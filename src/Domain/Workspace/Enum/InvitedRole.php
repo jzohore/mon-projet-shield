@@ -14,6 +14,10 @@ enum InvitedRole: string
             self::ROLE_WORKSPACE_COLLAB => 'Collaborateur',
         };
     }
+
+    /**
+     * @return InvitedRole[]
+     */
     public static function getGroupedChoices(): array
     {
         return [
@@ -22,6 +26,9 @@ enum InvitedRole: string
         ];
     }
 
+    /**
+     * @return string
+     */
     public function getColorClasses(): string
     {
         return match ($this) {

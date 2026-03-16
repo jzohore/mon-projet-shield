@@ -8,7 +8,7 @@ use Symfony\Component\Messenger\Attribute\AsMessage;
 final readonly class SendMagicLinkMessage
 {
     public function __construct(
-        public string $userEmail, // Identifiant unique
-        public string $magicLinkToken
+        public ?string $userEmail, // Identifiant unique
+        public ?string $magicLinkToken
     ) {}
 }

@@ -7,32 +7,32 @@ namespace App\Infrastructure\Audit\Persistence;
 use App\Domain\AuditLog\Entity\AuditLog;
 use App\Domain\AuditLog\Enum\AuditEventType;
 use App\Domain\AuditLog\Repository\AuditLogRepositoryInterface;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
 
 /**
  * Adaptateur : Implémentation Doctrine du contrat d'Audit Log.
  *
- * @extends ServiceEntityRepository<AuditLog>
- *
  * @method AuditLog|null find($id, $lockMode = null, $lockVersion = null)
  * @method AuditLog|null findOneBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null)
  * @method AuditLog[]    findAll()
  * @method AuditLog[]    findBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null, $limit = null, $offset = null)
  */
-final class AuditLogRepository extends ServiceEntityRepository implements AuditLogRepositoryInterface
+final readonly class AuditLogRepository implements AuditLogRepositoryInterface
 {
-    public function __construct(ManagerRegistry $registry)
+    /** @var EntityRepository<AuditLog> */
+    private EntityRepository $repository;
+    public function __construct(private EntityManagerInterface $entityManager)
     {
-        parent::__construct($registry, AuditLog::class);
+        $this->repository = $entityManager->getRepository(AuditLog::class);
     }
 
     public function save(AuditLog $auditLog): void
     {
-        $this->getEntityManager()->persist($auditLog);
-        $this->getEntityManager()->flush();
+        $this->entityManager->persist($auditLog);
+        $this->entityManager->flush();
     }
 
     /**
@@ -41,7 +41,7 @@ final class AuditLogRepository extends ServiceEntityRepository implements AuditL
     public function findByResourceId(string $resourceId): array
     {
         // On retourne toujours les événements du plus récent au plus ancien
-        return $this->findBy(
+        return $this->repository->findBy(
             ['resourceId' => $resourceId],
             ['occurredAt' => 'DESC']
         );
@@ -52,7 +52,7 @@ final class AuditLogRepository extends ServiceEntityRepository implements AuditL
      */
     public function findByEventName(string $eventName): array
     {
-        return $this->findBy(
+        return $this->repository->findBy(
             ['eventName' => $eventName],
             ['occurredAt' => 'DESC']
         );
@@ -64,12 +64,15 @@ final class AuditLogRepository extends ServiceEntityRepository implements AuditL
      */
     public function findBySlugId(string $slugId): ?AuditLog
     {
-        return $this->findOneBy(['slugId' => $slugId]);
+        return $this->repository->findOneBy(['slugId' => $slugId]);
     }
 
+    /**
+     * @return Pagerfanta<AuditLog>
+     */
     public function getAuditLogsList(?AuditEventType $type = null): Pagerfanta
     {
-        $qb = $this->createQueryBuilder('auditLog')
+        $qb = $this->repository->createQueryBuilder('auditLog')
         ->orderBy('auditLog.occurredAt', 'DESC')
         ;
 

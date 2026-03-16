@@ -1,138 +1,122 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Service;
 
 use App\Application\Device\DTO\Request\CreateDeviceRequest;
 use App\Application\Device\UseCase\CreateDeviceUseCase;
-use App\Domain\User\Repository\UserRepositoryInterface;
 use DeviceDetector\ClientHints;
 use DeviceDetector\DeviceDetector;
 use DeviceDetector\Parser\AbstractBotParser;
 use DeviceDetector\Parser\AbstractParser;
 use GeoIp2\Database\Reader;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
 use GeoIp2\Exception\AddressNotFoundException;
 use GeoIp2\Model\City;
 use MaxMind\Db\Reader\InvalidDatabaseException;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 
-readonly class DeviceDetectorService
+class DeviceDetectorService
 {
+    private ?Reader $cityDbReader = null;
+
     public function __construct(
-        private CreateDeviceUseCase     $createDevice,
-        private ParameterBagInterface   $parameterBag,
-        private RequestStack            $requestStack,
-        private UserRepositoryInterface $userRepository,
+        private readonly CreateDeviceUseCase   $createDevice,
+        private readonly ParameterBagInterface $parameterBag,
+        private readonly RequestStack          $requestStack,
     ) {}
 
-    public function deviceDetector(): DeviceDetector
+    /**
+     * Initialise le Reader GeoIP de manière lazy (une seule fois).
+     * @throws InvalidDatabaseException
+     */
+    private function getReader(): Reader
+    {
+        if (null === $this->cityDbReader) {
+            $path = $this->parameterBag->get('GeoIP2_file');
+            if (!is_string($path)) {
+                throw new \RuntimeException('Le paramètre GeoIP2_file doit être une chaîne de caractères.');
+            }
+            $this->cityDbReader = new Reader($path);
+        }
+
+        return $this->cityDbReader;
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function getDeviceDetector(Request $request): DeviceDetector
     {
         AbstractBotParser::setVersionTruncation(AbstractParser::VERSION_TRUNCATION_NONE);
 
-        $userAgent = $_SERVER['HTTP_USER_AGENT'];
-        $clientHints = ClientHints::factory($_SERVER);
+        /** @var string $userAgent */
+        $userAgent = $request->headers->get('User-Agent', '');
+        $clientHints = ClientHints::factory($request->server->all());
 
         return new DeviceDetector($userAgent, $clientHints);
     }
 
-    public function getAddressIp(): ?string
+    /**
+     * @throws InvalidDatabaseException
+     */
+    public function getCityData(string $ip): ?City
     {
-        if (isset($_SERVER['HTTP_CLIENT_IP'])) {
-            return $_SERVER['HTTP_CLIENT_IP'];
-        }
-        // IP derrière un proxy
-        elseif (isset($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-            return $_SERVER['HTTP_X_FORWARDED_FOR'];
-        }
-        // Sinon : IP normale
-        else {
-            return $_SERVER['REMOTE_ADDR'] ?? '';
+        try {
+            return $this->getReader()->city($ip);
+        } catch (AddressNotFoundException) {
+            return null;
         }
     }
 
     /**
-     * @throws AddressNotFoundException
      * @throws InvalidDatabaseException
      */
-    public function getCityReader(): City
+    public function createDeviceDetector(?string $userSlugId): void
     {
-        $cityDbReader = new Reader($this->parameterBag->get('GeoIP2_file'));
-        // $addressIp = $this->getAddressIp();
-        $addressIp = '2a01:cb00:8b5:5700:e46b:ac5d:48f3:ad81';
+        $request = $this->requestStack->getCurrentRequest();
+        if (null === $request) {
+            return;
+        }
 
-        return $cityDbReader->city(ipAddress: $addressIp);
-    }
+        $ip = $request->getClientIp() ?? '127.0.0.1';
+        $session = $request->hasSession() ? $request->getSession() : null;
 
-    /**
-     * @throws AddressNotFoundException
-     * @throws InvalidDatabaseException
-     */
-    public function getCountryIsoCode(): ?string
-    {
-        return $this->getCityReader()->country->isoCode;
-    }
-
-    /**
-     * @throws AddressNotFoundException
-     * @throws InvalidDatabaseException
-     */
-    public function getLongitude(): ?float
-    {
-        return $this->getCityReader()->location->longitude;
-    }
-
-    /**
-     * @throws AddressNotFoundException
-     * @throws InvalidDatabaseException
-     */
-    public function getLatitude(): ?float
-    {
-        return $this->getCityReader()->location->latitude;
-    }
-
-    /**
-     * @throws AddressNotFoundException
-     * @throws InvalidDatabaseException
-     */
-    public function getCityName(): ?string
-    {
-        return $this->getCityReader()->city->name;
-    }
-
-    /**
-     * @throws AddressNotFoundException
-     * @throws InvalidDatabaseException
-     */
-    public function getPostalCode(): ?string
-    {
-        return $this->getCityReader()->postal->code;
-    }
-
-    /**
-     * @throws InvalidDatabaseException
-     * @throws AddressNotFoundException
-     */
-    public function createDeviceDetector(string $userSlugId): void
-    {
-        $currentSessionId = $this->requestStack->getCurrentRequest()->getSession()->getId();
-        $device = $this->deviceDetector();
+        $device = $this->getDeviceDetector($request);
         $device->parse();
 
+        $cityData = $this->getCityData($ip);
+
         $deviceDTO = new CreateDeviceRequest();
-        $deviceDTO->addressIp = $this->getAddressIp();
+        $deviceDTO->userSlugId = $userSlugId;
+        $deviceDTO->addressIp = $ip;
+        $deviceDTO->sessionId = $session?->getId();
+
+        // Données Device
         $deviceDTO->clientDeviceName = $device->getDeviceName();
         $deviceDTO->clientBrandName = $device->getBrandName();
         $deviceDTO->clientIsBrowser = $device->isBrowser();
         $deviceDTO->clientIsSmartphone = $device->isSmartphone();
-        $deviceDTO->clientOs = $device->getOs();
-        $deviceDTO->clientInfo = $device->getClient();
-        $deviceDTO->sessionId = $currentSessionId;
-        $deviceDTO->countryIsoCode = $this->getCountryIsoCode();
-        $deviceDTO->postalCode = $this->getPostalCode();
-        $deviceDTO->cityName = $this->getCityName();
-        $deviceDTO->longitude = $this->getLongitude();
-        $deviceDTO->latitude = $this->getLatitude();
-        $deviceDTO->userSlugId = $userSlugId;
+
+        /** @var array<string, mixed> $os */
+        $os = $device->getOs();
+        /** @var array<string, mixed> $client */
+        $client = $device->getClient();
+
+        // Correction PHPStan : Conversion des tableaux associatifs en listes de valeurs
+        $deviceDTO->clientOs = $os;
+        $deviceDTO->clientInfo = $client;
+
+        // Données Géo (MaxMind)
+        if ($cityData) {
+            $deviceDTO->countryIsoCode = $cityData->country->isoCode;
+            $deviceDTO->postalCode = $cityData->postal->code;
+            $deviceDTO->cityName = $cityData->city->name;
+            $deviceDTO->longitude = $cityData->location->longitude;
+            $deviceDTO->latitude = $cityData->location->latitude;
+        }
 
         ($this->createDevice)($deviceDTO);
     }

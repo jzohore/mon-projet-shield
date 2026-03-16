@@ -12,6 +12,10 @@ final class UniqueWorkspaceName extends Constraint
     public string $message = 'L\'espace de travail "{{ value }}" existe déjà. Veuillez choisir un autre nom.';
     public ?string $ignoreSlugId = null;
 
+    /**
+     * @param array<string, mixed> $options  // Ajout du type pour PHPStan
+     * @param string[]|null $groups
+     */
     public function __construct(
         ?string $ignoreSlugId = null,
         ?string $message = null,

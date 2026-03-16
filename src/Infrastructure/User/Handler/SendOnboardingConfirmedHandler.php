@@ -6,6 +6,7 @@ namespace App\Infrastructure\User\Handler;
 
 use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
+use App\Domain\Workspace\Entity\Workspace;
 use App\Infrastructure\Notification\Email\OnboardingCompletedEmail;
 use App\Infrastructure\User\Message\SendOnboardingConfirmedMessage;
 use Symfony\Component\Mailer\MailerInterface;
@@ -27,9 +28,11 @@ final readonly class SendOnboardingConfirmedHandler
         $user = $this->userRepository->findByEmail($message->userEmail);
 
         Assert::isInstanceOf($user, User::class);
+        $workspace = $user->workspace;
+        Assert::isInstanceOf($workspace, Workspace::class);
         $url = $this->router->generate('app_dashboard', [], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        $email = new OnboardingCompletedEmail($user->email, $user->firstName, $user->workspace->name, $url);
+        $email = new OnboardingCompletedEmail($user->email, $user->firstName, $workspace->name, $url);
         $this->mailer->send($email);
     }
 }

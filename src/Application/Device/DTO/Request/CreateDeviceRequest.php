@@ -5,12 +5,12 @@ namespace App\Application\Device\DTO\Request;
 class CreateDeviceRequest
 {
     /**
-     * @var list<string>|null
+     * @var array<string, mixed>|null
      */
     public ?array $clientInfo = null;
 
     /**
-     * @var list<string>|null
+     * @var array<string, mixed>|null
      */
     public ?array $clientOs = null;
 

@@ -14,6 +14,7 @@ use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
+use Webmozart\Assert\Assert;
 
 #[AsController]
 #[Route(path: '/app/onboarding/profile/{slugId}', name: 'app_onboarding_profile', methods: ['GET', 'POST'])]
@@ -30,6 +31,7 @@ final class OnBoardingProfileController
         #[CurrentUser]
         ?User $user,
     ): Response {
+        Assert::notNull($user);
         return new Response(
             $twig->render('@app/onboarding/profile.html.twig', [
                 'page_title' => 'Votre tableau de bord',

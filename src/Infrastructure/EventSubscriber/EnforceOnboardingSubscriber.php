@@ -61,33 +61,17 @@ final class EnforceOnboardingSubscriber implements EventSubscriberInterface
             return;
         }
 
-        // --- LA LOGIQUE DE ROUTAGE STRICTE DE L'ONBOARDING ---
+        $redirectTo = match ($user->onboardingStatus) {
+            OnboardingStatus::WORKSPACE_SETUP => 'app_onboarding_profile',
+            OnboardingStatus::PENDING => 'app_onboarding_workspace',
+            default => null,
+        };
 
-        // 1. Si tout est fini, on ne fait rien, on laisse passer vers l'application !
-        if ($user->onboardingStatus === OnboardingStatus::COMPLETED) {
-            return;
-        }
-
-        // 2. Si l'utilisateur en est à l'ÉTAPE 1 (Espace de travail)
-        if ($user->onboardingStatus === OnboardingStatus::PENDING) {
-            if ($currentRoute !== 'app_onboarding_workspace') {
-                $url = $this->router->generate('app_onboarding_workspace', [
-                    'slugId' => $user->slugId,
-                ]);
-                $event->setResponse(new RedirectResponse($url));
-            }
-            return; // On arrête l'exécution ici
-        }
-
-        // 3. Si l'utilisateur en est à l'ÉTAPE 2 (Profil)
-        if ($user->onboardingStatus === OnboardingStatus::WORKSPACE_SETUP) {
-            if ($currentRoute !== 'app_onboarding_profile') {
-                $url = $this->router->generate('app_onboarding_profile', [
-                    'slugId' => $user->slugId,
-                ]);
-                $event->setResponse(new RedirectResponse($url));
-            }
-            return; // On arrête l'exécution ici
+        if ($redirectTo !== null && $currentRoute !== $redirectTo) {
+            $url = $this->router->generate($redirectTo, [
+                'slugId' => $user->slugId,
+            ]);
+            $event->setResponse(new RedirectResponse($url));
         }
     }
 }

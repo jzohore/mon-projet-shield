@@ -31,13 +31,18 @@ class Device
         // Pas de setter, le device appartient à ce user pour toujours
     }
 
-    // 🛠️ CORRECTION 2 : On passe au JSON pour les métadonnées complexes
+    /**
+     * @var array<string, mixed>|null
+     */
     #[ORM\Column(type: Types::JSON, nullable: true)]
     public ?array $clientInfo {
         get => $this->clientInfo;
         set => $this->clientInfo = $value;
     }
 
+    /**
+     * @var array<string, mixed>|null
+     */
     #[ORM\Column(type: Types::JSON, nullable: true)]
     public ?array $clientOs {
         get => $this->clientOs;
@@ -115,6 +120,10 @@ class Device
         get => $this->createdAt;
     }
 
+    /**
+     * @param array<string, mixed>|null $clientInfo
+     * @param array<string, mixed>|null $clientOs
+     */
     public function __construct(
         User $owner,
         ?array $clientInfo = null,

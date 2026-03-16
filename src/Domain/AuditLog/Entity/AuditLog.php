@@ -40,7 +40,9 @@ class AuditLog
         get => $this->slugId;
     }
 
-    // Un simple tableau JSON stocké tel quel
+    /**
+     * @var array<string, mixed>|null
+     */
     #[ORM\Column(type: Types::JSON)]
     public ?array $payload = null {
         get => $this->payload ?? [];
@@ -51,6 +53,12 @@ class AuditLog
         get => $this->occurredAt;
     }
 
+    /**
+     * @param AuditEventType $eventName
+     * @param string $resourceId
+     * @param array<string, mixed> $payload
+     * @throws \DateMalformedStringException
+     */
     public function __construct(
         AuditEventType $eventName,
         string $resourceId,

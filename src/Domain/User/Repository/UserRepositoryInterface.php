@@ -21,9 +21,9 @@ interface UserRepositoryInterface
     /**
      * Indispensable pour le système de login (Symfony Security).
      */
-    public function findByEmail(string $email): ?User;
+    public function findByEmail(?string $email): ?User;
 
-    public function findBySlug(string $slug): ?User;
+    public function findBySlug(?string $slug): ?User;
 
     /**
      * En RegTech, on préfère souvent une méthode "archive" plutôt que "delete",
@@ -33,7 +33,13 @@ interface UserRepositoryInterface
 
     public function findByMagicLink(string $magicLink): ?User;
 
+    /**
+     * @return Pagerfanta<User>
+     */
     public function findMembersForList(Workspace $workspace, ?string $search = null, ?bool $queryEnabled = null): Pagerfanta;
 
+    /**
+     * @return array<int, User>
+     */
     public function findOnboardingUsers(): array;
 }

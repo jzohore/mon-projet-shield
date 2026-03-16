@@ -122,12 +122,22 @@ class WorkspaceInvitation
         $this->magicLinkTokenExpiresAt = null;
     }
 
-    public function expiresAt()
+    public function expiresAt(): string
     {
-        $date = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $target = $this->magicLinkTokenExpiresAt;
-        $interval = $date->diff($target)->days;
 
-        return sprintf('Le lien expire dans %d jours', $interval);
+        if (null === $target || $target < $now) {
+            return 'Le lien est expiré';
+        }
+
+        $interval = $now->diff($target);
+        $days = (int) $interval->format('%a');
+
+        if ($days === 0) {
+            return "Le lien expire aujourd'hui";
+        }
+
+        return sprintf('Le lien expire dans %d jours', $days);
     }
 }

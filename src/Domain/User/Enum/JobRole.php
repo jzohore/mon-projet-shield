@@ -32,8 +32,9 @@ enum JobRole: string
     case CONSULTANT = 'consultant';
     case OTHER = 'other';
 
+
     /**
-     * Retourne le nom du métier formaté pour l'affichage (UI).
+     * @return string
      */
     public function getLabel(): string
     {
@@ -60,8 +61,7 @@ enum JobRole: string
     }
 
     /**
-     * Génère un tableau parfaitement formaté pour un ChoiceType Symfony
-     * avec les <optgroup> par catégories métier !
+     * @return JobRole[][]
      */
     public static function getGroupedChoices(): array
     {

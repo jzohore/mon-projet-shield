@@ -14,6 +14,7 @@ use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
+use Webmozart\Assert\Assert;
 
 #[AsController]
 #[Route(path: '/app/onboarding/finalization/{slugId}', name: 'app_onboarding_finalization', methods: ['GET'])]
@@ -30,6 +31,7 @@ final class OnBoardingFinalizationController
         #[CurrentUser]
         ?User $user,
     ): Response {
+        Assert::notNull($user);
         return new Response(
             $twig->render('@app/onboarding/finalization.html.twig', [
                 'page_title' => 'Votre tableau de bord',

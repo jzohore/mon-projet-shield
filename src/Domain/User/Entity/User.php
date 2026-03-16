@@ -151,6 +151,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Embedded(class: UserProfil::class, columnPrefix: 'profile_')]
     public UserProfil $profile;
 
+    /**
+     * @var list<string>|null $dismissedSteps
+     */
     #[ORM\Column(type: Types::JSON, nullable: true)]
     public ?array $dismissedSteps = [] {
         get => $this->dismissedSteps;
@@ -247,10 +250,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getInitials(): string
     {
+        $firstName = (string) $this->getNormalizedFirstName();
+        $lastName = (string) $this->getNormalizedLastName();
+
+        // On récupère le premier caractère de manière sécurisée (compatible UTF-8)
+        $firstLetter = mb_substr($firstName, 0, 1);
+        $lastLetter = mb_substr($lastName, 0, 1);
+
+        if ($firstLetter === '' && $lastLetter === '') {
+            return '??'; // Valeur de repli (fallback)
+        }
+
         return sprintf(
-            '%s %s',
-            ucfirst($this->getNormalizedFirstName()[0]),
-            ucfirst($this->getNormalizedLastName()[0])
+            '%s%s',
+            mb_strtoupper($firstLetter),
+            mb_strtoupper($lastLetter)
         );
     }
 
@@ -295,6 +309,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function isStepDismissed(?string $stepId): bool
     {
-        return in_array($stepId, $this->dismissedSteps);
+        \Webmozart\Assert\Assert::notNull($this->slugId);
+
+        // Le ?? [] garantit que le "haystack" est toujours un array
+        return in_array($stepId, $this->dismissedSteps ?? [], true);
     }
 }

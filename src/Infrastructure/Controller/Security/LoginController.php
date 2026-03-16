@@ -2,6 +2,7 @@
 
 namespace App\Infrastructure\Controller\Security;
 
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
@@ -24,10 +25,10 @@ class LoginController
      */
     public function __invoke(
         Environment $twig,
-        UserInterface $user,
+        Security $security,
         UrlGeneratorInterface $urlGenerator,
     ): Response {
-        if ($user) {
+        if ($security->getUser() instanceof UserInterface) {
             return new RedirectResponse($urlGenerator->generate('app_dashboard'));
         }
         return new Response(

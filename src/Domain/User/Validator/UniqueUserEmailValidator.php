@@ -24,7 +24,7 @@ final class UniqueUserEmailValidator extends ConstraintValidator
         }
 
         // On cherche s'il existe déjà un cabinet avec ce nom exact
-        $existingUser = $this->userRepository->findOneBy(['email' => $value]);
+        $existingUser = $this->userRepository->findByEmail($value);
 
         // S'il existe...
         if ($existingUser !== null) {

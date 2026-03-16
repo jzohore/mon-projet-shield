@@ -18,7 +18,7 @@ final readonly class SendLoginUserUseCase
 
     public function __invoke(LoginUserRequest $request): void
     {
-        Assert::email($request->email);
+        Assert::notNull($request->email);
 
         $user = $this->userRepository->findByEmail($request->email);
         Assert::isInstanceOf($user, User::class);

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Controller\App;
 
-use App\Domain\User\Repository\UserRepositoryInterface;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Attribute\Route;
@@ -24,7 +23,6 @@ final class DashboardController
      */
     public function __invoke(
         Environment $twig,
-        UserRepositoryInterface $repository,
     ): Response {
 
         return new Response(

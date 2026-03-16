@@ -105,8 +105,9 @@
         "lint:twig": "bin/console lint:twig templates",
         "lint:php": "vendor/bin/php-cs-fixer fix --dry-run --diff",
         "fix": "vendor/bin/php-cs-fixer fix",
-        "phpstan": "vendor/bin/phpstan analyze src --level=8",
+        "phpstan": "vendor/bin/phpstan analyze src --level=8 --memory-limit=2G",
         "deptrac": "php -d error_reporting='E_ALL & ~E_DEPRECATED' vendor/bin/deptrac analyze",
+        "audit": "composer audit",
         "check": [
             "@lint",
             "@phpstan",
@@ -125,11 +126,14 @@
         }
     },
     "require-dev": {
+        "deptrac/deptrac": "^4.6",
         "friendsofphp/php-cs-fixer": "^3.94",
         "phpro/grumphp": "^2.19",
         "phpstan/phpstan": "^2.1",
-        "qossmic/deptrac-shim": "^1.0",
+        "phpunit/phpunit": "^13.0",
         "rector/rector": "^2.3",
+        "symfony/browser-kit": "8.0.*",
+        "symfony/css-selector": "8.0.*",
         "symfony/maker-bundle": "^1.66",
         "symfony/stopwatch": "8.0.*",
         "symfony/ux-toolkit": "^2.32",

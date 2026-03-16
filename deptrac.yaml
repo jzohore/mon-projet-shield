@@ -1,24 +1,30 @@
 deptrac:
     paths:
         - ./src
+    exclude_files:
+        - '#.*test.*#'
     layers:
-        - name: Domain
-          collectors:
-              - type: directory
-                regex: src/Domain/.*
-        - name: Application
-          collectors:
-              - type: directory
-                regex: src/Application/.*
-        - name: Infrastructure
-          collectors:
-              - type: directory
-                regex: src/Infrastructure/.*
-
+        -
+            name: Controller
+            collectors:
+                -
+                    type: classLike
+                    value: .*Controller.*
+        -
+            name: Repository
+            collectors:
+                -
+                    type: classLike
+                    value: .*Repository.*
+        -
+            name: Service
+            collectors:
+                -
+                    type: classLike
+                    value: .*Service.*
     ruleset:
-        Domain: ~
-        Application:
-            - Domain
-        Infrastructure:
-            - Domain
-            - Application
+        Controller:
+            - Service
+        Service:
+            - Repository
+        Repository:

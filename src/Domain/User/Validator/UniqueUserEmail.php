@@ -10,6 +10,10 @@ final class UniqueUserEmail extends Constraint
     public string $message = 'L\'e-mail "{{ value }}" existe déjà.';
     public ?string $ignoreSlugId = null;
 
+    /**
+     * @param array<string, mixed> $options  // Ajout du type pour PHPStan
+     * @param string[]|null $groups
+     */
     public function __construct(
         ?string $ignoreSlugId = null,
         ?string $message = null,

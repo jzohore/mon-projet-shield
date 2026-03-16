@@ -1,31 +1,38 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Device\Persistence;
 
 use App\Domain\Device\Device;
 use App\Domain\Device\DeviceRepositoryInterface;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 
 /**
- *
- * @extends ServiceEntityRepository<Device>
  *
  * @method Device|null find($id, $lockMode = null, $lockVersion = null)
  * @method Device|null findOneBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null)
  * @method Device[]    findAll()
  * @method Device[]    findBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null, $limit = null, $offset = null)
  */
-class DeviceRepository extends ServiceEntityRepository implements DeviceRepositoryInterface
+final readonly class DeviceRepository implements DeviceRepositoryInterface
 {
-    public function __construct(ManagerRegistry $registry)
+    /** @var EntityRepository<Device> */
+    private EntityRepository $repository;
+    public function __construct(private EntityManagerInterface $entityManager)
     {
-        parent::__construct($registry, Device::class);
+        $this->repository = $entityManager->getRepository(Device::class);
     }
 
     public function save(Device $device): void
     {
-        $this->getEntityManager()->persist($device);
-        $this->getEntityManager()->flush();
+        $this->entityManager->persist($device);
+        $this->entityManager->flush();
+    }
+
+    public function findBySlugId(string $slugId): ?Device
+    {
+        return $this->repository->findOneBy(['slugId' => $slugId]);
     }
 }

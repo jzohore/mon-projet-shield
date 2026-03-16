@@ -1,33 +1,33 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Persistence;
 
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
-use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\Persistence\ManagerRegistry;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 
 /**
- *
- * @extends ServiceEntityRepository<WorkspaceInvitation>
- *
  * @method WorkspaceInvitation|null find($id, $lockMode = null, $lockVersion = null)
  * @method WorkspaceInvitation|null findOneBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null)
  * @method WorkspaceInvitation[]    findAll()
  * @method WorkspaceInvitation[]    findBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null, $limit = null, $offset = null)
  */
-class WorkspaceInvitationRepository extends ServiceEntityRepository implements WorkspaceInvitationRepositoryInterface
+final readonly class WorkspaceInvitationRepository implements WorkspaceInvitationRepositoryInterface
 {
-    public function __construct(ManagerRegistry $registry)
+    /** @var EntityRepository<WorkspaceInvitation> */
+    private EntityRepository $repository;
+    public function __construct(private EntityManagerInterface $entityManager)
     {
-        parent::__construct($registry, WorkspaceInvitation::class);
+        $this->repository = $entityManager->getRepository(WorkspaceInvitation::class);
     }
-
     public function save(WorkspaceInvitation $workspaceInvitation): void
     {
-        $this->getEntityManager()->persist($workspaceInvitation);
-        $this->getEntityManager()->flush();
+        $this->entityManager->persist($workspaceInvitation);
+        $this->entityManager->flush();
     }
 
     /**
@@ -35,11 +35,11 @@ class WorkspaceInvitationRepository extends ServiceEntityRepository implements W
      */
     public function findByWorkspace(Workspace $workspace): array
     {
-        return $this->findBy(['workspace' => $workspace], ['createdAt' => 'DESC']);
+        return $this->repository->findBy(['workspace' => $workspace], ['createdAt' => 'DESC']);
     }
 
     public function findByEmail(string $email): ?WorkspaceInvitation
     {
-        return $this->findOneBy(['email' => $email]);
+        return $this->repository->findOneBy(['email' => $email]);
     }
 }
