@@ -1,0 +1,29 @@
+{% extends '@app/onboarding/base_onboarding.html.twig' %}
+
+{% set current_step = 1 %}
+
+{% block title %}Création de l'espace | {{ company_name }}{% endblock %}
+
+{% block form_content %}
+
+    <div class="mb-8 text-left">
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900 mb-3">
+            Créez votre espace de travail
+        </h1>
+        <p class="text-slate-500 text-base">
+            Ce nom sera visible par vos collaborateurs et sur vos documents officiels.
+        </p>
+    </div>
+
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 mb-8">
+        <twig:CreateWorkspaceFormComponent userSlugId="{{ user_slug_id }}"></twig:CreateWorkspaceFormComponent>
+    </div>
+
+    <div class="flex justify-center gap-2 mb-8">
+        <div class="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 border border-emerald-100/50">
+            {{ ux_icon('lucide:shield-check', { class: 'size-4 stroke-[2.5px]' }) }}
+            Données chiffrées & Hébergé en Europe
+        </div>
+    </div>
+
+{% endblock %}

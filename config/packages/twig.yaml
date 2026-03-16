@@ -1,0 +1,15 @@
+twig:
+    file_name_pattern: '*.twig'
+    form_themes:
+        - 'form/stripe_theme.html.twig'
+    paths:
+        '%kernel.project_dir%/templates/admin': admin
+        '%kernel.project_dir%/templates/app': app
+        '%kernel.project_dir%/templates/website': website
+        '%kernel.project_dir%/templates/security': security
+        '%kernel.project_dir%/templates/emails': emails
+    globals:
+        company_name: '%env(COMPANY_NAME)%'
+when@test:
+    twig:
+        strict_variables: true

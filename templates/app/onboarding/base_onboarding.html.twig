@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="{{ app.request.locale|default('fr') }}" class="h-full antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    {# SEO : Onboarding = privé, donc on bloque les moteurs, mais on garde une structure propre #}
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="description" content="Configurez votre espace de travail {{ company_name|default('Shield') }} en quelques étapes.">
+
+    <title>{% block title %}{{ company_name|default('Shield') }} | Onboarding{% endblock %}</title>
+
+    {% block javascripts %}
+        {% block importmap %}{{ importmap('app') }}{% endblock %}
+    {% endblock %}
+    {% block stylesheets %}{% endblock %}
+</head>
+<body class="h-full font-sans text-slate-900 bg-slate-50">
+
+{# 1. ACCESSIBILITÉ : Lien d'évitement pour les lecteurs d'écran / navigation clavier #}
+<a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:px-4 focus:py-2 focus:bg-slate-900 focus:text-white focus:rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900">
+    Aller au contenu principal
+</a>
+
+{% set step = current_step|default(1) %}
+
+{# 2. LAYOUT : On englobe TOUT dans le min-h-screen flex #}
+<div class="flex min-h-screen flex-col md:flex-row">
+
+    {# HEADER MOBILE (Caché sur desktop car on a la sidebar) #}
+    <header class="md:hidden py-4 px-6 bg-white border-b border-slate-200 flex items-center justify-center shrink-0">
+            <span class="text-xl font-black tracking-widest uppercase text-slate-900">
+                {{ company_name|default('Shield') }}
+            </span>
+    </header>
+
+    {# ========================================== #}
+    {# LA SIDEBAR (Desktop)                       #}
+    {# ========================================== #}
+    <aside class="hidden md:flex flex-col w-80 shrink-0 bg-white border-r border-slate-200 px-10 py-12" aria-label="Progression de la configuration">
+
+        <div class="mb-16">
+            <span class="text-lg font-black tracking-widest uppercase text-slate-900">{{ company_name|default('Shield') }}</span>
+            <span class="block text-[9px] text-blue-600 font-bold uppercase tracking-[0.2em] mt-1">Onboarding</span>
+        </div>
+
+        <h2 id="timeline-title" class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-8">
+            Configuration
+        </h2>
+
+        {# ACCESSIBILITÉ : On utilise <nav> avec un aria-labelledby pour lister les étapes #}
+        <nav aria-labelledby="timeline-title" class="flex-1">
+            <ol class="relative border-l border-slate-200 ml-4">
+
+                {# Étape 1 #}
+                <li class="mb-10 ml-8" {% if step == 1 %}aria-current="step"{% endif %}>
+                        <span class="absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full ring-4 ring-white {{ step >= 1 ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-50 border border-slate-200 text-slate-400' }}" aria-hidden="true">
+                            {{ ux_icon('lucide:building-2', { class: 'size-4' }) }}
+                        </span>
+                    <h3 class="{{ step >= 1 ? 'font-bold text-slate-900' : 'font-medium text-slate-500' }}">
+                        {# Texte caché pour les lecteurs d'écran #}
+                        <span class="sr-only">{% if step > 1 %}Terminé : {% elseif step == 1 %}Étape actuelle : {% endif %}</span>
+                        1. Espace de travail
+                    </h3>
+                    <p class="text-sm {{ step >= 1 ? 'text-slate-500' : 'text-slate-400' }} mt-1">Nom de l'organisation</p>
+                </li>
+
+                {# Étape 2 #}
+                <li class="mb-10 ml-8" {% if step == 2 %}aria-current="step"{% endif %}>
+                        <span class="absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full ring-4 ring-white {{ step >= 2 ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-50 border border-slate-200 text-slate-400' }}" aria-hidden="true">
+                            {{ ux_icon('lucide:user', { class: 'size-4' }) }}
+                        </span>
+                    <h3 class="{{ step >= 2 ? 'font-bold text-slate-900' : 'font-medium text-slate-500' }}">
+                        <span class="sr-only">{% if step > 2 %}Terminé : {% elseif step == 2 %}Étape actuelle : {% endif %}</span>
+                        2. Votre profil
+                    </h3>
+                    <p class="text-sm {{ step >= 2 ? 'text-slate-500' : 'text-slate-400' }} mt-1">Rôle et contact</p>
+                </li>
+
+                {# Étape 3 #}
+                <li class="ml-8" {% if step == 3 %}aria-current="step"{% endif %}>
+                        <span class="absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full ring-4 ring-white {{ step >= 3 ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-50 border border-slate-200 text-slate-400' }}" aria-hidden="true">
+                            {{ ux_icon('lucide:check', { class: 'size-4' }) }}
+                        </span>
+                    <h3 class="{{ step >= 3 ? 'font-bold text-slate-900' : 'font-medium text-slate-500' }}">
+                        <span class="sr-only">{% if step == 3 %}Étape actuelle : {% endif %}</span>
+                        3. Finalisation
+                    </h3>
+                </li>
+            </ol>
+        </nav>
+
+        <div class="mt-auto flex items-center gap-2 text-xs text-slate-400">
+            <i class="fas fa-lock" aria-hidden="true"></i> Données chiffrées de bout en bout
+        </div>
+    </aside>
+
+    {# ========================================== #}
+    {# LA ZONE DROITE (Contenu + Footer intégrés) #}
+    {# ========================================== #}
+    <div class="flex-1 flex flex-col relative overflow-hidden">
+
+        <div class="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none"></div>
+
+        {# Le MAIN prend l'espace central #}
+        <main id="main-content" class="flex-1 flex items-center justify-center p-6 lg:p-12 relative z-10">
+            <div class="w-full max-w-lg animate-in fade-in slide-in-from-bottom-4 duration-700">
+                {% block form_content %}{% endblock %}
+            </div>
+        </main>
+
+        {# Le FOOTER reste sagement en bas de la zone droite #}
+        <footer class="p-6 text-center text-sm text-slate-500 relative z-10 shrink-0">
+            Besoin d'aide ?
+            <twig:Button as="a" href="mailto:support@{{ company_name|default('shield')|lower }}.com?subject=Aide Onboarding : {{ app.user.email|default('') }}" variant="link" class="text-blue-600 hover:underline px-1">
+                Contactez le support
+            </twig:Button>
+        </footer>
+
+    </div>
+</div>
+</body>
+</html>

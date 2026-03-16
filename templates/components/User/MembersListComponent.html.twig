@@ -1,0 +1,110 @@
+<div {{ attributes }}>
+    {% set members = this.members %}
+    {% if members is empty %}
+
+        {# --- 2A. L'ÉTAT VIDE (Empty State) --- #}
+        <div class="bg-white rounded-2xl p-8">
+            <twig:Empty class="border border-dashed border-slate-200 bg-slate-50/50 rounded-xl py-12">
+                <twig:Empty:Header>
+                    <twig:Empty:Media variant="icon" class="bg-white shadow-sm ring-1 ring-slate-200">
+                        <twig:ux:icon name="tabler:users-group" class="size-6 text-slate-400" />
+                    </twig:Empty:Media>
+                    <twig:Empty:Title class="text-lg font-bold text-slate-900 mt-4">Aucun collaborateur</twig:Empty:Title>
+                    <twig:Empty:Description class="text-slate-500">
+                        Vous êtes actuellement le seul membre de ce cabinet. Invitez des collaborateurs pour déléguer la gestion de la conformité.
+                    </twig:Empty:Description>
+                </twig:Empty:Header>
+                <twig:Empty:Content class="mt-6">
+                    <a href="" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-slate-100 hover:text-accent-foreground h-9 px-4 py-2">
+                        <twig:ux:icon name="tabler:mail-forward" class="size-4 mr-2" />
+                        Envoyer une invitation
+                    </a>
+                </twig:Empty:Content>
+            </twig:Empty>
+        </div>
+
+    {% else %}
+
+        {# --- 2B. LE TABLEAU DE DONNÉES --- #}
+        <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <twig:Table>
+                <twig:Table:Header class="bg-slate-50/50">
+                    <twig:Table:Row class="border-b-slate-100"> {# Optionnel: adoucir la bordure d'en-tête #}
+                        <twig:Table:Head class="text-slate-500 font-semibold">Collaborateur</twig:Table:Head>
+                        <twig:Table:Head class="text-slate-500 font-semibold">Niveau d'accès</twig:Table:Head>
+                        <twig:Table:Head class="text-slate-500 font-semibold">Statut</twig:Table:Head>
+                        <twig:Table:Head class="text-right text-slate-500 font-semibold">Actions</twig:Table:Head>
+                    </twig:Table:Row>
+                </twig:Table:Header>
+
+                <twig:Table:Body>
+                    {% for member in members %}
+                        {# J'ai ajouté border-b-slate-50 ou border-none si tu veux vraiment zéro ligne entre les rangées #}
+                        <twig:Table:Row class="hover:bg-slate-50/80 transition-colors border-b-slate-100 last:border-none">
+
+                            {# Info Utilisateur #}
+                            <twig:Table:Cell>
+                                <div class="flex items-center gap-3">
+                                    <div class="size-9 rounded-full {{ member.isOwner ? 'bg-slate-900 text-white' : 'bg-blue-100 text-blue-700' }} flex items-center justify-center text-xs font-bold shadow-sm">
+                                        {{ member.firstName|slice(0, 1) ~ member.lastName|split(' ')|last|slice(0, 1) }}
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-900">{{ member.fullName }}</p>
+                                        <p class="text-xs text-slate-500">{{ member.email }}</p>
+                                    </div>
+                                </div>
+                            </twig:Table:Cell>
+
+                            {# Rôle (Sans bordures) #}
+                            <twig:Table:Cell>
+                                {% if member.isOwner %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700">
+                                <twig:ux:icon name="tabler:crown" class="size-3 text-indigo-500" /> Gérant(e)
+                            </span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700">
+                                <twig:ux:icon name="tabler:shield" class="size-3 text-slate-500" />{{ enum('App\\Domain\\Workspace\\Enum\\InvitedRole').(member.roles[0]).label }}
+                            </span>
+                                {% endif %}
+                            </twig:Table:Cell>
+
+                            {# Statut #}
+                            <twig:Table:Cell>
+                                <div class="flex items-center gap-2">
+                                    {% if member.isActif %}
+                                        <span class="relative flex size-2">
+                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                    <span class="relative inline-flex rounded-full size-2 bg-emerald-500"></span>
+                                </span>
+                                    {% else %}
+                                        <span class="size-2 rounded-full bg-slate-300"></span>
+                                    {% endif %}
+                                    <span class="text-xs font-medium text-slate-600">Compte {{ member.isActif ? 'actif' : 'non actif' }}</span>
+                                </div>
+                            </twig:Table:Cell>
+
+                            {# Actions (Toujours visibles) #}
+                            <twig:Table:Cell class="text-right">
+                                {% if member.isOwner %}
+                                    <span class="text-xs italic text-slate-400">C'est vous</span>
+                                {% else %}
+                                    {# J'ai retiré opacity-0 group-hover:opacity-100 et assombri légèrement l'icône de base (text-slate-500) #}
+                                    <div class="flex justify-end gap-1">
+                                        <button class="p-1.5 text-slate-500 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors" title="Modifier les droits">
+                                            <twig:ux:icon name="tabler:pencil" class="size-4" />
+                                        </button>
+                                        <button class="p-1.5 text-slate-500 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors" title="Révoquer l'accès">
+                                            <twig:ux:icon name="tabler:trash" class="size-4" />
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </twig:Table:Cell>
+
+                        </twig:Table:Row>
+                    {% endfor %}
+                </twig:Table:Body>
+            </twig:Table>
+        </div>
+
+    {% endif %}
+</div>

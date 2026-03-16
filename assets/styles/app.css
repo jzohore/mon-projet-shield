@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@theme {
+    /* Ton Blanc Sable : Doux, reposant, haut de gamme */
+    --color-background-sable: #fcfaf8;
+
+    /* Typographie : On force l'inter ou une sans-serif moderne */
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+    /* Couleurs Shield */
+    --color-shield-dark: #0f172a; /* Slate 900 */
+    --color-shield-primary: #2563eb; /* Blue 600 */
+}
+
+@layer base {
+    body {
+        @apply bg-[--color-background-sable] text-slate-900 antialiased;
+        /* Rendu du texte comme sur Figma (meilleure définition des graisses) */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+
+    /* Pour que tes titres aient ce look "Bold/Black" de Figma */
+    h1, h2, h3 {
+        @apply font-bold tracking-tight text-slate-900;
+    }
+}
+
+@layer components {
+    /* Un composant de carte "SaaS" réutilisable */
+    .card-shield {
+        @apply bg-white border border-slate-200/60 shadow-sm rounded-xl p-6;
+    }
+}

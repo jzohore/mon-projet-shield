@@ -1,0 +1,33 @@
+<div{{ attributes }}>
+    <div>
+        {{ form_start(form, {
+            attr: {
+                novalidate: true,
+                'data-action': 'live#action:prevent',
+                'data-live-action-param': 'save',
+            }
+        }) }}
+
+        <div class="space-y-5">
+            {{ form_row(form.jobTitle) }}
+            {{ form_row(form.phoneNumber) }}
+        </div>
+
+        {# Le Footer / Bouton de soumission #}
+        <div class="flex items-center justify-end mt-8 pt-4">
+            <twig:Button as="button" type="submit" variant="dark" class="w-full sm:w-auto px-8">
+
+                {# Texte affiché par défaut #}
+                <span data-loading="action(save)|hide">Continuer</span>
+
+                {# Texte affiché PENDANT la requête AJAX avec la nouvelle syntaxe d'icône #}
+                <span data-loading="action(save)|show" class="hidden items-center gap-2">
+                        Enregistrement...
+                    </span>
+
+            </twig:Button>
+        </div>
+
+        {{ form_end(form) }}
+    </div>
+</div>

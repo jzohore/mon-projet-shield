@@ -1,0 +1,31 @@
+{% extends 'emails/base.html.twig' %}
+
+{# 1. Sujet interne du mail #}
+{% block title %}Votre espace Shield est prêt{% endblock %}
+
+{# 2. Contenu principal #}
+{% block content %}
+    <h1>Félicitations {{ first_name }} !</h1>
+
+    <p>C'est fait ! Votre configuration est terminée et votre espace <strong>{{ workspace_name }}</strong> est désormais opérationnel.</p>
+
+    <p>Vous avez maintenant accès à l'ensemble des outils {{ company_name }} pour piloter votre conformité et sécuriser vos opérations.</p>
+
+    <div class="btn-container">
+        <a href="{{ action_url }}" class="btn">Accéder à mon Dashboard</a>
+    </div>
+
+    <p style="font-size: 13px; color: #64748b; margin-top: 24px;">
+        💡 <strong>Conseil :</strong> Pensez à ajouter cette page à vos favoris pour y accéder rapidement lors de vos prochains contrôles.
+    </p>
+
+    <p style="font-size: 12px; color: #94a3b8; word-break: break-all; margin-top: 16px;">
+        Si le bouton ne fonctionne pas, utilisez ce lien :<br>
+        <a href="{{ action_url }}" style="color: #64748b;">{{ action_url }}</a>
+    </p>
+{% endblock %}
+
+{# 3. Footer personnalisé #}
+{% block footer_text %}
+    <p>Pour des raisons de sécurité, ne partagez jamais vos accès Shield. Notre support ne vous demandera jamais votre mot de passe par email.</p>
+{% endblock %}

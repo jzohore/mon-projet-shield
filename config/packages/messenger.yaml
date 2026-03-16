@@ -1,0 +1,28 @@
+framework:
+    messenger:
+        # Si un message échoue après les retries, il va ici
+        failure_transport: failed
+
+        transports:
+            # RabbitMQ pour la vitesse et la scalabilité
+            async:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 3
+                    delay: 1000 # 1s
+                    multiplier: 2
+
+            # Doctrine pour garder une trace des échecs (facile à relancer via l'admin)
+            failed: 'doctrine://default?queue_name=failed'
+
+            # Pour les actions qui DOIVENT être instantanées
+            sync: 'sync://'
+
+        routing:
+            # Les emails partent en asynchrone
+            'App\Infrastructure\User\Message\SendMagicLinkMessage': async
+            'App\Infrastructure\User\Message\SendOnboardingConfirmedMessage': async
+
+            # Tes commandes de conformité lourdes
+
+            # Tout le reste est synchrone par défaut (ou à définir ici)

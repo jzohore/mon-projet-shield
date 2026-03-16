@@ -1,0 +1,43 @@
+grumphp:
+    hooks_dir: ~
+    hooks_user: ~
+    stop_on_failure: true
+    process_timeout: 60
+    tasks:
+        # 1. Sécurité : Vérifie si des failles sont connues dans tes vendors
+        composer_script:
+            script: 'audit'
+
+        # 2. Qualité : Formattage automatique (PSR-12 / PER)
+        phpcsfixer:
+            config: .php-cs-fixer.dist.php
+            triggered_by: [php]
+
+        # 3. Analyse Statique : Niveau de typage strict (DDD)
+        phpstan:
+            level: 8 # Monte à 9 quand tu es prêt
+            triggered_by: [php]
+
+        # 4. Architecture : Le gardien de ton DDD (Hexagonale)
+        deptrac:
+            config: deptrac.yaml
+
+        # 5. Symfony : Vérification des fichiers de config
+        yamllint:
+            whitelist_patterns: ['%config_dir%/*.yaml']
+        twiglint:
+            whitelist_patterns: ['%template_dir%/*.twig']
+
+        # 6. Hygiène : Interdit les résidus de debug
+        git_blacklist:
+            keywords:
+                - "var_dump("
+                - "die("
+                - "dd("
+                - "dump("
+                - "print_r("
+            triggered_by: [php]
+
+        # 7. Tests : On ne commit pas si les tests unitaires échouent
+        phpunit:
+            always_execute: true

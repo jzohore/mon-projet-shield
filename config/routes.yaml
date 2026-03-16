@@ -1,0 +1,8 @@
+controllers:
+    resource:
+        path: ../src/Infrastructure/
+        namespace: App\Infrastructure
+    type: attribute
+app_verify_magic_link:
+    path: 'verify/magic/link/{token}'
+    methods: ['GET']

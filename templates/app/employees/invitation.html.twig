@@ -1,0 +1,24 @@
+{% extends '@admin/base.html.twig' %}
+
+{% block title %}{{ page_title }} | {{ company_name }}{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block breadcrumb_items %}
+    <twig:Breadcrumb:Separator />
+    <twig:Breadcrumb:Item>
+        <twig:Breadcrumb:Link href="{{ path('app_employees_list') }}" class="text-xs">
+            Équipe & Accès
+        </twig:Breadcrumb:Link>
+    </twig:Breadcrumb:Item>
+{% endblock %}
+{% block content %}
+    <div class="max-w-7xl mx-auto">
+
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{{ page_title }}</h1>
+            <p class="text-sm text-slate-500 mt-1">Gérez les accès de votre équipe à la plateforme {{ company_name }}.</p>
+        </div>
+
+        <twig:CreateInvitationFormComponent userSlugId="{{ user_slug_id }}" />
+    </div>
+{% endblock %}

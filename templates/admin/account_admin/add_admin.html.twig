@@ -1,0 +1,20 @@
+{% extends '@admin/base.html.twig' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+{% block button_page %}
+
+{% endblock %}
+{% block breadcrumb_items %}
+    <twig:Breadcrumb:Separator />
+    <twig:Breadcrumb:Item>
+        <twig:Breadcrumb:Link href="{{ path('account_admin_list') }}" class="text-xs">
+            Comptes Administrateurs
+        </twig:Breadcrumb:Link>
+    </twig:Breadcrumb:Item>
+{% endblock %}
+{% block content %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        {# Utilisation d'un composant anonyme si tu l'as créé #}
+
+    </div>
+{% endblock %}

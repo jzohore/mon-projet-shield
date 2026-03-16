@@ -1,0 +1,62 @@
+{% extends '@app/onboarding/base_onboarding.html.twig' %}
+
+{% set current_step = 3 %}
+
+{% block title %}Configuration terminée | {{ company_name }}{% endblock %}
+
+{% block form_content %}
+
+    {# On attache le contrôleur sur le parent #}
+    <div data-controller="loading-transition" class="relative w-full max-w-lg mx-auto min-h-[400px] flex items-center justify-center">
+
+        {# ========================================== #}
+        {# 1. L'ÉTAT DE CHARGEMENT                    #}
+        {# ========================================== #}
+        {# On cible cet élément comme étant "loader" #}
+        <div data-loading-transition-target="loader" class="w-full text-center flex flex-col items-center justify-center transition-all duration-500 opacity-100 scale-100">
+
+            <div class="relative flex items-center justify-center size-24 mb-8">
+                <div class="absolute inset-0 rounded-full border-[3px] border-slate-100"></div>
+                <div class="absolute inset-0 rounded-full border-[3px] border-slate-900 border-t-transparent animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    {{ ux_icon('lucide:shield-check', { class: 'size-8 text-slate-900 animate-pulse' }) }}
+                </div>
+            </div>
+
+            <h2 class="text-xl font-bold text-slate-900 mb-3 tracking-tight">
+                Finalisation de votre espace...
+            </h2>
+
+            {# On cible le texte pour pouvoir le changer #}
+            <p data-loading-transition-target="loaderText" class="text-sm text-slate-500 max-w-xs mx-auto transition-opacity duration-300">
+                Création de l'environnement sécurisé
+            </p>
+        </div>
+
+        {# ========================================== #}
+        {# 2. L'ÉTAT DE SUCCÈS                        #}
+        {# ========================================== #}
+        {# On cible cet élément comme étant "success" #}
+        <div data-loading-transition-target="success" class="hidden w-full bg-white rounded-[2rem] border border-slate-200 shadow-sm p-8 sm:p-12 text-center transition-all duration-700 ease-out opacity-0 scale-95 translate-y-4">
+
+            <div class="mx-auto inline-flex items-center justify-center size-20 rounded-full bg-emerald-100 mb-6 ring-8 ring-emerald-50">
+                {{ ux_icon('lucide:check-circle-2', { class: 'size-10 text-emerald-600' }) }}
+            </div>
+
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900 mb-4">
+                Tout est prêt, {{ app.user.firstName|default('bienvenue') }} !
+            </h1>
+
+            <p class="text-slate-500 text-base mb-10 max-w-sm mx-auto leading-relaxed">
+                Votre espace de travail et votre profil sont configurés. Vous pouvez maintenant gérer votre conformité en toute sérénité.
+            </p>
+
+            <twig:Button as="a" href="{{ path('app_dashboard') }}" variant="dark" size="lg">
+                Accéder à mon espace
+                {{ ux_icon('lucide:arrow-right', { class: 'size-4 ml-2' }) }}
+            </twig:Button>
+        </div>
+
+    </div>
+
+{% endblock %}

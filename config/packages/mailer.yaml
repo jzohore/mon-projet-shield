@@ -1,0 +1,10 @@
+# config/packages/mailer.yaml
+framework:
+    mailer:
+        dsn: '%env(MAILER_DSN)%'
+        envelope:
+            sender: 'hello@%env(DOMAIN_NAME)%'
+        headers:
+            From: '%env(COMPANY_NAME)% <hello@%env(DOMAIN_NAME)%>'
+            # Utile pour éviter les spams et marquer tes mails
+            'X-Shield-App': 'true'

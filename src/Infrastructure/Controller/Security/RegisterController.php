@@ -1,0 +1,31 @@
+<?php
+
+namespace App\Infrastructure\Controller\Security;
+
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\AsController;
+use Symfony\Component\Routing\Attribute\Route;
+use Twig\Environment;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
+
+#[AsController]
+#[Route(path: '/register', name: 'app_register', methods: ['GET', 'POST'])]
+class RegisterController
+{
+    /**
+     * @throws RuntimeError
+     * @throws SyntaxError
+     * @throws LoaderError
+     */
+    public function __invoke(
+        Environment $twig,
+    ): Response {
+        return new Response(
+            $twig->render('@security/register.html.twig', [
+                'page_title' => 'Votre tableau de bord',
+            ])
+        );
+    }
+}

@@ -1,0 +1,156 @@
+<div{{ attributes }}>
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {% include 'components/partials/_live_alerts.html.twig' with {
+            message: this.actionMessage|default(null),
+            type: this.actionMessageType|default('success')
+        } %}
+        {# --- COLONNE GAUCHE : LE FORMULAIRE (Prend 7 colonnes) --- #}
+        <div class="lg:col-span-7">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
+
+                <div class="p-8">
+                    <h2 class="text-lg font-bold text-slate-900 mb-6">Nouvelle invitation</h2>
+
+                    {# On gère la soumission directement sur la balise form générée par form_start #}
+                    {{ form_start(form, {
+                        attr: {
+                            novalidate: true,
+                            'data-action': 'live#action:prevent',
+                            'data-live-action-param': 'save',
+                        }
+                    }) }}
+
+                    <div class="space-y-6">
+                        {# L'email #}
+                        {{ form_row(form.email, {
+                            label: 'Email professionnel',
+                            attr: { placeholder: 'jean.dupont@cabinet.fr' }
+                        }) }}
+
+                        {# Les 2 Rôles #}
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-3">Niveau de privilèges</label>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                                {# Option 1 : Collaborateur #}
+                                <label class="relative flex cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-4 focus:outline-none hover:border-slate-300 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/30 transition-all group">
+                                    <input type="radio" data-model="invitedRole" name="invitedRole" value="ROLE_WORKSPACE_COLLAB" class="peer sr-only">
+                                    <span class="flex flex-col w-full">
+                                        <span class="flex items-center justify-between mb-2">
+                                            <span class="flex items-center gap-2 text-sm font-bold text-slate-900">
+                                                {{ ux_icon('lucide:user', { class: 'size-4 text-slate-400 group-has-[:checked]:text-blue-600 transition-colors' }) }}
+                                                Collaborateur
+                                            </span>
+                                            {{ ux_icon('lucide:check-circle-2', { class: 'size-4 text-blue-600 opacity-0 peer-checked:opacity-100 transition-opacity' }) }}
+                                        </span>
+                                        <span class="text-xs text-slate-500 leading-relaxed">
+                                            Accès aux dossiers clients et réalisation des contrôles de conformité KYC.
+                                        </span>
+                                    </span>
+                                </label>
+
+                                {# Option 2 : Administrateur #}
+                                <label class="relative flex cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-4 focus:outline-none hover:border-slate-300 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50/30 transition-all group">
+                                    <input type="radio" data-model="invitedRole" name="invitedRole" value="ROLE_WORKSPACE_ADMIN" class="peer sr-only">
+                                    <span class="flex flex-col w-full">
+                                        <span class="flex items-center justify-between mb-2">
+                                            <span class="flex items-center gap-2 text-sm font-bold text-slate-900">
+                                                {{ ux_icon('lucide:shield-check', { class: 'size-4 text-slate-400 group-has-[:checked]:text-indigo-600 transition-colors' }) }}
+                                                Administrateur
+                                            </span>
+                                            {{ ux_icon('lucide:check-circle-2', { class: 'size-4 text-indigo-600 opacity-0 peer-checked:opacity-100 transition-opacity' }) }}
+                                        </span>
+                                        <span class="text-xs text-slate-500 leading-relaxed">
+                                            Contrôle total. Peut inviter des membres, modifier les réglages et la facturation.
+                                        </span>
+                                    </span>
+                                </label>
+
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Le Footer / Bouton de soumission #}
+                    <div class="flex items-center justify-end mt-8 pt-4">
+                        <twig:Button as="button" type="submit" variant="dark" class="w-full sm:w-auto px-8">
+                            <span data-loading="action(save)|hide">Envoyer l'invitation</span>
+                            <span data-loading="action(save)|show" class="hidden items-center gap-2">
+                                Enregistrement...
+                            </span>
+                        </twig:Button>
+                    </div>
+
+                    {{ form_end(form) }}
+                </div>
+            </div>
+        </div>
+
+        {# --- COLONNE DROITE : LE PILOTAGE (Prend 5 colonnes) --- #}
+        {# 💡 IMPORTANT : On a rajouté un léger effet de chargement sur la liste quand on sauvegarde #}
+        <div class="lg:col-span-5 space-y-4 transition-opacity duration-200" data-loading="action(save)|addClass(opacity-50)">
+            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                {# Icône harmonisée avec Lucide #}
+                <twig:ux:icon name="lucide:clock" class="w-4 h-4 text-slate-400" />
+                Invitations en attente
+            </h3>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <ul class="divide-y divide-slate-100">
+
+                    {# 💡 LOGIQUE DE LIMITATION #}
+                    {% set total_invitations = this.invitations|length %}
+                    {% set visible_invitations = this.showAllInvitations ? this.invitations : this.invitations|slice(0, 5) %}
+
+                    {% for invitation in visible_invitations %}
+                        <li class="p-4 hover:bg-slate-50 transition-colors group">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-sm font-bold text-slate-900 truncate">{{ invitation.email }}</p>
+                                    <div class="flex items-center gap-2 mt-1">
+                               <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border transition-colors {{ invitation.invitedRole.getColorClasses() }}">
+    {{ invitation.invitedRole.getLabel() }}
+</span>
+                                        <span class="text-[11px] text-slate-400">{{ invitation.expiresAt }}</span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                    <button type="button" class="p-1.5 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors cursor-pointer" title="Renvoyer">
+                                        <twig:ux:icon name="lucide:send" class="w-3.5 h-3.5" />
+                                    </button>
+                                    <button type="button" class="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors cursor-pointer" title="Révoquer">
+                                        <twig:ux:icon name="lucide:trash-2" class="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+                            </div>
+                        </li>
+                    {% else %}
+                        <li class="p-12 text-center">
+                            <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
+                                <twig:ux:icon name="lucide:mail-x" class="w-6 h-6 text-slate-300" />
+                            </div>
+                            <p class="text-sm text-slate-500 font-medium">Aucune invitation en attente</p>
+                        </li>
+                    {% endfor %}
+
+                    {# 💡 BOUTON "AFFICHER LA SUITE" #}
+                    {% if total_invitations > 5 and not this.showAllInvitations %}
+                        <li class="p-0 border-t border-slate-100 bg-slate-50/50">
+                            <button type="button"
+                                    data-action="live#action"
+                                    data-live-action-param="showAllInvitations"
+                                    class="w-full p-3 text-sm font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2 focus:outline-none cusor-pointer">
+                                Afficher les {{ total_invitations - 5 }} autres
+                                <twig:ux:icon name="lucide:chevron-down" class="w-4 h-4" />
+                            </button>
+                        </li>
+                    {% endif %}
+
+                </ul>
+            </div>
+        </div>
+
+    </div>
+</div>

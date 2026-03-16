@@ -1,0 +1,166 @@
+
+{# =========================================================
+   1. LA LIGNE GOLBALE (Le conteneur)
+   ========================================================= #}
+{% block form_row %}
+    <div class="space-y-2">
+        {{ form_label(form) }}
+        {{ form_widget(form) }}
+        {{ form_help(form) }}
+        {{ form_errors(form) }}
+    </div>
+{% endblock form_row %}
+
+{# =========================================================
+   2. LE LABEL (Utilise ton composant Label.html.twig)
+   ========================================================= #}
+{% block form_label %}
+    {% if label is not same as(false) %}
+        {% set props = label_attr %}
+        {% if not compound %}
+            {% set props = props|merge({'for': id}) %}
+        {% endif %}
+
+        {# On prépare le texte du label #}
+        {% set label_content = translation_domain is same as(false) ? label : label|trans(label_translation_parameters, translation_domain) %}
+
+        {# Appel de ton composant UX Twig #}
+        {% component 'Label' with props %}
+            {% block content %}
+                {{ label_content|raw }}
+            {% endblock %}
+        {% endcomponent %}
+    {% endif %}
+{% endblock form_label %}
+
+{# =========================================================
+   3. LE CHAMP (Utilise ton composant Input.html.twig)
+   ========================================================= #}
+{% block form_widget_simple %}
+    {% set type = type|default('text') %}
+    {% set has_errors = errors|length > 0 %}
+
+    {# Si le champ a une erreur, on injecte les classes de danger #}
+    {% set current_class = attr.class|default('') %}
+    {% if has_errors %}
+        {% set attr = attr|merge({
+            'class': (current_class ~ ' border-red-500 focus-visible:ring-red-500 text-red-900')|trim
+        }) %}
+    {% endif %}
+
+    {# On rassemble tous les attributs natifs de Symfony pour les passer à ton composant #}
+    {% set props = {
+        type: type,
+        name: full_name,
+        id: id,
+        value: value,
+        required: required ? 'required' : null,
+    }|merge(attr) %}
+
+    {# Appel silencieux de ton composant (sans bloc de contenu car c'est un input) #}
+    {{ component('Input', props) }}
+{% endblock form_widget_simple %}
+
+{# =========================================================
+   4. LES ERREURS
+   ========================================================= #}
+{% block form_errors %}
+    {% if errors|length > 0 %}
+        <ul class="text-[0.8rem] font-medium text-red-500 mt-1.5 space-y-1">
+            {% for error in errors %}
+                <li class="flex items-center gap-1.5">
+                    <i class="fas fa-circle-exclamation text-xs"></i>
+                    {{ error.message }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock form_errors %}
+
+{% block choice_widget_collapsed %}
+    {% set has_errors = errors|length > 0 %}
+
+    {% set current_class = attr.class|default('') %}
+    {% if has_errors %}
+        {% set attr = attr|merge({
+            'class': (current_class ~ ' border-red-500 focus-visible:ring-red-500 text-red-900')|trim
+        }) %}
+    {% endif %}
+
+    {% set props = {
+        name: full_name,
+        id: id,
+    }|merge(attr) %}
+
+    {# 💥 ASTUCE DE PRO : On génère le HTML AVANT d'entrer dans le composant ! #}
+
+    {# 1. Capture des choix préférés #}
+    {% set preferred_options_html = '' %}
+    {% if preferred_choices|length > 0 %}
+        {% set options = preferred_choices %}
+        {% set preferred_options_html %}
+            {{ block('choice_widget_options') }}
+            {% if choices|length > 0 and separator is not none %}
+                <option disabled="disabled">{{ separator }}</option>
+            {% endif %}
+        {% endset %}
+    {% endif %}
+
+    {# 2. Capture de la liste principale (tes métiers) #}
+    {% set options = choices %}
+    {% set standard_options_html %}
+        {{ block('choice_widget_options') }}
+    {% endset %}
+
+
+    {# On appelle ton composant UX Twig #}
+    {% component 'Select' with props %}
+        {% block content %}
+
+            {# Le Placeholder #}
+            {% if placeholder is not none %}
+                <option value="" {% if required and value is empty %}selected="selected"{% endif %}>
+                    {{ placeholder != '' ? (translation_domain is same as(false) ? placeholder : placeholder|trans({}, translation_domain)) }}
+                </option>
+            {% endif %}
+
+            {# On injecte nos variables capturées avec le filtre |raw pour interpréter le HTML #}
+            {{ preferred_options_html|raw }}
+            {{ standard_options_html|raw }}
+
+        {% endblock %}
+    {% endcomponent %}
+
+{% endblock choice_widget_collapsed %}
+
+{# =========================================================
+   6. LE TEXTE D'AIDE (form_help)
+   ========================================================= #}
+{% block form_help %}
+    {% if help is not empty %}
+        {% set help_attr = help_attr|merge({
+            class: (help_attr.class|default('') ~ ' text-[0.8rem] text-slate-500 mt-1.5 flex items-start gap-1.5 leading-snug')|trim
+        }) %}
+
+        <p id="{{ id }}_help" {% with { attr: help_attr } %}{{ block('attributes') }}{% endwith %}>
+            {# Petite icône d'info (assortie à ton icône d'erreur) #}
+            <i class="fas fa-info-circle text-xs mt-0.5 opacity-70"></i>
+
+            <span>
+                {% if translation_domain is same as(false) %}
+                    {% if help_html is same as(false) %}
+                        {{ help }}
+                    {% else %}
+                        {{ help|raw }}
+                    {% endif %}
+                {% else %}
+                    {% if help_html is same as(false) %}
+                        {{ help|trans(help_translation_parameters, translation_domain) }}
+                    {% else %}
+                        {{ help|trans(help_translation_parameters, translation_domain)|raw }}
+                    {% endif %}
+                {% endif %}
+            </span>
+        </p>
+    {% endif %}
+{% endblock form_help %}

@@ -1,0 +1,64 @@
+<div{{ attributes }}>
+
+    {# 1. SI LE FORMULAIRE EST SOUMIS (Affichage du succès) #}
+    {% if this.isSuccessful %}
+        <div class="rounded-2xl border border-slate-200 bg-slate-50/50 p-8 text-center shadow-sm">
+
+            {# Ajout d'une petite icône de succès pour rassurer l'utilisateur #}
+            <div class="mx-auto flex size-12 items-center justify-center rounded-full bg-emerald-100 mb-4">
+                {{ ux_icon('lucide:mail-check', { class: 'size-6 text-emerald-600' }) }}
+            </div>
+
+            <h3 class="text-xl font-semibold tracking-tight text-slate-900">Vérifiez votre boîte mail</h3>
+            <p class="mt-2 text-sm text-slate-600 leading-relaxed">
+                {{ this.message|default("Si cette adresse est valide, un lien magique vous a été envoyé pour vous connecter de manière sécurisée.") }}
+            </p>
+
+            {# On redirige vers la page de login pour réinitialiser #}
+            <twig:Button as="a" href="{{ path('app_login') }}" variant="ghost" class="text-foreground mt-6">
+                Utiliser une autre adresse
+            </twig:Button>
+        </div>
+
+        {# 2. SI LE FORMULAIRE N'EST PAS ENCORE SOUMIS #}
+    {% else %}
+        <div data-controller="form">
+            {{ form_start(form, {
+                attr: {
+                    novalidate: true,
+                    'data-action': 'live#action:prevent',
+                    'data-live-action-param': 'save',
+                }
+            }) }}
+
+            {# On retire la grid-cols-2 pour que l'email prenne toute la largeur #}
+            <div class="space-y-5">
+                {{ form_row(form.email, {
+                    label: 'Email professionnel',
+                    attr: {
+                        placeholder: 'jean.dupont@cabinet.fr',
+                        autocomplete: 'email',
+                        autofocus: true
+                    }
+                }) }}
+            </div>
+
+            {# Le Footer / Bouton de soumission #}
+            <div class="flex items-center justify-end mt-8 pt-4">
+                <twig:Button as="button" type="submit" variant="dark" class="w-full sm:w-auto px-8">
+
+                    {# Texte affiché par défaut #}
+                    <span data-loading="action(save)|hide">Recevoir mon lien</span>
+
+                    {# Texte affiché PENDANT la requête AJAX avec la nouvelle syntaxe d'icône #}
+                    <span data-loading="action(save)|show" class="hidden items-center gap-2">
+                        Envoi en cours...
+                    </span>
+
+                </twig:Button>
+            </div>
+
+            {{ form_end(form) }}
+        </div>
+    {% endif %}
+</div>

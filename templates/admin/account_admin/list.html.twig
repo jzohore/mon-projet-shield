@@ -1,0 +1,16 @@
+{% extends '@admin/base.html.twig' %}
+
+{% block page_title %}{{ page_title }}{% endblock %}
+{% block button_page %}
+    <twig:Button as="a" href="{{ path('account_admin_add') }}" variant="link" size="sm">
+        <twig:ux:icon name="ic:baseline-plus" />
+        Nouveau
+    </twig:Button>
+
+{% endblock %}
+{% block content %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        {# Utilisation d'un composant anonyme si tu l'as créé #}
+
+    </div>
+{% endblock %}
