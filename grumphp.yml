@@ -15,6 +15,7 @@ grumphp:
         # 3. Analyse Statique : Niveau de typage strict (DDD)
         phpstan:
             level: 8 # Monte à 9 quand tu es prêt
+            memory_limit: "-1"
             triggered_by: [php]
 
         # 4. Architecture : Le gardien de ton DDD (Hexagonale)

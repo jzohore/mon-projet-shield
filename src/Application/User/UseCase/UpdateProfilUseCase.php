@@ -9,7 +9,6 @@ use App\Domain\User\Entity\User;
 use App\Domain\User\Enum\OnboardingStatus;
 use App\Domain\User\Event\UserOnboardingCompletedEvent;
 use App\Domain\User\Repository\UserRepositoryInterface;
-use App\Domain\Workspace\Enum\InvitedRole;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Webmozart\Assert\Assert;
 
@@ -37,7 +36,6 @@ final readonly class UpdateProfilUseCase
         $user->isOwner = true;
         $user->lang = $request->lang;
         $user->isActif = true;
-        $user->roles = [InvitedRole::ROLE_WORKSPACE_ADMIN->value];
         $this->userRepository->save($user);
 
         $this->eventDispatcher->dispatch(new UserOnboardingCompletedEvent($user));

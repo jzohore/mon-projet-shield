@@ -43,21 +43,33 @@
 
                             {# --- ÉTAPE 2 : INVITER (ID: invite_team) --- #}
                             {% if not app.user.isStepDismissed('invite_team') %}
-                                <div id="step_invite_team" class="group relative flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition-all">
-                                    <div class="flex-shrink-0 size-6 rounded-full border-2 border-slate-200 flex items-center justify-center">
-                                        <span class="text-[10px] font-bold text-slate-400">2</span>
-                                    </div>
-                                    <div class="flex-1">
-                                        <a href="{{ path('app_employees_invitation') }}" class="stretched-link">
+                                {% if count_members >= 1 %}
+                                    <div id="step_invite_team" class="flex items-center gap-4 p-4 rounded-xl bg-emerald-50 border border-emerald-100 transition-all">
+                                        <div class="flex-shrink-0 size-6 rounded-full bg-emerald-500 flex items-center justify-center">
+                                            {{ ux_icon('lucide:check', { class: 'size-4 text-white' }) }}
+                                        </div>
+                                        <div class="flex-1">
                                             <p class="text-sm font-semibold text-slate-900">Inviter votre premier collaborateur</p>
-                                            <p class="text-xs text-slate-500">Travaillez en équipe sur vos dossiers.</p>
-                                        </a>
+                                        </div>
                                     </div>
-                                    {# Bouton Ignorer (Croix) #}
-                                    <button type="button" title="Ignorer cette étape" class="z-10 p-1 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
-                                        {{ ux_icon('lucide:x', { class: 'size-4' }) }}
-                                    </button>
-                                </div>
+                                {% else %}
+                                    <div id="step_invite_team" class="group relative flex items-center gap-4 p-4 rounded-xl border border-slate-200 bg-white hover:border-indigo-300 transition-all">
+                                        <div class="flex-shrink-0 size-6 rounded-full border-2 border-slate-200 flex items-center justify-center">
+                                            <span class="text-[10px] font-bold text-slate-400">2</span>
+                                        </div>
+                                        <div class="flex-1">
+                                            <a href="{{ path('app_employees_invitation') }}" class="stretched-link">
+                                                <p class="text-sm font-semibold text-slate-900">Inviter votre premier collaborateur</p>
+                                                <p class="text-xs text-slate-500">Travaillez en équipe sur vos dossiers.</p>
+                                            </a>
+                                        </div>
+                                        {# Bouton Ignorer (Croix) #}
+                                        <button type="button" title="Ignorer cette étape" class="z-10 p-1 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                                            {{ ux_icon('lucide:x', { class: 'size-4' }) }}
+                                        </button>
+                                    </div>
+                                {% endif %}
+
                             {% endif %}
 
                             {# --- ÉTAPE 3 : KYC (ID: first_kyc) --- #}

@@ -20,11 +20,12 @@ enum JobRole: string
     case PARTNER = 'partner';
     case GENERAL_MANAGER = 'general_manager';
 
-    // --- Professions Réglementées ---
+    // --- Professions Réglementées (Praticiens / Collaborateurs) ---
     case LAWYER = 'lawyer';
     case ACCOUNTANT = 'accountant';
     case NOTARY = 'notary';
     case REAL_ESTATE_AGENT = 'real_estate_agent';
+    case WEALTH_MANAGER = 'wealth_manager'; // 👈 NOUVEAU (Aligné avec l'Industry)
 
     // --- Support & Opérationnel ---
     case LEGAL_ASSISTANT = 'legal_assistant';
@@ -32,10 +33,6 @@ enum JobRole: string
     case CONSULTANT = 'consultant';
     case OTHER = 'other';
 
-
-    /**
-     * @return string
-     */
     public function getLabel(): string
     {
         return match ($this) {
@@ -48,12 +45,13 @@ enum JobRole: string
             self::PARTNER => 'Associé (Partner)',
             self::GENERAL_MANAGER => 'Directeur Général',
 
-            self::LAWYER => 'Avocat',
-            self::ACCOUNTANT => 'Expert-Comptable',
-            self::NOTARY => 'Notaire',
-            self::REAL_ESTATE_AGENT => 'Agent / Mandataire Immobilier',
+            self::LAWYER => 'Avocat (Collaborateur)',
+            self::ACCOUNTANT => 'Expert-Comptable (Collaborateur)',
+            self::NOTARY => 'Notaire (Collaborateur)',
+            self::REAL_ESTATE_AGENT => 'Agent / Négociateur Immobilier',
+            self::WEALTH_MANAGER => 'Conseiller en Gestion de Patrimoine (CGP)', // 👈 NOUVEAU
 
-            self::LEGAL_ASSISTANT => 'Assistant(e) Juridique',
+            self::LEGAL_ASSISTANT => 'Assistant(e) Juridique / Paralegal',
             self::OFFICE_MANAGER => 'Office Manager',
             self::CONSULTANT => 'Consultant(e)',
             self::OTHER => 'Autre',
@@ -66,22 +64,23 @@ enum JobRole: string
     public static function getGroupedChoices(): array
     {
         return [
+            'Direction & Décisionnaires' => [ // Je l'ai remonté car c'est souvent eux qui s'inscrivent en premier
+                self::CEO->getLabel() => self::CEO,
+                self::PARTNER->getLabel() => self::PARTNER,
+                self::GENERAL_MANAGER->getLabel() => self::GENERAL_MANAGER,
+            ],
             'Conformité & Risques' => [
                 self::COMPLIANCE_OFFICER->getLabel() => self::COMPLIANCE_OFFICER,
                 self::KYC_ANALYST->getLabel() => self::KYC_ANALYST,
                 self::RISK_DIRECTOR->getLabel() => self::RISK_DIRECTOR,
                 self::INTERNAL_AUDITOR->getLabel() => self::INTERNAL_AUDITOR,
             ],
-            'Direction & Décisionnaires' => [
-                self::CEO->getLabel() => self::CEO,
-                self::PARTNER->getLabel() => self::PARTNER,
-                self::GENERAL_MANAGER->getLabel() => self::GENERAL_MANAGER,
-            ],
             'Professions Réglementées' => [
                 self::LAWYER->getLabel() => self::LAWYER,
                 self::ACCOUNTANT->getLabel() => self::ACCOUNTANT,
                 self::NOTARY->getLabel() => self::NOTARY,
                 self::REAL_ESTATE_AGENT->getLabel() => self::REAL_ESTATE_AGENT,
+                self::WEALTH_MANAGER->getLabel() => self::WEALTH_MANAGER,
             ],
             'Opérationnel & Support' => [
                 self::LEGAL_ASSISTANT->getLabel() => self::LEGAL_ASSISTANT,

@@ -18,6 +18,7 @@ enum AuditEventType: string
     // --- ONBOARDING & WORKSPACE ---
     case WORKSPACE_CREATED = 'workspace.created';             // 👈 L'événement qu'on vient de coder
     case WORKSPACE_MEMBER_ADDED = 'workspace.member_added';   // 👈 Utile pour plus tard (invitations)
+    case WORKSPACE_MEMBER_REVOKED = 'workspace.member_revoked';   // 👈 Utile pour plus tard (invitations)
     case ONBOARDING_COMPLETED = 'user.onboarding_completed';  // 👈 Quand le tunnel est 100% fini
 
     // --- MÉTIER (Exemples) ---

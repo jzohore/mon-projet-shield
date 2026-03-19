@@ -9,7 +9,6 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\CurrentUser;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -18,7 +17,6 @@ use Webmozart\Assert\Assert;
 
 #[AsController]
 #[Route(path: '/app/onboarding/finalization/{slugId}', name: 'app_onboarding_finalization', methods: ['GET'])]
-#[IsGranted("ROLE_WORKSPACE_ADMIN")]
 final class OnBoardingFinalizationController
 {
     /**

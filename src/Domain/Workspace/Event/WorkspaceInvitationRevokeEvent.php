@@ -1,0 +1,15 @@
+<?php
+
+namespace App\Domain\Workspace\Event;
+
+use App\Domain\User\Entity\User;
+use App\Domain\Workspace\Entity\WorkspaceInvitation;
+use Symfony\Contracts\EventDispatcher\Event;
+
+class WorkspaceInvitationRevokeEvent extends Event
+{
+    public function __construct(
+        public readonly WorkspaceInvitation $workspaceInvitation,
+        public readonly User $user,
+    ) {}
+}

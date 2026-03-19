@@ -27,11 +27,10 @@ final readonly class CreateUserUseCase
             // Bonus plus tard : lancer un UserAlreadyExistsEvent pour lui envoyer un email "Connectez-vous plutôt ici"
             return;
         }
-        $user = new User(
+        $user = User::create(
             $request->email,
             $request->firstName,
             $request->lastName,
-            $request->isVerified,
         );
         if ($request->isAdmin) {
             $user->promoteToAdmin();

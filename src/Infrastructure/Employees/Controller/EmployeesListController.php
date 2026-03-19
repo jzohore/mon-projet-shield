@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Employees\Controller;
 
+use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
 use App\Domain\User\Entity\User;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
@@ -16,8 +17,12 @@ use Twig\Error\SyntaxError;
 
 #[AsController]
 #[Route(path: '/app/employees/list', name: 'app_employees_list', methods: ['GET', 'POST'])]
-final class EmployeesListController
+final readonly class EmployeesListController
 {
+    public function __construct(
+        private GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo
+    ) {}
+
     /**
      * @throws RuntimeError
      * @throws SyntaxError
@@ -26,11 +31,14 @@ final class EmployeesListController
     public function __invoke(
         Environment $twig,
         #[CurrentUser]
-        ?User $user,
+        User $user,
     ): Response {
+        $workspaceInfo = ($this->getCurrentWorkspaceInfo)($user);
+
         return new Response(
             $twig->render('@app/employees/list.html.twig', [
                 'page_title' => 'Équipe & Accès',
+                'workspace_id' => $workspaceInfo->slugId,
             ])
         );
     }

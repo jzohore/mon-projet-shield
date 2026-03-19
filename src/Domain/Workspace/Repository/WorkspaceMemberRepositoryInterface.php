@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Domain\Workspace\Repository;
+
+use App\Domain\User\Entity\User;
+use App\Domain\Workspace\Entity\Workspace;
+use App\Domain\Workspace\Entity\WorkspaceMember;
+
+interface WorkspaceMemberRepositoryInterface
+{
+    public function save(WorkspaceMember $workspaceMember): void;
+
+    public function findByWorkspaceAndUser(Workspace $workspace, User $user): ?WorkspaceMember;
+
+    /**
+     * @param string $workspaceId
+     * @return array<int, WorkspaceMember>
+     */
+    public function findByWorkspace(string $workspaceId): array;
+
+    public function delete(WorkspaceMember $workspaceMember): void;
+
+    /**
+     * @param User $user
+     * @return array<int, WorkspaceMember>
+     */
+    public function findByUser(User $user): array;
+
+    public function findOneByUser(User $user): ?WorkspaceMember;
+
+    public function isUserAdminOfWorkspace(User $user, Workspace $workspace): bool;
+}

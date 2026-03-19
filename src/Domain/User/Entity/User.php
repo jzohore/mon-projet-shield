@@ -169,7 +169,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 //        set => $this->earlyAccessDevices = $value;
 //    }
 
-    public function __construct(
+    private function __construct(
         string $email,
         string $firstName,
         string $lastName,
@@ -178,7 +178,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->email = $email;
         $this->firstName = $firstName;
         $this->lastName = $lastName;
-        $this->roles = ['ROLE_WORKSPACE_ADMIN'];
+        $this->roles = ['ROLE_USER'];
         $this->isVerified = $isVerified;
 
         $this->slugId = $this->generate_ulid_prefixed('usr_');
@@ -187,7 +187,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->updatedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
 
-    // ==================== MÉTHODES SECURITY ====================
+    public static function create(string $email, string $firstName, string $lastName): self
+    {
+        return new self($email, $firstName, $lastName, false);
+    }
 
     /**
      * @return non-empty-string

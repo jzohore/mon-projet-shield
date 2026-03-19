@@ -4,14 +4,22 @@ namespace App\Infrastructure\Workspace\Twig\Components;
 
 use App\Application\Workspace\DTO\Request\CreateWorkspaceRequest;
 use App\Application\Workspace\UseCase\CreateWorkspaceUseCase;
+use App\Domain\Workspace\Enum\Industry;
 use App\Infrastructure\Workspace\Form\CreateWorkspaceType;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
+use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -28,11 +36,27 @@ class CreateWorkspaceFormComponent
     #[LiveProp]
     public ?string $userSlugId = null;
 
+    #[LiveProp(writable: true)]
+    public string $searchQuery = '';
+
+    #[LiveProp]
+    public ?string $workspaceName = null;
+
+    #[LiveProp]
+    public ?string $workspaceSiret = null;
+
+    #[LiveProp]
+    public ?string $workspaceAddress = null;
+
+    #[LiveProp]
+    public ?string $workspaceIndustry = null;
+
     public function __construct(
         private readonly FormFactoryInterface $formFactory,
         private readonly CreateWorkspaceUseCase $workspaceUseCase,
         private readonly LoggerInterface $logger,
         private readonly UrlGeneratorInterface $router,
+        private readonly HttpClientInterface $client,
     ) {}
 
     protected function instantiateForm(): FormInterface
@@ -41,9 +65,38 @@ class CreateWorkspaceFormComponent
     }
 
     #[LiveAction]
+    public function company(
+        #[LiveArg]
+        string $name,
+        #[LiveArg]
+        string $siret,
+        #[LiveArg]
+        string $address,
+        #[LiveArg]
+        string $industry,
+    ): void {
+        $this->formValues['name'] = $name;
+        $this->formValues['siret'] = $siret;
+        $this->formValues['address'] = $address;
+        $this->workspaceIndustry = $industry;
+
+        // On vide la recherche pour fermer la liste proprement
+        $this->searchQuery = '';
+    }
+
+    #[LiveAction]
+    public function resetSelection(): void
+    {
+        $this->formValues['name'] = null;
+        $this->formValues['siret'] = null;
+        $this->formValues['address'] = null;
+        $this->workspaceIndustry = null;
+        $this->searchQuery = '';
+    }
+
+    #[LiveAction]
     public function save(): ?RedirectResponse
     {
-
         $this->submitForm();
 
         /** @var CreateWorkspaceRequest $dto */
@@ -51,6 +104,9 @@ class CreateWorkspaceFormComponent
 
         try {
             $dto->userSlugId = $this->userSlugId;
+            $dto->legalName = $this->formValues['name'];
+            $dto->workspaceIndustry = Industry::fromApeCode($this->workspaceIndustry);
+
             ($this->workspaceUseCase)($dto);
 
         } catch (\DomainException $e) {
@@ -63,4 +119,36 @@ class CreateWorkspaceFormComponent
 
         return new RedirectResponse($this->router->generate('app_onboarding_profile', ['slugId' => $this->userSlugId]));
     }
+
+    /**
+     * @return array<int, array{siret: string, name: string, address: string}>
+     * @throws ClientExceptionInterface
+     * @throws DecodingExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws TransportExceptionInterface
+     */
+    public function getResults(): array
+    {
+        // On ne cherche rien si le champ est vide ou s'il y a moins de 3 caractères (pour économiser l'API)
+        if ($this->workspaceSiret !== null || strlen($this->searchQuery) < 3) {
+            return [];
+        }
+
+
+        $response = $this->client->request('GET', 'https://recherche-entreprises.api.gouv.fr/search', [
+            'query' => [
+                'q' => trim($this->searchQuery),
+                'page' => 1,
+                'per_page' => 3,
+            ],
+            'headers' => [
+                'Accept' => 'application/json',
+            ],
+        ]);
+        $data = $response->toArray();
+        // On appelle notre service qui va interroger l'API de l'État
+        return $data['results'] ?? [];
+    }
+
 }

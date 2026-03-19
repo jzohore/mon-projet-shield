@@ -15,4 +15,8 @@ interface WorkspaceInvitationRepositoryInterface
     public function findByWorkspace(Workspace $workspace): array;
 
     public function findByEmail(string $email): ?WorkspaceInvitation;
+
+    public function findBySlugId(string $slugId): ?WorkspaceInvitation;
+
+    public function delete(WorkspaceInvitation $workspaceInvitation): void;
 }

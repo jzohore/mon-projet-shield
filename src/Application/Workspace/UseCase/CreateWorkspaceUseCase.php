@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Workspace\UseCase;
 
 use App\Application\Workspace\DTO\Request\CreateWorkspaceRequest;
@@ -24,14 +26,19 @@ final readonly class CreateWorkspaceUseCase
     {
         Assert::notNull($request->name);
         Assert::notNull($request->userSlugId, 'Le slug utilisateur est requis.');
+        Assert::notNull($request->siret, 'Le numéro SIRET est requis.');
+        Assert::notNull($request->address, 'L\'adresse est requise.');
+        Assert::notNull($request->legalName, 'Le nom juridique est requis.');
         $user = $this->userRepository->findBySlug($request->userSlugId);
 
         Assert::isInstanceOf($user, User::class, sprintf('Aucun utilisateur trouvé pour le slug "%s"', $request->userSlugId));
 
-        $workspace = new Workspace(
-            $request->name,
+        $workspace = Workspace::create(
+            name: $request->name,
+            siret: $request->siret,
+            legalName: $request->legalName,
+            address: $request->address,
         );
-        $workspace->addMember($user);
         $user->onboardingStatus = OnboardingStatus::WORKSPACE_SETUP;
         $this->workspaceRepository->save($workspace);
         $this->userRepository->save($user);

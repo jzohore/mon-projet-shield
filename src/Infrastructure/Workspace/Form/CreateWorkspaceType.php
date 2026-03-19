@@ -16,6 +16,8 @@ class CreateWorkspaceType extends AbstractType
     {
         $builder
             ->add('name', TextType::class)
+            ->add('siret', TextType::class)
+            ->add('address', TextType::class)
         ;
     }
 

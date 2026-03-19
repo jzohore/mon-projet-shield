@@ -64,6 +64,7 @@ final class EnforceOnboardingSubscriber implements EventSubscriberInterface
         $redirectTo = match ($user->onboardingStatus) {
             OnboardingStatus::WORKSPACE_SETUP => 'app_onboarding_profile',
             OnboardingStatus::PENDING => 'app_onboarding_workspace',
+            #OnboardingStatus::COMPLETED => 'app_onboarding_finalization',
             default => null,
         };
 

@@ -42,4 +42,16 @@ final readonly class WorkspaceInvitationRepository implements WorkspaceInvitatio
     {
         return $this->repository->findOneBy(['email' => $email]);
     }
+
+    public function findBySlugId(string $slugId): ?WorkspaceInvitation
+    {
+        return $this->repository->findOneBy(['slugId' => $slugId]);
+    }
+
+    public function delete(WorkspaceInvitation $workspaceInvitation): void
+    {
+        $em = $this->entityManager;
+        $em->remove($workspaceInvitation);
+        $em->flush();
+    }
 }

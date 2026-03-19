@@ -1,0 +1,39 @@
+{# templates/emails/workspace/invitation.html.twig #}
+{% extends 'emails/base.html.twig' %}
+
+{# On personnalise le titre (sujet interne / pré-header souvent utilisé par les clients mail) #}
+{% block title %}Invitation à rejoindre l'espace "{{ workspace_name }}"{% endblock %}
+
+{# On injecte le contenu principal #}
+{% block content %}
+    <h1>Rejoignez votre équipe sur {{ company_name }}</h1>
+
+    <p>Bonjour,</p>
+    <p><strong>{{ inviter_name }}</strong> vous invite à collaborer sur l'espace de travail <strong>"{{ workspace_name }}"</strong>.</p>
+
+    {# Encart d'information métier (très apprécié en B2B pour clarifier les droits avant même le clic) #}
+    <div style="background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+        <p style="margin: 0; font-size: 14px; color: #475569;">
+            <strong>Niveau d'accès :</strong> {{ role_label }}<br>
+            <span style="font-size: 12px;">Vous pourrez accéder aux dossiers clients et aux outils de conformité de l'équipe.</span>
+        </p>
+    </div>
+
+    <div class="btn-container">
+        <a href="{{ action_url }}" class="btn">Accepter l'invitation</a>
+    </div>
+
+    <p style="font-size: 13px; color: #64748b; margin-bottom: 8px;">
+        ⏱️ Cette invitation sécurisée expirera dans <strong>{{ expires_in }}</strong>.
+    </p>
+
+    <p style="font-size: 12px; color: #94a3b8; word-break: break-all;">
+        Si le bouton ne fonctionne pas, copiez et collez cette URL dans votre navigateur :<br>
+        <a href="{{ action_url }}" style="color: #64748b;">{{ action_url }}</a>
+    </p>
+{% endblock %}
+
+{# Surcharge du footer pour le contexte de l'invitation #}
+{% block footer_text %}
+    <p>Si vous n'attendiez pas cette invitation ou si vous ne connaissez pas l'expéditeur, vous pouvez ignorer cet email en toute sécurité. Aucun compte ne sera créé sans votre action.</p>
+{% endblock %}

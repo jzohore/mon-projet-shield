@@ -1,37 +1,133 @@
 <div{{ attributes }}>
-    <div>
-        {{ form_start(form, {
-            attr: {
-                novalidate: true,
-                'data-action': 'live#action:prevent',
-                'data-live-action-param': 'save',
-            }
-        }) }}
+    <div class="w-full">
 
-        <div class="space-y-5">
-            {{ form_row(form.name, {
-                label: 'Nom de votre structure',
-                attr: {
-                    placeholder: 'Ex: Cabinet Dupont & Associés',
-                }
-            }) }}
-        </div>
+        {% if this.formValues.siret is not defined or this.formValues.siret is empty %}
+            {# ==========================================
+           ÉTAT 1 : LA RECHERCHE (Ton code de tout à l'heure)
+           ========================================== #}
+            <div class="relative w-full">
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2 text-sm leading-none font-medium select-none mb-3">
+                        Recherchez votre structure
+                    </label>
+                    <div class="relative">
+                        <input
+                            type="search"
+                            data-model="debounce(300)|searchQuery"
+                            placeholder="Ex: Cabinet Dupont & Associés (ou SIRET)"
+                            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                        <div data-loading="addClass(opacity-100)" class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 transition-opacity pointer-events-none">
+                            <twig:ux:icon name="lucide:loader-2" class="w-4 h-4 text-muted-foreground animate-spin" />
+                        </div>
+                    </div>
+                </div>
 
-        {# Le Footer / Bouton de soumission #}
-        <div class="flex items-center justify-end mt-8 pt-4">
-            <twig:Button as="button" type="submit" variant="dark" class="w-full sm:w-auto px-8">
+                {% if this.searchQuery|length >= 3 %}
+                    <div class="absolute z-50 w-full mt-2 bg-violet-50 border border-border rounded-md shadow-xl overflow-hidden">
+                        {% if this.results is empty %}
+                            <div class="p-6 text-sm text-center text-muted-foreground flex flex-col items-center gap-2">
+                                <twig:ux:icon name="lucide:search-x" class="w-6 h-6 text-muted/50" />
+                                Aucun cabinet trouvé pour "<span class="font-medium text-foreground">{{ this.searchQuery }}</span>"
+                            </div>
+                        {% else %}
+                            <ul class="max-h-72 overflow-y-auto divide-y divide-border">
+                                {% for company in this.results %}
 
-                {# Texte affiché par défaut #}
-                <span data-loading="action(save)|hide">Continuer</span>
+                                    {# 🪄 C'EST ICI QUE LA MAGIE OPÈRE : on câble l'action et on passe les paramètres #}
+                                    <li
+                                        data-action="click->live#action"
+                                        data-live-action-param="company"
+                                        data-live-name-param="{{ company.nom_complet }}"
+                                        data-live-siret-param="{{ company.siege.siret }}"
+                                        data-live-address-param="{{ company.siege.adresse|default('') }}"
+                                        data-live-industry-param="{{ company.siege.activite_principale }}"
+                                        class="p-3 hover:bg-primary/5 cursor-pointer transition-all duration-200 group border-l-2 border-transparent hover:border-primary"
+                                    >
+                                        <div class="flex flex-col min-w-0 pointer-events-none"> {# pointer-events-none évite que le clic se perde sur les enfants #}
+                                            <div class="flex items-center gap-2">
+                                                <twig:ux:icon name="lucide:building-2" class="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                                                <span class="text-sm font-semibold text-foreground group-hover:text-primary transition-colors truncate block">
+                                                {{ company.nom_complet }}
+                                            </span>
+                                            </div>
+                                            <div class="flex items-center gap-2 mt-1.5 pl-6 text-xs text-muted-foreground min-w-0">
+                                            <span class="font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded border border-primary/20 text-[10px] shrink-0 font-medium">
+                                                SIREN: {{ company.siren }}
+                                            </span>
+                                                <span class="truncate">{{ company.siege.adresse|default('Adresse inconnue') }}</span>
+                                            </div>
+                                        </div>
+                                    </li>
 
-                {# Texte affiché PENDANT la requête AJAX avec la nouvelle syntaxe d'icône #}
-                <span data-loading="action(save)|show" class="hidden items-center gap-2">
-                        Enregistrement...
-                    </span>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
 
-            </twig:Button>
-        </div>
+        {% else %}
+            <div>
+                <h3 class="text-xl font-semibold text-foreground">Entreprise validée</h3>
+                <p class="text-xs text-muted-foreground mt-1 mb-4">Vous pouvez ajuster le nom d'affichage si vous le souhaitez.</p>
+            </div>
 
-        {{ form_end(form) }}
+            <div class="space-y-5 mt-5">
+                <div>
+                    {{ form_start(form, {
+                        attr: {
+                            novalidate: true,
+                            'data-action': 'live#action:prevent',
+                            'data-live-action-param': 'save',
+                        }
+                    }) }}
+
+                    <div class="space-y-5">
+                        {{ form_row(form.name, {
+                            label: 'Nom de votre structure',
+                            attr: {
+                                placeholder: 'Ex: Cabinet Dupont & Associés',
+                            }
+                        }) }}
+
+                        {# Le champ SIRET verrouillé (Lecture seule) #}
+                        {{ form_row(form.siret, {
+                            label: 'Numéro SIRET',
+                            attr: {
+                                placeholder: 'Sera rempli automatiquement',
+                                readonly: true,
+                                class: 'bg-muted opacity-70 pointer-events-none'
+                            }
+                        }) }}
+
+                        {# L'adresse légale #}
+                        {{ form_row(form.address, {
+                            label: 'Adresse légale',
+                            attr: {
+                                placeholder: 'Ex: 123 avenue des Champs-Élysées, 75008 Paris',
+                            }
+                        }) }}
+                    </div>
+
+                    <div class="flex items-center justify-between mt-8 pt-4">
+                        <twig:Button type="button" variant="destructive" data-action="live#action" data-live-action-param="resetSelection" class="text-xs text-primary hover:underline font-medium">
+                            Changer d'entreprise
+                        </twig:Button>
+                        <twig:Button as="button" type="submit" variant="dark" class="w-full sm:w-auto px-8">
+                            <span data-loading="action(save)|hide">Continuer</span>
+
+                            <span data-loading="action(save)|show" class="hidden items-center gap-2">
+                <twig:ux:icon name="lucide:loader-2" class="w-4 h-4 animate-spin" />
+                Enregistrement...
+            </span>
+                        </twig:Button>
+                    </div>
+
+                    {{ form_end(form) }}
+                </div>
+            </div>
+        {% endif %}
+
     </div>
 </div>

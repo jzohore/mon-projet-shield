@@ -81,7 +81,8 @@ class DeviceDetectorService
             return;
         }
 
-        $ip = $request->getClientIp() ?? '127.0.0.1';
+        //$ip = $request->getClientIp() ?? '2a01:cb00:8b5:5700:e46b:ac5d:48f3:ad81';
+        $ip = '2a01:cb00:8b5:5700:e46b:ac5d:48f3:ad81';
         $session = $request->hasSession() ? $request->getSession() : null;
 
         $device = $this->getDeviceDetector($request);

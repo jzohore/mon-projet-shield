@@ -2,12 +2,13 @@
 
 namespace App\Application\Workspace\DTO\Request;
 
+use App\Domain\Workspace\Enum\Industry;
 use App\Domain\Workspace\Validator\UniqueWorkspaceName;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class CreateWorkspaceRequest
 {
-    #[Assert\NotBlank(message: 'Le nom de l\'espace est obligatoire.')]
+    #[Assert\NotBlank(message: 'Le nom est obligatoire.')]
     #[Assert\Length(
         min: 2,
         max: 50,
@@ -15,12 +16,30 @@ class CreateWorkspaceRequest
         maxMessage: 'Le nom ne peut pas dépasser {{ limit }} caractères.'
     )]
     #[Assert\Regex(
-        // On ajoute les chiffres (0-9), le &, le point (\.) et la virgule (,)
         pattern: '/^[\p{L}0-9\s\-\'\.,&]+$/u',
         message: 'Ce champ contient des caractères non autorisés (les symboles spéciaux comme <, >, = sont interdits).'
     )]
     #[UniqueWorkspaceName]
     public ?string $name = null;
+
+    #[Assert\NotBlank(message: 'Le numéro SIRET est obligatoire. Veuillez utiliser la recherche.')]
+    #[Assert\Regex(
+        pattern: '/^[0-9]{14}$/',
+        message: 'Le SIRET doit contenir exactement 14 chiffres, sans espaces.'
+    )]
+    public ?string $siret = null;
+
+    // 🛡️ NOUVEAU : Validation de l'adresse
+    #[Assert\NotBlank(message: 'L\'adresse de la structure est obligatoire.')]
+    #[Assert\Length(
+        max: 255,
+        maxMessage: 'L\'adresse ne peut pas dépasser {{ limit }} caractères.'
+    )]
+    public ?string $address = null;
+
+    public ?string $legalName = null;
+
+    public Industry $workspaceIndustry = Industry::OTHER;
 
     public ?string $userSlugId = null;
 }
