@@ -1,0 +1,45 @@
+{# templates/emails/kyc/request.html.twig #}
+{% extends 'emails/base.html.twig' %}
+
+{# Pré-header invisible dans l'email mais lu par Gmail/Outlook dans la liste des messages #}
+{% block title %}Demande d'informations réglementaires (LCB-FT) pour le cabinet {{ workspace_name }}{% endblock %}
+
+{% block content %}
+    <h1>Votre dossier de conformité</h1>
+
+    <p>Bonjour <strong>{{ recipient_name }}</strong>,</p>
+
+    <p>Le cabinet <strong>{{ workspace_name }}</strong> utilise notre plateforme sécurisée pour gérer ses obligations légales de conformité (directives LCB-FT).</p>
+
+    <p>Afin de finaliser l'ouverture ou la mise à jour de votre dossier (Réf : <strong>{{ reference }}</strong>), nous vous invitons à valider les informations de votre entreprise et à nous transmettre les pièces justificatives requises.</p>
+
+    {# Encart de réassurance sécurité (Crucial pour collecter des pièces d'identité) #}
+    <div style="background-color: #f8fafc; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+        <p style="margin: 0; font-size: 14px; color: #0f172a;">
+            <strong>🔒 Espace chiffré et sécurisé</strong><br>
+            <span style="font-size: 13px; color: #475569;">
+                Ce lien est personnel. Vos documents (Kbis, Pièces d'identité) seront transmis directement et exclusivement à votre conseiller via notre infrastructure sécurisée, hébergée en Europe.
+            </span>
+        </p>
+    </div>
+
+    <div class="btn-container">
+        <a href="{{ action_url }}" class="btn" style="background-color: #0f172a; color: #ffffff;">
+            Accéder à mon portail sécurisé
+        </a>
+    </div>
+
+    <p style="font-size: 13px; color: #64748b; margin-bottom: 8px;">
+        ⏱️ Pour des raisons de sécurité, ce lien d'accès unique expirera dans <strong>{{ expires_in }}</strong>.
+    </p>
+
+    <p style="font-size: 12px; color: #94a3b8; word-break: break-all;">
+        Si le bouton ne fonctionne pas, copiez et collez cette URL dans votre navigateur :<br>
+        <a href="{{ action_url }}" style="color: #64748b; text-decoration: underline;">{{ action_url }}</a>
+    </p>
+{% endblock %}
+
+{# Surcharge du footer pour le contexte juridique #}
+{% block footer_text %}
+    <p>Cet email a été envoyé par l'infrastructure technique Shield pour le compte de {{ workspace_name }}. Si vous avez des questions sur la nature des documents demandés, veuillez contacter directement votre conseiller habituel.</p>
+{% endblock %}

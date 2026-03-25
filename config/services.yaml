@@ -8,6 +8,7 @@
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     GeoIP2_file: '%kernel.project_dir%/public/ressources/GeoLite2-City.mmdb'
+    app.kyc_upload_directory: '%kernel.project_dir%/public/uploads/kyc'
 services:
     # default configuration for services in *this* file
     _defaults:
@@ -28,5 +29,10 @@ services:
             - '../src/Application/DTO/'
             - '../src/Application/Request/'
 
+
+    App\Infrastructure\Storage\LocalDocumentStorage:
+        arguments:
+            $baseUploadDirectory: '%app.kyc_upload_directory%'
+    App\Application\Kyc\Port\DocumentStorageInterface: '@App\Infrastructure\Storage\LocalDocumentStorage'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

@@ -9,6 +9,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Random\RandomException;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
@@ -25,6 +26,9 @@ class KycFolder
     public ?Uuid $id = null {
         get => $this->id;
     }
+
+    #[ORM\Column(length: 20, unique: true)]
+    public private(set) string $reference;
 
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
     public private(set) string $slugId;
@@ -48,14 +52,35 @@ class KycFolder
     #[ORM\Column(length: 14, nullable: true)]
     public private(set) ?string $siret = null;
 
+    #[ORM\Column(length: 9, nullable: true)]
+    public private(set) ?string $siren = null;
+
+    #[ORM\Column(length: 3, nullable: true)]
+    public private(set) ?string $statusAdministratif = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    public private(set) ?string $address = null;
+
     #[ORM\Column(type: 'string', enumType: KycFolderStatus::class)]
     public private(set) KycFolderStatus $status = KycFolderStatus::DRAFT;
 
-    #[ORM\Column(length: 64, unique: true)]
+    #[ORM\Column(type: 'string', nullable: true)]
+    public private(set) ?string $legalCategory = null;
+
+    /**
+     * @var array<int, array{title: string, description: string, saveAt: \DateTimeImmutable}>
+     */
+    #[ORM\Column(type: Types::JSON)]
+    public private(set) array $history = [];
+
+    #[ORM\Column(length: 255, unique: true)]
     public private(set) ?string $shareToken = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     public private(set) ?\DateTimeImmutable $shareTokenExpiresAt = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $createdAt = null;
 
     /**
      * @var Collection<int, Stakeholder>
@@ -71,33 +96,51 @@ class KycFolder
 
     /**
      * Le constructeur reste privé pour forcer l'utilisation du Named Constructor.
+     * @throws RandomException|\DateMalformedStringException
      */
-    private function __construct(Workspace $workspace, string $contactFirstName, string $contactLastName, string $contactEmail)
+    private function __construct(Workspace $workspace, string $contactFirstName, string $contactLastName, string $contactEmail, KycFolderStatus $status)
     {
         $this->workspace = $workspace;
         $this->contactFirstName = $contactFirstName;
         $this->contactLastName = $contactLastName;
         $this->contactEmail = $contactEmail;
+        $this->status = $status;
         $this->stakeholders = new ArrayCollection();
         $this->documents = new ArrayCollection();
         $this->slugId = $this->generate_ulid_prefixed('kyc_fol_');
+        $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $randomPart = strtoupper(substr(bin2hex(random_bytes(3)), 0, 4));
+        $this->reference = sprintf('KYC-%s-%s', date('y'), $randomPart);
     }
 
     /**
      * 🪄 Named Constructor : La seule façon d'initialiser un dossier KYC
      */
-    public static function initiate(Workspace $workspace, string $firstName, string $lastName, string $email): self
+    public static function initiate(Workspace $workspace, string $firstName, string $lastName, string $email, KycFolderStatus $status): self
     {
-        return new self($workspace, $firstName, $lastName, $email);
+        return new self($workspace, $firstName, $lastName, $email, $status);
+    }
+
+    public function saveHistory(string $event, string $data): void
+    {
+        $this->history[] = [
+            'title' => $event,
+            'description' => $data,
+            'saveAt' => new \DateTimeImmutable('now', new \DateTimeZone('UTC')),
+        ];
     }
 
     /**
      * Méthode métier pour lier l'entreprise une fois le formulaire Sirene rempli.
      */
-    public function bindCompany(string $companyName, string $siret): void
+    public function bindCompany(string $companyName, string $siret, string $siren, string $address, string $statusAdministratif, ?string $legalCategory): void
     {
-        $this->companyName = $companyName;
+        $this->companyName = strtoupper(trim($companyName));
         $this->siret = $siret;
+        $this->siren = $siren;
+        $this->legalCategory = $legalCategory;
+        $this->address = $address;
+        $this->statusAdministratif = $statusAdministratif;
     }
 
     public function markAsAwaitingClient(): void
@@ -130,5 +173,24 @@ class KycFolder
     {
         $this->shareToken = null;
         $this->shareTokenExpiresAt = null;
+    }
+
+    public function getNormalizedFirstName(): string
+    {
+        return ucfirst(strtolower(trim($this->contactFirstName)));
+    }
+
+    public function getNormalizedLastName(): string
+    {
+        return strtoupper(trim($this->contactLastName));
+    }
+
+    public function getFullName(): string
+    {
+        return sprintf(
+            '%s %s',
+            $this->getNormalizedFirstName(),
+            $this->getNormalizedLastName()
+        );
     }
 }

@@ -5,6 +5,7 @@ namespace App\Infrastructure\Workspace\Twig\Components;
 use App\Application\Workspace\DTO\Request\CreateWorkspaceRequest;
 use App\Application\Workspace\UseCase\CreateWorkspaceUseCase;
 use App\Domain\Workspace\Enum\Industry;
+use App\Infrastructure\Service\SiretSearchService;
 use App\Infrastructure\Workspace\Form\CreateWorkspaceType;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -16,7 +17,6 @@ use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
@@ -56,7 +56,7 @@ class CreateWorkspaceFormComponent
         private readonly CreateWorkspaceUseCase $workspaceUseCase,
         private readonly LoggerInterface $logger,
         private readonly UrlGeneratorInterface $router,
-        private readonly HttpClientInterface $client,
+        private readonly SiretSearchService $siretSearchService,
     ) {}
 
     protected function instantiateForm(): FormInterface
@@ -135,20 +135,7 @@ class CreateWorkspaceFormComponent
             return [];
         }
 
-
-        $response = $this->client->request('GET', 'https://recherche-entreprises.api.gouv.fr/search', [
-            'query' => [
-                'q' => trim($this->searchQuery),
-                'page' => 1,
-                'per_page' => 3,
-            ],
-            'headers' => [
-                'Accept' => 'application/json',
-            ],
-        ]);
-        $data = $response->toArray();
-        // On appelle notre service qui va interroger l'API de l'État
-        return $data['results'] ?? [];
+        return $this->siretSearchService->search($this->searchQuery);
     }
 
 }

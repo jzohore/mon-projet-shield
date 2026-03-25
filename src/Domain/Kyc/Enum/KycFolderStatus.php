@@ -9,6 +9,8 @@ enum KycFolderStatus: string
     case IN_REVIEW = 'in_review';
     case APPROVED = 'approved';
     case REJECTED = 'rejected';
+    case ARCHIVED = 'archived';
+    case NEEDS_CORRECTION = 'needs_correction';
 
     public function getLabel(): string
     {
@@ -18,6 +20,8 @@ enum KycFolderStatus: string
             self::IN_REVIEW => 'En cours d\'analyse',
             self::APPROVED => 'Dossier validé',
             self::REJECTED => 'Dossier refusé',
+            self::ARCHIVED => 'Dossier archivé',
+            self::NEEDS_CORRECTION => 'Corrections requises',
         };
     }
 }

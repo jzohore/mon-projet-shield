@@ -42,21 +42,37 @@ class Stakeholder
     #[ORM\Column(type: 'float', nullable: true)]
     public private(set) ?float $ownershipPercentage = null;
 
+    public bool $isUbo {
+        get {
+            // Règle 1 : Il a plus de 25% des parts
+            if ($this->ownershipPercentage > 25.0) {
+                return true;
+            }
+
+            // Règle 2 : Il a été explicitement flaggé comme UBO (via le rôle)
+            if ($this->role === StakeholderRole::BENEFICIAL_OWNER) {
+                return true;
+            }
+
+            return false;
+        }
+    }
+
     private function __construct(KycFolder $folder, string $firstName, string $lastName, StakeholderRole $role)
     {
         $this->folder = $folder;
         $this->firstName = $firstName;
         $this->lastName = $lastName;
         $this->role = $role;
-        $this->generate_ulid_prefixed('stake_');
+        $this->slugId = $this->generate_ulid_prefixed('stake_');
     }
 
     /**
      * 🪄 Named Constructor : Créer un Bénéficiaire Effectif
      */
-    public static function createBeneficialOwner(KycFolder $folder, string $firstName, string $lastName, float $percentage): self
+    public static function createBeneficialOwner(KycFolder $folder, string $firstName, string $lastName, StakeholderRole $role, ?float $percentage = null): self
     {
-        $stakeholder = new self($folder, $firstName, $lastName, StakeholderRole::BENEFICIAL_OWNER);
+        $stakeholder = new self($folder, $firstName, $lastName, $role);
         $stakeholder->ownershipPercentage = $percentage;
 
         return $stakeholder;

@@ -1,0 +1,52 @@
+<div {{ attributes }}>
+    {% include 'components/partials/_live_alerts.html.twig' with {
+        message: this.actionMessage|default(null),
+        type: this.actionMessageType|default('success')
+    } %}
+    {{ form_start(form, {
+        attr: {
+            novalidate: true,
+            'data-action': 'live#action:prevent',
+            'data-live-action-param': 'save',
+        }
+    }) }}
+
+        <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2 mt-5 mb-8">
+            {{ form_row(form.contactFirstName) }}
+            {{ form_row(form.contactLastName) }}
+        </div>
+
+        {# Email #}
+        <div>
+            {{ form_row(form.contactEmail) }}
+        </div>
+
+        {# Zone visuelle pour rassurer l'utilisateur sur la suite #}
+        <div class="rounded-md bg-blue-50 p-4 mt-6 border border-blue-100">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                </div>
+                <div class="ml-3 flex-1 md:flex md:justify-between">
+                    <p class="text-sm text-blue-700">Un email contenant un lien d'accès unique (valable 7 jours) sera envoyé à cette adresse dès la création du dossier.</p>
+                </div>
+            </div>
+        </div>
+
+        {# Actions #}
+        <div class="pt-5 border-t border-slate-200 mt-6 flex justify-end gap-x-6">
+            <twig:Button as="a" variant="outline" href="{{ path('app_kyc_list') }}">Annuler</twig:Button>
+            <twig:Button as="button" type="submit" variant="dark" class="w-full sm:w-auto px-8">
+
+                {# Texte affiché par défaut #}
+                <span data-loading="action(save)|hide">Créer le dossier et envoyer le lien</span>
+
+                {# Texte affiché PENDANT la requête AJAX (Magie Symfony UX Live Component) #}
+                <span data-loading="action(save)|show" class="hidden items-center gap-2">
+                        <i class="fas fa-circle-notch fa-spin opacity-70"></i> Enregistrement...
+                    </span>
+
+            </twig:Button>
+        </div>
+    {{ form_end(form) }}
+</div>

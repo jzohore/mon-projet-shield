@@ -51,6 +51,7 @@ security:
     # Note: Only the *first* access control that matches will be used
     access_control:
         - { path: ^/app/, allow_if: "is_granted('ROLE_USER') or is_granted('ROLE_SUPER_ADMIN')" }
+        - { path: ^/portal/, roles: PUBLIC_ACCESS }
         #- { path: ^/app, roles: ROLE_USER }
         - { path: ^/mon-compte/, allow_if: "is_granted('ROLE_ADMIN') or is_granted('ROLE_PARTNER') or is_granted('ROLE_CLIENT')" }
         - {path: ^/2fa/, roles: IS_AUTHENTICATED_2FA_IN_PROGRESS}

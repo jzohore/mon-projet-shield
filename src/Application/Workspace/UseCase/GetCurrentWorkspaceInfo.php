@@ -22,9 +22,6 @@ final readonly class GetCurrentWorkspaceInfo
         Assert::notNull($workspace, "L'espace de travail est introuvable.");
         Assert::notNull($workspace->slugId, "L'espace de travail n'a pas de slugId.");
         Assert::notNull($workspace->name, "L'espace de travail n'a pas de nom.");
-        return new WorkspaceInfoResponse(
-            slugId: $workspace->slugId,
-            name: $workspace->name
-        );
+        return WorkspaceInfoResponse::fromEntity($workspace);
     }
 }

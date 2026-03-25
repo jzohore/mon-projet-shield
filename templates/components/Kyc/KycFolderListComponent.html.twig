@@ -1,0 +1,161 @@
+<div {{ attributes }} class="space-y-6">
+    {% set items = this.kycList %}
+
+    {# --- 1. BARRE D'OUTILS (Recherche & Compteur) --- #}
+    <div class="flex flex-wrap gap-4 justify-between items-center">
+        <div class="relative w-full sm:w-72">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <twig:ux:icon name="tabler:search" class="size-4 text-slate-400" />
+            </div>
+            <input
+                type="search"
+                placeholder="Rechercher un dossier, un client..."
+                data-model="query"
+                value="{{ query }}"
+                class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors shadow-sm"
+            />
+        </div>
+        <div class="text-sm font-medium text-slate-500 bg-white px-3 py-1.5 rounded-md shadow-sm border border-slate-200">
+            <span class="text-slate-900 font-bold">{{ items.nbResults|default(items|length) }}</span> dossier(s)
+        </div>
+    </div>
+
+    {# --- 2. GESTION DE L'AFFICHAGE --- #}
+    {% if items is empty %}
+
+        {# --- 2A. L'ÉTAT VIDE (Empty State) --- #}
+        <div class="bg-white rounded-2xl p-8 shadow-sm">
+            <twig:Empty class="border border-dashed border-slate-200 bg-slate-50/50 rounded-xl py-12">
+                <twig:Empty:Header>
+                    <twig:Empty:Media variant="icon" class="bg-white shadow-sm ring-1 ring-slate-200">
+                        <twig:ux:icon name="tabler:shield-off" class="size-6 text-slate-400" />
+                    </twig:Empty:Media>
+                    <twig:Empty:Title class="text-lg font-bold text-slate-900 mt-4">Aucun dossier KYC</twig:Empty:Title>
+                    <twig:Empty:Description class="text-slate-500">
+                        Vous n'avez pas encore initié de demande de conformité. Lancez votre première vérification LCB-FT.
+                    </twig:Empty:Description>
+                </twig:Empty:Header>
+                <twig:Empty:Content class="mt-6">
+                    <a href="{{ path('app_kyc_invitation') }}" class="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 border border-transparent bg-slate-900 text-white hover:bg-slate-800 h-9 px-4 py-2 shadow-sm">
+                        <twig:ux:icon name="tabler:plus" class="size-4 mr-2" />
+                        Nouveau dossier KYC
+                    </a>
+                </twig:Empty:Content>
+            </twig:Empty>
+        </div>
+
+    {% else %}
+
+        {# --- 2B. LE TABLEAU DE DONNÉES --- #}
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <twig:Table>
+                <twig:Table:Header class="bg-slate-50/80 border-b border-slate-200">
+                    <twig:Table:Row class="border-none">
+                        <twig:Table:Head class="text-slate-500 font-semibold text-xs uppercase tracking-wider">Client (Contact)</twig:Table:Head>
+                        <twig:Table:Head class="text-slate-500 font-semibold text-xs uppercase tracking-wider">Entreprise</twig:Table:Head>
+                        <twig:Table:Head class="text-slate-500 font-semibold text-xs uppercase tracking-wider">Statut</twig:Table:Head>
+                        <twig:Table:Head class="text-right text-slate-500 font-semibold text-xs uppercase tracking-wider">Actions</twig:Table:Head>
+                    </twig:Table:Row>
+                </twig:Table:Header>
+
+                <twig:Table:Body class="divide-y divide-slate-100">
+                    {% for kyc in items %}
+                        <twig:Table:Row class="hover:bg-slate-50/50 transition-colors">
+
+                            {# Colonne 1 : Client #}
+                            <twig:Table:Cell>
+                                <div class="mb-1">
+                                    <span class="font-mono text-[10px] font-bold text-slate-400 uppercase tracking-wider">{{ kyc.reference }}</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="size-9 rounded-full bg-slate-100 text-slate-600 border border-slate-200 flex items-center justify-center text-xs font-bold shadow-sm">
+                                        {{ kyc.contactFirstName|slice(0, 1) ~ kyc.contactLastName|slice(0, 1) }}
+                                    </div>
+                                    <div>
+                                        <p class="font-bold text-slate-900">{{ kyc.contactFirstName }} {{ kyc.contactLastName }}</p>
+                                        <p class="text-xs text-slate-500">{{ kyc.contactEmail }}</p>
+                                    </div>
+                                </div>
+                            </twig:Table:Cell>
+
+                            {# Colonne 2 : Entreprise (Avec gestion du vide) #}
+                            <twig:Table:Cell>
+                                {% if kyc.companyName %}
+                                    <div class="flex items-center gap-2">
+                                        <twig:ux:icon name="tabler:building-bank" class="size-4 text-slate-400" />
+                                        <div>
+                                            <p class="text-sm font-bold text-slate-900">{{ kyc.companyName }}</p>
+                                            <p class="text-xs text-slate-500">SIRET: {{ kyc.siret }}</p>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="flex items-center gap-2 opacity-60">
+                                        <twig:ux:icon name="tabler:hourglass-empty" class="size-4 text-slate-400" />
+                                        <span class="text-sm italic text-slate-500">En attente de saisie...</span>
+                                    </div>
+                                {% endif %}
+                            </twig:Table:Cell>
+
+                            {# Colonne 3 : Statut (Design Fintech dynamique) #}
+                            <twig:Table:Cell>
+                                {# 1. On définit nos dictionnaires de styles #}
+                                {# Dictionnaire des couleurs de fond/bordure #}
+                                {% set statusColors = {
+                                'draft': 'bg-slate-100 text-slate-800 border-slate-200',
+                                'awaiting_client': 'bg-amber-100 text-amber-800 border-amber-200',
+                                'in_review': 'bg-blue-100 text-blue-800 border-blue-200',
+                                'needs_correction': 'bg-purple-100 text-purple-800 border-purple-200',
+                                'approved': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                                'rejected': 'bg-red-100 text-red-800 border-red-200',
+                                'archived': 'bg-red-100 text-red-800 border-red-200'
+                                } %}
+
+                                {# Dictionnaire pour le petit point clignotant (si tu l'utilises) #}
+                                {% set statusDots = {
+                                'draft': 'bg-slate-500',
+                                'awaiting_client': 'bg-amber-500 animate-pulse',
+                                'in_review': 'bg-blue-500',
+                                'needs_correction': 'bg-purple-500 animate-pulse',
+                                'approved': 'bg-emerald-500',
+                                'rejected': 'bg-red-500',
+                                'archived': 'bg-red-500'
+                                } %}
+
+                                {# 2. On récupère la valeur ou on applique un style par défaut si non trouvé #}
+                                {% set colorClass = statusColors[kyc.status.value] | default('bg-slate-50 text-slate-700 ring-slate-600/20') %}
+                                {% set dotClass = statusDots[kyc.status.value] | default('bg-slate-500') %}
+
+                                {# 3. On affiche le badge #}
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ring-1 ring-inset {{ colorClass }}">
+                                    <span class="h-1.5 w-1.5 rounded-full {{ dotClass }}"></span>
+                                    {{ kyc.status.label }}
+                                </span>
+                            </twig:Table:Cell>
+
+                            {# Colonne 4 : Actions #}
+                            <twig:Table:Cell class="text-right">
+                                <div class="flex justify-end gap-1">
+                                    {# Bouton copier le lien (Visible uniquement si le dossier n'est pas terminé) #}
+                                    {% if kyc.status.value in ['draft', 'awaiting_client'] %}
+                                        <button class="p-2 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors" title="Copier le lien sécurisé" data-action="clipboard#copy" data-clipboard-text="">
+                                            <twig:ux:icon name="tabler:link" class="size-4" />
+                                        </button>
+                                    {% endif %}
+
+                                    {# Bouton d'ouverture du dossier #}
+
+                                    <twig:Button as="a" href="{{ path('app_kyc_show', {slugId: kyc.slugId}) }}"
+                                                 variant="outline" size="sm" class="p-2 text-slate-400 hover:text-slate-900 rounded-md hover:bg-slate-100 transition-colors border-0">
+                                        <twig:ux:icon name="tabler:folder-open" class="size-4" />
+                                    </twig:Button>
+                                </div>
+                            </twig:Table:Cell>
+
+                        </twig:Table:Row>
+                    {% endfor %}
+                </twig:Table:Body>
+            </twig:Table>
+        </div>
+
+    {% endif %}
+</div>

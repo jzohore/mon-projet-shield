@@ -28,7 +28,7 @@ final class KycListController
     ): Response {
         return new Response(
             $twig->render('@app/kyc/kyc_list.html.twig', [
-                'page_title' => 'Documents KYC',
+                'page_title' => 'Dossiers KYC / LCB-FT',
             ])
         );
     }

@@ -20,6 +20,9 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+    env_file:
+      - .env
+      - .env.local
     ports:
       - name: http
         target: 80
@@ -62,6 +65,9 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
     ports:
       - "5432:5432" # <-- LA LIGNE MAGIQUE : Expose le port de Docker vers ton ordi
+    env_file:
+      - .env
+      - .env.local
     healthcheck:
       test: [ "CMD", "pg_isready", "-d", "${POSTGRES_DB:-app}", "-U", "${POSTGRES_USER:-app}" ]
       timeout: 5s

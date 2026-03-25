@@ -54,7 +54,7 @@ class KycDocument
     {
         $this->folder = $folder;
         $this->type = $type;
-        $this->generate_ulid_prefixed('kyc_doc_');
+        $this->slugId = $this->generate_ulid_prefixed('kyc_doc_');
     }
 
     /**

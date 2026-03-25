@@ -1,0 +1,14 @@
+{# templates/portal/step1_company.html.twig #}
+{% extends '@app/kyc/portal/base_portal.html.twig' %}
+
+{# On passe les variables au layout parent pour qu'il mette à jour la sidebar #}
+{% set step = 1 %}
+{% set workspace_name = folder.workspaceName ?? 'Cabinet Dupont' %}
+
+{% block portal_content %}
+
+
+
+    <twig:BindCompanyToKycFolderFormComponent folderSlugId="{{ folder.slugId }}"></twig:BindCompanyToKycFolderFormComponent>
+
+{% endblock %}

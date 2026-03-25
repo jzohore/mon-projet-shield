@@ -1,0 +1,112 @@
+<div {{ attributes }} class="w-full max-w-4xl mx-auto">
+
+    {# HEADER #}
+    <div class="flex justify-center mb-10">
+        <div class="text-xs font-semibold text-slate-500 bg-slate-100 px-4 py-2 rounded-full ring-1 ring-slate-200">
+            {{ this.expectedDocumentSlots|filter(slot => slot.isUploaded)|length }} / {{ this.expectedDocumentSlots|length }} documents reçus
+        </div>
+    </div>
+
+    {# LISTE DES DOCUMENTS #}
+    <div class="bg-white ring-1 ring-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <ul class="divide-y divide-slate-100">
+            {% for slot in this.expectedDocumentSlots %}
+                <li class="p-4 sm:px-6 hover:bg-slate-50/50 transition-colors group">
+                    <div class="grid grid-cols-12 gap-4 items-center">
+
+                        {# GAUCHE : INFOS (7/12) #}
+                        <div class="col-span-12 sm:col-span-7 flex items-center gap-4 min-w-0">
+                            <div class="h-10 w-10 bg-slate-50 text-slate-500 rounded-xl flex items-center justify-center shrink-0 ring-1 ring-slate-900/5 group-hover:bg-white group-hover:text-indigo-600 group-hover:ring-indigo-100 transition-all">
+                                <twig:ux:icon name="{{ slot.icon }}" class="size-5" />
+                            </div>
+                            <div class="min-w-0">
+                                <h3 class="text-sm font-bold text-slate-900 truncate">{{ slot.title }}</h3>
+                                <p class="text-xs text-slate-500 mt-0.5 truncate" title="{{ slot.description }}">
+                                    {{ slot.description }}
+                                </p>
+                            </div>
+                        </div>
+
+                        {# DROITE : ACTIONS (5/12) #}
+                        <div class="col-span-12 sm:col-span-5 flex flex-col items-end justify-center min-h-[50px]">
+
+                            {% set isReplacing = (this.replacingSlotId == slot.id) %}
+
+                            {# ÉTAT : REÇU (On l'affiche si c'est uploadé ET qu'on n'est pas en train de remplacer) #}
+                            {% if slot.isUploaded and not isReplacing %}
+                                <div class="flex flex-col items-end gap-1">
+                                    <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md ring-1 ring-emerald-500/20">
+                            <twig:ux:icon name="tabler:check" class="size-3.5" />
+                            Reçu
+                        </span>
+                                        <button type="button"
+                                                data-action="live#action" data-live-action-param="toggleReplace" data-live-id-param="{{ slot.id }}"
+                                                class="text-[11px] font-semibold text-slate-400 hover:text-indigo-600 underline cursor-pointer focus:outline-none">
+                                            Remplacer
+                                        </button>
+                                    </div>
+                                    {% if slot.fileName %}
+                                        <span class="text-[10px] text-slate-400 italic truncate max-w-[150px] text-right">{{ slot.fileName }}</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+
+                            {# ÉTAT : UPLOAD (On l'affiche si pas uploadé OU si on est en train de remplacer) #}
+                            {% if not slot.isUploaded or isReplacing %}
+                                <div class="flex items-center gap-2">
+
+                                    {# Le Label de sélection #}
+                                    <label class="cursor-pointer bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-100 shrink-0">
+                                        <twig:ux:icon name="tabler:upload" class="size-4 inline mr-1" />
+                                        {{ isReplacing ? 'Changer' : 'Téléverser' }}
+                                        <input type="file" name="document_{{ slot.id }}" class="sr-only"
+                                               accept=".pdf,image/png,image/jpeg"
+                                               onchange="handleFileSelect('{{ slot.id }}', this)">
+                                    </label>
+
+                                    {# Zone qui apparaît au choix du fichier (JS minimal) #}
+                                    <div id="actions-{{ slot.id }}" class="hidden items-center gap-2">
+                                        <span id="name-{{ slot.id }}" class="text-[10px] text-slate-500 bg-slate-100 px-2 py-1.5 rounded truncate max-w-[100px]"></span>
+
+                                        <button type="button"
+                                                class="bg-slate-900 text-white px-4 py-1.5 rounded-lg text-xs font-bold hover:bg-slate-800 shrink-0"
+                                                data-action="live#action:prevent" data-live-action-param="files|uploadDocument" data-live-id-param="{{ slot.id }}">
+                                            Valider
+                                        </button>
+                                    </div>
+
+                                    {# Bouton Annuler (toujours géré par PHP) #}
+                                    {% if isReplacing or not slot.isUploaded %}
+                                        <button type="button"
+                                                data-action="live#action" data-live-action-param="toggleReplace" data-live-id-param="{{ slot.id }}"
+                                                class="text-slate-400 hover:text-rose-500 p-1">
+                                            <twig:ux:icon name="tabler:x" class="size-5" />
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+
+                        </div>
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    {# ACTIONS FINALES #}
+    <div class="mt-10 flex items-center justify-between">
+        <twig:Button as="a" href="{{ path('portal_kyc_stakeholders') }}" variant="link" class="text-slate-500 hover:text-slate-900 px-0 gap-2">
+            <twig:ux:icon name="tabler:arrow-left" class="size-4" />
+            Retour
+        </twig:Button>
+
+        {% set progress = this.expectedDocumentSlots|filter(slot => slot.isUploaded)|length %}
+        {% set total = this.expectedDocumentSlots|length %}
+
+        <twig:Button as="button" variant="dark" class="px-8 py-3 text-sm disabled:opacity-50" >
+            Soumettre le dossier
+            <twig:ux:icon name="tabler:rocket" class="size-4 ml-2" />
+        </twig:Button>
+    </div>
+</div>

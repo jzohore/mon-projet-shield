@@ -1,0 +1,13 @@
+<?php
+
+namespace App\Infrastructure\KYC\Message;
+
+use Symfony\Component\Messenger\Attribute\AsMessage;
+
+#[AsMessage]
+readonly class SendCreatedKycFolderMessage
+{
+    public function __construct(
+        public string $slugId,
+    ) {}
+}

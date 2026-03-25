@@ -25,11 +25,9 @@ final readonly class DispatchInvitationEmailHandler
 
     public function __invoke(DispatchInvitationEmailMessage $message): void
     {
-        // 1. Validation de la payload asynchrone (Correction Ligne 27)
         $workspaceSlugId = $message->workspaceSlugId;
         Assert::notNull($workspaceSlugId, 'Le message asynchrone ne contient pas de workspaceSlugId.');
 
-        // 2. Récupération idempotente
         $invitation = $this->workspaceInvitationRepository->findBySlugId($workspaceSlugId);
 
         if (!$invitation) {
@@ -39,8 +37,6 @@ final readonly class DispatchInvitationEmailHandler
             return;
         }
 
-        // 3. Extraction & Type Narrowing massif (Corrections Lignes 42, 54, 55)
-        // On stocke dans des variables locales et on valide pour rassurer PHPStan
         $email = $invitation->email;
         $workspace = $invitation->workspace;
         $owner = $invitation->owner;
@@ -51,13 +47,10 @@ final readonly class DispatchInvitationEmailHandler
         Assert::notNull($owner, 'L\'auteur de l\'invitation est manquant.');
         Assert::notNull($role, 'Le rôle est manquant sur l\'invitation.');
 
-        // 4. Génération de l'URL
         $url = $this->router->generate('app_verify_magic_link', [
             'token' => $invitation->magicLinkToken,
         ], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        // 5. Instanciation
-        // Grâce aux Asserts ci-dessus, PHPStan sait que $workspace, $owner et $role sont des objets valides.
         $emailMessage = new DispatchInvitationEmail(
             recipientEmail: $email,
             workspaceName: $workspace->name ?? 'Espace de travail', // Fallback au cas où $name serait aussi nullable

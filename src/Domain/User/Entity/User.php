@@ -227,7 +227,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getNormalizedFirstName(): string
     {
-        return ucfirst(strtolower(trim($this->firstName ?? '')));
+        return ucfirst(strtoupper(trim($this->firstName ?? '')));
     }
 
     public function getNormalizedLastName(): ?string

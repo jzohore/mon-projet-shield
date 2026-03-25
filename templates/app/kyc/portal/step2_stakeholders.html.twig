@@ -1,0 +1,20 @@
+{# templates/portal/step2_stakeholders.html.twig #}
+{% extends '@app/kyc/portal/base_portal.html.twig' %}
+
+{% set step = 2 %}
+{% set workspace_name = folder.companyName ?? 'Votre société' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block portal_content %}
+
+    <div class="mb-8">
+        <h1 class="text-xl font-bold text-slate-900 tracking-tight">Dirigeants et Bénéficiaires</h1>
+        <p class="text-sm text-slate-500 mt-2">
+            Vérifiez les représentants légaux identifiés et ajoutez les bénéficiaires effectifs (UBO) détenant plus de 25% du capital ou des droits de vote.
+        </p>
+    </div>
+
+    <twig:ManageStakeholdersComponent folderSlugId="{{ folder.slugId }}"></twig:ManageStakeholdersComponent>
+
+{% endblock %}
