@@ -98,4 +98,8 @@ RUN set -eux; \
 	if [ -f importmap.php ]; then \
 		php bin/console asset-map:compile; \
 	fi; \
+    php bin/console tailwind:build; \
+    if [ -f importmap.php ]; then \
+        php bin/console asset-map:compile; \
+    fi; \
 	chmod +x bin/console; sync;
