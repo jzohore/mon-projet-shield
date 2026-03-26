@@ -9,6 +9,9 @@
 parameters:
     GeoIP2_file: '%kernel.project_dir%/public/ressources/GeoLite2-City.mmdb'
     app.kyc_upload_directory: '%kernel.project_dir%/public/uploads/kyc'
+    router.request_context.host: 'kysure.fr'
+    router.request_context.scheme: 'https'
+    router.request_context.base_url: ''
 services:
     # default configuration for services in *this* file
     _defaults:
