@@ -182,6 +182,9 @@
       <excludeFolder url="file://$MODULE_DIR$/vendor/twig/html-extra" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/twig/twig" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/webmozart/assert" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/remote-event" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/resend-mailer" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/webhook" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
