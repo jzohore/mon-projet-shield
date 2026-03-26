@@ -1,0 +1,398 @@
+{% extends '@website/base.html.twig' %}
+
+{% block title %}{{ company_name }} - La nouvelle génération pour votre conformité{% endblock %}
+
+{% block meta_description %}Optimisez vos processus KYC et KYB avec {{ company_name }}. Une infrastructure sécurisée, automatisée et certifiée pour les institutions financières et cabinets d'audit.{% endblock %}
+
+{% block body %}
+    <div class="relative min-h-screen bg-[#050608] text-slate-200 selection:bg-blue-500/30 overflow-x-hidden">
+
+        {# ==========================================
+           HEADER
+           ========================================== #}
+        <header class="fixed top-0 z-50 w-full border-b border-white/5 bg-[#050608]/80 backdrop-blur-md">
+            <nav class="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
+                <div class="relative z-10 flex items-center gap-3 text-xl font-semibold tracking-tight text-white">
+                    <div class="flex size-9 items-center justify-center rounded-xl bg-gradient-to-b from-slate-700 to-slate-900 border border-slate-700 shadow-inner">
+                        <img src="{{ asset('kysure_logo.png') }}" alt="Logo de {{ company_name }}" class="h-5 w-auto">
+                    </div>
+                    <a href="{{ path('website_home') }}" title="Retour à la page d'accueil">
+                        {{ company_name }}
+                    </a>
+                </div>
+                <div class="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
+                    <a href="#plateforme" class="hover:text-white transition-colors">Plateforme</a>
+                    <a href="#cas-d-usage" class="hover:text-white transition-colors">Cas d'usage</a>
+                    <a href="#tarifs" class="hover:text-white transition-colors">Tarifs</a>
+                </div>
+                <div class="flex items-center gap-4">
+                    <a href="{{ path('app_login') }}" class="hidden sm:block text-sm font-medium text-slate-400 hover:text-white transition-colors">Espace Client</a>
+                    <a href="{{ path('app_register') }}" class="rounded-full bg-blue-600 px-5 py-2 text-sm font-bold text-white hover:bg-blue-700 transition-all">
+                        Démo
+                    </a>
+                </div>
+            </nav>
+        </header>
+
+        <main>
+            {# ==========================================
+               1. HERO SECTION : IMPACT & VALEUR DIRECTE
+               ========================================== #}
+            <section class="relative pt-32 pb-16 lg:pt-48 lg:pb-20 overflow-hidden">
+                <div class="absolute inset-0 pointer-events-none flex justify-center" aria-hidden="true">
+                    <div class="w-[1000px] h-[500px] bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/40 via-[#050608] to-[#050608] opacity-60"></div>
+                </div>
+
+                <div class="relative z-10 mx-auto max-w-7xl px-6 text-center">
+
+                    <h1 class="mx-auto max-w-5xl text-5xl font-medium tracking-tight text-white sm:text-7xl leading-[1.05]">
+                        KYC instantané. Audit prêt. <br>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">Risque maîtrisé.</span>
+                    </h1>
+
+                    <p class="mx-auto mt-8 max-w-2xl text-lg text-slate-400 font-light leading-relaxed">
+                        La conformité qui ne ralentit plus votre croissance. Onboardez vos clients en 60 secondes, avec la garantie d'un dossier 100% vérifié et conforme.
+                    </p>
+
+                    <div class="mt-12 flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <a href="{{ path('app_register') }}" class="w-full sm:w-auto rounded-full bg-white px-8 py-4 text-sm font-bold text-black hover:bg-slate-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]">
+                            Tester 5 vérifications gratuites
+                        </a>
+                        <a href="#plateforme" class="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.02] px-8 py-4 text-sm font-bold text-white hover:bg-white/5 transition-all">
+                            Déployer ma conformité
+                            <twig:ux:icon name="lucide:arrow-right" class="w-4 h-4 text-slate-500" />
+                        </a>
+                    </div>
+
+                    <div class="mt-20 pt-10 border-t border-white/5">
+                        <p class="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-6">Conçu pour les environnements régulés</p>
+                        <div class="flex flex-wrap justify-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+                            <span class="text-xl font-bold font-serif text-white">ACPR Ready</span>
+                            <span class="text-xl font-bold font-serif text-white">SecNumCloud</span>
+                            <span class="text-xl font-bold font-serif text-white">ISO 27001</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {# ==========================================
+               2. DATA BAR & PREUVE SOCIALE
+               ========================================== #}
+            <div class="relative z-20 border-y border-white/5 bg-white/[0.01] backdrop-blur-md">
+                <div class="mx-auto max-w-7xl px-6 py-8">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center divide-x divide-white/5">
+                        <div class="px-4">
+                            <div class="text-3xl font-bold text-white tracking-tight mb-1">128 742</div>
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">Vérifications traitées</div>
+                        </div>
+                        <div class="px-4">
+                            <div class="text-3xl font-bold text-white tracking-tight mb-1">0,8s</div>
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">Temps moyen d'analyse</div>
+                        </div>
+                        <div class="px-4">
+                            <div class="text-3xl font-bold text-white tracking-tight mb-1">99,99%</div>
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">Disponibilité garantie</div>
+                        </div>
+                        <div class="px-4">
+                            <div class="text-3xl font-bold text-white tracking-tight mb-1">0</div>
+                            <div class="text-xs font-bold text-slate-500 uppercase tracking-widest">Incident de sécurité</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <section class="relative py-16 bg-[#050608]">
+                <div class="mx-auto max-w-7xl px-6">
+                    <div class="relative overflow-hidden rounded-[2.5rem] border border-blue-500/20 bg-gradient-to-br from-[#0A0C10] to-blue-900/10 p-8 md:p-12 lg:p-16 flex flex-col lg:flex-row items-center gap-12 shadow-2xl shadow-blue-900/10">
+                        <div class="absolute top-0 right-0 w-[400px] h-[400px] bg-blue-500/10 blur-[100px] rounded-full pointer-events-none"></div>
+
+                        <div class="flex-1 relative z-10">
+                            <div class="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-400 uppercase tracking-widest mb-6">
+                                <twig:ux:icon name="lucide:trending-down" class="w-3 h-3" />
+                                Réduction des coûts
+                            </div>
+                            <h2 class="text-3xl md:text-4xl font-medium tracking-tight text-white mb-6">
+                                Moins d'administratif. <br>
+                                <span class="text-blue-400 italic font-serif">Plus de rentabilité.</span>
+                            </h2>
+                            <ul class="space-y-4 text-slate-300 font-light">
+                                <li class="flex items-center gap-3">
+                                    <div class="size-6 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0"><twig:ux:icon name="lucide:check" class="w-3 h-3" /></div>
+                                    Un dossier traité en <strong class="text-white font-medium">3 minutes au lieu de 25</strong>.
+                                </li>
+                                <li class="flex items-center gap-3">
+                                    <div class="size-6 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0"><twig:ux:icon name="lucide:check" class="w-3 h-3" /></div>
+                                    Réduction de <strong class="text-white font-medium">80% du temps d'analyse</strong>.
+                                </li>
+                                <li class="flex items-center gap-3">
+                                    <div class="size-6 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0"><twig:ux:icon name="lucide:check" class="w-3 h-3" /></div>
+                                    <strong class="text-white font-medium">Zéro dossier incomplet</strong> relancé manuellement.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="flex-1 relative z-10 w-full lg:border-l lg:border-white/10 lg:pl-12 mt-8 lg:mt-0">
+                            <twig:ux:icon name="lucide:quote" class="w-10 h-10 text-blue-500/30 mb-4" />
+                            <p class="text-xl md:text-2xl text-slate-200 font-light leading-relaxed mb-8 italic">
+                                "Depuis l'intégration de {{ company_name }}, nos équipes ne chassent plus les Kbis manquants. Nous avons divisé notre temps d'onboarding par 4, tout en ayant des pistes d'audit irréprochables."
+                            </p>
+                            <div class="flex items-center gap-4">
+                                <div class="size-12 rounded-full bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-600 flex items-center justify-center text-slate-300 font-bold">JD</div>
+                                <div>
+                                    <div class="text-sm font-bold text-white">Julien D.</div>
+                                    <div class="text-xs text-slate-400">Directeur Conformité, NeoBank (Beta)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {# ==========================================
+               3. BENTO GRID : LE "SHOW, DON'T TELL"
+               ========================================== #}
+            <section id="plateforme" class="relative py-24 bg-[#050608]">
+                <div class="mx-auto max-w-7xl px-6">
+                    <div class="mb-16">
+                        <h2 class="text-3xl font-medium tracking-tight text-white">Une suite de conformité unifiée.</h2>
+                        <p class="mt-4 text-slate-400 font-light">Tout ce dont votre équipe compliance a besoin, réuni dans une seule interface.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6 auto-rows-[300px]">
+                        {# BENTO 1 : OCR #}
+                        <div class="md:col-span-2 group relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0A0C10] p-8 hover:border-blue-500/30 transition-colors">
+                            <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                            <div class="relative z-10 flex flex-col h-full justify-between">
+                                <div class="max-w-md">
+                                    <twig:ux:icon name="lucide:scan-face" class="w-8 h-8 text-blue-400 mb-4" />
+                                    <h3 class="text-2xl font-bold text-white mb-2">Moteur OCR & IA</h3>
+                                    <p class="text-slate-400 text-sm font-light leading-relaxed">
+                                        Extraction instantanée des données sur les Kbis, CNI et statuts. Détection automatique des fraudes documentaires.
+                                    </p>
+                                </div>
+                                <div class="mt-8 rounded-xl border border-white/10 bg-black/50 p-4 backdrop-blur-md transform group-hover:translate-y-[-5px] transition-transform">
+                                    <div class="flex items-center justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <div class="size-8 rounded bg-blue-900/50 flex items-center justify-center border border-blue-500/30"><twig:ux:icon name="lucide:file-text" class="w-4 h-4 text-blue-400" /></div>
+                                            <div>
+                                                <div class="text-xs font-bold text-white">Extrait_Kbis_Corp.pdf</div>
+                                                <div class="text-[10px] text-emerald-400 flex items-center gap-1 mt-0.5"><twig:ux:icon name="lucide:check-circle-2" class="w-3 h-3" /> Données extraites (0.8s)</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# BENTO 2 : Audit Trail #}
+                        <div class="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0A0C10] p-8 hover:border-emerald-500/30 transition-colors">
+                            <div class="relative z-10 flex flex-col h-full">
+                                <twig:ux:icon name="lucide:fingerprint" class="w-8 h-8 text-emerald-400 mb-4" />
+                                <h3 class="text-2xl font-bold text-white mb-2">Piste d'audit</h3>
+                                <p class="text-slate-400 text-sm font-light leading-relaxed mb-auto">Chaque action est horodatée. Un registre immuable prêt pour l'ACPR.</p>
+                                <div class="space-y-2 mt-6">
+                                    <div class="h-6 w-full rounded bg-white/5 flex items-center px-2 border border-white/5"><div class="size-1.5 rounded-full bg-emerald-400 mr-2"></div><div class="h-1.5 w-20 bg-white/20 rounded"></div></div>
+                                    <div class="h-6 w-5/6 rounded bg-white/5 flex items-center px-2 border border-white/5"><div class="size-1.5 rounded-full bg-slate-500 mr-2"></div><div class="h-1.5 w-16 bg-white/20 rounded"></div></div>
+                                    <div class="h-6 w-full rounded bg-white/5 flex items-center px-2 border border-white/5"><div class="size-1.5 rounded-full bg-emerald-400 mr-2"></div><div class="h-1.5 w-24 bg-white/20 rounded"></div></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# BENTO 3 : Workspaces #}
+                        <div class="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0A0C10] p-8 hover:border-purple-500/30 transition-colors">
+                            <div class="relative z-10 flex flex-col h-full">
+                                <twig:ux:icon name="lucide:network" class="w-8 h-8 text-purple-400 mb-4" />
+                                <h3 class="text-2xl font-bold text-white mb-2">Multi-Entités</h3>
+                                <p class="text-slate-400 text-sm font-light leading-relaxed">Séparez vos filiales, gérez les habilitations et isolez les données par équipe.</p>
+                                <div class="mt-auto flex -space-x-2">
+                                    <div class="size-8 rounded-full bg-slate-800 border-2 border-[#0A0C10]"></div>
+                                    <div class="size-8 rounded-full bg-slate-700 border-2 border-[#0A0C10]"></div>
+                                    <div class="size-8 rounded-full bg-blue-900 border-2 border-[#0A0C10] flex items-center justify-center text-[10px] text-white font-bold">+3</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# BENTO 4 : Sécurité #}
+                        <div class="md:col-span-2 group relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0A0C10] p-8 hover:border-slate-500/30 transition-colors flex flex-col md:flex-row items-center gap-8">
+                            <div class="flex-1">
+                                <div class="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-800/50 px-3 py-1 text-xs font-bold text-slate-300 mb-4">
+                                    <twig:ux:icon name="lucide:lock" class="w-3 h-3" /> Chiffrement de bout en bout
+                                </div>
+                                <h3 class="text-2xl font-bold text-white mb-2">Vos données ne quittent jamais l'Europe.</h3>
+                                <p class="text-slate-400 text-sm font-light leading-relaxed">Hébergement souverain, politique de rétention stricte (RGPD) et chiffrement AES-256. La sécurité n'est pas une option.</p>
+                            </div>
+                            <div class="w-32 h-32 shrink-0 rounded-full border-4 border-slate-800 flex items-center justify-center relative">
+                                <div class="absolute inset-0 rounded-full border border-blue-500/30 animate-[spin_4s_linear_infinite]"></div>
+                                <twig:ux:icon name="lucide:shield" class="w-12 h-12 text-slate-300" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {# ==========================================
+               4. SECTION : CAS D'USAGE
+               ========================================== #}
+            <section id="cas-d-usage" class="relative py-24 bg-[#020305] border-t border-white/5 overflow-hidden">
+                <div class="absolute inset-0 pointer-events-none" aria-hidden="true">
+                    <div class="absolute top-[20%] right-[10%] w-[500px] h-[500px] bg-indigo-900/10 blur-[120px] rounded-full"></div>
+                </div>
+
+                <div class="relative z-10 mx-auto max-w-7xl px-6">
+                    <div class="text-center mb-16">
+                        <div class="inline-flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-500/5 px-4 py-1.5 text-xs font-bold text-blue-400 uppercase tracking-widest mb-6">
+                            <twig:ux:icon name="lucide:target" class="w-3 h-3" />
+                            Adapté à votre métier
+                        </div>
+                        <h2 class="text-3xl md:text-5xl font-medium tracking-tight text-white leading-tight">
+                            La conformité sur-mesure <br>
+                            <span class="text-slate-500 italic font-serif">pour votre secteur.</span>
+                        </h2>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+                        {# EXPERTS-COMPTABLES #}
+                        <div class="group relative rounded-3xl border border-white/5 bg-white/[0.02] p-8 hover:bg-white/[0.04] hover:border-blue-500/30 transition-all duration-300">
+                            <div class="size-12 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-6 border border-blue-500/20 group-hover:-translate-y-1 transition-transform">
+                                <twig:ux:icon name="lucide:calculator" class="w-6 h-6" />
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-3">Experts-Comptables</h3>
+                            <p class="text-sm text-slate-400 leading-relaxed font-light mb-6">Simplifiez l'entrée en relation. Collectez les Kbis, validez les statuts et identifiez les Bénéficiaires Effectifs (UBO) en quelques clics.</p>
+                            <div class="pt-6 border-t border-white/5">
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Répond aux normes :</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="px-2.5 py-1 rounded bg-white/5 text-xs text-slate-300 border border-white/10">LCB-FT</span>
+                                    <span class="px-2.5 py-1 rounded bg-white/5 text-xs text-slate-300 border border-white/10">Tracfin</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# FINANCE #}
+                        <div class="group relative rounded-3xl border border-white/5 bg-white/[0.02] p-8 hover:bg-white/[0.04] hover:border-emerald-500/30 transition-all duration-300">
+                            <div class="size-12 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 mb-6 border border-emerald-500/20 group-hover:-translate-y-1 transition-transform">
+                                <twig:ux:icon name="lucide:landmark" class="w-6 h-6" />
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-3">Finance & FinTech</h3>
+                            <p class="text-sm text-slate-400 leading-relaxed font-light mb-6">Onboardez vos utilisateurs institutionnels et particuliers à la vitesse de l'éclair, sans faire de compromis sur la sécurité.</p>
+                            <div class="pt-6 border-t border-white/5">
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Répond aux normes :</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="px-2.5 py-1 rounded bg-white/5 text-xs text-slate-300 border border-white/10">ACPR</span>
+                                    <span class="px-2.5 py-1 rounded bg-white/5 text-xs text-slate-300 border border-white/10">Directive AML5</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {# IMMOBILIER & NOTAIRES #}
+                        <div class="group relative rounded-3xl border border-white/5 bg-white/[0.02] p-8 hover:bg-white/[0.04] hover:border-purple-500/30 transition-all duration-300">
+                            <div class="size-12 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 mb-6 border border-purple-500/20 group-hover:-translate-y-1 transition-transform">
+                                <twig:ux:icon name="lucide:building-2" class="w-6 h-6" />
+                            </div>
+                            <h3 class="text-2xl font-bold text-white mb-3">Immobilier & Notaires</h3>
+                            <p class="text-sm text-slate-400 leading-relaxed font-light mb-6">Identifiez instantanément les bénéficiaires effectifs (UBO) derrière les SCI et sécurisez l'identité de vos acquéreurs pour répondre à vos obligations Tracfin.</p>
+                            <div class="pt-6 border-t border-white/5">
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Répond aux normes :</p>
+                                <div class="flex flex-wrap gap-2">
+                                    <span class="px-2.5 py-1 rounded bg-white/5 text-xs text-slate-300 border border-white/10">Code Monétaire</span>
+                                    <span class="px-2.5 py-1 rounded bg-white/5 text-xs text-slate-300 border border-white/10">LCB-FT Notarial</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            {# ==========================================
+               5. SECTION TARIFS
+               ========================================== #}
+            <section id="tarifs" class="relative py-24 bg-[#050608] border-t border-white/5">
+                <div class="absolute inset-0 pointer-events-none flex justify-center" aria-hidden="true">
+                    <div class="w-[800px] h-[400px] bg-blue-900/10 blur-[120px] rounded-full mt-20"></div>
+                </div>
+
+                <div class="relative z-10 mx-auto max-w-7xl px-6">
+                    <div class="text-center mb-16 md:mb-24">
+                        <h2 class="text-3xl md:text-5xl font-medium tracking-tight text-white leading-tight">
+                            Payez uniquement <br>
+                            <span class="text-slate-500 italic font-serif">ce que vous validez.</span>
+                        </h2>
+                        <p class="mt-6 text-lg text-slate-400 font-light max-w-2xl mx-auto">
+                            Pas de frais d'installation. Pas d'abonnement rigide. Achetez des jetons ou payez à la fin du mois selon votre volume réel de dossiers KYC.
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
+                        {# OFFRE 1 : À LA CARTE #}
+                        <div class="rounded-[2rem] border border-white/10 bg-[#0A0C10] p-8 hover:border-white/20 transition-colors">
+                            <h3 class="text-lg font-bold text-white mb-2">À la carte</h3>
+                            <p class="text-sm text-slate-400 font-light mb-6">Idéal pour démarrer ou pour des volumes variables.</p>
+                            <div class="mb-8">
+                                <span class="text-4xl font-bold text-white">2,50€</span>
+                                <span class="text-slate-500 text-sm">/ dossier KYC</span>
+                            </div>
+                            <a href="{{ path('app_register') }}" class="block w-full text-center rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold text-white hover:bg-white/10 transition-all mb-8">
+                                Activer mon KYC (0€)
+                            </a>
+                            <ul class="space-y-4 text-sm text-slate-300 font-light">
+                                <li class="flex items-start gap-3"><twig:ux:icon name="lucide:check" class="w-5 h-5 text-blue-400 shrink-0" /><span>Sans aucun engagement</span></li>
+                                <li class="flex items-start gap-3"><twig:ux:icon name="lucide:check" class="w-5 h-5 text-blue-400 shrink-0" /><span>Plateforme et Dashboard inclus</span></li>
+                                <li class="flex items-start gap-3"><twig:ux:icon name="lucide:check" class="w-5 h-5 text-blue-400 shrink-0" /><span>Extraction OCR & Alertes</span></li>
+                            </ul>
+                        </div>
+
+                        {# OFFRE 2 : PACK (Mise en avant) #}
+                        <div class="relative rounded-[2rem] border border-blue-500/50 bg-gradient-to-b from-[#0A0C10] to-blue-900/10 p-8 shadow-[0_0_40px_rgba(37,99,235,0.15)] transform md:-translate-y-4">
+                            <div class="absolute -top-4 left-1/2 -translate-x-1/2">
+                                <div class="inline-flex items-center gap-1.5 rounded-full bg-blue-600 px-3 py-1 text-[10px] font-bold text-white uppercase tracking-widest shadow-lg shadow-blue-500/30">
+                                    <twig:ux:icon name="lucide:zap" class="w-3 h-3" /> Le plus rentable
+                                </div>
+                            </div>
+                            <h3 class="text-lg font-bold text-blue-400 mb-2">Pack Croissance</h3>
+                            <p class="text-sm text-slate-400 font-light mb-6">Achetez un volume de jetons à l'avance et économisez.</p>
+                            <div class="mb-8">
+                                <span class="text-4xl font-bold text-white">1,50€</span>
+                                <span class="text-slate-500 text-sm">/ dossier KYC</span>
+                            </div>
+                            <a href="{{ path('app_register') }}" class="block w-full text-center rounded-full bg-blue-600 px-6 py-3 text-sm font-bold text-white hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 mb-8">
+                                Générer mes premiers dossiers
+                            </a>
+                            <ul class="space-y-4 text-sm text-slate-200 font-light">
+                                <li class="flex items-start gap-3"><twig:ux:icon name="lucide:check" class="w-5 h-5 text-blue-400 shrink-0" /><span>À partir de 100 dossiers / mois</span></li>
+                                <li class="flex items-start gap-3"><twig:ux:icon name="lucide:check" class="w-5 h-5 text-blue-400 shrink-0" /><span>Historique d'audit étendu (10 ans)</span></li>
+                                <li class="flex items-start gap-3"><twig:ux:icon name="lucide:check" class="w-5 h-5 text-blue-400 shrink-0" /><span>Gestion Multi-entités (Workspaces)</span></li>
+                                <li class="flex items-start gap-3"><twig:ux:icon name="lucide:check" class="w-5 h-5 text-blue-400 shrink-0" /><span>Support client prioritaire</span></li>
+                            </ul>
+                        </div>
+
+                        {# OFFRE 3 : ENTERPRISE #}
+                        <div class="rounded-[2rem] border border-white/10 bg-[#0A0C10] p-8 hover:border-white/20 transition-colors">
+                            <h3 class="text-lg font-bold text-white mb-2">Institutionnel</h3>
+                            <p class="text-sm text-slate-400 font-light mb-6">Plus de 1000 vérifications par mois ? Parlons-en.</p>
+                            <div class="mb-8 pt-2">
+                                <span class="text-3xl font-medium text-white">Sur devis</span>
+                            </div>
+                            <a href="#contact" class="block w-full text-center rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-bold text-white hover:bg-white/10 transition-all mb-8">
+                                Contacter les ventes
+                            </a>
+                            <ul class="space-y-4 text-sm text-slate-300 font-light">
+                                <li class="flex items-start gap-3"><twig:ux:icon name="lucide:check" class="w-5 h-5 text-blue-400 shrink-0" /><span>Tarif dégressif sur volume</span></li>
+                                <li class="flex items-start gap-3"><twig:ux:icon name="lucide:check" class="w-5 h-5 text-blue-400 shrink-0" /><span>Intégration API personnalisée</span></li>
+                                <li class="flex items-start gap-3"><twig:ux:icon name="lucide:check" class="w-5 h-5 text-blue-400 shrink-0" /><span>SLA garantis & Onboarding dédié</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        {# ==========================================
+           FOOTER
+           ========================================== #}
+        <footer class="border-t border-white/5 py-12 bg-[#050608]">
+            <div class="mx-auto max-w-7xl px-6 flex justify-between items-center text-sm text-slate-500">
+                <div>&copy; {{ "now"|date("Y") }} {{ company_name }}.</div>
+                <div>Plateforme RegTech</div>
+            </div>
+        </footer>
+    </div>
+{% endblock %}

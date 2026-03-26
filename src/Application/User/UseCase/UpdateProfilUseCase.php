@@ -36,6 +36,7 @@ final readonly class UpdateProfilUseCase
         $user->isOwner = true;
         $user->lang = $request->lang;
         $user->isActif = true;
+        $user->roles = ['ROLE_WORKSPACE_ADMIN'];
         $this->userRepository->save($user);
 
         $this->eventDispatcher->dispatch(new UserOnboardingCompletedEvent($user));

@@ -18,7 +18,6 @@ use App\Infrastructure\Workspace\Form\WorkspaceInvitationType;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
-use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
@@ -85,8 +84,6 @@ class CreateInvitationFormComponent
     }
 
     #[LiveAction]
-    #[IsGranted('ROLE_WORKSPACE_ADMIN')]
-    #[IsGranted('ROLE_SUPER_ADMIN')]
     public function revokeInvitation(#[LiveArg] string $id): void
     {
         $this->clearLiveFlash();

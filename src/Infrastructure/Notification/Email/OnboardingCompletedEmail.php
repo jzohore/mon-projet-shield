@@ -16,7 +16,7 @@ class OnboardingCompletedEmail extends TemplatedEmail
         Assert::notNull($email);
         $this
             ->to(new Address(address: $email))
-            ->subject('Bienvenue sur Shield - Votre espace est prêt')
+            ->subject('Bienvenue sur  - Votre espace est prêt')
             ->htmlTemplate('emails/onboarding/completed.html.twig')
             ->context([
                 'first_name' => $firstname,

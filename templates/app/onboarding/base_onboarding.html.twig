@@ -6,9 +6,9 @@
 
     {# SEO : Onboarding = privé, donc on bloque les moteurs, mais on garde une structure propre #}
     <meta name="robots" content="noindex, nofollow">
-    <meta name="description" content="Configurez votre espace de travail {{ company_name|default('Shield') }} en quelques étapes.">
+    <meta name="description" content="Configurez votre espace de travail {{ company_name|default(company_name) }} en quelques étapes.">
 
-    <title>{% block title %}{{ company_name|default('Shield') }} | Onboarding{% endblock %}</title>
+    <title>{% block title %}{{ company_name|default(company_name) }} | Onboarding{% endblock %}</title>
 
     {% block javascripts %}
         {% block importmap %}{{ importmap('app') }}{% endblock %}
@@ -30,7 +30,7 @@
     {# HEADER MOBILE (Caché sur desktop car on a la sidebar) #}
     <header class="md:hidden py-4 px-6 bg-white border-b border-slate-200 flex items-center justify-center shrink-0">
             <span class="text-xl font-black tracking-widest uppercase text-slate-900">
-                {{ company_name|default('Shield') }}
+                {{ company_name|default(company_name) }}
             </span>
     </header>
 
@@ -40,7 +40,7 @@
     <aside class="hidden md:flex flex-col w-80 shrink-0 bg-white border-r border-slate-200 px-10 py-12" aria-label="Progression de la configuration">
 
         <div class="mb-16">
-            <span class="text-lg font-black tracking-widest uppercase text-slate-900">{{ company_name|default('Shield') }}</span>
+            <span class="text-lg font-black tracking-widest uppercase text-slate-900">{{ company_name|default(company_name) }}</span>
             <span class="block text-[9px] text-blue-600 font-bold uppercase tracking-[0.2em] mt-1">Onboarding</span>
         </div>
 
@@ -112,7 +112,7 @@
         {# Le FOOTER reste sagement en bas de la zone droite #}
         <footer class="p-6 text-center text-sm text-slate-500 relative z-10 shrink-0">
             Besoin d'aide ?
-            <twig:Button as="a" href="mailto:support@{{ company_name|default('shield')|lower }}.com?subject=Aide Onboarding : {{ app.user.email|default('') }}" variant="link" class="text-blue-600 hover:underline px-1">
+            <twig:Button as="a" href="mailto:support@{{ company_name|default(company_name)|lower }}.com?subject=Aide Onboarding : {{ app.user.email|default('') }}" variant="link" class="text-blue-600 hover:underline px-1">
                 Contactez le support
             </twig:Button>
         </footer>

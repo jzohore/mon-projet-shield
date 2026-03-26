@@ -2,17 +2,21 @@
 
 namespace App\Application\User\UseCase\Dashboard;
 
+use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
 use App\Domain\User\Entity\User;
-use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
+use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
 
 final readonly class GetCountMemberUseCase
 {
     public function __construct(
-        private WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
+        private WorkspaceInvitationRepositoryInterface $workspaceInvitationRepository,
+        private GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
     ) {}
 
-    public function __invoke(User $user): int
+    public function __invoke(User $user): bool|float|int|string|null
     {
-        return count($this->workspaceMemberRepository->findByUser($user));
+        $workspace = ($this->getCurrentWorkspaceInfo)($user);
+
+        return $this->workspaceInvitationRepository->countMemberInvitation(workspaceId: $workspace->slugId);
     }
 }

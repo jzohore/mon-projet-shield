@@ -54,4 +54,15 @@ final readonly class WorkspaceInvitationRepository implements WorkspaceInvitatio
         $em->remove($workspaceInvitation);
         $em->flush();
     }
+
+    public function countMemberInvitation(?string $workspaceId = null): bool|float|int|string|null
+    {
+        return $this->repository->createQueryBuilder('wi')
+            ->select('COUNT(wi.id)')
+            ->leftJoin('wi.workspace', 'w')
+            ->where('w.slugId = :workspaceId')
+            ->setParameter('workspaceId', $workspaceId)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

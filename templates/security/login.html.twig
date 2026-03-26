@@ -1,92 +1,105 @@
 {% extends '@website/base.html.twig' %}
 
-{% block title %}Connexion - Shield{% endblock %}
+{% block title %}Connexion - {{ company_name }}{% endblock %}
 
 {% block body %}
-    <div class="flex min-h-screen w-full bg-background antialiased">
+    {# On remplace le div principal par <main> pour le SEO et l'Accessibilité #}
+    <main class="flex min-h-screen w-full bg-background antialiased">
+        <aside class="relative hidden w-1/2 flex-col justify-between bg-[#0A0B0E] p-12 lg:flex overflow-hidden" aria-labelledby="marketing-title">
 
-        {# =========================================================
-       MOITIÉ GAUCHE : LA PRÉCISION STRIPE / APPLE
-       ========================================================= #}
-        <div class="relative hidden w-1/2 flex-col justify-between bg-[#0A0B0E] p-12 lg:flex overflow-hidden">
-
-            {# 1. Le "Mesh Gradient" façon Stripe (Lumière diffuse et sophistiquée) #}
-            <div class="absolute inset-0 pointer-events-none overflow-hidden">
+            {# 1. Mesh Gradient (On le cache aux lecteurs d'écran car purement décoratif) #}
+            <div class="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
                 <div class="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-blue-600/10 blur-[120px]"></div>
                 <div class="absolute bottom-[0%] -right-[10%] w-[60%] h-[60%] rounded-full bg-indigo-500/10 blur-[100px]"></div>
             </div>
 
-            {# 2. Le Logo (Traitement "Hardware" premium) #}
+            {# 2. Le Logo #}
             <div class="relative z-10 flex items-center gap-3 text-xl font-semibold tracking-tight text-white">
                 <div class="flex size-9 items-center justify-center rounded-xl bg-gradient-to-b from-slate-700 to-slate-900 border border-slate-700 shadow-inner">
-                    <i class="fas fa-shield-halved text-[13px] text-white/90"></i>
+                    <img src="{{ asset('kysure_logo.png') }}" alt="Logo de {{ company_name }}">
                 </div>
-                Shield
+                <a href="{{ path('website_home') }}" title="Retour à la page d'accueil">
+                    {{ company_name }}
+                </a>
             </div>
 
-            {# 3. La proposition de valeur (Typographie millimétrée) #}
+
+            {# 3. La proposition de valeur #}
             <div class="relative z-10 max-w-md space-y-8 mt-12 mb-auto">
-                <h1 class="text-[2.75rem] font-medium leading-[1.1] tracking-tight text-slate-50">
+                {# SEO : Devient un <h2> car le <h1> doit être le but principal de la page (la connexion) #}
+                <h2 id="marketing-title" class="text-[2.75rem] font-medium leading-[1.1] tracking-tight text-slate-50">
                     La conformité, <br>
                     <span class="text-slate-500">sans la complexité.</span>
-                </h1>
+                </h2>
                 <p class="text-[1.05rem] text-slate-400 leading-relaxed font-light">
                     Automatisez vos processus KYC, gérez vos habilitations finement et maintenez une piste d'audit infaillible en toute sécurité.
                 </p>
             </div>
 
-            {# 4. Le Témoignage (Glassmorphism ultra-fin) #}
-            <div class="relative z-10 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 backdrop-blur-xl shadow-2xl">
+            {# 4. Le Témoignage (Balises sémantiques figure/blockquote) #}
+            <figure class="relative z-10 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 backdrop-blur-xl shadow-2xl">
                 <div class="flex items-start gap-4">
-                    <i class="fas fa-quote-left text-slate-600 mt-1"></i>
-                    <div class="space-y-3">
+                    <i class="fas fa-quote-left text-slate-600 mt-1" aria-hidden="true"></i>
+                    <blockquote class="space-y-3">
                         <p class="text-sm font-medium leading-relaxed text-slate-200">
-                            Shield a divisé par trois notre temps de traitement des dossiers clients tout en garantissant un niveau de sécurité institutionnel.
+                            {{ company_name }} a divisé par trois notre temps de traitement des dossiers clients tout en garantissant un niveau de sécurité institutionnel.
                         </p>
-                        <div class="flex items-center gap-2">
-                            <div class="h-[1px] w-4 bg-slate-700"></div>
+                        <figcaption class="flex items-center gap-2">
+                            <div class="h-[1px] w-4 bg-slate-700" aria-hidden="true"></div>
                             <p class="text-xs font-medium text-slate-400 tracking-wide uppercase">
                                 Directeur Conformité, Banque XYZ
                             </p>
-                        </div>
-                    </div>
+                        </figcaption>
+                    </blockquote>
                 </div>
-            </div>
-        </div>
+            </figure>
+        </aside>
 
         {# =========================================================
-       MOITIÉ DROITE : TON FORMULAIRE (Inchangé)
+       MOITIÉ DROITE : LE FORMULAIRE
        ========================================================= #}
-        {# On ajoute "relative" ici pour que le bouton absolu reste dans cette moitié d'écran #}
-        <div class="relative flex w-full flex-col items-center justify-center p-8 lg:w-1/2 sm:p-12">
+        <section class="relative flex w-full flex-col items-center justify-center p-6 lg:w-1/2 sm:p-12">
+
+            {# === NOUVEAU : LOGO MOBILE === #}
+            {# S'affiche uniquement sur mobile pour que l'utilisateur sache où il se connecte #}
+            <div class="absolute left-6 top-6 flex items-center gap-2 font-bold text-foreground lg:hidden">
+                <div class="flex size-8 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm">
+                    <i class="fas fa-shield-halved text-[12px]" aria-hidden="true"></i>
+                </div>
+                {{ company_name }}
+            </div>
 
             {# === LE LIEN EN HAUT À DROITE === #}
-            <div class="absolute right-4 top-4 md:right-8 md:top-8">
-                <twig:Button as="a" href="{{ path('app_register') }}" variant="ghost" class="text-muted-foreground">
+            {# Ajustement des marges pour mobile #}
+            <div class="absolute right-6 top-6 md:right-8 md:top-8 z-10">
+                <twig:Button as="a" href="{{ path('app_register') }}" variant="ghost" class="text-muted-foreground text-sm">
                     Créer un compte
                 </twig:Button>
             </div>
 
             {# === LE FORMULAIRE CENTRÉ === #}
-            <div class="w-full max-w-[350px] space-y-8">
+            {# mt-16 sur mobile pour éviter que le formulaire passe sous le logo/bouton du header #}
+            <div class="w-full max-w-[350px] space-y-8 mt-16 lg:mt-0">
 
-                <div class="space-y-2">
-                    <h2 class="text-2xl font-bold tracking-tight text-foreground">Bon retour.</h2>
+                <header class="space-y-2 text-center lg:text-left">
+                    {# SEO : C'est le vrai <h1> de la page, visible sur mobile ET desktop #}
+                    <h1 class="text-2xl font-bold tracking-tight text-foreground">Bon retour.</h1>
                     <p class="text-sm text-muted-foreground">
                         Saisissez votre adresse email professionnelle. Nous vous enverrons un lien magique pour vous connecter instantanément.
                     </p>
-                </div>
+                </header>
 
                 <twig:LoginUserFormComponent></twig:LoginUserFormComponent>
 
-                <p class="text-center text-xs text-muted-foreground">
+                {# A11y : Ajout des états de focus (focus-visible) pour la navigation au clavier #}
+                <footer class="text-center text-xs text-muted-foreground">
                     En continuant, vous acceptez nos
-                    <a href="#" class="underline underline-offset-4 hover:text-foreground transition-colors">Conditions de service</a> et notre
-                    <a href="#" class="underline underline-offset-4 hover:text-foreground transition-colors">Politique de confidentialité</a>.
-                </p>
+                    <br class="sm:hidden"> {# Retour à la ligne propre sur tout petit écran #}
+                    <a href="#" class="underline underline-offset-4 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm transition-colors">Conditions de service</a> et notre
+                    <a href="#" class="underline underline-offset-4 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm transition-colors">Politique de confidentialité</a>.
+                </footer>
 
             </div>
-        </div>
-
-    </div>
+        </section>
+    </main>
 {% endblock %}

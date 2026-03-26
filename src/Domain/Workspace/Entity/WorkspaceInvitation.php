@@ -69,7 +69,7 @@ class WorkspaceInvitation
         set => $this->workspace = $value;
     }
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'members')]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'invitations')]
     #[ORM\JoinColumn(nullable: true)]
     public ?User $owner = null {
         get => $this->owner;
