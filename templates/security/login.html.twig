@@ -63,10 +63,12 @@
             {# === NOUVEAU : LOGO MOBILE === #}
             {# S'affiche uniquement sur mobile pour que l'utilisateur sache où il se connecte #}
             <div class="absolute left-6 top-6 flex items-center gap-2 font-bold text-foreground lg:hidden">
-                <div class="flex size-8 items-center justify-center rounded-lg bg-slate-900 text-white shadow-sm">
-                    <i class="fas fa-shield-halved text-[12px]" aria-hidden="true"></i>
+                <div class="flex size-9 items-center justify-center rounded-xl bg-gradient-to-b from-slate-700 to-slate-900 border border-slate-700 shadow-inner">
+                    <img src="{{ asset('kysure_logo.png') }}" alt="Logo de {{ company_name }}">
                 </div>
-                {{ company_name }}
+                <a href="{{ path('website_home') }}" title="Retour à la page d'accueil">
+                    {{ company_name }}
+                </a>
             </div>
 
             {# === LE LIEN EN HAUT À DROITE === #}
