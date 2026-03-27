@@ -4,8 +4,10 @@ namespace App\Application\Kyc\UseCase;
 
 use App\Application\Kyc\DTO\Request\AddStakeholderRequest;
 use App\Domain\Kyc\Entity\Stakeholder;
+use App\Domain\Kyc\Event\CreateStakeholderEvent;
 use App\Domain\Kyc\Repository\KycFolderRepositoryInterface;
 use App\Domain\Kyc\Repository\StakeholderRepositoryInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Webmozart\Assert\Assert;
 
 final readonly class SaveNewStakeHolderUseCase
@@ -13,6 +15,7 @@ final readonly class SaveNewStakeHolderUseCase
     public function __construct(
         private KycFolderRepositoryInterface $kycFolderRepository,
         private StakeholderRepositoryInterface $stakeholderRepository,
+        private EventDispatcherInterface $eventDispatcher,
     ) {}
 
     public function __invoke(AddStakeholderRequest $request): void
@@ -34,5 +37,6 @@ final readonly class SaveNewStakeHolderUseCase
         );
         $this->stakeholderRepository->save($stakeholder);
 
+        $this->eventDispatcher->dispatch(new CreateStakeholderEvent($currentKycFolder));
     }
 }

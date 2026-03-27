@@ -5,8 +5,10 @@ namespace App\Application\Kyc\UseCase;
 use App\Application\Kyc\DTO\Request\StakeholderRequest;
 use App\Domain\Kyc\Entity\Stakeholder;
 use App\Domain\Kyc\Enum\StakeholderRole;
+use App\Domain\Kyc\Event\CreateStakeholderEvent;
 use App\Domain\Kyc\Repository\KycFolderRepositoryInterface;
 use App\Domain\Kyc\Repository\StakeholderRepositoryInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Webmozart\Assert\Assert;
 
 final readonly class CreateStakeHolderUseCase
@@ -14,6 +16,7 @@ final readonly class CreateStakeHolderUseCase
     public function __construct(
         private KycFolderRepositoryInterface $kycFolderRepository,
         private StakeholderRepositoryInterface $stakeholderRepository,
+        private EventDispatcherInterface $eventDispatcher,
     ) {}
 
     public function __invoke(StakeholderRequest $request): void
@@ -22,20 +25,33 @@ final readonly class CreateStakeHolderUseCase
         Assert::notNull($currentKycFolder);
 
         foreach ($request->data as $apiDirigeant) {
-            // 1. On utilise notre traducteur magique
-            // Il va lire "Gérant" et te retourner StakeholderRole::LEGAL_REPRESENTATIVE
+            // 1. Traduction du rôle
             $qualite = $apiDirigeant['qualite'] ?? 'gérant';
             $roleEnum = StakeholderRole::fromApiRole($qualite);
 
-            // 2. Tu crées ton entité Stakeholder
+            // 2. Sécurisation des noms (Gestion des personnes physiques ET morales)
+            $prenoms = $apiDirigeant['prenoms'] ?? '';
+
+            // Si 'nom' n'existe pas, on cherche 'denomination' (cas d'une entreprise dirigeante)
+            $nom = $apiDirigeant['nom'] ?? $apiDirigeant['denomination'] ?? 'Nom inconnu';
+
+            // (Optionnel) Si on n'a vraiment ni nom ni prénom, on passe au suivant pour ne pas polluer la base
+            if (empty(trim($prenoms)) && empty(trim($nom))) {
+                continue;
+            }
+
+            // 3. Création de l'entité
             $stakeholder = Stakeholder::createBeneficialOwner(
                 $currentKycFolder,
-                $apiDirigeant['prenoms'],
-                $apiDirigeant['nom'],
+                $prenoms,
+                $nom,
                 $roleEnum,
+                0, // Pourcentage à 0 par défaut
             );
+
             $this->stakeholderRepository->save($stakeholder);
         }
 
+        $this->eventDispatcher->dispatch(new CreateStakeholderEvent($currentKycFolder));
     }
 }

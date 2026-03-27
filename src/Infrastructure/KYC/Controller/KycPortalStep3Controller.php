@@ -31,7 +31,7 @@ final readonly class KycPortalStep3Controller
         $kycFolder = ($this->getCurrentKycFolderUseCase)($id);
         return new Response(
             $twig->render('app/kyc/portal/step3_documents.html.twig', [
-                'page_title' => 'Dépôt des pièces justificativess',
+                'page_title' => 'Dépôt des pièces justificatives',
                 'folder' => $kycFolder,
             ])
         );

@@ -13,10 +13,9 @@ use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
-use Webmozart\Assert\Assert;
 
 #[AsController]
-#[Route(path: '/app/onboarding/workspace/{slugId}', name: 'app_onboarding_workspace', methods: ['GET', 'POST'])]
+#[Route(path: '/app/onboarding/workspace', name: 'app_onboarding_workspace', methods: ['GET', 'POST'])]
 final class OnBoardingWorkspaceController
 {
     /**
@@ -27,9 +26,10 @@ final class OnBoardingWorkspaceController
     public function __invoke(
         Environment $twig,
         #[CurrentUser]
-        ?User $user
+        User
+        $user,
     ): Response {
-        Assert::notNull($user);
+
         return new Response(
             $twig->render('@app/onboarding/workspace.html.twig', [
                 'page_title' => 'Votre tableau de bord',

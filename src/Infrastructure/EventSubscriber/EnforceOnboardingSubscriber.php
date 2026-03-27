@@ -9,6 +9,7 @@ use App\Domain\User\Enum\OnboardingStatus;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Routing\RouterInterface;
@@ -20,11 +21,13 @@ final class EnforceOnboardingSubscriber implements EventSubscriberInterface
         'app_login',                // Si jamais il tombe ici
         'app_register',
         'ux_live_component',
+        'app_onboarding_completed',
     ];
 
     public function __construct(
-        private Security $security,
-        private RouterInterface $router,
+        private readonly Security $security,
+        private readonly RouterInterface $router,
+        private readonly RequestStack $requestStack,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -64,14 +67,13 @@ final class EnforceOnboardingSubscriber implements EventSubscriberInterface
         $redirectTo = match ($user->onboardingStatus) {
             OnboardingStatus::WORKSPACE_SETUP => 'app_onboarding_profile',
             OnboardingStatus::PENDING => 'app_onboarding_workspace',
-            #OnboardingStatus::COMPLETED => 'app_onboarding_finalization',
+            OnboardingStatus::PROFIL_SETUP => 'app_onboarding_finalization',
             default => null,
         };
 
         if ($redirectTo !== null && $currentRoute !== $redirectTo) {
-            $url = $this->router->generate($redirectTo, [
-                'slugId' => $user->slugId,
-            ]);
+            $url = $this->router->generate($redirectTo);
+            $this->requestStack->getSession()->set('usr_slug_id', $user->slugId);
             $event->setResponse(new RedirectResponse($url));
         }
     }

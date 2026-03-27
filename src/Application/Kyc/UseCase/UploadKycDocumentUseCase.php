@@ -6,9 +6,11 @@ use App\Application\Kyc\DTO\Request\UploadKycDocumentRequest;
 use App\Application\Kyc\Port\DocumentStorageInterface;
 use App\Domain\Kyc\Entity\KycDocument;
 use App\Domain\Kyc\Enum\DocumentType;
+use App\Domain\Kyc\Event\UploadKycDocumentEvent;
 use App\Domain\Kyc\Repository\KycFolderRepositoryInterface;
 use App\Domain\Kyc\Repository\StakeholderRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 readonly class UploadKycDocumentUseCase
@@ -19,6 +21,7 @@ readonly class UploadKycDocumentUseCase
         private ValidatorInterface $validator,
         private KycFolderRepositoryInterface $kycFolderRepository,
         private StakeholderRepositoryInterface $stakeholderRepository,
+        private EventDispatcherInterface $eventDispatcher,
     ) {}
 
     public function __invoke(UploadKycDocumentRequest $request): void
@@ -88,5 +91,7 @@ readonly class UploadKycDocumentUseCase
 
         // 6. On valide tout en BDD
         $this->entityManager->flush();
+
+        $this->eventDispatcher->dispatch(new UploadKycDocumentEvent($folder, $document));
     }
 }

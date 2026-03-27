@@ -9,7 +9,9 @@
     <meta name="description" content="Transmission sécurisée de votre dossier de conformité pour {{ folder.workspaceName|default('votre conseiller') }}.">
 
     <title>{% block title %}Dossier de conformité | {{ folder.workspaceName|default('Shield') }}{% endblock %}</title>
-
+    <link rel="canonical" href="{{ app.request.getSchemeAndHttpHost() ~ app.request.getRequestUri() }}">
+    {# Favicon propre #}
+    <link rel="icon" href="{{ absolute_url(asset('kysure_favicon/favicon.ico')) }}">
     {% block javascripts %}
         {% block importmap %}{{ importmap('app') }}{% endblock %}
     {% endblock %}
@@ -32,73 +34,90 @@
     {# HEADER MOBILE (Caché sur desktop)          #}
     {# ========================================== #}
     <header class="md:hidden py-4 px-6 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-sm relative z-20">
-        <span class="text-lg font-black tracking-widest uppercase text-slate-900 truncate pr-4">
+        <div class="flex flex-col min-w-0">
+        <span class="text-sm font-black tracking-widest uppercase text-slate-900 truncate">
             {{ workspace_name }}
         </span>
+            {# Petit rappel de l'utilisateur sur mobile #}
+            <span class="text-[10px] text-slate-500 truncate">{{ folder.contactEmail }}</span>
+        </div>
         <span class="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md whitespace-nowrap">
-            Étape {{ step }}/3
-        </span>
+        Étape {{ step }}/3
+    </span>
     </header>
 
-    {# ========================================== #}
-    {# LA SIDEBAR GAUCHE (Desktop)                #}
-    {# ========================================== #}
-    <aside class="hidden md:flex flex-col w-80 shrink-0 bg-white border-r border-slate-200 px-10 py-12 relative z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]" aria-label="Progression du dossier">
+    {% if app.current_route != 'portal_kyc_completed' %}
+        <aside class="hidden md:flex flex-col w-80 shrink-0 bg-white border-r border-slate-200 px-10 py-12 relative z-20 shadow-[4px_0_24px_rgba(0,0,0,0.02)]" aria-label="Progression du dossier">
 
-        <div class="mb-12">
-            <span class="text-xl font-black tracking-widest uppercase text-slate-900 block truncate" title="{{ workspace_name }}">{{ workspace_name }}</span>
-            <span class="block text-[10px] text-indigo-600 font-bold uppercase tracking-[0.2em] mt-1.5">Dossier LCB-FT</span>
-        </div>
+            <div class="mb-12">
+                <span class="text-xl font-black tracking-widest uppercase text-slate-900 block truncate" title="{{ workspace_name }}">{{ workspace_name }}</span>
+                <span class="block text-[10px] text-indigo-600 font-bold uppercase tracking-[0.2em] mt-1.5">Dossier LCB-FT</span>
+            </div>
 
-        <h2 id="timeline-title" class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-8">
-            Progression
-        </h2>
+            <h2 id="timeline-title" class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-8">
+                Progression
+            </h2>
 
-        <nav aria-labelledby="timeline-title" class="flex-1">
-            <ol class="relative border-l border-slate-200 ml-4">
+            <nav aria-labelledby="timeline-title" class="flex-1">
+                <ol class="relative border-l border-slate-200 ml-4">
 
-                {# Étape 1 : Entreprise #}
-                <li class="mb-10 ml-8" {% if step == 1 %}aria-current="step"{% endif %}>
+                    {# Étape 1 : Entreprise #}
+                    <li class="mb-10 ml-8" {% if step == 1 %}aria-current="step"{% endif %}>
                     <span class="absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full ring-4 ring-white {{ step >= 1 ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-50 border border-slate-200 text-slate-400' }}" aria-hidden="true">
                         <twig:ux:icon name="tabler:building-bank" class="size-4" />
                     </span>
-                    <h3 class="{{ step >= 1 ? 'font-bold text-slate-900' : 'font-medium text-slate-500' }}">
-                        <span class="sr-only">{% if step > 1 %}Terminé : {% elseif step == 1 %}Étape actuelle : {% endif %}</span>
-                        1. Entreprise
-                    </h3>
-                    <p class="text-sm {{ step >= 1 ? 'text-slate-500' : 'text-slate-400' }} mt-1">Identification légale</p>
-                </li>
+                        <h3 class="{{ step >= 1 ? 'font-bold text-slate-900' : 'font-medium text-slate-500' }}">
+                            <span class="sr-only">{% if step > 1 %}Terminé : {% elseif step == 1 %}Étape actuelle : {% endif %}</span>
+                            1. Entreprise
+                        </h3>
+                        <p class="text-sm {{ step >= 1 ? 'text-slate-500' : 'text-slate-400' }} mt-1">Identification légale</p>
+                    </li>
 
-                {# Étape 2 : Intervenants #}
-                <li class="mb-10 ml-8" {% if step == 2 %}aria-current="step"{% endif %}>
+                    {# Étape 2 : Intervenants #}
+                    <li class="mb-10 ml-8" {% if step == 2 %}aria-current="step"{% endif %}>
                     <span class="absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full ring-4 ring-white {{ step >= 2 ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-50 border border-slate-200 text-slate-400' }}" aria-hidden="true">
                         <twig:ux:icon name="tabler:users" class="size-4" />
                     </span>
-                    <h3 class="{{ step >= 2 ? 'font-bold text-slate-900' : 'font-medium text-slate-500' }}">
-                        <span class="sr-only">{% if step > 2 %}Terminé : {% elseif step == 2 %}Étape actuelle : {% endif %}</span>
-                        2. Intervenants
-                    </h3>
-                    <p class="text-sm {{ step >= 2 ? 'text-slate-500' : 'text-slate-400' }} mt-1">Dirigeants & UBOs</p>
-                </li>
+                        <h3 class="{{ step >= 2 ? 'font-bold text-slate-900' : 'font-medium text-slate-500' }}">
+                            <span class="sr-only">{% if step > 2 %}Terminé : {% elseif step == 2 %}Étape actuelle : {% endif %}</span>
+                            2. Intervenants
+                        </h3>
+                        <p class="text-sm {{ step >= 2 ? 'text-slate-500' : 'text-slate-400' }} mt-1">Dirigeants & UBOs</p>
+                    </li>
 
-                {# Étape 3 : Documents #}
-                <li class="ml-8" {% if step == 3 %}aria-current="step"{% endif %}>
+                    {# Étape 3 : Documents #}
+                    <li class="ml-8" {% if step == 3 %}aria-current="step"{% endif %}>
                     <span class="absolute -left-4 flex h-8 w-8 items-center justify-center rounded-full ring-4 ring-white {{ step >= 3 ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-50 border border-slate-200 text-slate-400' }}" aria-hidden="true">
                         <twig:ux:icon name="tabler:file-description" class="size-4" />
                     </span>
-                    <h3 class="{{ step >= 3 ? 'font-bold text-slate-900' : 'font-medium text-slate-500' }}">
-                        <span class="sr-only">{% if step == 3 %}Étape actuelle : {% endif %}</span>
-                        3. Documents
-                    </h3>
-                    <p class="text-sm {{ step >= 3 ? 'text-slate-500' : 'text-slate-400' }} mt-1">Pièces justificatives</p>
-                </li>
-            </ol>
-        </nav>
+                        <h3 class="{{ step >= 3 ? 'font-bold text-slate-900' : 'font-medium text-slate-500' }}">
+                            <span class="sr-only">{% if step == 3 %}Étape actuelle : {% endif %}</span>
+                            3. Documents
+                        </h3>
+                        <p class="text-sm {{ step >= 3 ? 'text-slate-500' : 'text-slate-400' }} mt-1">Pièces justificatives</p>
+                    </li>
+                </ol>
+            </nav>
 
-        <div class="mt-auto flex items-center gap-2 text-xs text-slate-400 font-medium">
-            <twig:ux:icon name="tabler:lock" class="size-3.5" /> Espace chiffré et sécurisé
-        </div>
-    </aside>
+            <div class="mt-auto border-t border-slate-100 pt-6 mb-6">
+                <div class="flex items-center gap-3 px-2">
+                    <div class="min-w-0">
+                        <p class="text-sm font-bold text-slate-900 truncate">
+                            {{ folder.contactFirstName }} {{ folder.contactLastName }}
+                        </p>
+                        <p class="text-xs text-slate-500 truncate">
+                            {{ folder.contactEmail }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 text-xs text-slate-400 font-medium px-2">
+                <twig:ux:icon name="tabler:lock" class="size-3.5" /> Espace chiffré et sécurisé
+            </div>
+        </aside>
+    {% endif %}
+
 
     {# ========================================== #}
     {# LA ZONE DROITE CENTRALE (Contenu)          #}

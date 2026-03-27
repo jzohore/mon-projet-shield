@@ -19,7 +19,7 @@ class DispatchWelcomeEmail extends TemplatedEmail
 
         $this
             ->to(new Address($recipientEmail))
-            ->subject('Bienvenue sur Shield ! Finalisez votre inscription 🚀')
+            ->subject('Bienvenue sur Shield ! Finalisez votre inscription')
             ->htmlTemplate('emails/security/welcome_email.html.twig')
             ->context([
                 'first_name' => $firstName,

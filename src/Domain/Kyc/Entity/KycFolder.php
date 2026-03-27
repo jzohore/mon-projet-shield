@@ -85,14 +85,20 @@ class KycFolder
     /**
      * @var Collection<int, Stakeholder>
      */
-    #[ORM\OneToMany(targetEntity: Stakeholder::class, mappedBy: 'folder', cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: Stakeholder::class, mappedBy: 'folder', cascade: ['persist', 'remove'], orphanRemoval: true)]
     public private(set) Collection $stakeholders;
 
     /**
      * @var Collection<int, KycDocument>
      */
-    #[ORM\OneToMany(targetEntity: KycDocument::class, mappedBy: 'folder', cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: KycDocument::class, mappedBy: 'folder', cascade: ['persist', 'remove'], orphanRemoval: true)]
     public private(set) Collection $documents;
+
+    #[ORM\Column(type: 'string', nullable: true)]
+    public private(set) ?bool $isCertified = false;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $submittedAt = null;
 
     /**
      * Le constructeur reste privé pour forcer l'utilisation du Named Constructor.
@@ -141,6 +147,18 @@ class KycFolder
         $this->legalCategory = $legalCategory;
         $this->address = $address;
         $this->statusAdministratif = $statusAdministratif;
+    }
+
+    public function removeCompany(): void
+    {
+        $this->companyName = null;
+        $this->siret = null;
+        $this->siren = null;
+        $this->legalCategory = null;
+        $this->address = null;
+        $this->statusAdministratif = null;
+        $this->stakeholders->clear();
+        $this->documents->clear();
     }
 
     public function markAsAwaitingClient(): void
@@ -192,5 +210,17 @@ class KycFolder
             $this->getNormalizedFirstName(),
             $this->getNormalizedLastName()
         );
+    }
+
+    public function submitForReview(bool $isCertified): void
+    {
+        if (!$isCertified) {
+            throw new \DomainException("Le dossier doit être certifié pour être soumis.");
+        }
+
+        $this->isCertified = true;
+        $this->status = KycFolderStatus::IN_REVIEW;
+        $this->submittedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        //$this->clearShareToken();
     }
 }

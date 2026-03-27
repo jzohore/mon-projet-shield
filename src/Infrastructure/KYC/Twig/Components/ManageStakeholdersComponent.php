@@ -45,7 +45,7 @@ class ManageStakeholdersComponent
     }
 
     public function __construct(
-        private KycFolderRepositoryInterface $folderRepository,
+        private readonly KycFolderRepositoryInterface $folderRepository,
         private EntityManagerInterface $entityManager,
         private readonly FormFactoryInterface $formFactory,
         private readonly SaveNewStakeHolderUseCase $saveNewStakeHolderUseCase,

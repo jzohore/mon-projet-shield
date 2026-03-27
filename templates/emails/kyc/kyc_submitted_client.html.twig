@@ -1,0 +1,32 @@
+{# templates/emails/kyc/kyc_submitted_client.html.twig #}
+{% extends 'emails/base.html.twig' %}
+
+{% block title %}Confirmation de réception - Dossier de conformité (Réf: {{ reference }}){% endblock %}
+
+{% block content %}
+    <h1>Dossier transmis avec succès</h1>
+
+    <p>Bonjour <strong>{{ recipient_name }}</strong>,</p>
+
+    <p>Nous vous confirmons la bonne réception de votre dossier de conformité (Référence : <strong>{{ reference }}</strong>).</p>
+
+    <p>L'ensemble de vos pièces justificatives ainsi que votre attestation sur l'honneur ont été transmis au cabinet <strong>{{ workspace_name }}</strong> pour analyse.</p>
+
+    {# Encart de réassurance sécurité #}
+    <div style="background-color: #f8fafc; border-left: 4px solid #10b981; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+        <p style="margin: 0; font-size: 14px; color: #0f172a;">
+            <strong>🔒 Données chiffrées et protégées</strong><br>
+            <span style="font-size: 13px; color: #475569;">
+                Conformément au RGPD, vos documents sensibles sont stockés de manière chiffrée sur notre infrastructure européenne et sont exclusivement accessibles par votre conseiller agréé.
+            </span>
+        </p>
+    </div>
+
+    <p style="margin-top: 25px;"><strong>Que se passe-t-il ensuite ?</strong><br>
+        <span style="color: #475569;">Votre conseiller va procéder à la revue de vos documents. Vous n'avez aucune action supplémentaire à réaliser pour le moment. Vous serez notifié(e) si des pièces complémentaires s'avèrent nécessaires.</span></p>
+
+{% endblock %}
+
+{% block footer_text %}
+    <p>Cet email automatique a été envoyé par l'infrastructure technique Shield pour le compte de {{ workspace_name }}. Si vous avez des questions, veuillez contacter directement votre conseiller habituel.</p>
+{% endblock %}

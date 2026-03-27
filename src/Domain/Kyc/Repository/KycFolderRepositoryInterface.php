@@ -12,7 +12,7 @@ interface KycFolderRepositoryInterface
     public function findBySlugId(string $slugId): ?KycFolder;
     public function findByToken(string $shareToken): ?KycFolder;
 
-    public function findOneByEmailAndStatus(string $email, KycFolderStatus $status): ?KycFolder;
+    public function findOneByEmailAndStatus(string $email, KycFolderStatus $status, string $workspaceId): ?KycFolder;
 
     /**
      * @return Pagerfanta<KycFolder>

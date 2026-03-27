@@ -9,5 +9,6 @@ final readonly class SendWelcomeEmailMessage
 {
     public function __construct(
         public ?string $userEmail,
+        public string $magicLinkUrl
     ) {}
 }

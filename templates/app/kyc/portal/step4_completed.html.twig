@@ -1,0 +1,45 @@
+{% extends '@app/kyc/portal/base_portal.html.twig' %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block portal_content %}
+    <div class="text-center w-full max-w-md mx-auto relative z-10">
+
+        {# 1. Icône de succès #}
+        <div class="mx-auto h-20 w-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6 ring-8 ring-emerald-50">
+            <twig:ux:icon name="tabler:check" class="size-10" stroke-width="3" />
+        </div>
+
+        {# 2. Titre court #}
+        <h1 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mb-3">
+            Dossier transmis
+        </h1>
+
+        {# 3. Message essentiel #}
+        <p class="text-slate-500 text-sm mb-6 text-balance mx-auto">
+            Vos documents pour <strong class="text-slate-900">{{ folder.companyName|default(folder.siren) }}</strong> ont été envoyés de manière sécurisée au cabinet <strong class="text-slate-900">{{ folder.workspaceName }}</strong>.
+        </p>
+
+        {# 4. Badge Référence (Preuve de dépôt) #}
+        <div class="inline-flex items-center gap-2 text-[11px] font-medium text-slate-500 bg-slate-50 px-4 py-2 rounded-lg border border-slate-200 mb-10">
+            <twig:ux:icon name="tabler:receipt" class="size-4 text-slate-400" />
+            Réf : <strong class="text-slate-700">{{ folder.reference|default('KYC-2026') }}</strong>
+        </div>
+
+        {# 5. Message de statut unique et clair #}
+        <div class="bg-indigo-50/50 border border-indigo-100 rounded-2xl p-6 mb-10">
+            <div class="flex items-center justify-center gap-2.5 mb-2 text-indigo-700">
+                <twig:ux:icon name="tabler:loader" class="size-5 animate-spin" />
+                <h2 class="text-sm font-bold">Analyse en cours</h2>
+            </div>
+            <p class="text-xs text-indigo-600/80 leading-relaxed">
+                Votre conseiller vérifie actuellement vos pièces. Vous serez notifié(e) de la validation finale. <strong class="font-semibold text-indigo-700">Aucune action n'est requise.</strong>
+            </p>
+        </div>
+
+
+        <twig:Button as="a" href="{{ path('website_home') }}" variant="dark">
+            Quitter l'espace sécurisé
+        </twig:Button>
+    </div>
+{% endblock %}

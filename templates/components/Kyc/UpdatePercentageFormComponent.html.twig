@@ -1,0 +1,31 @@
+<div {{ attributes }} class="inline-flex items-center">
+    {% if isEditing %}
+        {# Mode Édition : Mini champ de saisie + Bouton valider #}
+        <div class="flex items-center gap-1">
+            <input class="h-6 w-20 rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-900 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 focus-visible:outline-none"
+                   type="number"
+                   data-model="percentage"
+                   placeholder="%"
+                   required="required"
+                   autofocus>
+
+            <button type="button"
+                    data-action="live#action"
+                    data-live-action-param="updatePercentage"
+                    class="inline-flex items-center justify-center h-6 w-6 rounded bg-slate-900 text-white hover:bg-slate-800 transition-colors focus:ring-2 focus:ring-slate-900 focus:ring-offset-1"
+                    title="Enregistrer">
+                <twig:ux:icon name="tabler:check" class="size-3" />
+            </button>
+        </div>
+    {% else %}
+        {# Mode Lecture : Badge cliquable #}
+        <button type="button"
+                data-action="live#action"
+                data-live-action-param="activateEditing"
+                class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors uppercase tracking-wide group"
+                title="Modifier le pourcentage">
+            {{ percentage|default('0') }} %
+            <twig:ux:icon name="tabler:pencil" class="size-3 opacity-50 group-hover:opacity-100 transition-opacity" />
+        </button>
+    {% endif %}
+</div>

@@ -70,6 +70,6 @@ class UpdateProfilFormComponent
             return null;
         }
 
-        return new RedirectResponse($this->router->generate('app_onboarding_finalization', ['slugId' => $this->userSlugId]));
+        return new RedirectResponse($this->router->generate('app_onboarding_finalization'));
     }
 }

@@ -44,11 +44,19 @@
                         aria-autocomplete="list"
                         aria-expanded="{{ this.results|length > 0 ? 'true' : 'false' }}"
                         aria-controls="company_search_results"
-                        data-model="debounce(300)|searchQuery"
+                        data-model="debounce(500)|searchQuery"
                         placeholder="Ex: Cabinet Dupont & Associés (ou SIRET, SIREN)"
                         class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                     >
-
+                    {% if hasApiError %}
+                        <div class="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-center gap-3 text-amber-800 animate-pulse">
+                            <twig:ux:icon name="tabler:clock-stop" class="size-5 shrink-0" />
+                            <p class="text-xs font-medium">
+                                L'annuaire des entreprises est très sollicité.
+                                Veuillez patienter quelques secondes avant de taper la suite.
+                            </p>
+                        </div>
+                    {% endif %}
                     {# 3. INDICATEUR DE CHARGEMENT ACCESSIBLE #}
                     <div data-loading="addClass(opacity-100)" class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 transition-opacity pointer-events-none" aria-hidden="true">
                         <twig:ux:icon name="lucide:loader-2" class="w-4 h-4 text-muted-foreground animate-spin" />
@@ -238,7 +246,7 @@
                     data-live-action-param="resetCompany"
                     aria-label="Modifier l'entreprise sélectionnée (Attention: supprime les dirigeants)"
                     class="text-xs cursor-pointer font-semibold text-indigo-600 hover:text-indigo-800 bg-white px-3 py-1.5 rounded-lg ring-1 ring-slate-900/5 shadow-sm hover:shadow transition-all shrink-0 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                    onclick="return confirm('Attention : Modifier l\'entreprise supprimera également les intervenants déjà saisis. Continuer ?')"
+
                 >
                     Modifier
                 </button>

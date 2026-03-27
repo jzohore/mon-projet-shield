@@ -14,6 +14,7 @@ use App\Infrastructure\User\Message\SendWelcomeEmailMessage;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Webmozart\Assert\Assert;
 
 final readonly class UserOnboardingFlow
@@ -21,7 +22,8 @@ final readonly class UserOnboardingFlow
     public function __construct(
         private MessageBusInterface $messageBus,
         private CreateAuditLogUseCase $auditLogUseCase,
-        private GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo
+        private GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
+        private UrlGeneratorInterface $router,
     ) {}
 
     /**
@@ -30,8 +32,13 @@ final readonly class UserOnboardingFlow
     #[AsEventListener]
     public function dispatchWelcomeEmail(UserCreatedEvent $event): void
     {
+        $magicLinkUrl = $this->router->generate('app_verify_magic_link', [
+            'token' => $event->user->magicLinkToken,
+        ], UrlGeneratorInterface::ABSOLUTE_URL);
+        Assert::notNull($magicLinkUrl);
         $message = new SendWelcomeEmailMessage(
             $event->user->email,
+            $magicLinkUrl,
         );
 
         $this->messageBus->dispatch($message);
@@ -61,10 +68,8 @@ final readonly class UserOnboardingFlow
     {
         $user = $event->user;
         Assert::isInstanceOf($user, User::class);
-        $workspaceInfo = ($this->getCurrentWorkspaceInfo)($user);
         $message = new SendOnboardingConfirmedMessage(
             $user->email,
-            $workspaceInfo->name,
         );
 
         $this->messageBus->dispatch($message);

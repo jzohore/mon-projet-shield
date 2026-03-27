@@ -31,7 +31,7 @@ final readonly class UpdateProfilUseCase
         Assert::isInstanceOf($user, User::class);
         $user->profile->jobTitle = $request->jobTitle;
         $user->profile->phoneNumber = $request->phoneNumber;
-        $user->onboardingStatus = OnboardingStatus::COMPLETED;
+        $user->onboardingStatus = OnboardingStatus::PROFIL_SETUP;
         $user->isVerified = true;
         $user->isOwner = true;
         $user->lang = $request->lang;

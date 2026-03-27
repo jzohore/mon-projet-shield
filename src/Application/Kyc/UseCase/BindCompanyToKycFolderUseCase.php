@@ -3,13 +3,16 @@
 namespace App\Application\Kyc\UseCase;
 
 use App\Application\Kyc\DTO\Request\BindCompanyToKycFolderRequest;
+use App\Domain\Kyc\Event\BindCompanyEvent;
 use App\Domain\Kyc\Repository\KycFolderRepositoryInterface;
+use Psr\EventDispatcher\EventDispatcherInterface;
 use Webmozart\Assert\Assert;
 
 final readonly class BindCompanyToKycFolderUseCase
 {
     public function __construct(
         private KycFolderRepositoryInterface $kycFolderRepository,
+        private EventDispatcherInterface $eventDispatcher,
     ) {}
 
     public function __invoke(BindCompanyToKycFolderRequest $request): void
@@ -33,10 +36,8 @@ final readonly class BindCompanyToKycFolderUseCase
             statusAdministratif: $request->statusAdministratif,
             legalCategory: $request->companyLegalCategory,
         );
-        $currentKycFolder->saveHistory(
-            'Entreprise identifiée',
-            sprintf('SIREN : %s (Via API)', $request->companySiren)
-        );
+
         $this->kycFolderRepository->save($currentKycFolder);
+        $this->eventDispatcher->dispatch(new BindCompanyEvent($currentKycFolder));
     }
 }

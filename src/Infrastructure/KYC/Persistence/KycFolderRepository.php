@@ -55,9 +55,18 @@ class KycFolderRepository implements KycFolderRepositoryInterface
         return new Pagerfanta(new QueryAdapter($qb));
     }
 
-    public function findOneByEmailAndStatus(string $email, KycFolderStatus $status): ?KycFolder
+    public function findOneByEmailAndStatus(string $email, KycFolderStatus $status, string $workspaceId): ?KycFolder
     {
-        return $this->repository->findOneBy(['contactEmail' => $email, 'status' => $status]);
+        return $qb = $this->repository->createQueryBuilder('kycFolder')
+            ->leftJoin('kycFolder.workspace', 'workspace')
+            ->andWhere('workspace.slugId = :workspaceSlugid')
+            ->andWhere('kycFolder.contactEmail = :email')
+            ->andWhere('kycFolder.status = :status')
+            ->setParameter('email', $email)
+            ->setParameter('status', $status)
+            ->setParameter('workspaceSlugid', $workspaceId)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     public function findByToken(string $shareToken): ?KycFolder

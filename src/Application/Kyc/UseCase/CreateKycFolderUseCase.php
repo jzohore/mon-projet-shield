@@ -38,7 +38,7 @@ final readonly class CreateKycFolderUseCase
             status: KycFolderStatus::AWAITING_CLIENT,
         );
         $kyc->generateShareToken();
-        $kyc->saveHistory('Demande initiée', 'xDossier créé');
+
         $this->kycFolderRepository->save($kyc);
         $this->eventDispatcher->dispatch(new KycFolderCreatedEvent($kyc));
     }

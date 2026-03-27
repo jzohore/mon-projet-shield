@@ -85,4 +85,9 @@ class Stakeholder
     {
         return new self($folder, $firstName, $lastName, StakeholderRole::DIRECTOR);
     }
+
+    public function updatePercentage(int $percentage): void
+    {
+        $this->ownershipPercentage = $percentage;
+    }
 }

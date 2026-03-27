@@ -1,0 +1,40 @@
+{# templates/emails/kyc/kyc_submitted_workspace.html.twig #}
+{% extends 'emails/base.html.twig' %}
+
+{% block title %}Action requise : Nouveau dossier KYC à réviser ({{ company_name }}){% endblock %}
+
+{% block content %}
+    <h1>Nouveau dossier à réviser</h1>
+
+    <p>Bonjour <strong>{{ recipient_name }}</strong>,</p>
+
+    <p>Un client vient de finaliser et de soumettre son dossier de conformité pour le cabinet <strong>{{ workspace_name }}</strong>.</p>
+
+    {# Encart résumé pour le conseiller #}
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; margin: 20px 0; border-radius: 8px;">
+        <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #334155; line-height: 1.6;">
+            <li><strong>Entreprise :</strong> {{ company_name }}</li>
+            <li><strong>Référence du dossier :</strong> {{ reference }}</li>
+            <li><strong>Statut :</strong> <span style="color: #d97706; font-weight: bold;">En attente de révision</span></li>
+        </ul>
+        <p style="margin: 10px 0 0 0; font-size: 12px; color: #10b981; font-weight: bold;">
+            ✓ Attestation sur l'honneur validée par le client.
+        </p>
+    </div>
+
+    <p style="color: #475569;">
+        L'ensemble des pièces justificatives ont été téléversées. Vous pouvez dès à présent procéder aux vérifications réglementaires (LCB-FT).
+    </p>
+
+    <div class="btn-container" style="margin-top: 25px; text-align: center;">
+        {# Remplace le href par la variable url que tu ajouteras dans ton context PHP #}
+        <a href="{{ review_url|default('#') }}" class="btn" style="background-color: #0f172a; color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+            Ouvrir le dossier client
+        </a>
+    </div>
+
+{% endblock %}
+
+{% block footer_text %}
+    <p>Notification automatique générée par l'infrastructure technique Shield. Si ce dossier ne vous est pas destiné, veuillez l'ignorer.</p>
+{% endblock %}

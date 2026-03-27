@@ -7,8 +7,9 @@
 
     <title>{% block title %}{{ company_name }} | Dashboard{% endblock %}</title>
 
-    {# Préchargement de la police pour éviter le flash de texte (Figma Look) #}
-
+    <link rel="canonical" href="{{ app.request.getSchemeAndHttpHost() ~ app.request.getRequestUri() }}">
+    {# Favicon propre #}
+    <link rel="icon" href="{{ absolute_url(asset('kysure_favicon/favicon.ico')) }}">
     {% block javascripts %}
         {% block importmap %}{{ importmap('app') }}{% endblock %}
     {% endblock %}

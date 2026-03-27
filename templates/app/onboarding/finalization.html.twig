@@ -50,11 +50,14 @@
             <p class="text-slate-500 text-base mb-10 max-w-sm mx-auto leading-relaxed">
                 Votre espace de travail et votre profil sont configurés. Vous pouvez maintenant gérer votre conformité en toute sérénité.
             </p>
+            <form action="{{ path('app_onboarding_completed') }}" method="post">
+                <twig:Button type="submit" variant="dark" size="lg">
+                    Accéder à mon espace
+                    {{ ux_icon('lucide:arrow-right', { class: 'size-4 ml-2' }) }}
+                </twig:Button>
+          <input type="hidden" name="_csrf_token" value="{{ csrf_token('onboarding_completed') }}">
+            </form>
 
-            <twig:Button as="a" href="{{ path('app_dashboard') }}" variant="dark" size="lg">
-                Accéder à mon espace
-                {{ ux_icon('lucide:arrow-right', { class: 'size-4 ml-2' }) }}
-            </twig:Button>
         </div>
 
     </div>

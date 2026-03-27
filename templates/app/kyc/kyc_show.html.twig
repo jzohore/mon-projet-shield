@@ -55,73 +55,128 @@
                     </div>
                 </div>
 
+                {# 1. CALCUL DES DOCUMENTS SOCIÉTÉ (Docs sans stakeholder attaché) #}
+                {% set companyDocs = folder.documents|filter(d => d.stakeholderSlug is null) %}
+
                 {# SECTION 1 : SOCIÉTÉ #}
                 <section>
-                    <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center justify-between mb-4 px-2">
                         <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest">1. Pièces de la société</h2>
                     </div>
 
                     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 overflow-hidden">
-                        {% if folder.companyName is empty %}
-                            {# État vide si le client n'a pas tapé son SIREN #}
+                        {% if companyDocs is empty %}
+                            {# État vide si aucune entreprise n'est liée ou aucun doc généré #}
                             <div class="p-10 text-center">
                                 <div class="mx-auto h-12 w-12 bg-slate-50 rounded-full flex items-center justify-center mb-4 ring-1 ring-slate-900/5">
                                     <twig:ux:icon name="tabler:building-bank" class="size-6 text-slate-400" />
                                 </div>
                                 <h3 class="text-sm font-semibold text-slate-900">En attente de l'entreprise</h3>
-                                <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">Les documents légaux seront générés dès que le client aura identifié sa structure.</p>
+                                <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
+                                    Identifiez votre structure pour générer la liste des documents requis.
+                                </p>
                             </div>
                         {% else %}
-                            {# Liste des documents (Prêt pour ta boucle for doc in folder.documents) #}
                             <ul class="divide-y divide-slate-900/5">
-                                <li class="p-5 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
-                                    <div class="flex items-center gap-4">
-                                        <div class="p-2.5 bg-slate-50 rounded-xl text-slate-500 ring-1 ring-slate-900/5">
-                                            <twig:ux:icon name="tabler:file-description" class="size-5" />
+                                {% for doc in companyDocs %}
+                                    <li class="p-5 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                                        <div class="flex items-center gap-4">
+                                            <div class="p-2.5 bg-slate-50 rounded-xl text-slate-500 ring-1 ring-slate-900/5">
+                                                <twig:ux:icon name="tabler:file-description" class="size-5" />
+                                            </div>
+                                            <div>
+                                                <p class="text-sm font-semibold text-slate-900">{{ doc.typeLabel }}</p>
+                                                <p class="text-xs text-slate-400 mt-0.5">{{ doc.storagePath|default('Aucun fichier') }}</p>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <p class="text-sm font-semibold text-slate-900">Extrait Kbis</p>
-                                            <p class="text-xs text-slate-500 mt-0.5">kbis_enigma_2026.pdf</p>
+                                        <div class="flex items-center gap-4">
+                                            {{ _self.status_badge(doc.status) }}
+                                            {% if doc.storagePath %}
+                                                <twig:Button variant="link" class="opacity-0 group-hover:opacity-100 transition-opacity !text-indigo-600 hover:!text-indigo-800 p-0">
+                                                    Ouvrir
+                                                </twig:Button>
+                                            {% endif %}
                                         </div>
-                                    </div>
-                                    <div class="flex items-center gap-4">
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold text-amber-700 bg-amber-50 ring-1 ring-inset ring-amber-600/20">À vérifier</span>
-                                        <twig:Button variant="link" class="opacity-0 group-hover:opacity-100 transition-opacity !text-indigo-600 hover:!text-indigo-800">
-                                            Ouvrir
-                                        </twig:Button>
-                                    </div>
-                                </li>
+                                    </li>
+                                {% endfor %}
                             </ul>
                         {% endif %}
                     </div>
                 </section>
 
                 {# SECTION 2 : INTERVENANTS #}
-                <section>
-                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">2. Intervenants & Bénéficiaires</h2>
+                <section class="mt-8">
+                    <div class="flex items-center justify-between mb-4 px-2">
+                        <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest">2. Intervenants & Bénéficiaires</h2>
+                    </div>
+
                     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-2 space-y-1">
-                        {# Personne #}
-                        <div class="p-3 hover:bg-slate-50 rounded-xl transition-colors">
-                            <div class="flex items-center justify-between mb-3">
-                                <div class="flex items-center gap-3">
-                                    <div class="h-8 w-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-xs ring-1 ring-slate-900/5">AT</div>
-                                    <div>
-                                        <h3 class="text-sm font-bold text-slate-900">Alan Turing</h3>
-                                        <p class="text-xs text-slate-500">Dirigeant</p>
+                        {% for stakeholder in folder.stakeholders %}
+                            <div class="p-3 hover:bg-slate-50 rounded-xl transition-colors group">
+                                <div class="flex items-center justify-between mb-3">
+                                    <div class="flex items-center gap-3">
+                                        <div class="h-8 w-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center font-bold text-[10px] ring-1 ring-slate-900/5">
+                                            {{ stakeholder.fullName|split(' ')|map(n => n|first)|join|upper }}
+                                        </div>
+                                        <div>
+                                            <h3 class="text-sm font-bold text-slate-900">{{ stakeholder.fullName }}</h3>
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-[10px] text-slate-500 uppercase font-medium tracking-wide">{{ stakeholder.roleLabel }}</span>
+                                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-slate-50 text-slate-600 ring-1 ring-inset ring-slate-200">
+                                        {{ stakeholder.percentage }} %
+                                    </span>
+                                                {% if stakeholder.isUbo %}
+                                                    <span class="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold">UBO</span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            {# Document indenté #}
-                            <div class="ml-11 flex items-center justify-between p-3 bg-white rounded-lg ring-1 ring-slate-900/5 shadow-sm group">
-                                <div class="flex items-center gap-3">
-                                    <twig:ux:icon name="tabler:id" class="size-4 text-slate-400" />
-                                    <span class="text-sm font-medium text-slate-700">Pièce d'identité</span>
+
+                                {# Filtrer les documents de CET intervenant #}
+                                {% set stakeholderDocs = folder.documents|filter(d => d.stakeholderSlug == stakeholder.slugId) %}
+
+                                <div class="ml-11 space-y-2">
+                                    {% for doc in stakeholderDocs %}
+                                        <div class="flex items-center justify-between p-3 bg-white rounded-lg ring-1 ring-slate-900/5 shadow-sm group/doc">
+                                            <div class="flex items-center gap-3">
+                                                <twig:ux:icon name="tabler:id" class="size-4 text-slate-400" />
+                                                <span class="text-sm font-medium text-slate-700">{{ doc.typeLabel }}</span>
+                                            </div>
+                                            <div class="flex items-center gap-3">
+                                                {{ _self.status_badge(doc.status) }}
+                                                {% if doc.storagePath %}
+                                                    <twig:ux:icon name="tabler:eye" class="size-4 text-indigo-500 opacity-0 group-hover/doc:opacity-100 cursor-pointer" />
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-[11px] text-slate-400 italic">Aucun document requis pour le moment.</p>
+                                    {% endfor %}
                                 </div>
-                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-semibold text-amber-700 bg-amber-50 ring-1 ring-inset ring-amber-600/20">À vérifier</span>
                             </div>
-                        </div>
+                        {% else %}
+                            <div class="p-10 text-center">
+                                <twig:ux:icon name="tabler:users" class="size-8 text-slate-300 mx-auto mb-3" />
+                                <h3 class="text-sm font-semibold text-slate-900">Aucun intervenant</h3>
+                                <p class="text-xs text-slate-500 mt-1">La liste s'affichera après l'étape précédente.</p>
+                            </div>
+                        {% endfor %}
                     </div>
                 </section>
+
+                {# MACRO POUR LES BADGES (À mettre en haut du fichier ou dans un partial) #}
+                {% macro status_badge(status) %}
+                    {% set config = {
+                        'PENDING':   { bg: 'bg-amber-50',  text: 'text-amber-700', ring: 'ring-amber-600/20', label: 'À vérifier' },
+                        'VALIDATED': { bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-600/20', label: 'Validé' },
+                        'REJECTED':  { bg: 'bg-rose-50',    text: 'text-rose-700',    ring: 'ring-rose-600/20',    label: 'Refusé' }
+                    } %}
+                    {% set s = config[status] ?? config.PENDING %}
+                    <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold {{ s.bg }} {{ s.text }} ring-1 ring-inset {{ s.ring }}">
+        {{ s.label }}
+    </span>
+                {% endmacro %}
 
                 {# SECTION 3 : NOTES INTERNES #}
                 <section>
@@ -249,26 +304,10 @@
                                     <div class="relative">
                                         <div class="absolute -left-[17px] top-1.5 h-2 w-2 rounded-full bg-amber-400 ring-4 ring-white"></div>
                                         <p class="text-sm font-semibold text-slate-900">{{ history.title }}</p>
-                                        <p class="text-xs text-slate-500 mt-1">{{ history.description }}.</p>
+                                        <p class="text-xs text-slate-500 mt-1">{{ history.description }}</p>
                                         <p class="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-wider">{{ history.saveAt.date |date('d/m/Y H:i') }}</p>
                                     </div>
                                 {% endfor %}
-
-
-                                <div class="relative">
-                                    <div class="absolute -left-[17px] top-1.5 h-2 w-2 rounded-full bg-blue-500 ring-4 ring-white"></div>
-                                    <p class="text-sm font-semibold text-slate-900">Société identifiée</p>
-                                    <p class="text-xs text-slate-500 mt-1">Lien avec SIREN 987 654 321.</p>
-                                    <p class="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-wider">Aujourd'hui, 09:30</p>
-                                </div>
-
-                                <div class="relative">
-                                    <div class="absolute -left-[17px] top-1.5 h-2 w-2 rounded-full bg-slate-300 ring-4 ring-white"></div>
-                                    <p class="text-sm font-semibold text-slate-900">Demande initiée</p>
-                                    <p class="text-xs text-slate-500 mt-1">Dossier créé en attente du client.</p>
-                                    <p class="text-[10px] font-bold text-slate-400 mt-1.5 uppercase tracking-wider">{{ folder.createdAt|date('d M Y, H:i') }}</p>
-                                </div>
-
                             </div>
                         </div>
                     </div>

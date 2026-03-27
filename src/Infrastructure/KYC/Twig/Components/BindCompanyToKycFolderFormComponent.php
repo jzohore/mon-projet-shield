@@ -7,8 +7,10 @@ use App\Application\Kyc\DTO\Request\StakeholderRequest;
 use App\Application\Kyc\UseCase\BindCompanyToKycFolderUseCase;
 use App\Application\Kyc\UseCase\CreateStakeHolderUseCase;
 use App\Application\Kyc\UseCase\GetCurrentKycFolderUseCase;
+use App\Application\Kyc\UseCase\ResetCompanyToKycFolderUseCase;
 use App\Infrastructure\Service\SiretSearchService;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpClient\Exception\ClientException;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
@@ -22,6 +24,7 @@ use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\LiveComponent\ValidatableComponentTrait;
+use Webmozart\Assert\Assert;
 
 #[AsLiveComponent(
     name: 'BindCompanyToKycFolderFormComponent',
@@ -68,6 +71,8 @@ class BindCompanyToKycFolderFormComponent
     #[LiveProp]
     public bool $isAlreadySavedInDatabase = false;
 
+    public bool $hasApiError = false;
+
     public function __construct(
         private readonly SiretSearchService $siretSearchService,
         private readonly LoggerInterface $logger,
@@ -75,6 +80,7 @@ class BindCompanyToKycFolderFormComponent
         private readonly CreateStakeHolderUseCase $createStakeHolderUseCase,
         private readonly UrlGeneratorInterface $router,
         private readonly GetCurrentKycFolderUseCase $getCurrentKycFolderUseCase,
+        private readonly ResetCompanyToKycFolderUseCase $resetCompanyToKycFolderUseCase,
     ) {}
 
     /**
@@ -152,6 +158,7 @@ class BindCompanyToKycFolderFormComponent
     #[LiveAction]
     public function resetCompany(): void
     {
+        Assert::notNull($this->folderSlugId);
         $this->companyName = null;
         $this->companySiret = null;
         $this->companyAddress = null;
@@ -161,6 +168,7 @@ class BindCompanyToKycFolderFormComponent
         $this->statusAdministratif = null;
         $this->prefilledStakeholders = [];
         $this->searchQuery = '';
+        ($this->resetCompanyToKycFolderUseCase)($this->folderSlugId);
     }
 
     #[LiveAction]
@@ -220,11 +228,22 @@ class BindCompanyToKycFolderFormComponent
      */
     public function getResults(): array
     {
-        if ($this->companySiret !== null || strlen($this->searchQuery) < 3) {
+        if (strlen($this->searchQuery) < 3) {
             return [];
         }
 
-        return $this->siretSearchService->search($this->searchQuery);
+        try {
+            $this->hasApiError = false; // On reset l'erreur à chaque tentative
+            return $this->siretSearchService->search($this->searchQuery);
+        } catch (ClientException $e) {
+            // Si l'API renvoie 429
+            if ($e->getResponse()->getStatusCode() === 429) {
+                $this->hasApiError = true;
+            }
+            return [];
+        } catch (\Exception $e) {
+            // Pour toute autre erreur (API down, etc.)
+            return [];
+        }
     }
-
 }

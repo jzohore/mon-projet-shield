@@ -117,7 +117,7 @@ class CreateWorkspaceFormComponent
             return null;
         }
 
-        return new RedirectResponse($this->router->generate('app_onboarding_profile', ['slugId' => $this->userSlugId]));
+        return new RedirectResponse($this->router->generate('app_onboarding_profile'));
     }
 
     /**

@@ -2,16 +2,24 @@
 
 namespace App\Domain\Kyc\Validator;
 
+use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
 use App\Domain\Kyc\Enum\KycFolderStatus;
 use App\Domain\Kyc\Repository\KycFolderRepositoryInterface;
+use App\Domain\User\Entity\User;
+use App\Domain\User\Repository\UserRepositoryInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\ConstraintValidator;
 use Symfony\Component\Validator\Exception\UnexpectedTypeException;
+use Webmozart\Assert\Assert;
 
 final class UniqueKycAwaitingClientValidator extends ConstraintValidator
 {
     public function __construct(
-        private readonly KycFolderRepositoryInterface $kycFolderRepository
+        private readonly KycFolderRepositoryInterface $kycFolderRepository,
+        private readonly GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
+        private readonly UserRepositoryInterface $userRepository,
+        private readonly Security $security,
     ) {}
 
     public function validate(mixed $value, Constraint $constraint): void
@@ -23,8 +31,18 @@ final class UniqueKycAwaitingClientValidator extends ConstraintValidator
         if (null === $value || '' === $value) {
             return;
         }
+        $currentUserEmail = $this->security->getUser();
+        Assert::notNull($currentUserEmail);
+        $user = $this->userRepository->findByEmail($currentUserEmail->getUserIdentifier());
 
-        $existingWorkspace = $this->kycFolderRepository->findOneByEmailAndStatus($value, KycFolderStatus::AWAITING_CLIENT);
+        Assert::isInstanceOf($user, User::class);
+        $workspaceInfo = ($this->getCurrentWorkspaceInfo)($user);
+        Assert::notNull($workspaceInfo->slugId);
+        $existingWorkspace = $this->kycFolderRepository->findOneByEmailAndStatus(
+            $value,
+            KycFolderStatus::AWAITING_CLIENT,
+            workspaceId: $workspaceInfo->slugId,
+        );
         if ($existingWorkspace !== null) {
             if ($constraint->ignoreSlugId !== null && $existingWorkspace->slugId === $constraint->ignoreSlugId) {
                 return;
