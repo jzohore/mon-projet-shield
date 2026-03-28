@@ -2,7 +2,7 @@
 
 namespace App\Infrastructure\Storage;
 
-use App\Application\Kyc\Port\DocumentStorageInterface;
+use App\Domain\Port\DocumentStorageInterface;
 use League\Flysystem\FilesystemException;
 use League\Flysystem\FilesystemOperator;
 use Psr\Log\LoggerInterface;

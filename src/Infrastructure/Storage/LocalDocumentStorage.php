@@ -2,7 +2,7 @@
 
 namespace App\Infrastructure\Storage;
 
-use App\Application\Kyc\Port\DocumentStorageInterface;
+use App\Domain\Port\DocumentStorageInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\File\UploadedFile;

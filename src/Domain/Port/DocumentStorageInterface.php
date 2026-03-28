@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Application\Kyc\Port;
+namespace App\Domain\Port;
 
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 

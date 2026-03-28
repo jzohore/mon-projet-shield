@@ -2,7 +2,7 @@
 
 namespace App\Infrastructure\Shared\Twig;
 
-use App\Application\Kyc\Port\DocumentStorageInterface;
+use App\Domain\Port\DocumentStorageInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 

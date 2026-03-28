@@ -17,7 +17,8 @@ services:
     _defaults:
         autowire: true      # Automatically injects dependencies in your services.
         autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
-
+        bind:
+            $mindeeApiKey: '%env(MINDEE_API_KEY)%'
     # makes classes in src/ available to be used as services
     # this creates a service per class whose id is the fully-qualified class name
     App\:
@@ -31,7 +32,26 @@ services:
             - '../src/Domain/*/Event/'
             - '../src/Application/DTO/'
             - '../src/Application/Request/'
+    Mindee\ClientV2:
+        arguments:
+            $apiKey: '%env(MINDEE_API_KEY)%'
+    App\Infrastructure\Ocr\MindeeProvider: ~
+    App\Infrastructure\Ocr\FakeOcrProvider: ~
 
+    App\Infrastructure\Ocr\OcrFactory: ~
+
+        # 🚀 ON DÉFINIT L'INTERFACE VIA LE FACTORY
+    App\Domain\Port\OcrProviderInterface:
+        factory: [ '@App\Infrastructure\Ocr\OcrFactory', 'create' ]
+        arguments:
+            $mode: '%env(OCR_MODE)%'
+
+    # Définition des alias nommés pour matcher la variable d'env
+    real_ocr_provider:
+        alias: App\Infrastructure\Ocr\MindeeProvider
+
+    mock_ocr_provider:
+        alias: App\Infrastructure\Ocr\FakeOcrProvider
     Aws\S3\S3Client:
         arguments:
             -   version: 'latest'
@@ -45,6 +65,6 @@ services:
     App\Infrastructure\Storage\LocalDocumentStorage:
         arguments:
             $baseUploadDirectory: '%app.kyc_upload_directory%'
-    App\Application\Kyc\Port\DocumentStorageInterface: '@App\Infrastructure\Storage\ScalewayS3DocumentStorage'
+    App\Domain\Port\DocumentStorageInterface: '@App\Infrastructure\Storage\ScalewayS3DocumentStorage'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
