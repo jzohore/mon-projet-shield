@@ -9,5 +9,6 @@ readonly class SendCreatedKycFolderMessage
 {
     public function __construct(
         public string $slugId,
+        public string $actionUrl,
     ) {}
 }

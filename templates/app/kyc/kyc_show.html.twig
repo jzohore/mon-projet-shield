@@ -42,7 +42,7 @@
                             </span>
                                 <span class="text-xs font-semibold text-slate-500 flex items-center gap-1.5">
                                 <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span></span>
-                                En cours d'analyse
+                                {{ folder.status.label }}
                             </span>
                             </div>
                             <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight mt-4">
@@ -86,15 +86,19 @@
                                             </div>
                                             <div>
                                                 <p class="text-sm font-semibold text-slate-900">{{ doc.typeLabel }}</p>
-                                                <p class="text-xs text-slate-400 mt-0.5">{{ doc.storagePath|default('Aucun fichier') }}</p>
+                                                <p class="text-xs text-slate-400 mt-0.5">{{ doc.storagePath|slice(0, 40) ~ (doc.storagePath|length > 40 ? '...' : '')|default('Aucun fichier') }}</p>
                                             </div>
                                         </div>
                                         <div class="flex items-center gap-4">
                                             {{ _self.status_badge(doc.status) }}
                                             {% if doc.storagePath %}
-                                                <twig:Button variant="link" class="opacity-0 group-hover:opacity-100 transition-opacity !text-indigo-600 hover:!text-indigo-800 p-0">
-                                                    Ouvrir
+                                                <twig:Button
+                                                    target="_blank"
+                                                    title="Visualiser"
+                                                    variant="link" as="a"  href="{{ doc.storagePath|private_url }}">
+                                                    <twig:ux:icon name="tabler:eye" class="size-5" />
                                                 </twig:Button>
+
                                             {% endif %}
                                         </div>
                                     </li>
@@ -146,7 +150,12 @@
                                             <div class="flex items-center gap-3">
                                                 {{ _self.status_badge(doc.status) }}
                                                 {% if doc.storagePath %}
-                                                    <twig:ux:icon name="tabler:eye" class="size-4 text-indigo-500 opacity-0 group-hover/doc:opacity-100 cursor-pointer" />
+                                                    <twig:Button
+                                                        target="_blank"
+                                                        title="Visualiser"
+                                                        variant="link" as="a"  href="{{ doc.storagePath|private_url }}">
+                                                        <twig:ux:icon name="tabler:eye" class="size-5" />
+                                                    </twig:Button>
                                                 {% endif %}
                                             </div>
                                         </div>

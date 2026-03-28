@@ -32,10 +32,19 @@ services:
             - '../src/Application/DTO/'
             - '../src/Application/Request/'
 
-
+    Aws\S3\S3Client:
+        arguments:
+            -   version: 'latest'
+                region: '%env(S3_REGION)%'
+                endpoint: '%env(S3_ENDPOINT)%'
+                credentials:
+                    key: '%env(S3_ACCESS_KEY)%'
+                    secret: '%env(S3_SECRET_KEY)%'
+                    # Use_path_style_endpoint est souvent nécessaire pour les S3 alternatifs à AWS
+                use_path_style_endpoint: true
     App\Infrastructure\Storage\LocalDocumentStorage:
         arguments:
             $baseUploadDirectory: '%app.kyc_upload_directory%'
-    App\Application\Kyc\Port\DocumentStorageInterface: '@App\Infrastructure\Storage\LocalDocumentStorage'
+    App\Application\Kyc\Port\DocumentStorageInterface: '@App\Infrastructure\Storage\ScalewayS3DocumentStorage'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

@@ -8,7 +8,6 @@ use App\Infrastructure\Notification\Email\Kyc\WorkspaceKycConfirmationEmail;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Webmozart\Assert\Assert;
 
 #[AsMessageHandler]
@@ -18,7 +17,6 @@ final readonly class NotifyWorkspaceOfKycSubmission
         private KycFolderRepositoryInterface $kycFolderRepository,
         private LoggerInterface $logger,
         private MailerInterface $mailer,
-        private UrlGeneratorInterface $router,
     ) {}
 
     public function __invoke(SendSubmittedKycFolderMessage $message): void
@@ -44,17 +42,13 @@ final readonly class NotifyWorkspaceOfKycSubmission
         Assert::notNull($workspaceName);
         Assert::notNull($companyName);
 
-        $url = $this->router->generate('app_kyc_show', [
-            'slugId' => $kycFolder->slugId,
-        ], UrlGeneratorInterface::ABSOLUTE_URL);
-
         $email = new WorkspaceKycConfirmationEmail(
             recipientEmail: $email,
             recipientFullName: $recipientFullName,
             workspaceName: $workspaceName,
             companyName: $companyName,
             folderReference: $folderReference,
-            reviewUrl: $url,
+            reviewUrl: $message->actionUrl,
         );
         $this->mailer->send($email);
     }

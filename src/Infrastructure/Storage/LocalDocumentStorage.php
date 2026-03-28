@@ -66,4 +66,9 @@ readonly class LocalDocumentStorage implements DocumentStorageInterface
             }
         }
     }
+
+    public function getTemporaryUrl(string $path): string
+    {
+        return $path;
+    }
 }

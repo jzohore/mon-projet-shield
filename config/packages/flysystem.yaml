@@ -1,0 +1,9 @@
+flysystem:
+    storages:
+        # C'est le nom de ton "disque" qu'on va utiliser dans le code
+        kyc.storage:
+            adapter: 'aws'
+            options:
+                client: 'Aws\S3\S3Client' # Fait référence au service créé juste au-dessus
+                bucket: '%env(S3_BUCKET_NAME)%'
+                prefix: 'documents' # Optionnel : Ça créera un dossier "documents" dans ton bucket

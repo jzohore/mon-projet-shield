@@ -19,4 +19,6 @@ interface DocumentStorageInterface
      * @param string $path Le chemin relatif du fichier (ex: kyc_folders/xyz/doc.pdf)
      */
     public function delete(string $path): void;
+
+    public function getTemporaryUrl(string $path): string;
 }

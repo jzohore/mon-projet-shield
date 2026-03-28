@@ -8,7 +8,6 @@ use App\Infrastructure\Notification\Email\Kyc\DispatchKycRequestEmail;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Webmozart\Assert\Assert;
 
 #[AsMessageHandler]
@@ -17,7 +16,6 @@ final readonly class SendCreatedKycFolderHandler
     public function __construct(
         private KycFolderRepositoryInterface $kycFolderRepository,
         private LoggerInterface $logger,
-        private UrlGeneratorInterface $router,
         private MailerInterface $mailer,
     ) {}
 
@@ -42,16 +40,12 @@ final readonly class SendCreatedKycFolderHandler
         Assert::notNull($email);
         Assert::notNull($workspaceName);
 
-        $url = $this->router->generate('portal_kyc_confirm_token', [
-            'token' => $kycFolder->shareToken,
-        ], UrlGeneratorInterface::ABSOLUTE_URL);
-
         $email = new DispatchKycRequestEmail(
             recipientEmail: $email,
             recipientFullName: $recipientFullName,
             workspaceName: $workspaceName,
             folderReference: $folderReference,
-            actionUrl: $url,
+            actionUrl: $message->actionUrl,
         );
         $this->mailer->send($email);
     }

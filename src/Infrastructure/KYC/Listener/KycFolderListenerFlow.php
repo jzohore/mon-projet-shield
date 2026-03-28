@@ -20,6 +20,7 @@ use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 final readonly class KycFolderListenerFlow
 {
@@ -28,6 +29,7 @@ final readonly class KycFolderListenerFlow
         private MessageBusInterface $messageBus,
         private Security $security,
         private KycFolderRepositoryInterface $kycFolderRepository,
+        private UrlGeneratorInterface $router,
     ) {}
 
     #[AsEventListener]
@@ -176,8 +178,13 @@ final readonly class KycFolderListenerFlow
     public function dispatchEmailSubmittedKycFolderCreated(KycFolderSubmittedEvent $event): void
     {
         $kyc = $event->kycFolder;
+        $url = $this->router->generate('app_kyc_show', [
+            'slugId' => $kyc->slugId,
+        ], UrlGeneratorInterface::ABSOLUTE_URL);
+
         $message = new SendSubmittedKycFolderMessage(
             $kyc->slugId,
+            $url,
         );
         $this->messageBus->dispatch($message);
     }
@@ -189,8 +196,14 @@ final readonly class KycFolderListenerFlow
     public function dispatchEmailKycFolderCreated(KycFolderCreatedEvent $event): void
     {
         $kyc = $event->kycFolder;
+
+        $url = $this->router->generate('portal_kyc_confirm_token', [
+            'token' => $kyc->shareToken,
+        ], UrlGeneratorInterface::ABSOLUTE_URL);
+
         $message = new SendCreatedKycFolderMessage(
             $kyc->slugId,
+            $url,
         );
         $this->messageBus->dispatch($message);
     }
