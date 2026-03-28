@@ -35,7 +35,7 @@ class DeviceDetectorService
     private function getReader(): Reader
     {
         if (null === $this->cityDbReader) {
-            $path = $this->parameterBag->get('GeoIP2_file');
+            $path = $this->parameterBag->get('geoip_db_path');
             if (!is_string($path)) {
                 throw new \RuntimeException('Le paramètre GeoIP2_file doit être une chaîne de caractères.');
             }
