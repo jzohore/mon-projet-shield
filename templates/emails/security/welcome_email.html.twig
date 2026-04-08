@@ -1,14 +1,14 @@
 {# On étend le layout de base #}
 {% extends 'emails/base.html.twig' %}
 
-{% block title %}Bienvenue sur Shield !{% endblock %}
+{% block title %}Bienvenue sur {{ company_name }} !{% endblock %}
 
 {% block content %}
     <h1>Bienvenue à bord !</h1>
 
     <p>Bonjour {{ first_name }},</p>
 
-    <p>Votre compte utilisateur Shield a bien été créé. Il ne vous reste plus qu'une étape pour finaliser votre inscription et commencer à travailler.</p>
+    <p>Votre compte utilisateur {{ company_name }} a bien été créé. Il ne vous reste plus qu'une étape pour finaliser votre inscription et commencer à travailler.</p>
 
     <p>Cliquez sur le bouton ci-dessous pour vous connecter de manière sécurisée et <strong>créer votre espace de travail (cabinet)</strong> :</p>
 

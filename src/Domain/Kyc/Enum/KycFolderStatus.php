@@ -24,4 +24,17 @@ enum KycFolderStatus: string
             self::NEEDS_CORRECTION => 'Corrections requises',
         };
     }
+
+    /**
+     * @return array<self>
+     */
+    public static function getActiveStatuses(): array
+    {
+        return [
+            self::AWAITING_CLIENT,
+            self::IN_REVIEW,
+            self::APPROVED,
+            self::NEEDS_CORRECTION,
+        ];
+    }
 }

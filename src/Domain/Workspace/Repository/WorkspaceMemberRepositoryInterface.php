@@ -5,6 +5,7 @@ namespace App\Domain\Workspace\Repository;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Entity\WorkspaceMember;
+use Symfony\Component\Uid\Uuid;
 
 interface WorkspaceMemberRepositoryInterface
 {
@@ -26,7 +27,7 @@ interface WorkspaceMemberRepositoryInterface
      */
     public function findByUser(User $user): array;
 
-    public function findOneByUser(User $user): ?WorkspaceMember;
+    public function findOneByUser(Uuid $userId): ?WorkspaceMember;
 
     public function isUserAdminOfWorkspace(User $user, Workspace $workspace): bool;
 }

@@ -3,6 +3,8 @@
 namespace App\Domain\Workspace\Entity;
 
 use App\Domain\Subscription\Entity\Subscription;
+use App\Domain\Wallet\Entity\WalletTransaction;
+use App\Domain\Wallet\Exception\InsufficientCreditsException;
 use App\Domain\Workspace\Enum\Industry;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -104,22 +106,39 @@ class Workspace
         get => $this->createdAt;
     }
 
-    private function __construct(string $name, string $siret, string $legalName, string $address)
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    public private(set) int $balance = 0;
+
+    /**
+     * @var array<int|string, mixed>|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    public private(set) ?array $transactions = null;
+
+    /**
+     * @var Collection<int, WalletTransaction>
+     */
+    #[ORM\OneToMany(targetEntity: WalletTransaction::class, mappedBy: 'workspace', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    public private(set) Collection $walletTransactions;
+
+    private function __construct(string $name, string $siret, string $legalName, string $address, Industry $industry)
     {
         $this->name = trim($name);
         $this->siret = trim($siret);
         $this->legalName = trim($legalName);
         $this->address = trim($address);
         $this->slugId = $this->generate_ulid_prefixed('wrk_');
+        $this->industry = $industry;
+        $this->balance = 2;
 
         $this->members = new ArrayCollection();
         $this->invitations = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
 
-    public static function create(string $name, string $siret, string $legalName, string $address): self
+    public static function create(string $name, string $siret, string $legalName, string $address, Industry $industry): self
     {
-        return new self($name, $siret, $legalName, $address);
+        return new self($name, $siret, $legalName, $address, $industry);
     }
 
     /**
@@ -131,5 +150,48 @@ class Workspace
         if (!$this->members->contains($member)) {
             $this->members->add($member);
         }
+    }
+
+    public function debit(int $amount, string $type, ?string $referenceId = null): void
+    {
+        if ($amount <= 0) {
+            throw new \DomainException("Le montant à débiter doit être strictement positif.");
+        }
+
+        if ($this->balance < $amount) {
+            throw new InsufficientCreditsException();
+        }
+
+        $this->balance -= $amount;
+
+        $this->walletTransactions->add(
+            new WalletTransaction(
+                workspace: $this,
+                amount: $amount,
+                type: $type,
+                referenceId: $referenceId
+            )
+        );
+    }
+
+    public function credit(int $amount, string $type, ?string $referenceId = null): WalletTransaction
+    {
+        if ($amount <= 0) {
+            throw new \DomainException("Le montant à créditer doit être strictement positif.");
+        }
+
+        $this->balance += $amount;
+        $transaction = new WalletTransaction(
+            workspace: $this,
+            amount: $amount,
+            type: $type,
+            referenceId: $referenceId
+        );
+
+        // 2. On l'ajoute à la collection
+        $this->walletTransactions->add($transaction);
+
+        // 3. On retourne l'objet créé
+        return $transaction;
     }
 }

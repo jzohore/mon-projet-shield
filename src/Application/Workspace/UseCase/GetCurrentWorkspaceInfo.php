@@ -3,8 +3,8 @@
 namespace App\Application\Workspace\UseCase;
 
 use App\Application\Workspace\DTO\Response\WorkspaceInfoResponse;
-use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
+use Symfony\Component\Uid\Uuid;
 use Webmozart\Assert\Assert;
 
 final readonly class GetCurrentWorkspaceInfo
@@ -13,9 +13,9 @@ final readonly class GetCurrentWorkspaceInfo
         private WorkspaceMemberRepositoryInterface $workspaceMemberRepository
     ) {}
 
-    public function __invoke(User $user): WorkspaceInfoResponse
+    public function __invoke(Uuid $userSlugId): WorkspaceInfoResponse
     {
-        $workspaceMember = $this->workspaceMemberRepository->findOneByUser($user);
+        $workspaceMember = $this->workspaceMemberRepository->findOneByUser($userSlugId);
         Assert::notNull($workspaceMember, "L'utilisateur n'est membre d'aucun espace de travail.");
 
         $workspace = $workspaceMember->workspace;

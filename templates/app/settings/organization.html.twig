@@ -1,0 +1,84 @@
+{% extends '@admin/base.html.twig' %}
+
+{% block title %}{{ page_title }} | {{ company_name }}{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+
+{% block content %}
+    <div class="max-w-7xl mx-auto space-y-6">
+        {{ include('@app/settings/_header_settings.html.twig') }}
+        <div class="max-w-3xl space-y-8 pb-12">
+
+
+            {# --- BANNIÈRE D'INFORMATION --- #}
+            <div class="rounded-lg border border-blue-100 bg-blue-50/50 p-4 flex gap-3">
+                <twig:ux:icon name="material-symbols:info-outline-rounded" class="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+                <div class="text-sm text-blue-900 leading-relaxed">
+                    <p class="font-semibold mb-1">Ces données sont certifiées et verrouillées.</p>
+                    <p class="text-blue-700/80">Elles ont été extraites et synchronisées avec les registres officiels. Pour toute modification suite à un changement statutaire, veuillez lancer une synchronisation.</p>
+                </div>
+            </div>
+
+            {# --- CARTE 1 : IDENTITÉ LÉGALE --- #}
+            <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div class="flex flex-col space-y-1.5 p-6 border-b border-slate-100">
+                    <h3 class="font-semibold leading-none tracking-tight text-slate-900">Identité Légale</h3>
+                </div>
+
+                <div class="p-6 space-y-6">
+                    {# Raison Sociale #}
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm font-medium leading-none text-slate-700">Raison Sociale</label>
+                            <twig:ux:icon name="material-symbols:lock-outline" class="w-3.5 h-3.5 text-slate-400" />
+                        </div>
+                        <input type="text" value="{{ workspace.legalName }}" disabled readonly
+                               class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50 text-slate-900 font-semibold px-3 py-2 text-sm cursor-not-allowed opacity-90">
+                    </div>
+
+                    {# Ligne 2 : SIRET & Forme #}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm font-medium leading-none text-slate-700">Numéro de SIRET</label>
+                                <twig:ux:icon name="material-symbols:lock-outline" class="w-3.5 h-3.5 text-slate-400" />
+                            </div>
+                            <input type="text" value="{{ workspace.siret|siret }}" disabled readonly
+                                   class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50 text-slate-500 font-mono px-3 py-2 text-sm cursor-not-allowed opacity-80">
+                        </div>
+
+                        <div class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <label class="text-sm font-medium leading-none text-slate-700">Secteur</label>
+                                <twig:ux:icon name="material-symbols:lock-outline" class="w-3.5 h-3.5 text-slate-400" />
+                            </div>
+                            <input type="text" value="{{ workspace.industry }}" disabled readonly
+                                   class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50 text-slate-500 px-3 py-2 text-sm cursor-not-allowed opacity-80">
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <label class="text-sm font-medium leading-none text-slate-700">Adresse</label>
+                            <twig:ux:icon name="material-symbols:lock-outline" class="w-3.5 h-3.5 text-slate-400" />
+                        </div>
+                        <input type="text" value="{{ workspace.address }}" disabled readonly
+                               class="flex h-10 w-full rounded-md border border-slate-200 bg-slate-50 text-slate-500 px-3 py-2 text-sm cursor-not-allowed opacity-80">
+                    </div>
+
+                    {# Footer de la carte avec l'action de synchronisation #}
+{#                    <div class="flex items-center justify-between p-6 bg-slate-50/50 rounded-b-xl border-t border-slate-100">#}
+{#                        <p class="text-[11px] text-slate-500">Dernière synchronisation : Il y a 14 jours</p>#}
+
+{#                        #}{# Formulaire POST ou lien vers l'action de Sync #}
+{#                        <form action="" method="POST">#}
+{#                            <button type="submit" class="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 hover:text-slate-900 h-10 px-4 py-2 shadow-sm">#}
+{#                                <twig:ux:icon name="material-symbols:sync-rounded" class="w-4 h-4" />#}
+{#                                Synchroniser les données#}
+{#                            </button>#}
+{#                        </form>#}
+{#                    </div>#}
+                </div>
+            </section>
+        </div>
+    </div>
+{% endblock %}

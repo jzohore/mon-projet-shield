@@ -1,0 +1,76 @@
+<div{{ attributes }}>
+    {% include 'components/partials/_live_alerts.html.twig' with {
+        message: this.actionMessage|default(null),
+        type: this.actionMessageType|default('success')
+    } %}
+    <div data-controller="form">
+        {{ form_start(form, {
+            attr: {
+                novalidate: true,
+                'data-action': 'live#action:prevent',
+                'data-live-action-param': 'save',
+            }
+        }) }}
+        <div class="p-6 space-y-8">
+
+            {# Section Identité (Modifiable) #}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    {{ form_row(form.firstName, {
+                        label: 'Prénom',
+                        attr: { placeholder: 'Jean', autofocus: true }
+                    }) }}
+                </div>
+
+                <div class="space-y-2">
+                    {{ form_row(form.lastName, {
+                        label: 'Nom',
+                        attr: { placeholder: 'Dupont' }
+                    }) }}
+                </div>
+            </div>
+
+            <div class="h-px bg-slate-100 w-full"></div>
+
+            {# Section Coordonnées (Verrouillées / Read-Only) #}
+            <div class="space-y-6">
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <label for="email" class="text-sm font-medium leading-none text-slate-700">Adresse email</label>
+                        <twig:ux:icon name="material-symbols:lock-outline" class="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                    <input type="email" id="email" value="{{ app.user.email }}" disabled readonly
+                           class="flex h-10 w-full md:w-2/3 rounded-md border border-slate-200 bg-slate-50 text-slate-500 px-3 py-2 text-sm cursor-not-allowed opacity-80">
+                    <p class="text-[11px] text-slate-500">Votre email sert de clé d'authentification unique. Contactez le support pour le modifier.</p>
+                </div>
+
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                        <label for="phone" class="text-sm font-medium leading-none text-slate-700">Numéro de téléphone</label>
+                        <twig:ux:icon name="material-symbols:lock-outline" class="w-3.5 h-3.5 text-slate-400" />
+                    </div>
+                    <input type="tel" id="phone" value="{{ app.user.profile.phoneNumber }}" disabled readonly
+                           class="flex h-10 w-full md:w-2/3 rounded-md border border-slate-200 bg-slate-50 text-slate-500 px-3 py-2 text-sm cursor-not-allowed opacity-80">
+                    <p class="text-[11px] text-slate-500">Lié à votre authentification forte (MFA).</p>
+                </div>
+            </div>
+        </div>
+
+        {# Footer de la carte #}
+        <div class="flex items-center justify-end p-6 bg-slate-50/50 rounded-b-xl border-t border-slate-100">
+            <twig:Button as="button" type="submit" variant="dark" class="w-full sm:w-auto px-8">
+
+                {# Texte affiché par défaut #}
+                <span data-loading="action(save)|hide">Mettre à jour le profil</span>
+
+                {# Texte affiché PENDANT la requête AJAX (Magie Symfony UX Live Component) #}
+                <span data-loading="action(save)|show" class="hidden items-center gap-2">
+                        <i class="fas fa-circle-notch fa-spin opacity-70"></i> Enregistrement...
+                    </span>
+
+            </twig:Button>
+        </div>
+
+        {{ form_end(form) }}
+    </div>
+</div>

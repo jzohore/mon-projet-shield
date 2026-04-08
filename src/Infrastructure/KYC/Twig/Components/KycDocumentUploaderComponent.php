@@ -2,18 +2,14 @@
 
 namespace App\Infrastructure\KYC\Twig\Components;
 
-use App\Application\Kyc\DTO\Request\UploadKycDocumentRequest;
 use App\Application\Kyc\UseCase\GetCurrentKycFolderUseCase;
 use App\Application\Kyc\UseCase\SubmitKycFolderUseCase;
-use App\Application\Kyc\UseCase\UploadKycDocumentUseCase;
+use App\Domain\Kyc\Enum\CompanyLegalCategory;
 use App\Domain\Kyc\Enum\DocumentType;
-use Psr\Log\LoggerInterface;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
+use App\Infrastructure\Shared\Component\LiveFlashTrait;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
-use App\Domain\Kyc\Enum\CompanyLegalCategory;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -29,11 +25,10 @@ class KycDocumentUploaderComponent
 {
     use DefaultActionTrait;
     use ValidatableComponentTrait;
+    use LiveFlashTrait;
 
     public function __construct(
         private readonly GetCurrentKycFolderUseCase $getCurrentKycFolderUseCase,
-        private readonly UploadKycDocumentUseCase $uploadKycDocumentUseCase,
-        private readonly LoggerInterface $logger,
         private readonly SubmitKycFolderUseCase $submitKycFolderUseCase,
         private readonly UrlGeneratorInterface $router,
     ) {}
@@ -47,35 +42,63 @@ class KycDocumentUploaderComponent
     #[LiveProp(writable: true)]
     public bool $isCertified = false;
 
+    /**
+     * @var array<string, string>
+     */
+    #[LiveProp(writable: true)]
+    public array $newlyUploadedFiles = [];
+
+    /**
+     * @var array<string, bool>
+     */
+    #[LiveProp(writable: true)]
+    public array $uploadingSlots = [];
+
+    /**
+     * @var array<string, string>
+     */
+    #[LiveProp(writable: true)]
+    public array $lastErrors = [];
+
     #[LiveAction]
     public function toggleReplace(#[LiveArg] string $id): void
     {
-        // Si on reclique, on annule, sinon on active
+        $this->clearLiveFlash();
         $this->replacingSlotId = ($this->replacingSlotId === $id) ? null : $id;
     }
 
     /**
-     * @return array<array{id: string, title: string, description: string, icon: string, isUploaded: bool, fileName: ?string}>
+     * @return array<int, array{id: string, title: string, description: string, icon: string, isUploaded: bool, fileName: ?string, isUploading: bool, error: ?string}>
      */
     public function getExpectedDocumentSlots(): array
     {
         $folder = ($this->getCurrentKycFolderUseCase)($this->folderSlugId);
+        $existingDocuments = $folder->documents ?? [];
 
-        // 1. On récupère les documents (qui sont maintenant des tableaux dans le DTO)
-        $existingDocuments = $folder->documents;
-
-        // 2. On modifie la closure pour accepter un string (le slug) au lieu de l'entité
+        // Closure de vérification inchangée et robuste
         $getDocInfo = function (DocumentType $type, ?string $stakeholderSlug = null) use ($existingDocuments): array {
             foreach ($existingDocuments as $doc) {
-                // Attention : $doc est un tableau issu du DTO maintenant !
-                // On compare le type et le slug de l'intervenant
-                if ($doc['typeLabel'] === $type->value && $doc['stakeholderSlug'] === $stakeholderSlug) {
-                    return [
-                        'isUploaded' => $doc['storagePath'] !== null,
-                        'fileName' => $doc['storagePath'] ? basename($doc['storagePath']) : null,
-                    ];
+                $docType = $doc['type'] ?? $doc['documentType'] ?? null;
+                $docLabel = $doc['typeLabel'] ?? null;
+
+                $typeMatches = (
+                    $docType === $type->value
+                    || $docType === $type->name
+                    || $docLabel === $type->getLabel()
+                    || $docLabel === $type->value
+                );
+
+                if ($typeMatches) {
+                    $docStakeholder = $doc['stakeholderSlug'] ?? $doc['stakeholderId'] ?? null;
+                    if ($docStakeholder === $stakeholderSlug) {
+                        return [
+                            'isUploaded' => !empty($doc['storagePath']) || !empty($doc['fileName']),
+                            'fileName' => $doc['fileName'] ?? (isset($doc['storagePath']) ? basename($doc['storagePath']) : null),
+                        ];
+                    }
                 }
             }
+
             return ['isUploaded' => false, 'fileName' => null];
         };
 
@@ -83,62 +106,102 @@ class KycDocumentUploaderComponent
         Assert::notNull($folder->legalCategory);
         $categoryEnum = CompanyLegalCategory::tryFrom($folder->legalCategory);
 
-        // --- 1. DOCUMENTS GÉNÉRAUX ---
+        // ==========================================
+        // --- 1. DOCUMENTS GÉNÉRAUX DE L'ENTREPRISE
+        // ==========================================
+
+        // 1.1 Extrait Kbis
         if ($categoryEnum?->requiresKbis()) {
+            $slotId = 'kbis';
             $info = $getDocInfo(DocumentType::KBIS);
+
             $slots[] = [
-                'id' => 'kbis',
+                'id' => $slotId,
                 'title' => DocumentType::KBIS->getLabel(),
                 'description' => 'Extrait Kbis de moins de 3 mois.',
                 'icon' => 'tabler:building',
-                'isUploaded' => $info['isUploaded'],
-                'fileName' => $info['fileName'],
+                'isUploaded' => $info['isUploaded'] || array_key_exists($slotId, $this->newlyUploadedFiles),
+                'fileName' => $this->newlyUploadedFiles[$slotId] ?? $info['fileName'],
+                'isUploading' => array_key_exists($slotId, $this->uploadingSlots), // Corrigé ici
+                'error' => $this->lastErrors[$slotId] ?? null,
             ];
         }
 
-        // ... (Idem pour les statuts) ...
+        // 1.2 Statuts de la société
+        if ($categoryEnum?->requiresStatutes()) {
+            $slotId = 'articles_of_assoc';
+            $info = $getDocInfo(DocumentType::ARTICLES_OF_ASSOC);
 
-        // --- 2. DOCUMENTS PERSONNELS ---
+            $slots[] = [
+                'id' => $slotId,
+                'title' => DocumentType::ARTICLES_OF_ASSOC->getLabel(),
+                'description' => 'Statuts constitutifs à jour, datés et signés.',
+                'icon' => 'tabler:file-certificate',
+                'isUploaded' => $info['isUploaded'] || array_key_exists($slotId, $this->newlyUploadedFiles),
+                'fileName' => $this->newlyUploadedFiles[$slotId] ?? $info['fileName'],
+                'isUploading' => array_key_exists($slotId, $this->uploadingSlots), // Corrigé ici
+                'error' => $this->lastErrors[$slotId] ?? null,
+            ];
+        }
+
+        // 1.3 Registre des Bénéficiaires Effectifs (RBE)
+        if ($categoryEnum?->requiresUboDeclaration()) {
+            $slotId = 'rbe';
+            $info = $getDocInfo(DocumentType::RBE);
+
+            $slots[] = [
+                'id' => $slotId,
+                'title' => DocumentType::RBE->getLabel(),
+                'description' => 'Document officiel de déclaration des bénéficiaires effectifs.',
+                'icon' => 'tabler:users-group',
+                'isUploaded' => $info['isUploaded'] || array_key_exists($slotId, $this->newlyUploadedFiles),
+                'fileName' => $this->newlyUploadedFiles[$slotId] ?? $info['fileName'],
+                'isUploading' => array_key_exists($slotId, $this->uploadingSlots), // Corrigé ici
+                'error' => $this->lastErrors[$slotId] ?? null,
+            ];
+        }
+
+        // ==========================================
+        // --- 2. DOCUMENTS PERSONNELS (INTERVENANTS)
+        // ==========================================
+
         foreach ($folder->stakeholders as $person) {
-            // ✅ On passe le slugId (string) et non plus l'objet $person
+            $slotId = 'id_card_' . $person['slugId'];
             $info = $getDocInfo(DocumentType::ID_CARD, $person['slugId']);
 
             $slots[] = [
-                'id' => 'id_card_' . $person['slugId'],
-                'title' => sprintf('Pièce d\'identité de %s', $person['fullName']),
+                'id' => $slotId,
+                'title' => sprintf('Pièce d\'identité (%s)', $person['fullName']),
                 'description' => DocumentType::ID_CARD->getLabel(),
                 'icon' => 'tabler:id',
-                'isUploaded' => $info['isUploaded'],
-                'fileName' => $info['fileName'],
+                'isUploaded' => $info['isUploaded'] || array_key_exists($slotId, $this->newlyUploadedFiles),
+                'fileName' => $this->newlyUploadedFiles[$slotId] ?? $info['fileName'],
+                'isUploading' => array_key_exists($slotId, $this->uploadingSlots), // Corrigé ici
+                'error' => $this->lastErrors[$slotId] ?? null,
             ];
         }
 
         return $slots;
     }
     #[LiveAction]
-    public function uploadDocument(#[LiveArg] string $id, Request $request): void
+    public function uploaded(#[LiveArg] string $id, #[LiveArg] string $fileName): void
     {
-        // 1. On attrape le fichier de la requête
-        /** @var UploadedFile|null $file */
-        $file = $request->files->get('document_' . $id);
+        $this->clearLiveFlash();
+        $this->newlyUploadedFiles[$id] = $fileName;
+        $this->replacingSlotId = null;
+        unset($this->uploadingSlots[$id], $this->lastErrors[$id]);
 
-        if (!$file) {
-            return; // Pas de fichier, on ignore.
-        }
+        $this->addLiveFlash('success', sprintf('Le document "%s" a bien été uploadé.', $fileName));
+    }
 
-        // 2. On prépare la valise (DTO)
-        $dto = new UploadKycDocumentRequest();
-        $dto->folderSlugId = $this->folderSlugId;
-        $dto->slotId = $id;
-        $dto->file = $file;
-        // 3. On lance la machine
-        try {
-            ($this->uploadKycDocumentUseCase)($dto);
-        } catch (\Exception $e) {
-            $this->logger->error('Erreur Upload', ['msg' => $e->getMessage()]);
-            // Gérer l'affichage de l'erreur si besoin
-        }
-        $this->replacingSlotId = null; // On repasse en mode "Reçu"
+    #[LiveAction]
+    public function uploadError(#[LiveArg] string $id, #[LiveArg] string $message): void
+    {
+        $this->clearLiveFlash();
+        $this->lastErrors[$id] = $message;
+        unset($this->uploadingSlots[$id]);
+
+        $this->addLiveFlash('error', $message);
     }
 
     #[LiveAction]
@@ -146,7 +209,7 @@ class KycDocumentUploaderComponent
     {
         $this->validate();
 
-        if (!$this->isValid()) {
+        if (!$this->isCertified) {
             return null;
         }
 

@@ -8,6 +8,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
+use Symfony\UX\LiveComponent\ComponentToolsTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Symfony\UX\LiveComponent\ValidatableComponentTrait;
 
@@ -19,6 +20,7 @@ class UpdatePercentageFormComponent
 {
     use DefaultActionTrait;
     use ValidatableComponentTrait;
+    use ComponentToolsTrait;
 
     #[LiveProp]
     public ?string $folderSlugId = null;
@@ -58,6 +60,7 @@ class UpdatePercentageFormComponent
         try {
             ($this->updatePercentageUseCase)($this->stakeHoldersId, $this->percentage);
             $this->isEditing = false;
+            $this->emit('stakeholder_updated');
         } catch (\DomainException $e) {
             $this->logger->error('Erreur métier lors de la modification du pourcentage', [
                 'error' => $e->getMessage(),

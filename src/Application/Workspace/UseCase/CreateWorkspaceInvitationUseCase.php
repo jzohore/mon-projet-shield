@@ -28,7 +28,9 @@ final readonly class CreateWorkspaceInvitationUseCase
         Assert::notNull($request->email);
         $user = $this->userRepository->findBySlug($request->userSlugId);
         Assert::isInstanceOf($user, User::class);
-        $findWorkspace = $this->workspaceMemberRepository->findOneByUser($user);
+        $userId = $user->id;
+        Assert::notNull($userId, "L'utilisateur doit avoir un ID pour récupérer le workspace.");
+        $findWorkspace = $this->workspaceMemberRepository->findOneByUser($userId);
         Assert::notNull($findWorkspace);
         $workspace = $findWorkspace->workspace;
         Assert::notNull($workspace);

@@ -1,0 +1,42 @@
+<form data-controller="upload-feedback"
+      data-action="live#action:prevent"
+      data-live-action-param="uploadDocument"
+      enctype="multipart/form-data"
+      class="w-full">
+
+    <input type="hidden" name="slotId" value="{{ slot.id }}">
+
+    {# ETAT IDLE #}
+    <div data-upload-feedback-target="idleState" class="flex flex-col items-center">
+        <label class="w-full group">
+            <div class="flex flex-col items-center justify-center w-full py-12 px-6 border-2 border-dashed border-slate-200 rounded-[2rem] cursor-pointer transition-all duration-300 group-hover:border-indigo-300 group-hover:bg-indigo-50/30">
+                <div class="w-14 h-14 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 group-hover:text-indigo-500 transition-all duration-300">
+                    <twig:ux:icon name="tabler:cloud-upload" class="size-7" />
+                </div>
+                <span class="text-sm font-semibold text-slate-900">Choisir un fichier</span>
+                <span class="text-xs text-slate-400 mt-1">ou glisser-déposer</span>
+            </div>
+            <input type="file" name="document" class="hidden"
+                   accept=".pdf,image/png,image/jpeg"
+                   data-upload-feedback-target="input"
+                   data-action="change->upload-feedback#handleSelect">
+        </label>
+
+        {% if this.errorMessages[slot.id] is defined %}
+            <p class="mt-4 text-xs text-rose-500 font-medium animate-in fade-in duration-300">
+                {{ this.errorMessages[slot.id] }}
+            </p>
+        {% endif %}
+    </div>
+
+    {# ETAT LOADING (Spinner Apple style) #}
+    <div data-upload-feedback-target="loadingState" class="hidden flex flex-col items-center py-12 animate-in fade-in">
+        <div class="relative w-12 h-12 mb-4">
+            <twig:ux:icon name="tabler:loader-2" class="size-12 text-slate-900 animate-spin" />
+        </div>
+        <span class="text-sm font-medium text-slate-900">Analyse du document...</span>
+        <span data-upload-feedback-target="filename" class="text-[10px] text-slate-400 mt-2 font-mono italic"></span>
+    </div>
+
+    <button type="submit" data-upload-feedback-target="formBtn" class="hidden"></button>
+</form>

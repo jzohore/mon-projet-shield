@@ -31,7 +31,7 @@ security:
                 login_path: app_login          # route qui affiche le formulaire (GET)
                 check_path: app_login          # route interceptée pour le POST (corrige l'ancienne "aop_login")
                 enable_csrf: true
-                username_parameter: _username  # car ton input s'appelle "_username"
+                #username_parameter: _username  # car ton input s'appelle "_username"
                 #password_parameter: _password  # idem pour "_password"
                 default_target_path: app_dashboard
             logout:
@@ -55,6 +55,7 @@ security:
         #- { path: ^/app, roles: ROLE_USER }
         - { path: ^/mon-compte/, allow_if: "is_granted('ROLE_ADMIN') or is_granted('ROLE_PARTNER') or is_granted('ROLE_CLIENT')" }
         - {path: ^/2fa/, roles: IS_AUTHENTICATED_2FA_IN_PROGRESS}
+        - { path: ^/api/stripe/webhook, roles: PUBLIC_ACCESS }
 
 when@test:
     security:

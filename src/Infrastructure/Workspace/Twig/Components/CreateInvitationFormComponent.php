@@ -136,7 +136,9 @@ class CreateInvitationFormComponent
     {
         $user = $this->userRepository->findBySlug($this->userSlugId);
         Assert::isInstanceOf($user, User::class);
-        $workspaceMember = $this->workspaceMemberRepository->findOneByUser($user);
+        $userId = $user->id;
+        Assert::notNull($userId, "L'utilisateur doit avoir un ID pour récupérer le workspace.");
+        $workspaceMember = $this->workspaceMemberRepository->findOneByUser($userId);
         Assert::notNull($workspaceMember);
         $workspace = $workspaceMember->workspace;
         Assert::notNull($workspace);

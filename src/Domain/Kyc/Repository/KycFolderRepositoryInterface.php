@@ -12,7 +12,13 @@ interface KycFolderRepositoryInterface
     public function findBySlugId(string $slugId): ?KycFolder;
     public function findByToken(string $shareToken): ?KycFolder;
 
-    public function findOneByEmailAndStatus(string $email, KycFolderStatus $status, string $workspaceId): ?KycFolder;
+    /**
+     * @param string $email
+     * @param array<KycFolderStatus> $statuses
+     * @param string $workspaceId
+     * @return KycFolder|null
+     */
+    public function findFirstByEmailAndStatuses(string $email, array $statuses, string $workspaceId): ?KycFolder;
 
     /**
      * @return Pagerfanta<KycFolder>
@@ -20,4 +26,6 @@ interface KycFolderRepositoryInterface
     public function getKycFolderList(string $workspaceSlugId, ?string $search = null): Pagerfanta;
 
     public function remove(KycFolder $kycFolder): void;
+
+    public function countDraftsForWorkspace(string $workspaceId): int;
 }

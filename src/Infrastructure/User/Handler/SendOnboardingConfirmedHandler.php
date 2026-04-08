@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Infrastructure\User\Handler;
 
 use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
-use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Notification\Email\OnboardingCompletedEmail;
 use App\Infrastructure\User\Message\SendOnboardingConfirmedMessage;
@@ -28,8 +27,10 @@ final readonly class SendOnboardingConfirmedHandler
     {
         $user = $this->userRepository->findByEmail($message->userEmail);
 
-        Assert::isInstanceOf($user, User::class);
-        $workspaceInfo = ($this->getCurrentWorkspaceInfo)($user);
+        Assert::notNull($user);
+        $userId = $user->id;
+        Assert::notNull($userId, "L'utilisateur doit avoir un ID pour récupérer le workspace.");
+        $workspaceInfo = ($this->getCurrentWorkspaceInfo)($userId);
         $url = $this->router->generate('app_dashboard', [], UrlGeneratorInterface::ABSOLUTE_URL);
 
         $email = new OnboardingCompletedEmail($user->email, $user->firstName, $workspaceInfo->name, $url);

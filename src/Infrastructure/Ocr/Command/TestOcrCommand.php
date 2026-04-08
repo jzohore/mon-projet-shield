@@ -2,14 +2,12 @@
 
 namespace App\Infrastructure\Ocr\Command;
 
-use App\Domain\Kyc\Enum\DocumentType;
-use App\Domain\Port\OcrProviderInterface;
+use App\Domain\Kyc\Repository\KycDocumentRepositoryInterface;
+use App\Domain\Ocr\Event\OcrEvent;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
-use Symfony\Component\Console\Input\InputArgument;
-use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Console\Style\SymfonyStyle;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 #[AsCommand(
     name: 'app:test-ocr',
@@ -18,53 +16,20 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class TestOcrCommand extends Command
 {
     public function __construct(
-        private readonly OcrProviderInterface $ocrProvider
+        private readonly KycDocumentRepositoryInterface $kycDocumentRepository,
+        private readonly EventDispatcherInterface $eventDispatcher,
     ) {
         parent::__construct();
     }
 
-    protected function configure(): void
+    public function __invoke(OutputInterface $output): int
     {
-        $this
-            ->addArgument('filePath', InputArgument::REQUIRED, 'Chemin relatif du fichier (ex: test.jpg)')
-            ->addArgument('type', InputArgument::REQUIRED, 'Type de document (id_card ou kbis)');
-    }
+        $document = $this->kycDocumentRepository->findPendingDocuments();
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
-    {
-        $io = new SymfonyStyle($input, $output);
-
-        $filePath = $input->getArgument('filePath');
-        $typeString = $input->getArgument('type');
-
-        if (!file_exists($filePath)) {
-            $io->error("Le fichier $filePath est introuvable.");
-            return Command::FAILURE;
+        foreach ($document as $doc) {
+            $this->eventDispatcher->dispatch(new OcrEvent($doc));
         }
 
-        $type = DocumentType::tryFrom($typeString);
-        if (!$type) {
-            $io->error("Type invalide. Utilisez 'id_card' ou 'kbis'.");
-            return Command::FAILURE;
-        }
-
-        $io->note("Envoi du document à l'API OCR (Type: {$type->value})...");
-        $startTime = microtime(true);
-
-        try {
-            $data = $this->ocrProvider->extractData($type, $filePath);
-
-            $duration = round(microtime(true) - $startTime, 2);
-            $io->success("Extraction réussie en {$duration} secondes !");
-
-            $io->section('Données extraites :');
-            $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-            $io->writeln($json !== false ? $json : 'Impossible d\'encoder les données en JSON.');
-
-            return Command::SUCCESS;
-        } catch (\Exception $e) {
-            $io->error("Erreur OCR : " . $e->getMessage());
-            return Command::FAILURE;
-        }
+        return Command::SUCCESS;
     }
 }

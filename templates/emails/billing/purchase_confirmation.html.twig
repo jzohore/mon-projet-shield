@@ -1,0 +1,22 @@
+{# templates/emails/billing/purchase_confirmation.html.twig #}
+{% extends 'emails/base.html.twig' %}
+
+{% block content %}
+    <h1>Merci pour votre achat !</h1>
+    <p>Votre compte a été crédité avec succès.</p>
+
+    <div style="background-color: #f0fdf4; border-left: 4px solid #22c55e; padding: 15px; margin: 20px 0;">
+        <p style="margin: 0; font-size: 16px; color: #166534;">
+            <strong>Allocation :</strong> +{{ credits }} crédits d'audit<br>
+            <strong>Espace :</strong> {{ workspace_name }}
+        </p>
+    </div>
+
+    {% if invoice_url %}
+        <div class="btn-container">
+            <a href="{{ invoice_url }}" class="btn">Télécharger la facture</a>
+        </div>
+    {% endif %}
+
+    <p>Vous pouvez dès à présent lancer vos nouvelles analyses de conformité depuis votre tableau de bord.</p>
+{% endblock %}

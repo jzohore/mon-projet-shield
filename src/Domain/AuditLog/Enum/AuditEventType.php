@@ -34,9 +34,14 @@ enum AuditEventType: string
     // --- DOCUMENTS KYC (PIÈCES JUSTIFICATIVES) ---
     case KYC_DOCUMENT_REQUESTED = 'kyc_document.requested';       // Le système a généré une "case vide" (ex: KBIS)
     case KYC_DOCUMENT_UPLOADED = 'kyc_document.uploaded';         // Le client a déposé un fichier
+    case KYC_DOCUMENT_OCR = 'kyc_document.ocr';         // Le client a déposé un fichier
     case KYC_DOCUMENT_VALIDATED = 'kyc_document.validated';       // L'avocat a examiné et validé la pièce
     case KYC_DOCUMENT_REJECTED = 'kyc_document.rejected';         // L'avocat a refusé la pièce (floue, périmée...)
     case KYC_DOCUMENT_EXPIRED = 'kyc_document.expired';           // CRON Job : Le document a atteint sa date d'expiration
+
+    // --- BILLING & CRÉDITS ---
+    case CREDIT_PURCHASED = 'billing.credit_purchased'; // Achat via Stripe
+    case CREDIT_CONSUMED = 'billing.credit_consumed';
 
     /**
      * Retourne un libellé lisible par un humain pour l'affichage dans la frise chronologique (Audit Trail).
@@ -77,6 +82,11 @@ enum AuditEventType: string
             self::KYC_DOCUMENT_VALIDATED => 'Validation d\'une pièce',
             self::KYC_DOCUMENT_REJECTED => 'Refus d\'une pièce',
             self::KYC_DOCUMENT_EXPIRED => 'Expiration d\'une pièce',
+            self::KYC_DOCUMENT_OCR => 'Validation OCR',
+
+            // Billing
+            self::CREDIT_PURCHASED => 'Achat de crédits d\'audit',
+            self::CREDIT_CONSUMED => 'Consommation de crédits',
         };
     }
 }

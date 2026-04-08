@@ -1,0 +1,77 @@
+{% extends '@app/billing/base_billing.html.twig' %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% set container_width = 'max-w-6xl' %}
+
+{% block portal_content %}
+    <div class="py-10">
+        <div class="mb-16 text-center">
+            <h1 class="text-3xl font-bold text-[#0a0f1a] tracking-tight">{{page_title}}</h1>
+            <p class="text-slate-500 mt-4 text-lg max-w-2xl mx-auto font-medium">
+                {{ page_description }}
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {% for product in products %}
+                <div class="relative bg-white border {{ product.isRecommended ? 'border-[#0a0f1a] shadow-xl ring-1 ring-[#0a0f1a]/5' : 'border-slate-200 shadow-sm' }} rounded-2xl p-8 flex flex-col transition-all duration-300">
+
+                    {# BADGE RECOMMANDÉ - CHIRURGICAL #}
+                    {% if product.isRecommended %}
+                        <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white border border-[#0a0f1a] text-[#0a0f1a] text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full shadow-sm z-20">
+                            Usage Standard
+                        </div>
+                    {% endif %}
+
+                    <div class="mb-8">
+                        <h3 class="text-lg font-bold text-[#0a0f1a]">{{ product.name }}</h3>
+                        <div class="mt-4 flex items-baseline gap-1">
+                            <span class="text-4xl font-bold text-[#0a0f1a] tracking-tighter">{{ product.formattedPrice }}€</span>
+                            <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider ml-1">HT</span>
+                        </div>
+                        <p class="mt-6 text-[13px] leading-relaxed text-slate-500 min-h-[80px] font-medium">
+                            {{ product.description }}
+                        </p>
+                    </div>
+
+                    <ul class="space-y-4 mb-10 flex-1">
+                        <li class="flex items-center gap-3 text-sm text-slate-700 font-semibold">
+                            {# Icône en Midnight Navy pour la cohérence #}
+                            <twig:ux:icon name="lucide:check-circle-2" class="size-4 text-[#0a0f1a]" />
+                            {{ product.credits }} Crédits d'audit
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-slate-400 font-medium">
+                            <twig:ux:icon name="lucide:shield-check" class="size-4 opacity-50" />
+                            Accès complet aux 3 modules
+                        </li>
+                        <li class="flex items-center gap-3 text-sm text-slate-400 font-medium">
+                            <twig:ux:icon name="lucide:clock" class="size-4 opacity-50" />
+                            Validité illimitée
+                        </li>
+                    </ul>
+
+                    {# BOUTON D'ACTION #}
+                    <a href="{{ path('app_billing_buy', {id: product.slugId}) }}"
+                       data-turbo="false"
+                       class="w-full text-center py-4 px-4 rounded-xl font-bold text-[13px] transition-all tracking-wide
+                       {{ product.isRecommended
+                       ? 'bg-[#0a0f1a] text-white hover:bg-[#1a1f2a] shadow-lg shadow-[#0a0f1a]/10'
+                       : 'bg-white border border-slate-200 text-slate-900 hover:border-[#0a0f1a] hover:text-[#0a0f1a]' }}">
+                        Initialiser la commande
+                    </a>
+                </div>
+            {% endfor %}
+        </div>
+
+        {# FOOTER DE RÉASSURANCE #}
+        <div class="mt-12 pt-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-start gap-4">
+            <div class="flex items-center gap-3">
+                <twig:ux:icon name="lucide:shield-check" class="size-4 text-slate-400" />
+                <p class="text-[11px] text-slate-400 font-medium">
+                    Paiements sécurisés via <span class="font-bold text-slate-600">Stripe</span>.
+                    Aucune donnée bancaire n'est stockée sur nos serveurs.
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

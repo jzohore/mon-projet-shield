@@ -14,15 +14,12 @@ use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
+use Webmozart\Assert\Assert;
 
 #[AsController]
 #[Route(path: '/app/employees/list', name: 'app_employees_list', methods: ['GET', 'POST'])]
 final readonly class EmployeesListController
 {
-    public function __construct(
-        private GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo
-    ) {}
-
     /**
      * @throws RuntimeError
      * @throws SyntaxError
@@ -32,13 +29,17 @@ final readonly class EmployeesListController
         Environment $twig,
         #[CurrentUser]
         User $user,
+        GetCurrentWorkspaceInfo
+        $getCurrentWorkspaceInfo,
     ): Response {
-        $workspaceInfo = ($this->getCurrentWorkspaceInfo)($user);
+        $userId = $user->id;
+        Assert::notNull($userId, "L'utilisateur doit avoir un ID pour récupérer le workspace.");
+        $workspace = ($getCurrentWorkspaceInfo)($userId);
 
         return new Response(
             $twig->render('@app/employees/list.html.twig', [
                 'page_title' => 'Équipe & Accès',
-                'workspace_id' => $workspaceInfo->slugId,
+                'workspace_id' => $workspace->slugId,
             ])
         );
     }

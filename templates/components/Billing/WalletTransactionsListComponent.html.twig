@@ -1,0 +1,74 @@
+<div {{ attributes }} class="space-y-6">
+    {% set items = this.transactionsList %}
+
+    {# --- 1. BARRE D'OUTILS --- #}
+    <div class="flex justify-end items-center">
+        <div class="text-sm font-medium text-slate-500 bg-white px-3 py-1.5 rounded-md shadow-sm border border-slate-200">
+            <span class="text-slate-900 font-bold">{{ items.nbResults|default(items|length) }}</span> transaction(s)
+        </div>
+    </div>
+
+    {# --- 2. GESTION DE L'AFFICHAGE --- #}
+    {% if items is empty %}
+        <twig:Empty class="border border-slate-200 rounded-xl py-12">
+            <twig:Empty:Header>
+                <twig:Empty:Title class="text-sm font-medium text-slate-500">Aucun mouvement enregistré</twig:Empty:Title>
+            </twig:Empty:Header>
+        </twig:Empty>
+    {% else %}
+
+        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+            <twig:Table>
+                <twig:Table:Header class="bg-slate-50/50 border-b border-slate-200">
+                    <twig:Table:Row class="border-none">
+                        <twig:Table:Head class="text-slate-500 text-xs uppercase font-bold px-6">Date</twig:Table:Head>
+                        <twig:Table:Head class="text-slate-500 text-xs uppercase font-bold px-6">Désignation</twig:Table:Head>
+                        <twig:Table:Head class="text-slate-500 text-xs uppercase font-bold px-6 text-right">Montant</twig:Table:Head>
+                        <twig:Table:Head class="text-slate-500 text-xs uppercase font-bold px-6 text-right">Référence</twig:Table:Head>
+                    </twig:Table:Row>
+                </twig:Table:Header>
+
+                <twig:Table:Body class="divide-y divide-slate-100">
+                    {% for transaction in items %}
+                        <twig:Table:Row>
+
+                            {# Colonne 1 : Date #}
+                            <twig:Table:Cell class="px-6 py-4">
+                                <span class="text-sm text-slate-900 font-medium">{{ transaction.createdAt|date('d/m/Y') }}</span>
+                                <span class="text-xs text-slate-400 ml-1">{{ transaction.createdAt|date('H:i') }}</span>
+                            </twig:Table:Cell>
+
+                            {# Colonne 2 : Désignation #}
+                            <twig:Table:Cell class="px-6 py-4">
+                                <span class="text-sm text-slate-700">
+
+                                    {{ enum('App\\Domain\\Wallet\\Enum\\TransactionType').from(transaction.type).label }}
+                                </span>
+                            </twig:Table:Cell>
+
+                            {# Colonne 3 : Montant #}
+                            <twig:Table:Cell class="px-6 py-4 text-right">
+                                <span class="text-sm font-bold text-slate-900">
+                                    {{ transaction.amount > 0 ? '+' : '' }}{{ transaction.amount }} crédits
+                                </span>
+                            </twig:Table:Cell>
+
+                            {# Colonne 4 : Action/Lien #}
+                            <twig:Table:Cell class="px-6 py-4 text-right">
+                                {% if transaction.referenceId and 'http' in transaction.referenceId %}
+                                    <a href="{{ transaction.referenceId }}" target="_blank" class="text-xs font-bold text-blue-600 hover:text-blue-800">
+                                        FACTURE PDF
+                                    </a>
+                                {% else %}
+                                    <span class="text-xs text-slate-300 font-mono">{{ transaction.id|slice(0, 8)|upper }}</span>
+                                {% endif %}
+                            </twig:Table:Cell>
+
+                        </twig:Table:Row>
+                    {% endfor %}
+                </twig:Table:Body>
+            </twig:Table>
+        </div>
+
+    {% endif %}
+</div>

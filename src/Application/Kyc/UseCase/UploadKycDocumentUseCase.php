@@ -4,13 +4,13 @@ namespace App\Application\Kyc\UseCase;
 
 use App\Application\Kyc\DTO\Request\UploadKycDocumentRequest;
 use App\Domain\Kyc\Entity\KycDocument;
+use App\Domain\Kyc\Entity\KycFolder;
+use App\Domain\Kyc\Entity\Stakeholder;
 use App\Domain\Kyc\Enum\DocumentType;
-use App\Domain\Kyc\Event\UploadKycDocumentEvent;
+use App\Domain\Kyc\Event\KycDocumentReceivedLocalEvent;
+use App\Domain\Kyc\Repository\KycDocumentRepositoryInterface;
 use App\Domain\Kyc\Repository\KycFolderRepositoryInterface;
 use App\Domain\Kyc\Repository\StakeholderRepositoryInterface;
-use App\Domain\Port\DocumentStorageInterface;
-use App\Infrastructure\Service\ImageOptimizer;
-use Doctrine\ORM\EntityManagerInterface;
 use DomainException;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -19,105 +19,95 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
 final readonly class UploadKycDocumentUseCase
 {
     public function __construct(
-        private EntityManagerInterface $entityManager,
-        private DocumentStorageInterface $storage,
+        private KycDocumentRepositoryInterface $kycDocumentRepository,
         private ValidatorInterface $validator,
         private KycFolderRepositoryInterface $kycFolderRepository,
         private StakeholderRepositoryInterface $stakeholderRepository,
         private EventDispatcherInterface $eventDispatcher,
-        private ImageOptimizer $imageOptimizer,
+        private string $tempStorageDir, // Injection du paramètre (ex: '%kernel.project_dir%/var/uploads/kyc_temp')
     ) {}
 
     public function __invoke(UploadKycDocumentRequest $request): void
     {
         $this->validator->validate($request);
 
-        // 1. On récupère le dossier parent
         $folder = $this->kycFolderRepository->findBySlugId($request->folderSlugId);
         if (!$folder) {
             throw new DomainException("Dossier introuvable.");
         }
 
-        // 2. TRANSLATION : Slot Virtuel -> Type de Document & Stakeholder
-        $type = null;
-        $stakeholder = null;
+        [$type, $stakeholder] = $this->resolveDocumentContext($request->slotId);
 
-        if ($request->slotId === 'kbis') {
-            $type = DocumentType::KBIS;
-        } elseif ($request->slotId === 'articles') {
-            $type = DocumentType::ARTICLES_OF_ASSOC;
-        } elseif ($request->slotId === 'rbe') {
-            $type = DocumentType::RBE;
-        } elseif (str_starts_with($request->slotId, 'id_card_')) {
-            $type = DocumentType::ID_CARD;
-            $stakeholderSlug = str_replace('id_card_', '', $request->slotId);
+        $document = $this->getOrCreateDocument($folder, $type, $stakeholder);
+        $oldStoragePath = $document->storagePath; // À conserver pour la suppression asynchrone future
+
+        // 1. Stockage Local Temporaire (Instantané)
+        $localTempPath = $this->storeLocally($request->file);
+
+        // 2. Mise à jour de l'état (On enregistre le chemin local temporaire en attendant le S3)
+        $document->markAsUploaded($localTempPath);
+        $this->kycDocumentRepository->save($document);
+
+        // 3. Dispatch de l'Event Métier
+        $this->eventDispatcher->dispatch(new KycDocumentReceivedLocalEvent(
+            kycDocument: $document,
+            kycFolder: $folder,
+            localTempPath: $localTempPath,
+            mimeType: $request->file->getClientMimeType(),
+            originalName: $request->file->getClientOriginalName(),
+            oldStoragePath: $oldStoragePath
+        ));
+    }
+
+    /**
+     * @return array{0: DocumentType, 1: Stakeholder|null}
+     */
+    private function resolveDocumentContext(string $slotId): array
+    {
+        if (str_starts_with($slotId, 'id_card_')) {
+            $stakeholderSlug = str_replace('id_card_', '', $slotId);
             $stakeholder = $this->stakeholderRepository->findBySlugId($stakeholderSlug);
+
+            if (!$stakeholder) {
+                throw new DomainException("Intervenant introuvable.");
+            }
+            return [DocumentType::ID_CARD, $stakeholder];
         }
 
-        if (!$type) {
-            throw new DomainException("Type de document non reconnu.");
-        }
+        $type = match ($slotId) {
+            'kbis'     => DocumentType::KBIS,
+            'articles_of_assoc' => DocumentType::ARTICLES_OF_ASSOC,
+            'rbe'      => DocumentType::RBE,
+            default    => throw new DomainException(sprintf('Type de document non reconnu: %s', $slotId)),
+        };
 
-        // 3. RECHERCHE OU CRÉATION (Le fameux Upsert !)
-        $criteria = ['folder' => $folder, 'type' => $type];
-        if ($stakeholder) {
-            $criteria['stakeholder'] = $stakeholder;
-        }
+        return [$type, null];
+    }
 
-        $document = $this->entityManager->getRepository(KycDocument::class)->findOneBy($criteria);
+    private function getOrCreateDocument(KycFolder $folder, DocumentType $type, ?Stakeholder $stakeholder): KycDocument
+    {
+        $document = $this->kycDocumentRepository->findOneByContext($folder, $type, $stakeholder);
 
         if (!$document) {
-            if ($stakeholder) {
-                $document = KycDocument::requestForStakeholder($folder, $stakeholder, $type);
-            } else {
-                $document = KycDocument::requestForCompany($folder, $type);
-            }
-            $this->entityManager->persist($document);
-        } else {
-            if ($document->storagePath) {
-                $this->storage->delete($document->storagePath);
-            }
+            return $stakeholder
+                ? KycDocument::requestForStakeholder($folder, $stakeholder, $type)
+                : KycDocument::requestForCompany($folder, $type);
         }
 
-        // --- 🚀 NOUVELLE ÉTAPE 4 : OPTIMISATION ET SAUVEGARDE ---
+        return $document;
+    }
 
-        $directory = 'kyc_folders/' . $folder->slugId;
-        $fileToStore = $request->file; // Par défaut, on stocke le fichier original (ex: PDF)
-        $optimizedTempPath = null;
-
-        $mimeType = $request->file->getMimeType();
-        $isImage = in_array($mimeType, ['image/jpeg', 'image/png', 'image/webp', 'image/jpg'], true);
-
-        // Si c'est une image, on l'optimise pour Mindee et Scaleway S3
-        if ($isImage) {
-            $optimizedTempPath = $this->imageOptimizer->preProcessForOcr($request->file->getRealPath());
-
-            $fileToStore = new UploadedFile(
-                $optimizedTempPath,
-                $request->file->getClientOriginalName(),
-                'image/jpeg',
-                null,
-                true
-            );
+    private function storeLocally(UploadedFile $file): string
+    {
+        if (!is_dir($this->tempStorageDir)) {
+            mkdir($this->tempStorageDir, 0o755, true);
         }
 
-        // Envoi vers le S3
-        $storagePath = $this->storage->store($fileToStore, $directory);
+        $extension = $file->guessExtension() ?? 'bin';
+        $filename = uniqid('kyc_tmp_', true) . '.' . $extension;
 
-        // Nettoyage crucial : on supprime le fichier temporaire local généré par Intervention
-        if ($optimizedTempPath && file_exists($optimizedTempPath)) {
-            unlink($optimizedTempPath);
-        }
+        $file->move($this->tempStorageDir, $filename);
 
-        // ---------------------------------------------------------
-
-        // 5. Action Métier : On marque comme uploadé
-        $document->markAsUploaded($storagePath);
-
-        // 6. On valide tout en BDD
-        $this->entityManager->flush();
-
-        // Ce Dispatch d'event est parfait : c'est lui qui va déclencher le Message Messenger pour l'OCR !
-        $this->eventDispatcher->dispatch(new UploadKycDocumentEvent($folder, $document));
+        return $this->tempStorageDir . DIRECTORY_SEPARATOR . $filename;
     }
 }

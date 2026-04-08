@@ -152,22 +152,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public UserProfil $profile;
 
     /**
-     * @var list<string>|null $dismissedSteps
+     * @var bool Dismiss the onboarding steps.
      */
-    #[ORM\Column(type: Types::JSON, nullable: true)]
-    public ?array $dismissedSteps = [] {
-        get => $this->dismissedSteps;
-        set => $this->dismissedSteps = $value;
-    }
-
-//    /**
-//     * @var Collection<int, User>
-//     */
-//    #[ORM\OneToMany(targetEntity: Device::class, mappedBy: 'device', cascade: ['persist', 'remove'])]
-//    public Collection $earlyAccessDevices {
-//        get => $this->earlyAccessDevices;
-//        set => $this->earlyAccessDevices = $value;
-//    }
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    public private(set) bool $dismissOnboarding = false;
 
     private function __construct(
         string $email,
@@ -310,11 +298,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         }
     }
 
-    public function isStepDismissed(?string $stepId): bool
+    public function updateName(string $firstName, string $lastName): void
     {
-        \Webmozart\Assert\Assert::notNull($this->slugId);
+        $this->firstName = $firstName;
+        $this->lastName = $lastName;
+    }
 
-        // Le ?? [] garantit que le "haystack" est toujours un array
-        return in_array($stepId, $this->dismissedSteps ?? [], true);
+    public function isDismiss(): bool
+    {
+        return $this->dismissOnboarding;
+    }
+
+    public function setDismissOnboarding(bool $dismissOnboarding): void
+    {
+        $this->dismissOnboarding = $dismissOnboarding;
     }
 }

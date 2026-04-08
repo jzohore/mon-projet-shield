@@ -79,8 +79,10 @@ final readonly class UserOnboardingFlow
     public function auditLogOnboardingConfirmed(UserOnboardingCompletedEvent $event): void
     {
         $user = $event->user;
-        Assert::isInstanceOf($user, User::class);
-        $workspaceInfo = ($this->getCurrentWorkspaceInfo)($user);
+        Assert::notNull($user);
+        $userId = $user->id;
+        Assert::notNull($userId, "L'utilisateur doit avoir un ID pour récupérer le workspace.");
+        $workspaceInfo = ($this->getCurrentWorkspaceInfo)($userId);
         $auditLog = new CreateAuditLogRequest(
             eventName: AuditEventType::ONBOARDING_COMPLETED,
             resourceId: $user->slugId,

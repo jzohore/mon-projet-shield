@@ -8,6 +8,7 @@ use App\Domain\Workspace\Entity\WorkspaceMember;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @method WorkspaceMember|null find($id, $lockMode = null, $lockVersion = null)
@@ -59,9 +60,15 @@ final readonly class WorkspaceMemberRepository implements WorkspaceMemberReposit
         return $this->repository->findBy(['user' => $user]);
     }
 
-    public function findOneByUser(User $user): ?WorkspaceMember
+    public function findOneByUser(Uuid $userId): ?WorkspaceMember
     {
-        return $this->repository->findOneBy(['user' => $user]);
+        return $this->repository->createQueryBuilder('wm')
+            ->select('wm')
+            ->leftJoin('wm.user', 'user')
+            ->where('user.id = :userId')
+            ->setParameter('userId', $userId)
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 
     public function isUserAdminOfWorkspace(User $user, Workspace $workspace): bool

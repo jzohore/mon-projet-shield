@@ -31,20 +31,23 @@ final class UniqueKycAwaitingClientValidator extends ConstraintValidator
         if (null === $value || '' === $value) {
             return;
         }
+
         $currentUserEmail = $this->security->getUser();
         Assert::notNull($currentUserEmail);
         $user = $this->userRepository->findByEmail($currentUserEmail->getUserIdentifier());
 
         Assert::isInstanceOf($user, User::class);
-        $workspaceInfo = ($this->getCurrentWorkspaceInfo)($user);
-        Assert::notNull($workspaceInfo->slugId);
-        $existingWorkspace = $this->kycFolderRepository->findOneByEmailAndStatus(
+        $userId = $user->id;
+        Assert::notNull($userId, "L'utilisateur doit avoir un ID pour récupérer le workspace.");
+        $workspace = ($this->getCurrentWorkspaceInfo)($userId);
+        Assert::notNull($workspace->slugId);
+        $existingFolder = $this->kycFolderRepository->findFirstByEmailAndStatuses(
             $value,
-            KycFolderStatus::AWAITING_CLIENT,
-            workspaceId: $workspaceInfo->slugId,
+            KycFolderStatus::getActiveStatuses(),
+            $workspace->slugId
         );
-        if ($existingWorkspace !== null) {
-            if ($constraint->ignoreSlugId !== null && $existingWorkspace->slugId === $constraint->ignoreSlugId) {
+        if ($existingFolder !== null) {
+            if ($constraint->ignoreSlugId !== null && $existingFolder->slugId === $constraint->ignoreSlugId) {
                 return;
             }
 

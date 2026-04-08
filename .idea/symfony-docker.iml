@@ -204,6 +204,8 @@
       <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/remote-event" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/resend-mailer" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/webhook" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/git-state" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/stripe/stripe-php" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

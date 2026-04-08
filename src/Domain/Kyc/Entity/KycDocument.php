@@ -50,6 +50,12 @@ class KycDocument
     #[ORM\Column(type: 'date_immutable', nullable: true)]
     public private(set) ?\DateTimeImmutable $expiresAt = null;
 
+    /**
+     * @var array<string, mixed>|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    public private(set) ?array $ocrData = null;
+
     private function __construct(KycFolder $folder, DocumentType $type)
     {
         $this->folder = $folder;
@@ -85,6 +91,12 @@ class KycDocument
         $this->rejectionReason = null; // On nettoie l'ancien refus éventuel
     }
 
+    public function markAsProcessed(): void
+    {
+        $this->status = DocumentStatus::VALID;
+        $this->rejectionReason = null;
+    }
+
     /**
      * Action métier : L'avocat refuse le document.
      */
@@ -92,5 +104,14 @@ class KycDocument
     {
         $this->status = DocumentStatus::REJECTED;
         $this->rejectionReason = $reason;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @return void
+     */
+    public function setExtractedData(array $data): void
+    {
+        $this->ocrData = $data;
     }
 }

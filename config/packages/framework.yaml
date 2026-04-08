@@ -6,8 +6,9 @@ framework:
     # Note that the session will be started ONLY if you read or write from it.
     session: true
     router:
+        utf8: true
         # Remplace par ton vrai domaine
-        default_uri: 'https://kysure.fr'
+        #default_uri: '%env(DEFAULT_URI)%'
         # Force le HTTPS pour tous les liens générés
         http_port: 80
         https_port: 44

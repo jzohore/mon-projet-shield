@@ -6,16 +6,15 @@ use App\Application\Kyc\DTO\Request\AddStakeholderRequest;
 use App\Application\Kyc\UseCase\RemoveStakeHolderUseCase;
 use App\Application\Kyc\UseCase\SaveNewStakeHolderUseCase;
 use App\Domain\Kyc\Entity\KycFolder;
-use App\Domain\Kyc\Entity\Stakeholder;
 use App\Domain\Kyc\Repository\KycFolderRepositoryInterface;
 use App\Infrastructure\KYC\Form\AddStakeholderType;
-use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveArg;
+use Symfony\UX\LiveComponent\Attribute\LiveListener;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -46,7 +45,6 @@ class ManageStakeholdersComponent
 
     public function __construct(
         private readonly KycFolderRepositoryInterface $folderRepository,
-        private EntityManagerInterface $entityManager,
         private readonly FormFactoryInterface $formFactory,
         private readonly SaveNewStakeHolderUseCase $saveNewStakeHolderUseCase,
         private readonly LoggerInterface $logger,
@@ -58,6 +56,7 @@ class ManageStakeholdersComponent
         return $this->formFactory->create(AddStakeholderType::class, new AddStakeholderRequest());
     }
 
+    #[LiveListener('stakeholder_updated')]
     public function getFolder(): KycFolder
     {
         $folderSlugId = $this->folderSlugId;
@@ -89,21 +88,6 @@ class ManageStakeholdersComponent
             $this->logger->error('Erreur métier lors de l\'ajout d\'un dirigeant au dossier KYC', [
                 'error' => $e->getMessage(),
             ]);
-        }
-    }
-
-    #[LiveAction]
-    public function updatePercentage(#[LiveArg] string $id, #[LiveArg] ?float $inlinePercentage): void
-    {
-        if ($inlinePercentage === null) {
-            return;
-        }
-
-        $stakeholder = $this->entityManager->getRepository(Stakeholder::class)->find($id);
-
-        if ($stakeholder && $stakeholder->folder === $this->getFolder()) {
-            //$stakeholder->updateOwnershipPercentage($inlinePercentage);
-            $this->entityManager->flush();
         }
     }
 

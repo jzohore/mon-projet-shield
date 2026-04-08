@@ -7,27 +7,5 @@
 {% block title %}{{ page_title }}{% endblock %}
 
 {% block portal_content %}
-
-    <div class="mb-8">
-        <h1 class="text-xl font-bold text-slate-900 tracking-tight">Pièces justificatives</h1>
-        <p class="text-sm text-slate-500 mt-2">Veuillez fournir les documents ci-dessous pour finaliser votre dossier KYC.</p>
-    </div>
-
     <twig:KycDocumentUploaderComponent folderSlugId="{{ folder.slugId }}"></twig:KycDocumentUploaderComponent>
-    <script>
-        function handleFileSelect(id, input) {
-            if (input.files.length > 0) {
-                // 1. On affiche le nom du fichier choisi
-                const nameSpan = document.getElementById('name-' + id);
-                nameSpan.textContent = input.files[0].name;
-
-                // 2. On affiche le groupe "Actions" (Valider + Nom)
-                document.getElementById('actions-' + id).classList.remove('hidden');
-                document.getElementById('actions-' + id).classList.add('flex');
-
-                // 3. On cache le bouton de sélection initial pour gagner de la place
-                input.parentElement.classList.add('hidden');
-            }
-        }
-    </script>
 {% endblock %}

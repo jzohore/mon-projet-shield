@@ -26,6 +26,7 @@ final readonly class KycFolderResponse
      * @param bool $isShareTokenValid
      * @param string|null $workspaceName
      * @param string|null $legalCategory
+     * @param bool|null $isCertified
      */
     public function __construct(
         public string $reference,
@@ -66,19 +67,19 @@ final readonly class KycFolderResponse
             ])->toArray(),
             documents: $kycFolder->documents->map(fn(KycDocument $doc) => [
                 'slugId'          => $doc->slugId,
-                'typeLabel'       => $doc->type->value, // ex: "KBIS"
+                'typeLabel'       => $doc->type->getLabel(), // ex: "KBIS"
                 'status'          => $doc->status->value, // ex: "PENDING"
                 'storagePath'     => $doc->storagePath,
                 'rejectionReason' => $doc->rejectionReason,
                 'expiresAt'       => $doc->expiresAt?->format('d/m/Y'),
-                // 💡 On ne prend que l'ID du stakeholder pour éviter la boucle infinie
                 'stakeholderSlug' => $doc->stakeholder?->slugId,
+                'ocrData'         => $doc->ocrData,
             ])->toArray(),
             companyName: $kycFolder->companyName,
             siret: $kycFolder->siret,
             siren: $kycFolder->siren,
             createdAt: $kycFolder->createdAt,
-            history: $kycFolder->history ?? [],
+            history: $kycFolder->history,
             shareToken: $kycFolder->shareToken,
             isShareTokenValid: $kycFolder->isShareTokenValid(),
             workspaceName: $workspaceName,

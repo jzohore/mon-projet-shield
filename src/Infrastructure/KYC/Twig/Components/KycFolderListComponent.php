@@ -45,8 +45,9 @@ class KycFolderListComponent
     {
         $user = $this->userRepository->findBySlug($this->userSlugId);
         Assert::notNull($user);
-
-        $workspace = ($this->getCurrentWorkspaceInfo)($user);
+        $userId = $user->id;
+        Assert::notNull($userId, "L'utilisateur doit avoir un ID pour récupérer le workspace.");
+        $workspace = ($this->getCurrentWorkspaceInfo)($userId);
 
         $workspaceSlugId = $workspace->slugId;
         Assert::notNull($workspaceSlugId);

@@ -1,31 +1,58 @@
 framework:
     messenger:
-        # Si un message échoue après les retries, il va ici
+        # Si un message échoue après ses retries, il va ici (dans Postgres pour être analysé)
         failure_transport: failed
 
         transports:
-            # RabbitMQ pour la vitesse et la scalabilité
-            async:
+            # 🚀 1. HAUTE PRIORITÉ : Les actions qui impactent l'UX immédiatement (Emails)
+            async_priority:
                 dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    exchange: { name: priority_exchange, type: direct }
+                    queues: { priority_queue: ~ }
                 retry_strategy:
                     max_retries: 3
                     delay: 1000 # 1s
                     multiplier: 2
 
-            # Doctrine pour garder une trace des échecs (facile à relancer via l'admin)
-            failed: 'doctrine://default?queue_name=failed'
+            # 📦 2. PRIORITÉ NORMALE : Opérations de fond standard (S3, Création de dossiers)
+            async_main:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    exchange: { name: main_exchange, type: direct }
+                    queues: { main_queue: ~ }
+                retry_strategy:
+                    max_retries: 3
+                    delay: 2000
 
-            # Pour les actions qui DOIVENT être instantanées
+            # 🐢 3. TÂCHES LOURDES : Opérations gourmandes en CPU ou API externes lentes (OCR)
+            async_heavy:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                options:
+                    exchange: { name: heavy_exchange, type: direct }
+                    queues: { heavy_queue: ~ }
+                retry_strategy:
+                    # Plus de délai entre les essais car l'API OCR peut être indisponible
+                    max_retries: 3
+                    delay: 10000
+
+            failed: 'doctrine://default?queue_name=failed'
             sync: 'sync://'
 
         routing:
-            # Les emails partent en asynchrone
-            'App\Infrastructure\User\Message\SendMagicLinkMessage': async
-            'App\Infrastructure\User\Message\SendOnboardingConfirmedMessage': async
-            'App\Infrastructure\User\Message\SendWelcomeEmailMessage': async
-            'App\Infrastructure\KYC\Message\SendSubmittedKycFolderMessage': async
-            'App\Infrastructure\KYC\Message\SendCreatedKycFolderMessage': async
+            # --- EMAILS (Doit partir à la milliseconde) ---
+            'App\Infrastructure\User\Message\SendMagicLinkMessage': async_priority
+            'App\Infrastructure\User\Message\SendOnboardingConfirmedMessage': async_priority
+            'App\Infrastructure\User\Message\SendWelcomeEmailMessage': async_priority
+            'App\Infrastructure\Billing\Message\SendPurchaseConfirmationEmailMessage': async_priority
 
+            # --- WORKFLOW KYC & S3 (Peut prendre 1 ou 2 secondes) ---
+            'App\Infrastructure\KYC\Message\SendSubmittedKycFolderMessage': async_main
+            'App\Infrastructure\KYC\Message\SendCreatedKycFolderMessage': async_main
+            'App\Infrastructure\KYC\Message\ProcessAndStoreKycDocumentMessage': async_main
+
+            # --- OCR (Lourd, bloque le thread longtemps) ---
+            'App\Infrastructure\Ocr\Message\ProcessOcrMessage': async_heavy
             # Tes commandes de conformité lourdes
 
             # Tout le reste est synchrone par défaut (ou à définir ici)

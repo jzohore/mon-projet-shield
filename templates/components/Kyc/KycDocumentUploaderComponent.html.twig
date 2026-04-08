@@ -1,133 +1,206 @@
-<div {{ attributes }} class="w-full max-w-4xl mx-auto">
+<div {{ attributes }}
+    data-action="kyc:uploaded->live#action"
+    data-live-action-param="uploaded"
+    data-live-id-param="event.detail.id"
+    data-live-file-name-param="event.detail.fileName"
+    data-action="kyc:upload-error->live#action"
+    data-live-action-param="uploadError"
+    data-live-id-param="event.detail.id"
+    data-live-message-param="event.detail.message"
+    class="w-full max-w-4xl mx-auto">
     {% set uploadedCount = this.expectedDocumentSlots|filter(slot => slot.isUploaded)|length %}
     {% set totalCount = this.expectedDocumentSlots|length %}
-    {% set isComplete = (uploadedCount == totalCount) %}
-    {# HEADER #}
-    <div class="flex justify-center mb-10">
-        <div class="text-xs font-semibold text-slate-500 bg-slate-100 px-4 py-2 rounded-full ring-1 ring-slate-200">
-            {{ this.expectedDocumentSlots|filter(slot => slot.isUploaded)|length }} / {{ this.expectedDocumentSlots|length }} documents reçus
+    {% set isComplete = uploadedCount == totalCount %}
+
+    {% if this.actionMessage %}
+        {% include 'components/partials/_live_alerts.html.twig' with {
+            message: this.actionMessage|default(null),
+            type: this.actionMessageType|default('success')
+        } %}
+    {% endif %}
+
+    {# 1. HEADER MINIMALISTE (Exit la grosse card) #}
+    {# ========================================== #}
+    {# HEADER UNIFIÉ (Titre + Compteur dynamique) #}
+    {# ========================================== #}
+    <div class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1 sm:px-0">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">Pièces justificatives</h1>
+            <p class="text-sm text-slate-500 mt-1">Veuillez fournir les documents ci-dessous pour finaliser votre dossier KYC.</p>
+        </div>
+
+        <div class="shrink-0">
+            {% if isComplete %}
+                <span class="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-md ring-1 ring-emerald-200 shadow-sm animate-in zoom-in duration-300">
+                <twig:ux:icon name="tabler:circle-check-filled" class="size-4" />
+                Dossier complet
+            </span>
+            {% else %}
+                <span class="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 bg-white px-3 py-1.5 rounded-md ring-1 ring-slate-200 shadow-sm">
+                <span class="font-bold text-slate-900">{{ uploadedCount }}</span> sur {{ totalCount }} reçus
+            </span>
+            {% endif %}
         </div>
     </div>
 
-    {# LISTE DES DOCUMENTS #}
-    <div class="bg-white ring-1 ring-slate-200 rounded-2xl shadow-sm overflow-hidden">
+    {# 2. LISTE ÉPURÉE #}
+    <div class="bg-white ring-1 ring-slate-200 rounded-2xl shadow-sm overflow-hidden mb-8">
         <ul class="divide-y divide-slate-100">
             {% for slot in this.expectedDocumentSlots %}
-                <li class="p-4 sm:p-5 hover:bg-slate-50/50 transition-colors group">
-                    <div class="flex flex-col gap-3">
+                {% set isReplacing = this.replacingSlotId == slot.id %}
 
-                        {# HAUT : INFOS #}
-                        <div class="flex items-start gap-4 min-w-0">
-                            <div class="h-10 w-10 bg-slate-50 text-slate-500 rounded-xl flex items-center justify-center shrink-0 ring-1 ring-slate-900/5 group-hover:bg-white group-hover:text-indigo-600 group-hover:ring-indigo-100 transition-all mt-0.5">
-                                <twig:ux:icon name="{{ slot.icon }}" class="size-5" />
-                            </div>
-                            <div class="min-w-0 flex-1">
-                                <h3 class="text-sm font-bold text-slate-900">{{ slot.title }}</h3>
-                                <p class="text-xs text-slate-500 mt-1 line-clamp-2" title="{{ slot.description }}">
-                                    {{ slot.description }}
+                {% if slot.id is empty %}
+                    {# Erreur ID - Aplatie sur le LI #}
+                    <li class="p-4 sm:p-5 bg-rose-50 text-sm text-rose-700">
+                        <twig:ux:icon name="tabler:alert-circle" class="inline size-4 mr-1 mb-0.5" /> Identifiant de document manquant.
+                    </li>
+
+                {% elseif slot.isUploaded and not isReplacing %}
+                    {# ÉTAT SUCCÈS - Aplati sur le LI (Exit la boîte imbriquée) #}
+                    <li class="p-4 sm:p-5 bg-emerald-50/30 flex items-center justify-between gap-4 transition-colors hover:bg-emerald-50/60">
+                        <div class="flex items-center gap-4 min-w-0">
+                            <twig:ux:icon name="tabler:circle-check" class="size-5" />
+
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-emerald-900 truncate" title="{{ slot.fileName }}">
+                                    {{ slot.title }}
+                                </p>
+                                <p class="mt-0.5 text-xs text-emerald-600">
+                                    Document envoyé
                                 </p>
                             </div>
                         </div>
 
-                        {# BAS : ACTIONS (Aligné à gauche sous le texte) #}
-                        <div class="pl-14 flex items-center w-full">
+                        <button
+                            type="button"
+                            data-action="live#action"
+                            data-live-action-param="toggleReplace"
+                            data-live-id-param="{{ slot.id }}"
+                            class="shrink-0 text-xs font-medium text-emerald-600 hover:text-emerald-900 underline transition cursor-pointer focus:outline-none"
+                        >
+                            Remplacer
+                        </button>
+                    </li>
 
-                            {% set isReplacing = (this.replacingSlotId == slot.id) %}
-
-                            {# ÉTAT : REÇU #}
-                            {% if slot.isUploaded and not isReplacing %}
-                                <div class="flex flex-col items-start gap-1">
-                                    <div class="flex items-center gap-3">
-                                    <span class="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md ring-1 ring-emerald-500/20">
-                                        <twig:ux:icon name="tabler:check" class="size-3.5" />
-                                        Reçu
-                                    </span>
-                                        <button type="button"
-                                                data-action="live#action" data-live-action-param="toggleReplace" data-live-id-param="{{ slot.id }}"
-                                                class="text-[11px] font-semibold text-slate-400 hover:text-indigo-600 underline cursor-pointer focus:outline-none">
-                                            Remplacer
-                                        </button>
-                                    </div>
-                                    {% if slot.fileName %}
-                                        <span class="text-[10px] text-slate-400 italic truncate max-w-[250px]">{{ slot.fileName }}</span>
-                                    {% endif %}
-                                </div>
-                            {% endif %}
-
-                            {# ÉTAT : UPLOAD #}
-                            {% if not slot.isUploaded or isReplacing %}
-                                <div class="flex flex-wrap items-center gap-3 w-full">
-
-                                    {# Le Label de sélection #}
-                                    <label class="cursor-pointer bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-100 shrink-0 transition-colors">
-                                        <twig:ux:icon name="tabler:upload" class="size-4 inline mr-1" />
-                                        {{ isReplacing ? 'Changer le fichier' : 'Téléverser' }}
-                                        <input type="file" name="document_{{ slot.id }}" class="sr-only"
-                                               accept=".pdf,image/png,image/jpeg"
-                                               onchange="handleFileSelect('{{ slot.id }}', this)">
-                                    </label>
-
-                                    {# Zone qui apparaît au choix du fichier (JS minimal) #}
-                                    <div id="actions-{{ slot.id }}" class="hidden items-center gap-2">
-                                        <span id="name-{{ slot.id }}" class="text-[10px] text-slate-500 bg-slate-100 px-2 py-1.5 rounded truncate max-w-[120px]"></span>
-
-                                        <twig:Button size="sm" variant="dark" data-action="live#action:prevent" data-live-action-param="files|uploadDocument" data-live-id-param="{{ slot.id }}">
-
-                                            {# Texte affiché par défaut #}
-                                            <span data-loading="action(uploadDocument)|hide">Valider</span>
-
-                                            {# Texte affiché PENDANT la requête AJAX (Magie Symfony UX Live Component) #}
-                                            <span data-loading="action(uploadDocument)|show" class="hidden items-center gap-2">
-                        <i class="fas fa-circle-notch fa-spin opacity-70"></i> Enregistrement...
-                    </span>
-
-                                        </twig:Button>
+                {% else %}
+                    {# ÉTAT UPLOAD - Inchangé niveau fonctionnel, mais intégré dans le flux #}
+                    <li class="p-4 sm:p-5 hover:bg-slate-50/50 transition-colors group">
+                        <div class="kyc-slot" data-slot-id="{{ slot.id }}">
+                            <form
+                                data-controller="kyc-document"
+                                data-action="submit->kyc-document#upload"
+                                data-upload-url="{{ path('portal_kyc_document_upload', { id: slot.id }) }}"
+                                data-folder-slug-id="{{ this.folderSlugId }}"
+                                data-slot-id="{{ slot.id }}"
+                                enctype="multipart/form-data"
+                                class="space-y-4"
+                            >
+                                <div class="flex items-start gap-4 min-w-0">
+                                    <div class="h-10 w-10 bg-slate-50 text-slate-500 rounded-xl flex items-center justify-center shrink-0 ring-1 ring-slate-900/5 group-hover:bg-white group-hover:text-indigo-600 group-hover:ring-indigo-100 transition-all mt-0.5">
+                                        <twig:ux:icon name="{{ slot.icon }}" class="size-5" />
                                     </div>
 
-                                    {# Bouton Annuler (Poussé tout à droite grâce à ml-auto) #}
-                                    {% if isReplacing or not slot.isUploaded %}
-                                        <button type="button"
-                                                data-action="live#action" data-live-action-param="toggleReplace" data-live-id-param="{{ slot.id }}"
-                                                class="text-slate-400 hover:text-rose-500 p-1 ml-auto">
-                                            <twig:ux:icon name="tabler:x" class="size-5" />
-                                        </button>
+                                    <div class="min-w-0 flex-1">
+                                        <h3 class="text-sm font-bold text-slate-900">{{ slot.title }}</h3>
+                                        <p class="text-xs text-slate-500 mt-1 line-clamp-2" title="{{ slot.description }}">
+                                            {{ slot.description }}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div class="pl-14 flex flex-col gap-3">
+                                    <div class="flex flex-wrap items-center gap-3 w-full">
+                                        <label
+                                            data-kyc-document-target="uploadLabel"
+                                            class="cursor-pointer bg-indigo-50 text-indigo-700 px-4 py-2 rounded-lg text-xs font-bold hover:bg-indigo-100 shrink-0 transition-colors inline-flex items-center gap-2"
+                                        >
+                                            <twig:ux:icon name="tabler:upload" class="size-4" />
+                                            {{ isReplacing ? 'Changer le fichier' : 'Téléverser' }}
+
+                                            <input
+                                                type="file"
+                                                name="document"
+                                                class="sr-only"
+                                                accept=".pdf,image/png,image/jpeg"
+                                                data-kyc-document-target="input"
+                                                data-action="change->kyc-document#preview"
+                                            >
+                                        </label>
+
+                                        <div data-kyc-document-target="actionsContainer" class="hidden items-center gap-2">
+                                            <span data-kyc-document-target="fileName" class="text-[10px] text-slate-500 bg-slate-100 px-2 py-1.5 rounded truncate max-w-[160px]"></span>
+
+                                            <button
+                                                type="submit"
+                                                class="cursor-pointer inline-flex items-center justify-center rounded-lg bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-800"
+                                            >
+                                                <span data-kyc-document-target="submitLabel">Valider</span>
+                                                <span data-kyc-document-target="spinner" class="hidden items-center gap-2">
+                                                    Enregistrement...
+                                                </span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                data-action="kyc-document#reset"
+                                                class="text-slate-400 hover:text-rose-500 p-1"
+                                                title="Annuler ce fichier"
+                                            >
+                                                <twig:ux:icon name="tabler:trash" class="size-4" />
+                                            </button>
+                                        </div>
+
+                                        {% if isReplacing %}
+                                            <button
+                                                type="button"
+                                                data-action="click->live#action:prevent"
+                                                data-live-action-param="toggleReplace"
+                                                data-live-id-param="{{ slot.id }}"
+                                                class="text-slate-400 hover:text-rose-500 p-1 ml-auto"
+                                                title="Annuler le remplacement"
+                                            >
+                                                <twig:ux:icon name="tabler:x" class="size-5" />
+                                            </button>
+                                        {% endif %}
+                                    </div>
+
+                                    {% if slot.error %}
+                                        <div class="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 flex items-start gap-2">
+                                            <twig:ux:icon name="tabler:alert-circle" class="size-4 mt-0.5 shrink-0" />
+                                            <span>{{ slot.error }}</span>
+                                        </div>
                                     {% endif %}
                                 </div>
-                            {% endif %}
-
+                            </form>
                         </div>
-                    </div>
-                </li>
+                    </li>
+                {% endif %}
             {% endfor %}
         </ul>
     </div>
 
-    <div class="mt-10 p-6 rounded-2xl ring-1 ring-inset transition-all {{ isComplete ? 'bg-blue-50 p-4 rounded-lg mb-8' : 'bg-slate-50 ring-slate-200 opacity-60' }}">
-        <div class="flex items-start gap-4">
-            <div class="flex items-center h-6">
-                <label for="certify" class="sr-only">
-                    Attestation sur l'honneur
-                </label>
-                <input id="certify"
-                       name="certify"
-                       type="checkbox"
-                       data-model="isCertified"
-                    {{ not isComplete ? 'disabled' : '' }}
-                       class="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600 disabled:cursor-not-allowed">
-            </div>
-            <div class="grid gap-1.5 font-normal">
-                <p class="text-sm leading-none font-bold {{ not isComplete ? 'cursor-not-allowed' : 'cursor-pointer' }}">
-                    Attestation sur l'honneur
-                </p>
-                <p class="text-muted-foreground text-sm">
-                    Je certifie l'exactitude des informations fournies et l'authenticité des documents téléchargés.
-                </p>
-            </div>
+    {# 3. ATTESTATION (Allégée) #}
+    {# 3. ATTESTATION #}
+    <div class="bg-slate-50 ring-1 ring-slate-200 p-4 rounded-xl mb-8 flex items-start gap-3 transition-colors {{ isComplete ? 'bg-indigo-50/50 ring-indigo-200' : '' }}">
+        <div class="flex items-center h-5 mt-0.5">
+
+            {# 🚨 CORRECTIF ICI : data-model="isCertified" ajouté 🚨 #}
+            <input id="certify"
+                   name="certify"
+                   type="checkbox"
+                   data-model="isCertified"
+                   class="focus:ring-indigo-500 h-4 w-4 text-indigo-600 border-slate-300 rounded cursor-pointer"
+                   {% if isCertified %}checked{% endif %}>
+
+        </div>
+        <div class="text-sm">
+            <label for="certify" class="font-bold text-slate-800 cursor-pointer">Attestation sur l'honneur</label>
+            <p class="text-slate-500 text-xs mt-0.5">Je certifie l'exactitude des informations fournies et l'authenticité des documents téléchargés.</p>
         </div>
     </div>
 
-    {# ACTIONS FINALES #}
-    <div class="mt-8 flex items-center justify-between pt-8">
+    {# 4. ACTIONS FINALES #}
+    <div class="flex items-center justify-between pt-4">
         <twig:Button as="a" href="{{ path('portal_kyc_stakeholders') }}" variant="link" class="text-slate-500 hover:text-slate-900 px-0 gap-2">
             <twig:ux:icon name="tabler:arrow-left" class="size-4" />
             Retour
@@ -136,10 +209,8 @@
         <twig:Button
             type="button"
             variant="dark"
-            class="px-8 py-3 text-sm flex items-center gap-2 group {{ (not isComplete or not isCertified) ? 'opacity-40 cursor-not-allowed' : '' }}  {{ (not isComplete or not isCertified) ? 'disabled' : '' }}"
-
+            class="px-8 py-3 text-sm flex items-center gap-2 group {{ (not isComplete or not isCertified) ? 'opacity-40 cursor-not-allowed' : '' }}"
             title="{{ (not isComplete or not isCertified) ? 'Veuillez compléter le dossier et cocher la certification' : '' }}"
-
             data-action="{{ (isComplete and isCertified) ? 'live#action' : '' }}"
             data-live-action-param="{{ (isComplete and isCertified) ? 'submitFolder' : '' }}"
         >
@@ -147,5 +218,4 @@
             <twig:ux:icon name="tabler:rocket" class="size-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
         </twig:Button>
     </div>
-
 </div>

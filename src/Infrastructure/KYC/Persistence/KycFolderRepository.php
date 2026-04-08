@@ -55,16 +55,20 @@ class KycFolderRepository implements KycFolderRepositoryInterface
         return new Pagerfanta(new QueryAdapter($qb));
     }
 
-    public function findOneByEmailAndStatus(string $email, KycFolderStatus $status, string $workspaceId): ?KycFolder
+    /**
+     * @param array<KycFolderStatus> $statuses
+     */
+    public function findFirstByEmailAndStatuses(string $email, array $statuses, string $workspaceId): ?KycFolder
     {
-        return $qb = $this->repository->createQueryBuilder('kycFolder')
+        return $this->repository->createQueryBuilder('kycFolder')
             ->leftJoin('kycFolder.workspace', 'workspace')
             ->andWhere('workspace.slugId = :workspaceSlugid')
             ->andWhere('kycFolder.contactEmail = :email')
-            ->andWhere('kycFolder.status = :status')
+            ->andWhere('kycFolder.status IN (:statuses)')
             ->setParameter('email', $email)
-            ->setParameter('status', $status)
+            ->setParameter('statuses', $statuses) // Doctrine gère très bien les tableaux d'Enums !
             ->setParameter('workspaceSlugid', $workspaceId)
+            ->setMaxResults(1)
             ->getQuery()
             ->getOneOrNullResult();
     }
@@ -78,5 +82,18 @@ class KycFolderRepository implements KycFolderRepositoryInterface
     {
         $this->entityManager->remove($kycFolder);
         $this->entityManager->flush();
+    }
+
+    public function countDraftsForWorkspace(string $workspaceId): int
+    {
+        return (int) $this->repository->createQueryBuilder('kf')
+            ->select('COUNT(kf.id)')
+            ->leftJoin('kf.workspace', 'workspace')
+            ->where('workspace.slugId = :workspaceId')
+            ->andWhere('kf.status = :state')
+            ->setParameter('workspaceId', $workspaceId)
+            ->setParameter('state', KycFolderStatus::AWAITING_CLIENT->value)
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 }

@@ -5,7 +5,6 @@ namespace App\Infrastructure\KYC\Twig\Components;
 use App\Application\Kyc\DTO\Request\CreateKycFolderRequest;
 use App\Application\Kyc\UseCase\CreateKycFolderUseCase;
 use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
-use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\KYC\Form\CreateKycFolderType;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
@@ -56,8 +55,10 @@ class CreateKycFolderFormComponent
         try {
 
             $user = $this->userRepository->findBySlug($this->userSlugId);
-            Assert::isInstanceOf($user, User::class);
-            $workspace = ($this->getCurrentWorkspaceInfo)($user);
+            Assert::notNull($user);
+            $userId = $user->id;
+            Assert::notNull($userId, "L'utilisateur doit avoir un ID pour récupérer le workspace.");
+            $workspace = ($this->getCurrentWorkspaceInfo)($userId);
             $dto->workspaceSlugId = $workspace->slugId;
             ($this->createKycFolderUseCase)($dto);
             $this->resetForm();

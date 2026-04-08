@@ -8,6 +8,7 @@ use App\Application\Workspace\DTO\Request\CreateWorkspaceRequest;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Enum\OnboardingStatus;
 use App\Domain\User\Repository\UserRepositoryInterface;
+use App\Domain\Wallet\Enum\TransactionType;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Event\WorkspaceCreatedEvent;
 use App\Domain\Workspace\Repository\WorkspaceRepositoryInterface;
@@ -38,7 +39,9 @@ final readonly class CreateWorkspaceUseCase
             siret: $request->siret,
             legalName: $request->legalName,
             address: $request->address,
+            industry: $request->workspaceIndustry,
         );
+        $workspace->credit(2, TransactionType::RETENTION_BONUS->value);
         $user->onboardingStatus = OnboardingStatus::WORKSPACE_SETUP;
         $this->workspaceRepository->save($workspace);
         $this->userRepository->save($user);
