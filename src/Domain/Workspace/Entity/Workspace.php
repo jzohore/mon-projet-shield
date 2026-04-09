@@ -133,6 +133,7 @@ class Workspace
 
         $this->members = new ArrayCollection();
         $this->invitations = new ArrayCollection();
+        $this->walletTransactions = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
 

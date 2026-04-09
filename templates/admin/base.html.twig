@@ -43,9 +43,10 @@
                 <div class="space-y-1">
                     {% set compliance_items = [
                         {'icon': 'lucide:layout-dashboard', 'label': 'Tableau de Bord', 'badge': null, 'link': 'app_dashboard'},
-                        {'icon': 'lucide:shield-check', 'label': 'Dossiers KYC', 'badge': '3', 'link': 'app_kyc_list'},
-                        {'icon': 'lucide:users-round', 'label': 'Parties Prenantes', 'badge': null, 'link': 'app_kyc_list'},
-                        {'icon': 'lucide:folder-open', 'label': 'Documents Collectés', 'badge': null, 'link': 'app_kyc_list'}
+                        {'icon': 'lucide:shield-check', 'label': 'Dossiers', 'badge': '3', 'link': 'app_kyc_list'},
+                        {'icon': 'lucide:sparkles', 'label': 'Rapports Advisory', 'badge': null, 'link': 'app_employees_list'},
+                        {'icon': 'lucide:users-round', 'label': 'Parties Prenantes', 'badge': null, 'link': 'app_employees_list'},
+                        {'icon': 'lucide:folder-open', 'label': 'Documents Collectés', 'badge': null, 'link': 'app_employees_list'}
                     ] %}
 
                     {% for item in compliance_items %}
