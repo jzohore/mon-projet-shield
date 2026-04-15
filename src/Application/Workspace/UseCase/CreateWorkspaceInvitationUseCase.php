@@ -26,6 +26,8 @@ final readonly class CreateWorkspaceInvitationUseCase
     public function __invoke(CreateWorkspaceInvitationRequest $request): void
     {
         Assert::notNull($request->email);
+        Assert::notNull($request->firstName);
+        Assert::notNull($request->lastName);
         $user = $this->userRepository->findBySlug($request->userSlugId);
         Assert::isInstanceOf($user, User::class);
         $userId = $user->id;
@@ -34,11 +36,13 @@ final readonly class CreateWorkspaceInvitationUseCase
         Assert::notNull($findWorkspace);
         $workspace = $findWorkspace->workspace;
         Assert::notNull($workspace);
-        $newInvitation = new WorkspaceInvitation(
+        $newInvitation = WorkspaceInvitation::create(
             owner: $user,
             workspace: $workspace,
             email: $request->email,
-            invitedRole: $request->invitedRole
+            firstName: $request->firstName,
+            lastName: $request->lastName,
+            invitedRole: $request->invitedRole,
         );
 
         $this->workspaceInvitationRepository->save($newInvitation);

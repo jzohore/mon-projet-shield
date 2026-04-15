@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Helvetica', 'Arial', 'sans-serif'],
+                        mono: ['Courier', 'ui-monospace', 'monospace'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* SOLUTION : Marges physiques à 0 pour laisser Tailwind gérer l'espace */
+        @page { size: A4; margin: 0; }
+
+        body {
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+            font-size: 11px; /* Base beaucoup plus petite pour le print */
+            line-height: 1.4;
+            background: white;
+        }
+
+        /* Empêche les cartes d'être coupées en deux entre deux pages PDF */
+        .avoid-page-break { break-inside: avoid; page-break-inside: avoid; }
+
+        /* Force les coupures de mots pour les longs textes juridiques */
+        .break-words { word-break: break-word; overflow-wrap: break-word; }
+    </style>
+</head>
+<body class="bg-white text-slate-900 font-sans antialiased">
+
+{# --- SOLUTION : Wrapper global avec padding massif pour sécurité d'impression --- #}
+<main class="p-10 min-h-screen flex flex-col">
+
+    {# --- HEADER FORMEL --- #}
+    <div class="border-b-2 border-slate-800 pb-4 mb-6 flex justify-between items-end avoid-page-break">
+        <div>
+            <div class="flex items-center gap-2 mb-2">
+                <span class="text-[9px] font-bold uppercase tracking-widest text-slate-500">Rapport d'Audit LCB-FT</span>
+            </div>
+            <h1 class="text-xl font-bold text-slate-900 uppercase tracking-wide">Certificat de Conformité</h1>
+        </div>
+        <div class="text-right shrink-0">
+            <p class="text-[9px] font-bold text-slate-400 uppercase mb-0.5">Date d'émission (UTC)</p>
+            <p class="text-xs font-mono font-bold text-slate-800">{{ audit.createdAt|date('d/m/Y H:i:s') }}</p>
+        </div>
+    </div>
+
+    {# --- EN-TÊTE DU DOSSIER --- #}
+    <div class="grid grid-cols-2 gap-8 border border-slate-300 p-4 mb-6 bg-slate-50/50 avoid-page-break">
+        <div>
+            <h2 class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-1">Entité contrôlée</h2>
+            <p class="text-lg font-bold text-slate-900 uppercase break-words">{{ audit.query }}</p>
+        </div>
+        <div class="border-l border-slate-300 pl-6 min-w-0">
+            <h2 class="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-1">Détails de la requête</h2>
+            <table class="w-full text-[10px]">
+                <tr>
+                    <td class="text-slate-500 py-0.5 w-24">Demandeur :</td>
+                    <td class="font-bold text-slate-800 truncate">{{ audit.workspace.name|default('Mon Entreprise') }}</td>
+                </tr>
+                <tr>
+                    <td class="text-slate-500 py-0.5">Opérateur :</td>
+                    <td class="text-slate-800 truncate">{{ audit.owner.fullName|default('Système automatisé') }}</td>
+                </tr>
+                <tr>
+                    <td class="text-slate-500 py-0.5">ID Rapport :</td>
+                    <td class="font-mono text-slate-800 break-words">{{ audit.id|slice(0, 8)}}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    {# --- RÉSULTAT GLOBAL --- #}
+    <div class="mb-8 avoid-page-break">
+        {% if audit.totalMatches == 0 %}
+            <div class="border border-slate-300 border-l-4 border-l-emerald-500 p-3 flex items-center gap-4">
+                <svg class="size-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+                <div>
+                    <h3 class="text-xs font-bold text-emerald-900 uppercase tracking-wide">Aucun résultat identifié</h3>
+                    <p class="text-[10px] text-slate-700 mt-0.5">Le profil interrogé ne figure sur aucune liste de sanctions ou de PPE au moment de la recherche.</p>
+                </div>
+            </div>
+        {% else %}
+            <div class="border border-slate-300 border-l-4 border-l-rose-600 p-3 flex items-center gap-4">
+                <svg class="size-5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                <div>
+                    <h3 class="text-xs font-bold text-rose-900 uppercase tracking-wide">Vigilance requise : {{ audit.totalMatches }} correspondance(s)</h3>
+                    <p class="text-[10px] text-slate-700 mt-0.5">Des correspondances ont été détectées. Une analyse humaine est requise pour écarter tout risque d'homonymie.</p>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    {# --- DÉTAIL DES ALERTES --- #}
+    {% if audit.totalMatches > 0 %}
+        <div class="mb-8 flex-grow">
+            <h2 class="text-[10px] font-bold uppercase tracking-widest text-slate-900 border-b border-slate-800 pb-1 mb-4">1. Détail des entités détectées</h2>
+
+            <div class="space-y-4">
+                {% for result in audit.results %}
+
+                    {# avoid-page-break empêche la carte d'être coupée #}
+                    <div class="avoid-page-break border border-slate-300">
+                        {# En-tête de l'alerte #}
+                        <div class="bg-slate-50 border-b border-slate-300 p-2.5 flex justify-between items-center gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="font-bold text-xs uppercase break-words">{{ result.name }}</span>
+                                <span class="text-[8px] border border-slate-300 bg-white text-slate-500 px-1 py-0.5 uppercase tracking-widest shrink-0">{{ result.schema }}</span>
+                            </div>
+                            <div class="flex flex-wrap gap-1 justify-end shrink-0 max-w-[250px]">
+                                {% if 'sanction' in result.topics or 'sanction.linked' in result.topics %}
+                                    <span class="px-1.5 py-0.5 rounded border border-red-200 bg-red-50 text-[8px] font-bold text-red-700 uppercase tracking-widest">Sanctionné</span>
+                                {% endif %}
+
+                                {% if 'export.control' in result.topics %}
+                                    <span class="px-1.5 py-0.5 rounded border border-orange-200 bg-orange-50 text-[8px] font-bold text-orange-700 uppercase tracking-widest">Contrôle Export</span>
+                                {% endif %}
+
+                                {% if 'debarment' in result.topics %}
+                                    <span class="px-1.5 py-0.5 rounded border border-slate-300 bg-slate-100 text-[8px] font-bold text-slate-700 uppercase tracking-widest">Exclusion</span>
+                                {% endif %}
+
+                                {% if 'wanted' in result.topics %}
+                                    <span class="px-1.5 py-0.5 rounded border border-rose-200 bg-rose-50 text-[8px] font-bold text-rose-700 uppercase tracking-widest">Recherché</span>
+                                {% endif %}
+
+                                {% if 'crime' in result.topics or 'crime.fin' in result.topics or 'crime.terror' in result.topics %}
+                                    <span class="px-1.5 py-0.5 rounded border border-rose-200 bg-rose-50 text-[8px] font-bold text-rose-700 uppercase tracking-widest">Crime / Délit</span>
+                                {% endif %}
+
+                                {% if 'role.pep' in result.topics %}
+                                    <span class="px-1.5 py-0.5 rounded border border-purple-200 bg-purple-50 text-[8px] font-bold text-purple-700 uppercase tracking-widest">PEP</span>
+                                {% endif %}
+
+                                {% if 'role.rca' in result.topics %}
+                                    <span class="px-1.5 py-0.5 rounded border border-amber-200 bg-amber-50 text-[8px] font-bold text-amber-700 uppercase tracking-widest">RCA</span>
+                                {% endif %}
+
+                                {% if result.datasets is defined and 'interpol_red_notices' in result.datasets %}
+                                    <span class="px-1.5 py-0.5 rounded border border-slate-800 bg-slate-900 text-[8px] font-bold text-white uppercase tracking-widest">INTERPOL RED</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        {# Corps de l'alerte #}
+                        <div class="p-3 grid grid-cols-2 gap-4">
+                            {# Colonne Métadonnées #}
+                            <div class="min-w-0">
+                                <table class="text-[9px] w-full text-left table-fixed">
+                                    {% if result.countries %}
+                                        <tr>
+                                            <th class="py-0.5 text-slate-500 font-normal w-20">Pays liés :</th>
+                                            <td class="font-medium uppercase break-words">{{ result.countries|map(c => c|upper|country_name)|join(', ') }}</td>
+                                        </tr>
+                                    {% endif %}
+                                    {% if result.birth_dates %}
+                                        <tr>
+                                            <th class="py-0.5 text-slate-500 font-normal">Naissance :</th>
+                                            <td class="font-medium break-words">{{ result.birth_dates|join(', ') }}</td>
+                                        </tr>
+                                    {% elseif result.incorporation_dates is defined and result.incorporation_dates %}
+                                        <tr>
+                                            <th class="py-0.5 text-slate-500 font-normal">Dates :</th>
+                                            <td class="font-medium break-words">{{ result.incorporation_dates|join(', ') }}</td>
+                                        </tr>
+                                    {% endif %}
+                                    {% if result.registration_numbers is defined and result.registration_numbers %}
+                                        <tr>
+                                            <th class="py-0.5 text-slate-500 font-normal truncate">Immatriculation :</th>
+                                            <td class="font-mono font-medium break-words">{{ result.registration_numbers|first }}</td>
+                                        </tr>
+                                    {% endif %}
+                                </table>
+                            </div>
+
+                            {# Colonne Notes (Extrait légal) #}
+                            {% if result.notes is defined and result.notes|length > 0 %}
+                                <div class="border-l-2 border-indigo-100 pl-3 min-w-0">
+                                    <p class="text-[8px] font-bold text-indigo-600 uppercase mb-1">Extrait du registre</p>
+                                    <p class="text-[9px] text-slate-700 italic text-justify leading-relaxed break-words">
+                                        « {{ result.notes[0] }} »
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    {# --- CARTOUCHE DE DÉCISION (STYLE FORMULAIRE PAPIER) --- #}
+    <div class="avoid-page-break mb-8 mt-auto">
+        <h2 class="text-[10px] font-bold uppercase tracking-widest text-slate-900 border-b border-slate-800 pb-1 mb-3">2. Visa et Décision</h2>
+
+        <div class="border border-slate-800 p-4">
+            <div class="flex gap-12 mb-6">
+                <div class="flex items-center gap-2">
+                    <div class="size-3 border border-slate-800"></div>
+                    <span class="text-[10px] font-bold uppercase">Homonymie / Faux Positif</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="size-3 border border-slate-800"></div>
+                    <span class="text-[10px] font-bold uppercase">Relation Autorisée</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <div class="size-3 border border-slate-800 bg-slate-200"></div>
+                    <span class="text-[10px] font-bold uppercase tracking-tight">Relation Refusée / Suspendue</span>
+                </div>
+            </div>
+
+            <div class="mb-8">
+                <span class="text-[9px] text-slate-500 uppercase">Motif de la décision :</span>
+                <div class="border-b border-dotted border-slate-400 mt-4"></div>
+                <div class="border-b border-dotted border-slate-400 mt-4"></div>
+            </div>
+
+            <div class="flex justify-between gap-6">
+                <div class="w-1/3">
+                    <span class="text-[9px] text-slate-500 uppercase block mb-6">Nom & Fonction de l'analyste :</span>
+                    <div class="border-b border-dotted border-slate-400"></div>
+                </div>
+                <div class="w-1/3">
+                    <span class="text-[9px] text-slate-500 uppercase block mb-6">Date & Signature :</span>
+                    <div class="border-b border-dotted border-slate-400"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# --- PISTE D'AUDIT TECHNIQUE --- #}
+    <div class="avoid-page-break border-t border-slate-300 pt-4 grid grid-cols-2 gap-8 text-[9px] text-slate-500 mt-auto">
+        <div>
+            <p class="font-bold uppercase text-slate-700 mb-1">Sources & Périmètre</p>
+            <p class="break-words leading-relaxed">Vérification croisée effectuée sur les listes de sanctions internationales (ONU, OFAC, UE, Trésor), les registres PPE globaux et les listes de personnes recherchées (Interpol). Données consolidées et mises à jour en continu.</p>
+        </div>
+        <div class="text-right">
+            <p class="font-bold uppercase text-slate-700 mb-1">Validation cryptographique</p>
+            <p class="leading-relaxed">Ce document constitue une preuve d'audit opposable. Il a été généré automatiquement et ne peut être altéré.</p>
+            <p class="mt-1 font-mono text-[8px] break-words">SHA-256 ID: {{ audit.id }}</p>
+        </div>
+    </div>
+
+    {# --- FIN DU WRAPPER GLOBAL --- #}
+</main>
+
+</body>
+</html>

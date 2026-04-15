@@ -16,8 +16,8 @@
             </twig:Empty:Header>
         </twig:Empty>
     {% else %}
-
-        <div class="bg-white rounded-xl border border-slate-200 overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+        <div class="overflow-x-auto">
             <twig:Table>
                 <twig:Table:Header class="bg-slate-50/50 border-b border-slate-200">
                     <twig:Table:Row class="border-none">
@@ -36,6 +36,11 @@
                             <twig:Table:Cell class="px-6 py-4">
                                 <span class="text-sm text-slate-900 font-medium">{{ transaction.createdAt|date('d/m/Y') }}</span>
                                 <span class="text-xs text-slate-400 ml-1">{{ transaction.createdAt|date('H:i') }}</span>
+                                {% if transaction.invoiceUrl %}
+                                    <a href="{{ transaction.invoiceUrl }}" target="_blank" class="text-xs font-bold text-blue-600 hover:text-blue-800">
+                                        FACTURE PDF
+                                    </a>
+                                {% endif %}
                             </twig:Table:Cell>
 
                             {# Colonne 2 : Désignation #}
@@ -49,19 +54,13 @@
                             {# Colonne 3 : Montant #}
                             <twig:Table:Cell class="px-6 py-4 text-right">
                                 <span class="text-sm font-bold text-slate-900">
-                                    {{ transaction.amount > 0 ? '+' : '' }}{{ transaction.amount }} crédits
+                                    {{ transaction.action == 'debit' ? '-' : '+' }}{{ transaction.amount }} crédit{{ transaction.amount > 1 ? 's'}}
                                 </span>
                             </twig:Table:Cell>
 
                             {# Colonne 4 : Action/Lien #}
                             <twig:Table:Cell class="px-6 py-4 text-right">
-                                {% if transaction.referenceId and 'http' in transaction.referenceId %}
-                                    <a href="{{ transaction.referenceId }}" target="_blank" class="text-xs font-bold text-blue-600 hover:text-blue-800">
-                                        FACTURE PDF
-                                    </a>
-                                {% else %}
-                                    <span class="text-xs text-slate-300 font-mono">{{ transaction.id|slice(0, 8)|upper }}</span>
-                                {% endif %}
+                                <span class="text-xs text-slate-300 font-mono">{{ transaction.referenceId|upper }}</span>
                             </twig:Table:Cell>
 
                         </twig:Table:Row>
@@ -69,6 +68,59 @@
                 </twig:Table:Body>
             </twig:Table>
         </div>
+        <div class="border-t border-slate-200 bg-slate-50/50 px-4 py-3 flex items-center justify-between sm:px-6 mt-auto">
+
+            {# Version Mobile (Boutons Simples) #}
+            <div class="flex-1 flex justify-between md:hidden">
+                <button type="button" data-action="live#action" data-live-action-param="previousPage" class="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50">
+                    Précédent
+                </button>
+                <button type="button" data-action="live#action" data-live-action-param="nextPage" class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50">
+                    Suivant
+                </button>
+            </div>
+
+            {# Version Desktop (Informations + Chiffres) #}
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-slate-600">
+                        Affichage de la page <span class="font-bold text-slate-900">{{ this.page|default(1) }}</span>
+                        sur <span class="font-bold text-slate-900">{{ items.nbResults|default(items|length) }}</span> résultats
+                    </p>
+                </div>
+
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        {# Bouton Précédent #}
+                        <button type="button"
+                                data-action="live#action"
+                                data-live-action-param="previousPage"
+                                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                {% if this.page|default(1) <= 1 %}disabled{% endif %}>
+                            <span class="sr-only">Précédent</span>
+                            <twig:ux:icon name="tabler:chevron-left" class="size-4" />
+                        </button>
+
+                        {# Info Page Centrale (optionnel, pour montrer où on est) #}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-indigo-50 text-sm font-bold text-indigo-600">
+                                {{ this.page|default(1) }}
+                            </span>
+
+                        {# Bouton Suivant #}
+                        <button type="button"
+                                data-action="live#action"
+                                data-live-action-param="nextPage"
+                                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            {# Remplace "has_next_page" par ta propre logique PHP pour désactiver la suite #}
+                            {% if items|length < 11 %}disabled{% endif %}>
+                            <span class="sr-only">Suivant</span>
+                            <twig:ux:icon name="tabler:chevron-right" class="size-4" />
+                        </button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
 
     {% endif %}
 </div>

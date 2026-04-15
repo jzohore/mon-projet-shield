@@ -8,6 +8,7 @@ use App\Domain\Wallet\Entity\WalletTransaction;
 use App\Domain\Wallet\Repository\WalletTransactionsRepositoryInterface;
 use Pagerfanta\Pagerfanta;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
+use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 use Webmozart\Assert\Assert;
@@ -31,6 +32,20 @@ class WalletTransactionsListComponent
 
     #[LiveProp]
     public ?string $userSlugId = null;
+
+    #[LiveAction]
+    public function previousPage(): void
+    {
+        if ($this->page > 1) {
+            $this->page--;
+        }
+    }
+
+    #[LiveAction]
+    public function nextPage(): void
+    {
+        $this->page++;
+    }
 
     public function __construct(
         public readonly WalletTransactionsRepositoryInterface $walletTransactionsRepository,

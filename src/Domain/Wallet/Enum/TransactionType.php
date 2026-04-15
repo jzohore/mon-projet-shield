@@ -14,6 +14,8 @@ enum TransactionType: string
     case REFUND = 'refund'; // Pour les annulations de dossiers DRAFT dont on a parlé
     case MANUAL_ADJUSTMENT = 'manual_adjustment'; // Indispensable pour ton back-office (Support)
 
+    case SCREENING_SEARCH = 'screening_search';
+
     /**
      * Retourne le libellé propre pour l'affichage humain (Dashboard).
      */
@@ -26,6 +28,7 @@ enum TransactionType: string
             self::RETENTION_BONUS => 'Crédits offerts',
             self::REFUND => 'Remboursement (Annulation)',
             self::MANUAL_ADJUSTMENT => 'Ajustement manuel (Support client)',
+            self::SCREENING_SEARCH => 'Recherche LCB-FT',
         };
     }
 
@@ -44,6 +47,7 @@ enum TransactionType: string
 
             self::KYC_ANALYSIS,
             self::ADVISORY_REPORT => false,
+            self::SCREENING_SEARCH => throw new \Exception('To be implemented'),
         };
     }
 }

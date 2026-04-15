@@ -8,6 +8,8 @@ use App\Domain\Workspace\Entity\WorkspaceMember;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Pagerfanta\Doctrine\ORM\QueryAdapter;
+use Pagerfanta\Pagerfanta;
 use Symfony\Component\Uid\Uuid;
 
 /**
@@ -71,6 +73,25 @@ final readonly class WorkspaceMemberRepository implements WorkspaceMemberReposit
             ->getOneOrNullResult();
     }
 
+    public function getMembersList(string $workspaceSlugId, ?string $search = null): Pagerfanta
+    {
+        $qb = $this->repository->createQueryBuilder('wm')
+            ->select()
+            ->leftJoin('wm.workspace', 'workspace')
+            ->leftJoin('wm.user', 'user')
+            ->andWhere('workspace.slugId = :workspaceSlugid')
+            ->setParameter('workspaceSlugid', $workspaceSlugId)
+            ->orderBy('user.createdAt', 'DESC');
+
+        if ($search) {
+            $qb->andWhere('user.email LIKE :search OR user.firstName LIKE :search OR user.lastName LIKE :search')
+                ->setParameter('search', '%' . $search . '%');
+        }
+
+        return new Pagerfanta(new QueryAdapter($qb));
+
+    }
+
     public function isUserAdminOfWorkspace(User $user, Workspace $workspace): bool
     {
         $member = $this->repository->findOneBy([
@@ -84,5 +105,19 @@ final readonly class WorkspaceMemberRepository implements WorkspaceMemberReposit
         }
 
         return $member->isAdmin();
+    }
+
+    public function getMembersActive(string $workspaceSlugId): array
+    {
+        return $this->repository->createQueryBuilder('wm')
+            ->select('user.email, user.firstName, user.lastName')
+            ->leftJoin('wm.workspace', 'workspace')
+            ->leftJoin('wm.user', 'user')
+            ->andWhere('workspace.slugId = :workspaceSlugid')
+            ->andWhere('user.isActif = true')
+            ->setParameter('workspaceSlugid', $workspaceSlugId)
+            ->orderBy('user.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
     }
 }

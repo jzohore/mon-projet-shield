@@ -9,5 +9,6 @@ final readonly class DispatchInvitationEmailMessage
 {
     public function __construct(
         public ?string $workspaceSlugId,
+        public string $url,
     ) {}
 }

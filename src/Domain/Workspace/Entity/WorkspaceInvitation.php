@@ -12,6 +12,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'workspaces_invitations')]
@@ -31,6 +32,20 @@ class WorkspaceInvitation
     public ?string $email = null {
         get => $this->email;
         set => $this->email = strtolower(trim($value ?? ''));
+    }
+
+    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
+    #[Assert\Length(max: 100)]
+    public ?string $firstName = null {
+        get => $this->firstName;
+        set => $this->firstName = $value ? ucfirst(trim($value)) : null;
+    }
+
+    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
+    #[Assert\Length(max: 100)]
+    public ?string $lastName = null {
+        get => $this->lastName;
+        set => $this->lastName = $value ? ucfirst(trim($value)) : null;
     }
 
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
@@ -81,19 +96,35 @@ class WorkspaceInvitation
         get => $this->createdAt;
     }
 
-    public function __construct(
+    private function __construct(
         User $owner,
         Workspace $workspace,
         string $email,
+        string $firstName,
+        string $lastName,
         InvitedRole $invitedRole,
     ) {
         $this->owner = $owner;
         $this->workspace = $workspace;
         $this->email = $email;
+        $this->firstName = $firstName;
+        $this->lastName = $lastName;
         $this->invitedRole = $invitedRole;
         $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $this->slugId = $this->generate_ulid_prefixed('wrk_inv_');
         $this->generateMagicLinkToken();
+    }
+
+    public static function create(User $owner, Workspace $workspace, string $email, string $firstName, string $lastName, InvitedRole $invitedRole): WorkspaceInvitation
+    {
+        return new self(
+            owner: $owner,
+            workspace: $workspace,
+            email: $email,
+            firstName: $firstName,
+            lastName: $lastName,
+            invitedRole: $invitedRole,
+        );
     }
 
     public function isTokenValid(?string $token, ?\DateTimeImmutable $expiresAt): bool

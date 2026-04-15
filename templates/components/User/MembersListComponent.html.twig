@@ -1,6 +1,24 @@
-<div {{ attributes }}>
-    {% set members = this.members %}
-    {% if members is empty %}
+<div {{ attributes }} class="space-y-6">
+    {% set items = this.members %}
+    <div class="flex flex-wrap gap-4 justify-between items-center">
+        <div class="relative w-full sm:w-72">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <twig:ux:icon name="tabler:search" class="size-4 text-slate-400" />
+            </div>
+            <input
+                type="search"
+                placeholder="Rechercher un email, un nom..."
+                data-model="query"
+                value="{{ query }}"
+                class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors shadow-sm"
+            />
+        </div>
+        <div class="text-sm font-medium text-slate-500 bg-white px-3 py-1.5 rounded-md shadow-sm border border-slate-200">
+            <span class="text-slate-900 font-bold">{{ items.nbResults|default(items|length) }}</span> membre(s)
+        </div>
+    </div>
+
+    {% if items is empty %}
 
         {# --- 2A. L'ÉTAT VIDE (Empty State) --- #}
         <div class="bg-white rounded-2xl p-8">
@@ -24,9 +42,8 @@
         </div>
 
     {% else %}
-
-        {# --- 2B. LE TABLEAU DE DONNÉES --- #}
-        <div class="bg-white rounded-2xl shadow-sm overflow-hidden">
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+        <div class="overflow-x-auto">
             <twig:Table>
                 <twig:Table:Header class="bg-slate-50/50">
                     <twig:Table:Row class="border-b-slate-100"> {# Optionnel: adoucir la bordure d'en-tête #}
@@ -38,32 +55,32 @@
                 </twig:Table:Header>
 
                 <twig:Table:Body>
-                    {% for member in members %}
+                    {% for member in items %}
                         {# J'ai ajouté border-b-slate-50 ou border-none si tu veux vraiment zéro ligne entre les rangées #}
                         <twig:Table:Row class="hover:bg-slate-50/80 transition-colors border-b-slate-100 last:border-none">
 
                             {# Info Utilisateur #}
                             <twig:Table:Cell>
                                 <div class="flex items-center gap-3">
-                                    <div class="size-9 rounded-full {{ member.isOwner ? 'bg-slate-900 text-white' : 'bg-blue-100 text-blue-700' }} flex items-center justify-center text-xs font-bold shadow-sm">
-                                        {{ member.firstName|slice(0, 1) ~ member.lastName|split(' ')|last|slice(0, 1) }}
+                                    <div class="size-9 rounded-full {{ member.user.isOwner ? 'bg-slate-900 text-white' : 'bg-blue-100 text-blue-700' }} flex items-center justify-center text-xs font-bold shadow-sm">
+                                        {{ member.user.firstName|slice(0, 1) ~ member.user.lastName|split(' ')|last|slice(0, 1) }}
                                     </div>
                                     <div>
-                                        <p class="font-bold text-slate-900">{{ member.fullName }}</p>
-                                        <p class="text-xs text-slate-500">{{ member.email }}</p>
+                                        <p class="font-bold text-slate-900">{{ member.user.fullName }}</p>
+                                        <p class="text-xs text-slate-500">{{ member.user.email }}</p>
                                     </div>
                                 </div>
                             </twig:Table:Cell>
 
                             {# Rôle (Sans bordures) #}
                             <twig:Table:Cell>
-                                {% if member.isOwner %}
+                                {% if member.user.isOwner %}
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700">
                                 <twig:ux:icon name="tabler:crown" class="size-3 text-indigo-500" /> Gérant(e)
                             </span>
                                 {% else %}
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700">
-                                <twig:ux:icon name="tabler:shield" class="size-3 text-slate-500" />{{ enum('App\\Domain\\Workspace\\Enum\\InvitedRole').(member.roles[0]).label }}
+                                <twig:ux:icon name="tabler:shield" class="size-3 text-slate-500" />{{ enum('App\\Domain\\Workspace\\Enum\\InvitedRole').(member.user.roles[0]).label }}
                             </span>
                                 {% endif %}
                             </twig:Table:Cell>
@@ -71,7 +88,7 @@
                             {# Statut #}
                             <twig:Table:Cell>
                                 <div class="flex items-center gap-2">
-                                    {% if member.isActif %}
+                                    {% if member.user.isActif %}
                                         <span class="relative flex size-2">
                                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                     <span class="relative inline-flex rounded-full size-2 bg-emerald-500"></span>
@@ -79,14 +96,14 @@
                                     {% else %}
                                         <span class="size-2 rounded-full bg-slate-300"></span>
                                     {% endif %}
-                                    <span class="text-xs font-medium text-slate-600">Compte {{ member.isActif ? 'actif' : 'non actif' }}</span>
+                                    <span class="text-xs font-medium text-slate-600">Compte {{ member.user.isActif ? 'actif' : 'non actif' }}</span>
                                 </div>
                             </twig:Table:Cell>
 
                             {# Actions (Toujours visibles) #}
                             <twig:Table:Cell class="text-right">
-                                {% if member.isOwner %}
-                                    <span class="text-xs italic text-slate-400">C'est vous</span>
+                                {% if member.user.isOwner %}
+                                    <span class="text-xs italic text-slate-400">Compte principal</span>
                                 {% else %}
                                     {# J'ai retiré opacity-0 group-hover:opacity-100 et assombri légèrement l'icône de base (text-slate-500) #}
                                     <div class="flex justify-end gap-1">
@@ -105,6 +122,58 @@
                 </twig:Table:Body>
             </twig:Table>
         </div>
+        <div class="border-t border-slate-200 bg-slate-50/50 px-4 py-3 flex items-center justify-between sm:px-6 mt-auto">
 
+            {# Version Mobile (Boutons Simples) #}
+            <div class="flex-1 flex justify-between md:hidden">
+                <button type="button" data-action="live#action" data-live-action-param="previousPage" class="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50">
+                    Précédent
+                </button>
+                <button type="button" data-action="live#action" data-live-action-param="nextPage" class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50">
+                    Suivant
+                </button>
+            </div>
+
+            {# Version Desktop (Informations + Chiffres) #}
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-slate-600">
+                        Affichage de la page <span class="font-bold text-slate-900">{{ this.page|default(1) }}</span>
+                        sur <span class="font-bold text-slate-900">{{ items.nbResults|default(items|length) }}</span> résultats
+                    </p>
+                </div>
+
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                        {# Bouton Précédent #}
+                        <button type="button"
+                                data-action="live#action"
+                                data-live-action-param="previousPage"
+                                class="cursor-pointer relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                {% if this.page|default(1) <= 1 %}disabled{% endif %}>
+                            <span class="sr-only">Précédent</span>
+                            <twig:ux:icon name="tabler:chevron-left" class="size-4" />
+                        </button>
+
+                        {# Info Page Centrale (optionnel, pour montrer où on est) #}
+                        <span class="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-indigo-50 text-sm font-bold text-indigo-600">
+                                {{ this.page|default(1) }}
+                            </span>
+
+                        {# Bouton Suivant #}
+                        <button type="button"
+                                data-action="live#action"
+                                data-live-action-param="nextPage"
+                                class="cursor-pointer relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            {# Remplace "has_next_page" par ta propre logique PHP pour désactiver la suite #}
+                            {% if items|length < 11 %}disabled{% endif %}>
+                            <span class="sr-only">Suivant</span>
+                            <twig:ux:icon name="tabler:chevron-right" class="size-4" />
+                        </button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
     {% endif %}
 </div>

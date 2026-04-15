@@ -1,0 +1,25 @@
+{% extends '@admin/base.html.twig' %}
+
+{% block title %}{{ page_title }} | {{ company_name }}{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+
+{% block content %}
+    <div class="max-w-7xl mx-auto space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{{ page_title }}</h1>
+                <p class="text-sm text-slate-500 mt-1">Gérez les obligations de conformité de vos clients en un coup d'œil.</p>
+            </div>
+
+            <div>
+                <twig:Button as="a" href="{{ path('app_screening_new') }}"
+                             variant="primary" size="sm">
+                    <twig:ux:icon name="ic:baseline-plus" class="size-4" /> Nouvelle recherche
+                </twig:Button>
+            </div>
+        </div>
+
+        <twig:ScreeningListComponent userSlugId="{{ app.user.id }}"></twig:ScreeningListComponent>
+    </div>
+{% endblock %}

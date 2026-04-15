@@ -39,6 +39,7 @@ final readonly class EmployeesListController
         return new Response(
             $twig->render('@app/employees/list.html.twig', [
                 'page_title' => 'Équipe & Accès',
+                'sub_title' => 'Gérez les accès, les rôles et la sécurité de vos collaborateurs.',
                 'workspace_id' => $workspace->slugId,
             ])
         );

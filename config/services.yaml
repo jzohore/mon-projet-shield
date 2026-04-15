@@ -48,6 +48,12 @@ services:
         arguments:
             $mode: '%env(OCR_MODE)%'
 
+    App\Domain\Port\OpenSanctionsClientInterface:
+        factory: [ '@App\Infrastructure\Screening\Service\OpenSanctionsFactory', 'create' ]
+        arguments:
+            $mode: '%env(OPEN_SANCTIONS_MODE)%'
+
+
     App\Application\Kyc\UseCase\UploadKycDocumentUseCase:
         arguments:
             $tempStorageDir: '%tempStorageDir%'
@@ -75,5 +81,9 @@ services:
     App\Infrastructure\Billing\Controller\StripeWebhookController:
         arguments:
             $stripeWebhookSecret: '%env(STRIPE_WEBHOOK_SECRET)%'
+
+    App\Infrastructure\Screening\Service\OpenSanctionsClient:
+        arguments:
+            $openSanctionsApiKey: '%env(OPEN_SANCTIONS_API_KEY)%'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

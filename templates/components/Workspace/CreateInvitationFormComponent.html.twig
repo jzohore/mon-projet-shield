@@ -23,10 +23,28 @@
 
                     <div class="space-y-6">
                         {# L'email #}
-                        {{ form_row(form.email, {
-                            label: 'Email professionnel',
-                            attr: { placeholder: 'jean.dupont@cabinet.fr' }
-                        }) }}
+                        <div class="grid grid-cols-2 gap-5">
+
+                            {# Prénom (Colonne 1) #}
+                            {{ form_row(form.firstName, {
+                                label: 'Prénom',
+                                attr: { placeholder: 'Jean', autofocus: true }
+                            }) }}
+
+                            {# Nom (Colonne 2) #}
+                            {{ form_row(form.lastName, {
+                                label: 'Nom',
+                                attr: { placeholder: 'Dupont' }
+                            }) }}
+
+                            {# Email (Prend les 2 colonnes grâce à col-span-2) #}
+                            <div class="col-span-2">
+                                {{ form_row(form.email, {
+                                    label: 'Email professionnel',
+                                    attr: { placeholder: 'jean.dupont@cabinet.fr' }
+                                }) }}
+                            </div>
+                        </div>
 
                         {# Les 2 Rôles #}
                         <div>
@@ -118,33 +136,37 @@
                             <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border transition-colors {{ invitation.invitedRole.getColorClasses() }}">
                                 {{ invitation.invitedRole.getLabel() }}
                             </span>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border transition-colors {{ invitation.invitationStatus.getColorClasses() }}">
+                                {{ invitation.invitationStatus.getLabel() }}
+                            </span>
                                         <span class="text-[11px] text-slate-400">{{ invitation.expiresAt }}</span>
                                     </div>
                                 </div>
+                                {% if invitation.invitationStatus.value != 'accepted' %}
+                                    <div class="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                            type="button"
+                                            data-action="live#action"
+                                            data-live-action-param="resendInvitation"
+                                            data-live-id-param="{{ invitation.slugId }}"
+                                            onclick="return confirm('Êtes-vous sûr de vouloir renvoyer l\'invitation de {{ invitation.email }} ?');"
+                                            class="p-1.5 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors cursor-pointer" title="Renvoyer">
+                                            <twig:ux:icon name="lucide:send" class="w-3.5 h-3.5" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            data-action="live#action"
+                                            data-live-action-param="revokeInvitation"
+                                            data-live-id-param="{{ invitation.slugId }}"
+                                            onclick="return confirm('Êtes-vous sûr de vouloir révoquer l\'invitation de {{ invitation.email }} ?');"
+                                            class="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors cursor-pointer"
+                                            title="Révoquer">
 
-                                <div class="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        type="button"
-                                        data-action="live#action"
-                                        data-live-action-param="resendInvitation"
-                                        data-live-id-param="{{ invitation.slugId }}"
-                                        onclick="return confirm('Êtes-vous sûr de vouloir renvoyer l\'invitation de {{ invitation.email }} ?');"
-                                        class="p-1.5 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors cursor-pointer" title="Renvoyer">
-                                        <twig:ux:icon name="lucide:send" class="w-3.5 h-3.5" />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        data-action="live#action"
-                                        data-live-action-param="revokeInvitation"
-                                        data-live-id-param="{{ invitation.slugId }}"
-                                        onclick="return confirm('Êtes-vous sûr de vouloir révoquer l\'invitation de {{ invitation.email }} ?');"
-                                        class="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors cursor-pointer"
-                                        title="Révoquer">
+                                            <twig:ux:icon name="lucide:trash" class="w-3.5 h-3.5" />
+                                        </button>
 
-                                        <twig:ux:icon name="lucide:trash" class="w-3.5 h-3.5" />
-                                    </button>
-
-                                </div>
+                                    </div>
+                                {% endif %}
                             </div>
                         </li>
                     {% else %}

@@ -1,0 +1,331 @@
+{% extends '@admin/base.html.twig' %}
+
+{% set page_title = 'Rapport de Criblage' %}
+
+{% block title %}{{ page_title }} | {{ company_name|default('RegTech') }}{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+{% block breadcrumb_items %}
+    <twig:Breadcrumb:Separator />
+    <twig:Breadcrumb:Item>
+        <twig:Breadcrumb:Link href="{{ path('app_screening_list') }}" class="text-xs">
+            Criblage LCB-FT
+        </twig:Breadcrumb:Link>
+    </twig:Breadcrumb:Item>
+    <twig:Breadcrumb:Separator />
+    <twig:Breadcrumb:Item>
+        <span class="text-xs text-slate-500 uppercase">{{ audit.query }}</span>
+    </twig:Breadcrumb:Item>
+{% endblock %}
+
+{% block content %}
+
+        {# Top Navigation #}
+        <div class="px-6 py-4 flex items-center gap-4">
+            <twig:Button as="a" href="{{ path('app_screening_list') }}" variant="link" class="text-slate-500 hover:text-slate-900">
+                <twig:ux:icon name="solar:arrow-left-bold" class="size-4 mr-2" />
+                Retour à l'historique
+            </twig:Button>
+        </div>
+
+        {# CONTAINER PRINCIPAL #}
+        <div class="max-w-[1400px] mx-auto px-6 lg:px-8 flex flex-col lg:flex-row gap-10">
+
+            {# ========================================================= #}
+            {# COLONNE GAUCHE : CONTENU DÉFILANT (flex-1)                 #}
+            {# ========================================================= #}
+            <div class="flex-1 min-w-0 space-y-10">
+
+                {# BANDEAU TOP #}
+                <div class="bg-indigo-50/50 rounded-[2rem] p-8 ring-1 ring-indigo-900/5 relative overflow-hidden">
+                    <div class="absolute -top-24 -right-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <div class="relative z-10 flex justify-between items-start">
+                        <div>
+                            <div class="flex items-center gap-3 mb-2">
+                                <span class="px-2.5 py-1 rounded-full text-[10px] uppercase tracking-widest font-bold bg-white text-indigo-600 ring-1 ring-slate-900/5 shadow-sm">
+                                    Audit n° {{ audit.slugId|slice(0, 8) }}
+                                </span>
+
+                            </div>
+
+                            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight mt-4 uppercase">
+                                {{ audit.query }}
+                            </h1>
+                        </div>
+                    </div>
+                </div>
+
+                {# SECTION 1 : SYNTHÈSE DES RISQUES #}
+                <section>
+                    <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4 px-2">1. Synthèse de l'analyse</h2>
+
+                    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 overflow-hidden p-6 md:p-8">
+                        {% if audit.totalMatches == 0 %}
+                            <div class="flex items-start gap-5">
+                                <div class="size-12 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 ring-4 ring-emerald-50">
+                                    <twig:ux:icon name="tabler:shield-check" class="size-6 text-emerald-600" />
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-emerald-900">Aucun risque identifié</h3>
+                                    <p class="text-sm text-slate-600 mt-1 max-w-2xl">
+                                        L'entité <strong>{{ audit.query|upper }}</strong> ne figure sur aucune des listes de sanctions internationales interrogées (OFAC, ONU, UE, Trésor Public) et n'est pas identifiée comme une Personne Politiquement Exposée (PPE).
+                                    </p>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="flex items-start gap-5">
+                                <div class="size-12 rounded-full bg-rose-100 flex items-center justify-center shrink-0 ring-4 ring-rose-50">
+                                    <twig:ux:icon name="tabler:shield-x" class="size-6 text-rose-600" />
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-bold text-rose-900">Vigilance requise : {{ audit.totalMatches }} correspondance(s)</h3>
+                                    <p class="text-sm text-slate-600 mt-1 max-w-2xl">
+                                        Des similarités ont été trouvées dans les bases de données de sanctions ou PPE. Une analyse humaine est nécessaire pour écarter tout risque d'homonymie.
+                                    </p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </section>
+
+                {# SECTION 2 : DÉTAIL DES CORRESPONDANCES (Affiché uniquement si matchs > 0) #}
+                {% if audit.totalMatches > 0 %}
+                    <section>
+                        <div class="flex items-center justify-between mb-4 px-2">
+                            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest">2. Détail des alertes</h2>
+                        </div>
+
+                        <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 overflow-hidden" data-controller="notes-modal">
+                            <ul class="divide-y divide-slate-900/5">
+                                {% for result in audit.results %}
+                                    {# On détermine si le profil est "Dangereux" #}
+                                    {% set isHighRisk = false %}
+                                    {% for risk_tag in ['sanction', 'sanction.linked', 'wanted', 'crime', 'crime.terror', 'crime.fin', 'export.control'] %}
+                                        {% if risk_tag in result.topics %}
+                                            {% set isHighRisk = true %}
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    <li class="p-5 hover:bg-slate-50/50 transition-colors flex flex-col md:flex-row md:items-start justify-between gap-6">
+
+                                        {# COLONNE GAUCHE (Prend tout l'espace restant avec flex-1 min-w-0) #}
+                                        <div class="flex items-start gap-4 flex-1 min-w-0">
+
+                                            {# Icône dynamique #}
+                                            <div class="p-2.5 rounded-xl shrink-0 mt-1 ring-1 {% if isHighRisk %}bg-rose-50 text-rose-600 ring-rose-900/10{% else %}bg-slate-50 text-slate-500 ring-slate-900/10{% endif %}">
+                                                {% if result.schema == 'Person' %}
+                                                    <twig:ux:icon name="tabler:user" class="size-5" />
+                                                {% else %}
+                                                    <twig:ux:icon name="tabler:building-bank" class="size-5" />
+                                                {% endif %}
+                                            </div>
+
+                                            <div class="flex-1 min-w-0">
+                                                {# Nom principal et type #}
+                                                <div class="flex items-center gap-2 mb-1">
+                                                    <p class="text-base font-bold text-slate-900 uppercase truncate">{{ result.name }}</p>
+                                                    <span class="text-[9px] font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-1.5 py-0.5 rounded shrink-0">{{ result.schema }}</span>
+                                                </div>
+
+                                                {# Méta-données d'identification #}
+                                                <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 mb-2 font-medium">
+                                                    {% if result.birth_dates %}
+                                                        <div class="flex items-center gap-1" title="Date de naissance">
+                                                            <twig:ux:icon name="tabler:calendar" class="size-3.5" />
+                                                            {{ result.birth_dates|join(', ') }}
+                                                        </div>
+                                                    {% elseif result.incorporation_dates is defined and result.incorporation_dates %}
+                                                        <div class="flex items-center gap-1" title="Date d'immatriculation">
+                                                            <twig:ux:icon name="tabler:calendar-stats" class="size-3.5" />
+                                                            {{ result.incorporation_dates|join(', ') }}
+                                                        </div>
+                                                    {% endif %}
+
+                                                    {% if result.registration_numbers is defined and result.registration_numbers %}
+                                                        <div class="flex items-center gap-1" title="Numéro d'immatriculation / LEI">
+                                                            <twig:ux:icon name="tabler:barcode" class="size-3.5" />
+                                                            {{ result.registration_numbers|first }}
+                                                        </div>
+                                                    {% endif %}
+
+                                                    {% if result.countries %}
+                                                        <div class="flex items-center gap-1 uppercase" title="Pays liés">
+                                                            <twig:ux:icon name="tabler:flag" class="size-3.5" />
+                                                            {{ result.countries|map(c => c|upper|country_name)|join(', ') }}
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+
+                                                {# Positions/Rôles #}
+                                                {% if result.positions %}
+                                                    <div class="text-xs text-slate-600 leading-relaxed bg-white ring-1 ring-slate-200 p-2 rounded-lg mt-2">
+                                                        <ul class="list-disc list-inside">
+                                                            {% for position in result.positions|slice(0, 3) %}
+                                                                <li class="truncate" title="{{ position }}">{{ position }}</li>
+                                                            {% endfor %}
+                                                            {% if result.positions|length > 3 %}
+                                                                <li class="text-slate-400 italic list-none ml-4">+ {{ result.positions|length - 3 }} autres rôles...</li>
+                                                            {% endif %}
+                                                        </ul>
+                                                    </div>
+                                                {% endif %}
+
+                                                {# --- MOTIF ET CONTEXTE (Inline avec Stimulus) --- #}
+                                                {% if result.notes is defined and result.notes|length > 0 %}
+                                                    <div class="mt-3">
+
+                                                        <button type="button"
+                                                                data-action="click->notes-modal#open"
+                                                                data-entity="{{ result.name }}"
+                                                                data-notes="{{ result.notes|json_encode|e('html_attr') }}"
+                                                                class="cursor-pointer inline-flex items-center gap-1.5 text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-md border border-indigo-100">
+                                                            <twig:ux:icon name="tabler:file-text" class="size-3.5" />
+                                                            Voir les notes ({{ result.notes|length }})
+                                                        </button>
+                                                    </div>
+                                                    <dialog data-notes-modal-target="dialog"
+                                                            data-action="click->notes-modal#clickOutside"
+                                                            class="backdrop:bg-slate-900/50 backdrop:backdrop-blur-sm p-0 rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl bg-white m-auto">
+
+                                                        <div class="flex flex-col max-h-[85vh]">
+
+                                                            {# Header Fixe #}
+                                                            <div class="flex items-center justify-between p-6 border-b border-slate-100 shrink-0 bg-white sticky top-0">
+                                                                <div>
+                                                                    <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2 uppercase">
+                                                                        <twig:ux:icon name="tabler:gavel" class="size-5 text-indigo-600" />
+                                                                        Contexte Légal
+                                                                    </h2>
+                                                                    <p class="text-sm text-slate-500 mt-1">
+                                                                        Notes relatives à <span data-notes-modal-target="entityName" class="font-bold text-slate-700"></span>
+                                                                    </p>
+                                                                </div>
+                                                                <button type="button" data-action="click->notes-modal#close" class="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors">
+                                                                    <twig:ux:icon name="tabler:x" class="size-5" />
+                                                                </button>
+                                                            </div>
+
+                                                            {# Corps Scrollable (Injecté par JS) #}
+                                                            <div data-notes-modal-target="content" class="p-6 overflow-y-auto space-y-4 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-slate-200 [&::-webkit-scrollbar-thumb]:rounded-full">
+                                                                {# Les notes apparaîtront ici #}
+                                                            </div>
+
+                                                        </div>
+                                                    </dialog>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+
+                                        {# COLONNE DROITE : BADGES (Taille fixe, alignés en haut à droite) #}
+                                        <div class="flex flex-wrap items-start gap-2 shrink-0 md:justify-end md:w-[220px]">
+                                            {% if 'sanction' in result.topics or 'sanction.linked' in result.topics %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded border border-red-200 bg-red-50 text-[10px] font-bold text-red-700 uppercase tracking-widest">Sanctionné</span>
+                                            {% endif %}
+                                            {% if 'export.control' in result.topics %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded border border-orange-200 bg-orange-50 text-[10px] font-bold text-orange-700 uppercase tracking-widest">Contrôle Export</span>
+                                            {% endif %}
+                                            {% if 'debarment' in result.topics %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded border border-slate-300 bg-slate-100 text-[10px] font-bold text-slate-700 uppercase tracking-widest" title="Exclu des marchés publics">Exclusion</span>
+                                            {% endif %}
+                                            {% if 'wanted' in result.topics %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded border border-rose-200 bg-rose-50 text-[10px] font-bold text-rose-700 uppercase tracking-widest">
+                                <twig:ux:icon name="tabler:viewfinder" class="size-3 mr-1" /> Recherché
+                            </span>
+                                            {% endif %}
+                                            {% if 'crime' in result.topics or 'crime.fin' in result.topics or 'crime.terror' in result.topics %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded border border-rose-200 bg-rose-50 text-[10px] font-bold text-rose-700 uppercase tracking-widest">Crime / Délit</span>
+                                            {% endif %}
+                                            {% if 'role.pep' in result.topics %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded border border-purple-200 bg-purple-50 text-[10px] font-bold text-purple-700 uppercase tracking-widest">PEP</span>
+                                            {% endif %}
+                                            {% if 'role.rca' in result.topics %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded border border-amber-200 bg-amber-50 text-[10px] font-bold text-amber-700 uppercase tracking-widest" title="Proche de PEP">RCA</span>
+                                            {% endif %}
+                                            {% if result.datasets is defined and 'interpol_red_notices' in result.datasets %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded border border-slate-300 bg-slate-900 text-[10px] font-bold text-white uppercase tracking-widest">INTERPOL RED</span>
+                                            {% endif %}
+                                        </div>
+
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </section>
+                {% endif %}
+
+            </div>
+
+            {# ========================================================= #}
+            {# COLONNE DROITE : SIDEBAR FIXE (w-96)                       #}
+            {# ========================================================= #}
+            <div class="w-full lg:w-96 flex-shrink-0">
+
+                <div class="sticky top-8 flex flex-col space-y-6">
+
+                    {# 1. BLOC ACTIONS PRINCIPALES (LA GESTION DU PDF EST ICI) #}
+                    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-5 space-y-3">
+
+                        {# LOGIQUE DU BOUTON PDF SELON L'ÉTAT DE L'ENTITÉ #}
+                        <twig:ScreeningPdfActionComponent screeningId="{{ audit.slugId }}" workSpaceId="{{ audit.workspaceSlugId }}"></twig:ScreeningPdfActionComponent>
+
+                    </div>
+
+                    {# 2. BLOC DÉTAILS DE L'OPÉRATION #}
+                    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-5">
+                        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Méta-données</h3>
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between items-center py-1 border-b border-slate-50">
+                                <span class="text-slate-500 text-xs">ID Requête</span>
+                                <span class="font-mono text-xs font-medium text-slate-900">{{ audit.slugId|slice(0, 12) }}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1 border-b border-slate-50">
+                                <span class="text-slate-500 text-xs">Horodatage</span>
+                                <span class="font-medium text-slate-900 text-xs">{{ audit.createdAt|date('d/m/Y H:i:s') }}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1 border-b border-slate-50">
+                                <span class="text-slate-500 text-xs">Résultats trouvés</span>
+                                <span class="font-medium text-slate-900 text-xs">{{ audit.totalMatches }}</span>
+                            </div>
+                            <div class="flex justify-between items-center py-1">
+                                <span class="text-slate-500 text-xs">Coût d'audit</span>
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600">
+                                    <twig:ux:icon name="tabler:bolt" class="size-3 mr-0.5 text-amber-500" /> 1 crédit
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# 3. BLOC SOURCES DE DONNÉES #}
+                    <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 flex flex-col">
+                        <div class="p-5 border-b border-slate-900/5">
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Périmètre de recherche</h3>
+                        </div>
+                        <div class="p-5 bg-slate-50/50 rounded-b-2xl">
+                            <ul class="text-[11px] text-slate-500 space-y-2.5">
+                                <li class="flex items-start gap-2">
+                                    <twig:ux:icon name="tabler:point-filled" class="size-3 text-indigo-400 mt-0.5 shrink-0" />
+                                    Sanctions internationales (OFAC, UN, EU)
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <twig:ux:icon name="tabler:point-filled" class="size-3 text-indigo-400 mt-0.5 shrink-0" />
+                                    Registre national du Gel des Avoirs
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <twig:ux:icon name="tabler:point-filled" class="size-3 text-indigo-400 mt-0.5 shrink-0" />
+                                    Personnes Politiquement Exposées (PPE)
+                                </li>
+                                <li class="flex items-start gap-2">
+                                    <twig:ux:icon name="tabler:point-filled" class="size-3 text-indigo-400 mt-0.5 shrink-0" />
+                                    Proches collaborateurs (RCA)
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    {# LA MODALE NATIVE HTML5 (Gérée par Stimulus) #}
+
+{% endblock %}

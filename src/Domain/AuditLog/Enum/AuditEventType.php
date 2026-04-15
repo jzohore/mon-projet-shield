@@ -42,7 +42,10 @@ enum AuditEventType: string
     // --- BILLING & CRÉDITS ---
     case CREDIT_PURCHASED = 'billing.credit_purchased'; // Achat via Stripe
     case CREDIT_CONSUMED = 'billing.credit_consumed';
+    case SCREENING_PERFORMED = 'screening.performed'; // Recherche unitaire PEP/Sanctions
+    case ADVISORY_REPORT_GENERATED = 'advisory.generated'; // Analyse IA de l'adéquation
 
+    case DOCUMENT_SHARED = 'document_shared';
     /**
      * Retourne un libellé lisible par un humain pour l'affichage dans la frise chronologique (Audit Trail).
      */
@@ -87,6 +90,11 @@ enum AuditEventType: string
             // Billing
             self::CREDIT_PURCHASED => 'Achat de crédits d\'audit',
             self::CREDIT_CONSUMED => 'Consommation de crédits',
+
+            self::SCREENING_PERFORMED => 'Recherche LCB-FT effectuée',
+            self::ADVISORY_REPORT_GENERATED => 'Génération du rapport Advisory',
+
+            self::DOCUMENT_SHARED => 'Partage d\'un document',
         };
     }
 }

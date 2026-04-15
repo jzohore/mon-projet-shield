@@ -65,4 +65,9 @@ final readonly class WorkspaceInvitationRepository implements WorkspaceInvitatio
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    public function findByToken(string $token): ?WorkspaceInvitation
+    {
+        return $this->repository->findOneBy(['magicLinkToken' => $token]);
+    }
 }

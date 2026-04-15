@@ -36,15 +36,23 @@ class WalletTransaction
     #[ORM\Column(type: Types::STRING, nullable: true)]
     public private(set) ?string $referenceId = null;
 
+    #[ORM\Column(type: Types::STRING, nullable: true)]
+    public private(set) ?string $invoiceUrl = null;
+
+    #[ORM\Column(type: Types::STRING, nullable: true)]
+    public private(set) ?string $action = null;
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     public private(set) ?\DateTimeImmutable $createdAt = null;
 
-    public function __construct(Workspace $workspace, int $amount, string $type, ?string $referenceId = null)
+    public function __construct(Workspace $workspace, int $amount, string $type, ?string $action = null, ?string $invoiceUrl = null)
     {
         $this->workspace = $workspace;
         $this->amount = $amount;
         $this->type = $type;
-        $this->referenceId = $referenceId;
+        $this->referenceId = 'WT' . mt_rand(100000, 999999);
+        $this->action = $action;
+        $this->invoiceUrl = $invoiceUrl;
         $this->createdAt = new \DateTimeImmutable();
     }
 }

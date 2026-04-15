@@ -5,6 +5,7 @@ namespace App\Domain\Workspace\Repository;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Entity\WorkspaceMember;
+use Pagerfanta\Pagerfanta;
 use Symfony\Component\Uid\Uuid;
 
 interface WorkspaceMemberRepositoryInterface
@@ -30,4 +31,17 @@ interface WorkspaceMemberRepositoryInterface
     public function findOneByUser(Uuid $userId): ?WorkspaceMember;
 
     public function isUserAdminOfWorkspace(User $user, Workspace $workspace): bool;
+
+    /**
+     * @param string $workspaceSlugId
+     * @param string|null $search
+     * @return Pagerfanta<WorkspaceMember>
+     */
+    public function getMembersList(string $workspaceSlugId, ?string $search = null): Pagerfanta;
+
+    /**
+     * @param string $workspaceSlugId
+     * @return array<int, WorkspaceMember>
+     */
+    public function getMembersActive(string $workspaceSlugId): array;
 }

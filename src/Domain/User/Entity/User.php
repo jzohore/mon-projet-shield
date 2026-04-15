@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\User\Entity;
 
+use App\Domain\Screening\Entity\ScreeningAudit;
 use App\Domain\User\Enum\OnboardingStatus;
 use App\Domain\User\ValueObject\UserProfil;
 use App\Domain\Workspace\Entity\Workspace;
@@ -56,7 +57,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column(type: Types::JSON)]
     public array $roles = ['ROLE_USER'] {
-        // 👇 On englobe le tout dans array_values()
         get => array_values(array_unique([...$this->roles, 'ROLE_USER']));
         set => $this->roles = array_values(array_unique($value));
     }
@@ -141,11 +141,19 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * @var Collection<int, User>
+     * @var Collection<int, WorkspaceInvitation>
      */
     #[ORM\OneToMany(targetEntity: WorkspaceInvitation::class, mappedBy: 'owner', cascade: ['persist', 'remove'], orphanRemoval: true)]
     public Collection $invitations {
         get => $this->invitations;
+    }
+
+    /**
+     * @var Collection<int, ScreeningAudit>
+     */
+    #[ORM\OneToMany(targetEntity: ScreeningAudit::class, mappedBy: 'owner', cascade: ['persist', 'remove'])]
+    public Collection $screeningAudits {
+        get => $this->screeningAudits;
     }
 
     #[ORM\Embedded(class: UserProfil::class, columnPrefix: 'profile_')]
@@ -157,27 +165,44 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     public private(set) bool $dismissOnboarding = false;
 
+    /**
+     * @param list<string> $roles
+     */
     private function __construct(
         string $email,
         string $firstName,
         string $lastName,
         bool $isVerified,
+        array $roles = ['ROLE_USER'],
+        OnboardingStatus $onboardingStatus = OnboardingStatus::PENDING,
+        bool $isActif = false,
     ) {
         $this->email = $email;
         $this->firstName = $firstName;
         $this->lastName = $lastName;
-        $this->roles = ['ROLE_USER'];
+        $this->roles = array_values(array_unique($roles));
         $this->isVerified = $isVerified;
-
+        $this->onboardingStatus = $onboardingStatus;
+        $this->isActif = $isActif;
         $this->slugId = $this->generate_ulid_prefixed('usr_');
         $this->profile = new UserProfil();
         $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $this->updatedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
 
-    public static function create(string $email, string $firstName, string $lastName): self
-    {
-        return new self($email, $firstName, $lastName, false);
+    /**
+     * @param list<string> $roles
+     */
+    public static function create(
+        string $email,
+        string $firstName,
+        string $lastName,
+        bool $isVerified = false,
+        array $roles = ['ROLE_USER'],
+        OnboardingStatus $onboardingStatus = OnboardingStatus::PENDING,
+        bool $isActif = false,
+    ): self {
+        return new self($email, $firstName, $lastName, $isVerified, $roles, $onboardingStatus, $isActif);
     }
 
     /**
@@ -191,6 +216,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         return $this->email;
     }
+
     public function getPassword(): ?string
     {
         return $this->password;

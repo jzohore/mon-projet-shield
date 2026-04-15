@@ -6,6 +6,7 @@ use App\Application\Billing\UseCase\AddCreditsUseCase;
 use Psr\Log\LoggerInterface;
 use Stripe\Exception\SignatureVerificationException;
 use Stripe\Exception\UnexpectedValueException;
+use Stripe\StripeClient;
 use Stripe\Webhook;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -59,7 +60,7 @@ readonly class StripeWebhookController
             if (!empty($session->invoice)) {
                 try {
                     // On utilise le SDK pour récupérer l'objet Invoice complet
-                    $stripe = new \Stripe\StripeClient($this->stripeSecretKey);
+                    $stripe = new StripeClient($this->stripeSecretKey);
                     $invoice = $stripe->invoices->retrieve($session->invoice);
 
                     // C'est ici que se cache l'URL publique de la facture

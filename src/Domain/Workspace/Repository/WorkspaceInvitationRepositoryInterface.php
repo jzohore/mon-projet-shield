@@ -18,6 +18,8 @@ interface WorkspaceInvitationRepositoryInterface
 
     public function findBySlugId(string $slugId): ?WorkspaceInvitation;
 
+    public function findByToken(string $token): ?WorkspaceInvitation;
+
     public function delete(WorkspaceInvitation $workspaceInvitation): void;
 
     public function countMemberInvitation(?string $workspaceId = null): bool|float|int|string|null;

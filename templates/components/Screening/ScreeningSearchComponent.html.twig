@@ -1,0 +1,67 @@
+<div {{ attributes }}>
+    {% include 'components/partials/_live_alerts.html.twig' with {
+        message: this.actionMessage|default(null),
+        type: this.actionMessageType|default('success')
+    } %}
+    {{ form_start(form, {
+        attr: {
+            novalidate: true,
+            'data-action': 'live#action:prevent',
+            'data-live-action-param': 'performSearch',
+        }
+    }) }}
+
+    <div class="space-y-5 mt-5">
+
+        {# L'adresse légale #}
+        {{ form_row(form.nameToSearch) }}
+        <div class="inline-flex p-1 bg-slate-100/80 border border-slate-200 rounded-lg shadow-inner">
+            {% for child in form.schemaToSearch %}
+                <label class="relative cursor-pointer">
+                    {# Le input est caché avec 'sr-only' et 'peer' sert à styliser le label quand c'est coché #}
+                    {{ form_widget(child, {'attr': {'class': 'peer sr-only'}}) }}
+
+                    <div class="flex items-center gap-2 px-4 py-2 text-sm font-medium text-slate-500 rounded-md transition-all peer-checked:bg-white peer-checked:text-indigo-700 peer-checked:shadow-sm peer-checked:ring-1 peer-checked:ring-slate-900/5">
+                        {# Ajout d'icônes contextuelles basées sur la valeur (Person / Company) #}
+                        {% if child.vars.value == 'Person' %}
+                            <twig:ux:icon name="tabler:user" class="size-4" />
+                        {% else %}
+                            <twig:ux:icon name="tabler:building-bank" class="size-4" />
+                        {% endif %}
+
+                        {{ child.vars.label }}
+                    </div>
+                </label>
+            {% endfor %}
+        </div>
+
+    </div>
+
+    <div class="flex items-center justify-end mt-8 pt-4">
+        <twig:Button as="button" type="submit" variant="dark" class="w-full sm:w-auto px-8">
+            <span data-loading="action(save)|hide">Lancer la recherche </span>
+
+            <span data-loading="action(save)|show" class="hidden items-center gap-2">
+                <twig:ux:icon name="lucide:loader-2" class="w-4 h-4 animate-spin" />
+                Enregistrement...
+            </span>
+        </twig:Button>
+    </div>
+
+    {{ form_end(form) }}
+
+    {# --- RÉSULTATS --- #}
+    {% if results %}
+        <div class="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            {% if results.isCached %}
+                <div class="mb-4 flex items-center gap-2 text-xs font-medium text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full w-fit border border-emerald-100">
+                    {{ ux_icon('lucide:history', { class: 'size-3.5' }) }}
+                    Cette recherche est issue de votre historique (consultation gratuite)
+                </div>
+            {% endif %}
+
+            {# Ici on inclut ton design de certificat qu'on a fait précédemment #}
+
+        </div>
+    {% endif %}
+</div>

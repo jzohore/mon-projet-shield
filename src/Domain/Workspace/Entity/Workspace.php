@@ -2,6 +2,8 @@
 
 namespace App\Domain\Workspace\Entity;
 
+use App\Domain\Billing\Enum\CreditAction;
+use App\Domain\Screening\Entity\ScreeningAudit;
 use App\Domain\Subscription\Entity\Subscription;
 use App\Domain\Wallet\Entity\WalletTransaction;
 use App\Domain\Wallet\Exception\InsufficientCreditsException;
@@ -101,6 +103,14 @@ class Workspace
         get => $this->invitations;
     }
 
+    /**
+     * @var Collection<int, ScreeningAudit>
+     */
+    #[ORM\OneToMany(targetEntity: ScreeningAudit::class, mappedBy: 'workspace', cascade: ['persist', 'remove'])]
+    public Collection $screeningAudits {
+        get => $this->screeningAudits;
+    }
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public \DateTimeImmutable $createdAt {
         get => $this->createdAt;
@@ -153,29 +163,36 @@ class Workspace
         }
     }
 
-    public function debit(int $amount, string $type, ?string $referenceId = null): void
+    public function debit(CreditAction $action, string $type): void
     {
-        if ($amount <= 0) {
+        $cost = $action->getCost();
+
+        // Si l'action est gratuite, on ne fait rien
+        if ($cost === 0) {
+            return;
+        }
+
+        if ($action->getCost() <= 0) {
             throw new \DomainException("Le montant à débiter doit être strictement positif.");
         }
 
-        if ($this->balance < $amount) {
+        if ($this->balance < $cost) {
             throw new InsufficientCreditsException();
         }
 
-        $this->balance -= $amount;
+        $this->balance -= $cost;
 
         $this->walletTransactions->add(
             new WalletTransaction(
                 workspace: $this,
-                amount: $amount,
+                amount: $cost,
                 type: $type,
-                referenceId: $referenceId
+                action: 'debit'
             )
         );
     }
 
-    public function credit(int $amount, string $type, ?string $referenceId = null): WalletTransaction
+    public function credit(int $amount, string $type, ?string $invoiceUrl = null): WalletTransaction
     {
         if ($amount <= 0) {
             throw new \DomainException("Le montant à créditer doit être strictement positif.");
@@ -186,7 +203,8 @@ class Workspace
             workspace: $this,
             amount: $amount,
             type: $type,
-            referenceId: $referenceId
+            action: 'credit',
+            invoiceUrl: $invoiceUrl
         );
 
         // 2. On l'ajoute à la collection

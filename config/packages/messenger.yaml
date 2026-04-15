@@ -50,6 +50,8 @@ framework:
             'App\Infrastructure\KYC\Message\SendSubmittedKycFolderMessage': async_main
             'App\Infrastructure\KYC\Message\SendCreatedKycFolderMessage': async_main
             'App\Infrastructure\KYC\Message\ProcessAndStoreKycDocumentMessage': async_main
+            'App\Infrastructure\Screening\Message\GenerateScreeningPdfMessage': async_main
+            'App\Infrastructure\Screening\Message\ShareDocumentMessage': async_main
 
             # --- OCR (Lourd, bloque le thread longtemps) ---
             'App\Infrastructure\Ocr\Message\ProcessOcrMessage': async_heavy

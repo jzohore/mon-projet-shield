@@ -37,7 +37,7 @@ readonly class AddCreditsUseCase
             $workspace,
             $transaction,
             $user,
-            $invoiceUrl
+            $invoiceUrl,
         ));
     }
 }

@@ -1,0 +1,27 @@
+{# templates/emails/document/share_report.html.twig #}
+{% extends 'emails/base.html.twig' %}
+
+{% block title %}Rapport de conformité : {{ subject_name }}{% endblock %}
+
+{% block content %}
+    <h1>Nouveau document partagé</h1>
+
+    <p>Bonjour,</p>
+    <p><strong>{{ sender_name }}</strong> a partagé avec vous un rapport de conformité LCB-FT concernant le dossier <strong>"{{ subject_name }}"</strong>.</p>
+
+    {# Encart métier #}
+    <div style="background-color: #f8fafc; border-left: 4px solid #4f46e5; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+        <p style="margin: 0; font-size: 14px; color: #475569;">
+            <strong>Information :</strong> Ce rapport contient des données confidentielles soumises au secret professionnel et aux réglementations RGPD en vigueur.
+        </p>
+    </div>
+
+    <div class="btn-container">
+        <a href="{{ action_url }}" class="btn">Consulter le rapport sécurisé</a>
+    </div>
+
+    <p style="font-size: 12px; color: #94a3b8; word-break: break-all;">
+        Lien de secours :<br>
+        <a href="{{ action_url }}" style="color: #64748b;">{{ action_url }}</a>
+    </p>
+{% endblock %}

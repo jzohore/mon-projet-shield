@@ -1,0 +1,76 @@
+{# templates/portal/step1_company.html.twig #}
+{% extends '@app/kyc/portal/base_portal.html.twig' %}
+
+{# On passe les variables au layout parent pour qu'il mette à jour la sidebar #}
+{% set step = 1 %}
+{% set workspace_name = folder.workspaceName ?? 'Cabinet Dupont' %}
+
+{% block portal_content %}
+    <div class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1 sm:px-0">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900 tracking-tight">👋 Bonjour, {{ invitation.firstName }}</h1>
+            <p class="text-sm text-slate-500 mt-1">Vous avez été invité à collaborer sur Kysure</p>
+        </div>
+    </div>
+    <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 mb-8">
+        <div class="size-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg">
+            {{ "ANTONIE HENRY"|first }}
+        </div>
+        <div>
+            <p class="text-sm font-medium text-slate-900">
+                <span class="font-bold">{{ invitation.ownerFullName }}</span> vous invite
+            </p>
+            <p class="text-xs text-slate-500">
+                Espace de travail : <span class="font-semibold text-slate-700">{{ invitation.workspaceName }}</span>
+            </p>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        {# Détails des accès #}
+        <div class="space-y-3">
+            <div class="flex items-start gap-3">
+                <div class="mt-0.5">
+                    <twig:ux:icon name="tabler:check" class="size-4 text-emerald-500" />
+                </div>
+                <p class="text-xs text-slate-600">
+                    Accès en tant que <span class="font-bold text-slate-900 underline decoration-indigo-500/30">{{ invitation.role }}</span>
+                </p>
+            </div>
+            <div class="flex items-start gap-3">
+                <div class="mt-0.5">
+                    <twig:ux:icon name="tabler:check" class="size-4 text-emerald-500" />
+                </div>
+                <p class="text-xs text-slate-600">Lecture et création des dossiers clients</p>
+            </div>
+            <div class="flex items-start gap-3">
+                <div class="mt-0.5">
+                    <twig:ux:icon name="tabler:check" class="size-4 text-emerald-500" />
+                </div>
+                <p class="text-xs text-slate-600">Utilisation des outils de screening et monitoring</p>
+            </div>
+            {% if invitation.role == 'Administrateur' %}
+                <div class="flex items-start gap-3">
+                    <div class="mt-0.5">
+                        <twig:ux:icon name="tabler:check" class="size-4 text-emerald-500" />
+                    </div>
+                    <p class="text-xs text-slate-600">Contrôle total. Peut inviter des membres, modifier les réglages et la facturation.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="pt-4">
+            <form action="{{ path('portal_user_invitation_accept') }}" method="POST">
+                <twig:Button type="submit" variant="dark" class="w-full">
+                    Accepter l'invitation
+                    <twig:ux:icon name="tabler:arrow-right" class="ml-2 size-4" />
+                </twig:Button>
+                <input type="hidden" name="_token" value="{{ csrf_token('accept-invitation') }}">
+            </form>
+
+            <button type="button" class="w-full mt-3 text-center text-xs text-slate-400 hover:text-rose-600 transition-colors">
+                Refuser l'invitation
+            </button>
+        </div>
+    </div>
+{% endblock %}

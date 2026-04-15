@@ -1,0 +1,183 @@
+
+<div {{ attributes }} class="w-full" {% if this.audit.status == 'pending' %}data-poll="delay(2000)|$render"{% endif %}>
+
+    {% if this.audit.status == 'pending' %}
+        {# ÉTAT 1 : EN COURS DE GÉNÉRATION #}
+        <twig:Button disabled class="w-full flex justify-center bg-slate-100 text-slate-500 shadow-sm border border-slate-200">
+            <twig:ux:icon name="tabler:loader" class="size-4 mr-2 animate-spin text-indigo-500" />
+            Génération en cours...
+        </twig:Button>
+
+    {% elseif this.audit.status == 'generated' and this.audit.pdfPath %}
+        {# ÉTAT 2 : GÉNÉRÉ (Prêt à télécharger) #}
+
+        {# On initialise notre contrôleur Stimulus pour gérer les deux panneaux #}
+        <div class="space-y-3" data-controller="actions-panel">
+
+            {# 1. Bouton de téléchargement principal (Toujours en haut et bien visible) #}
+            <twig:Button as="a" href="{{ this.audit.pdfPath|private_url }}" target="_blank" class="w-full flex justify-center bg-[#0A2540] hover:bg-slate-900 text-white shadow-sm">
+                <twig:ux:icon name="tabler:download" class="size-4 mr-2 text-indigo-300" />
+                Télécharger le certificat
+            </twig:Button>
+
+            <div class="grid grid-cols-2 gap-2">
+                {# Bouton : Ouvrir l'envoi #}
+                <button type="button"
+                        data-action="click->actions-panel#toggleSend"
+                        class="cursor-pointer w-full flex justify-center items-center py-2 px-3 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-md shadow-sm transition-colors font-medium text-xs">
+                    <twig:ux:icon name="tabler:mail-forward" class="size-3.5 mr-1.5 text-slate-400" />
+                    Envoyer
+                </button>
+
+                {# Bouton : Ouvrir la surveillance #}
+                <button type="button"
+                        data-action="click->actions-panel#toggleMonitoring"
+                        class="cursor-pointer w-full flex justify-center items-center py-2 px-3 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-md shadow-sm transition-colors font-medium text-xs">
+                    <twig:ux:icon name="tabler:eye" class="size-3.5 mr-1.5 text-slate-400" />
+                    Surveiller
+                </button>
+            </div>
+
+            {# --- BLOC A : PANNEAU D'ENVOI D'EMAIL --- #}
+            {# On ajoute data-live-ignore pour empêcher Symfony d'effacer notre animation JS #}
+            {# On retire le data-live-ignore et les anciens événements #}
+            <div data-actions-panel-target="sendForm" class="hidden mt-2 bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner">
+
+                {% if this.isDocumentSent %}
+
+                    {# --- ÉTAT SUCCÈS --- #}
+                    {# On ajoute un tout petit contrôleur qui va juste fermer la fenêtre au bout de 3s #}
+                    <div data-controller="success-timer" class="flex flex-col items-center justify-center py-4 text-emerald-600">
+                        <twig:ux:icon name="tabler:circle-check" class="size-8 mb-2 animate-bounce" />
+                        <span class="text-sm font-bold text-emerald-700">Document envoyé !</span>
+                        <span class="text-[10px] text-emerald-600/70 mt-1">Les destinataires vont recevoir un email.</span>
+                    </div>
+
+                {% else %}
+
+                    {# --- ÉTAT FORMULAIRE --- #}
+                    <div data-email-tags-target="formZone" data-controller="email-tags">
+                        <div class="relative mb-3">
+                            <label for="email-selector" class="block text-[10px] font-bold text-slate-500 mb-1.5 uppercase tracking-widest">
+                                Partager le rapport avec :
+                            </label>
+
+                            {# Le select VISIBLE #}
+                            <select id="email-selector"
+                                    data-email-tags-target="visibleSelect"
+                                    data-action="change->email-tags#add"
+                                    class="w-full text-sm bg-white border border-slate-300 text-slate-700 rounded-lg shadow-sm py-2 px-3 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all hover:border-slate-400 cursor-pointer appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:0.7rem_0.7rem] bg-no-repeat bg-[position:right_1rem_center]">
+                                <option value="" disabled selected>Sélectionner un destinataire...</option>
+                                {% for member in this.members %}
+                                    <option value="{{ member.email }}">{{ member.firstName }} ({{ member.email }})</option>
+                                {% endfor %}
+                            </select>
+
+                            {# La zone des pilules #}
+                            <div data-email-tags-target="container" class="flex flex-wrap gap-2 mt-3 empty:hidden"></div>
+
+                            {# Le select CACHÉ #}
+                            <select multiple="multiple"
+                                    data-model="selectedEmails"
+                                    data-email-tags-target="hiddenSelect"
+                                    class="hidden">
+                                {% for member in this.members %}
+                                    <option value="{{ member.email }}">{{ member.firstName }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        {# Bouton Envoyer #}
+                        <button type="button"
+                                data-action="live#action"
+                                data-live-action-param="sendDocument"
+                                data-email-tags-target="submitBtn"
+                                class="mt-4 w-full flex justify-center items-center py-2 px-4 bg-indigo-600 text-white rounded-md shadow-sm transition-all font-medium text-sm">
+                            <twig:ux:icon name="tabler:send" class="size-4 mr-2" />
+                            Envoyer le document
+                        </button>
+                    </div>
+
+                {% endif %}
+            </div>
+
+            {# --- BLOC B : PANNEAU DE SURVEILLANCE --- #}
+            {% set monitorColor = this.audit.totalMatches == 0 ? 'emerald' : 'amber' %}
+
+            {# --- BLOC B : PANNEAU DE SURVEILLANCE (Design Minimaliste N&B) --- #}
+
+            <div data-actions-panel-target="monitoringForm" class="hidden mt-2 bg-slate-50 p-4 rounded-xl border border-slate-200 shadow-inner">
+                <div class="mb-4 pb-3 border-b border-slate-200">
+                    <span class="block text-sm font-bold text-slate-900">Monitoring Continu</span>
+
+                    {# Texte intelligent selon le contexte #}
+                    {% if this.audit.totalMatches == 0 %}
+                        <span class="block text-[10px] text-slate-500 leading-tight mt-1">
+                            Ce profil est actuellement sans risque. Vous serez alerté immédiatement s'il est ajouté à une liste de sanctions ou devient PPE.
+                        </span>
+                    {% else %}
+                        <span class="block text-[10px] text-slate-500 leading-tight mt-1">
+                            Ce profil présente un historique. Vous serez alerté de toute évolution (ajout de sanctions, levée de restrictions, mise à jour Interpol).
+                        </span>
+                    {% endif %}
+                </div>
+
+                <label class="block text-[10px] font-bold text-slate-700 mb-2 uppercase tracking-widest">Durée de la surveillance</label>
+
+                {# Sélecteur ultra-simple et très contrasté (Gris clair / Gris foncé) #}
+                <div class="flex gap-2 mb-4">
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" data-model="monitoringDuration" name="duration" value="1" class="peer sr-only" checked>
+                        <div class="text-center px-3 py-2 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-md hover:border-slate-300 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-all">1 mois</div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" data-model="monitoringDuration" name="duration" value="3" class="peer sr-only">
+                        <div class="text-center px-3 py-2 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-md hover:border-slate-300 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-all">3 mois</div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" data-model="monitoringDuration" name="duration" value="6" class="peer sr-only">
+                        <div class="text-center px-3 py-2 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-md hover:border-slate-300 peer-checked:border-slate-800 peer-checked:bg-slate-800 peer-checked:text-white transition-all">6 mois</div>
+                    </label>
+                </div>
+
+                <button type="button"
+                        data-action="live#action"
+                        data-live-action-param="enableMonitoring"
+                        class="w-full flex justify-center items-center py-2 px-4 bg-[#0A2540] hover:bg-slate-900 text-white rounded-md shadow-sm transition-colors font-medium text-sm">
+                    <twig:ux:icon name="tabler:shield-check" class="size-4 mr-2" />
+                    Activer la surveillance
+                </button>
+            </div>
+
+            {# 4. Bouton de regénération (Discret en dessous) #}
+            <div class="pt-2">
+                <button type="button"
+                        data-action="live#action"
+                        data-live-action-param="generatePdf"
+                        class="cursor-pointer w-full text-slate-400 hover:text-indigo-600 text-xs flex justify-center items-center py-1.5 transition-colors">
+                    <twig:ux:icon name="tabler:refresh" class="size-3.5 mr-1.5" />
+                    Regénérer le document
+                </button>
+            </div>
+        </div>
+
+    {% else %}
+        {# ÉTAT 3 : INITIAL OU FAILED (Bouton d'action normal) #}
+
+        {% if this.audit.status == 'failed' %}
+            <div class="mb-2 text-xs text-rose-600 flex items-center justify-center">
+                <twig:ux:icon name="tabler:alert-circle" class="size-3 mr-1" />
+                La dernière génération a échoué.
+            </div>
+        {% endif %}
+
+        <button type="button"
+                data-action="live#action"
+                data-live-action-param="generatePdf"
+                class="cursor-pointer w-full flex justify-center items-center py-2 px-4 bg-[#0A2540] hover:bg-slate-900 text-white rounded-md shadow-sm transition-colors font-medium text-sm">
+            <twig:ux:icon name="tabler:file-invoice" class="size-4 mr-2" />
+            Générer le certificat PDF
+        </button>
+    {% endif %}
+
+</div>
