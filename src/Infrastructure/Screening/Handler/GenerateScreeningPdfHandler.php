@@ -6,6 +6,7 @@ use App\Domain\Port\DocumentStorageInterface;
 use App\Domain\Screening\Repository\ScreeningAuditRepositoryInterface;
 use App\Infrastructure\Pdf\PdfGeneratorInterface;
 use App\Infrastructure\Screening\Message\GenerateScreeningPdfMessage;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Webmozart\Assert\Assert;
@@ -19,6 +20,7 @@ readonly class GenerateScreeningPdfHandler
         private DocumentStorageInterface $storage,
         private ScreeningAuditRepositoryInterface $auditRepository,
         private PdfGeneratorInterface $pdfGenerator,
+        private LoggerInterface $logger,
     ) {}
 
 
@@ -70,6 +72,8 @@ readonly class GenerateScreeningPdfHandler
         } catch (\Throwable $e) {
             $audit->markAsFailed();
             $this->auditRepository->save($audit);
+            $this->logger->error('Erreur métier', ['error' => $e->getMessage()]);
+
             throw $e; // Déclenche le Retry Messenger
 
         } finally {

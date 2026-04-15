@@ -25,6 +25,5 @@ readonly class GenerateScreeningPdfUseCase
         $screening->markAsProcessed();
         $this->screeningAuditRepository->save($screening);
         $this->messageBus->dispatch(new GenerateScreeningPdfMessage($screening->slugId, $screening->pdfPath));
-
     }
 }
