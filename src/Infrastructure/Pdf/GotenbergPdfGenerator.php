@@ -4,6 +4,10 @@ namespace App\Infrastructure\Pdf;
 
 use Symfony\Component\Mime\Part\DataPart;
 use Symfony\Component\Mime\Part\Multipart\FormDataPart;
+use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Twig\Environment;
 
@@ -11,17 +15,18 @@ readonly class GotenbergPdfGenerator implements PdfGeneratorInterface
 {
     public function __construct(
         private Environment $twig,
-        private HttpClientInterface $httpClient
+        private HttpClientInterface $httpClient,
+        private string $gotenbergUrl,
     ) {}
 
     /**
      * @param string $template
      * @param array<string, mixed> $context
      * @return string
-     * @throws \Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface
-     * @throws \Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface
-     * @throws \Symfony\Contracts\HttpClient\Exception\ServerExceptionInterface
-     * @throws \Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface
+     * @throws ClientExceptionInterface
+     * @throws RedirectionExceptionInterface
+     * @throws ServerExceptionInterface
+     * @throws TransportExceptionInterface
      * @throws \Twig\Error\LoaderError
      * @throws \Twig\Error\RuntimeError
      * @throws \Twig\Error\SyntaxError
@@ -48,7 +53,7 @@ readonly class GotenbergPdfGenerator implements PdfGeneratorInterface
 
         try {
             // 3. Appel direct au serveur Gotenberg avec un TRES LONG timeout (60 secondes)
-            $response = $this->httpClient->request('POST', 'http://gotenberg:3000/forms/chromium/convert/html', [
+            $response = $this->httpClient->request('POST', $this->gotenbergUrl, [
                 'headers' => $formData->getPreparedHeaders()->toArray(),
                 'body' => $formData->bodyToIterable(),
                 'timeout' => 60, // On lui laisse une minute pour réfléchir !
@@ -59,7 +64,7 @@ readonly class GotenbergPdfGenerator implements PdfGeneratorInterface
 
             return $pdfContent;
 
-        } catch (\Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface $e) {
+        } catch (TransportExceptionInterface $e) {
             // S'il y a un problème réseau (timeout, gotenberg éteint...)
             throw new \Exception("Erreur réseau vers Gotenberg : " . $e->getMessage());
         } catch (\Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface $e) {

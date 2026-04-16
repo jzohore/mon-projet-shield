@@ -85,5 +85,8 @@ services:
     App\Infrastructure\Screening\Service\OpenSanctionsClient:
         arguments:
             $openSanctionsApiKey: '%env(OPEN_SANCTIONS_API_KEY)%'
+    App\Infrastructure\Pdf\GotenbergPdfGenerator:
+        arguments:
+            $gotenbergUrl: '%env(GOTENBERG_URL)%'
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones
