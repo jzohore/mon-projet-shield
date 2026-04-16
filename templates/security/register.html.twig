@@ -1,114 +1,125 @@
 {% extends '@website/base.html.twig' %}
 
-{% block title %}Créer un compte - {{ company_name }}{% endblock %}
+{% block title %}Créer un compte — {{ company_name }}{% endblock %}
 
 {% block body %}
-    {# SEO & Sémantique : Le conteneur principal devient un <main> #}
-    <main class="flex min-h-screen w-full bg-background antialiased">
+    <main class="flex min-h-screen w-full bg-white text-[#1a1a1a] font-sans antialiased selection:bg-[#cce4ff]">
 
         {# =========================================================
-       MOITIÉ GAUCHE : LA PROMESSE (Design Stripe / Apple)
-       ========================================================= #}
-        {# Sémantique : Devient un <aside> car c'est du contenu secondaire sur mobile #}
-        <aside class="relative hidden w-1/2 flex-col justify-between bg-[#0A0B0E] p-12 lg:flex overflow-hidden" aria-labelledby="register-marketing-title">
+           MOITIÉ GAUCHE : LA PROMESSE (Style Notion-Light)
+           ========================================================= #}
+        {# =========================================================
+   MOITIÉ GAUCHE : ESPACE STRUCTURÉ (Gradient Subtil)
+   ========================================================= #}
+        <aside class="relative hidden w-1/2 flex-col border-r border-[#e6e6e6] bg-gradient-to-b from-[#f7f7f5] via-[#f7f7f5] to-[#f0f7ff] p-12 lg:flex overflow-hidden">
 
-            {# Mesh Gradient (Caché aux lecteurs d'écran) #}
-            <div class="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
-                <div class="absolute -top-[20%] -left-[10%] w-[70%] h-[70%] rounded-full bg-blue-600/10 blur-[120px]"></div>
-                <div class="absolute bottom-[0%] -right-[10%] w-[60%] h-[60%] rounded-full bg-emerald-500/10 blur-[100px]"></div>
-            </div>
+            {# Optionnel : Un léger halo de lumière pour donner de la profondeur #}
+            <div class="absolute -bottom-24 -left-24 size-96 bg-blue-100/30 blur-[100px] rounded-full pointer-events-none"></div>
 
             {# Logo #}
-            <div class="relative z-10 flex items-center gap-3 text-xl font-semibold tracking-tight text-white">
-                <div class="flex size-9 items-center justify-center rounded-xl bg-gradient-to-b from-slate-700 to-slate-900 border border-slate-700 shadow-inner">
-                    <img src="{{ asset('kysure_logo.png') }}" alt="Logo de {{ company_name }}">
-                </div>
-                <a href="{{ path('website_home') }}" title="Retour à la page d'accueil">
+            <div class="relative z-10 flex items-center gap-2 text-[17px] font-bold tracking-tight mb-20">
+                <div class="flex size-7 items-center justify-center rounded bg-black text-white font-bold text-sm" aria-hidden="true">K</div>
+                <a href="{{ path('website_home') }}" title="Retour à l'accueil {{ company_name }}">
                     {{ company_name }}
                 </a>
             </div>
 
-            {# La promesse d'Onboarding #}
-            <div class="relative z-10 max-w-md space-y-8 mt-12 mb-auto">
-                {# SEO : Devient un <h2> car il disparaît sur mobile #}
-                <h2 id="register-marketing-title" class="text-[2.75rem] font-medium leading-[1.1] tracking-tight text-slate-50">
-                    Votre conformité. <br>
-                    <span class="text-slate-500">Notre infrastructure.</span>
-                </h2>
-                <p class="text-[1.05rem] text-slate-400 leading-relaxed font-light">
-                    Rejoignez les cabinets d'audit et les institutions financières qui font confiance à {{ company_name }} pour sécuriser leurs processus réglementaires.
-                </p>
+            {# Contenu central #}
+            <div class="relative z-10 max-w-sm space-y-12">
+                <header class="space-y-4">
+                    <h2 class="text-[40px] font-bold leading-[1.1] tracking-tight text-[#1a1a1a]">
+                        Votre espace <br>
+                        <span class="text-[#0060df]">conformité.</span>
+                    </h2>
+                    <p class="text-[17px] text-[#666] leading-relaxed">
+                        Retrouvez tous vos outils de vigilance centralisés en un seul endroit.
+                    </p>
+                </header>
 
-                {# Chiffres clés ou rassurance rapide #}
-                <div class="flex items-center gap-8 pt-4">
-                    <div>
-                        <div class="text-2xl font-bold text-white">SecNum</div>
-                        <div class="text-sm text-slate-500 font-medium">Hébergement certifié</div>
+                {# Liste de rappel avec Symfony UX Icons #}
+                <nav class="space-y-6" aria-label="Aperçu des fonctionnalités">
+                    <div class="flex items-start gap-4 group">
+                        <div class="size-10 shrink-0 rounded-lg bg-white/80 border border-[#e6e6e6] flex items-center justify-center shadow-sm group-hover:border-[#0060df]/30 transition-colors">
+                            <twig:ux:icon name="lucide:folder-kanban" class="size-5 text-slate-600" />
+                        </div>
+                        <div>
+                            <h3 class="text-[15px] font-bold text-[#1a1a1a]">Gestion des dossiers</h3>
+                            <p class="text-[13px] text-[#999]">Centralisez vos KYC et KYB par client.</p>
+                        </div>
                     </div>
-                    <div class="w-px h-10 bg-slate-800" aria-hidden="true"></div>
-                    <div>
-                        <div class="text-2xl font-bold text-white">100%</div>
-                        <div class="text-sm text-slate-500 font-medium">Traçabilité garantie</div>
+
+                    <div class="flex items-start gap-4 group">
+                        <div class="size-10 shrink-0 rounded-lg bg-white/80 border border-[#e6e6e6] flex items-center justify-center shadow-sm group-hover:border-[#0060df]/30 transition-colors">
+                            <twig:ux:icon name="lucide:user-search" class="size-5 text-slate-600" />
+                        </div>
+                        <div>
+                            <h3 class="text-[15px] font-bold text-[#1a1a1a]">Screening instantané</h3>
+                            <p class="text-[13px] text-[#999]">Interrogez les listes PPE et Sanctions.</p>
+                        </div>
                     </div>
-                </div>
+
+                    <div class="flex items-start gap-4 group">
+                        <div class="size-10 shrink-0 rounded-lg bg-white/80 border border-[#e6e6e6] flex items-center justify-center shadow-sm group-hover:border-[#0060df]/30 transition-colors">
+                            <twig:ux:icon name="lucide:file-badge" class="size-5 text-slate-600" />
+                        </div>
+                        <div>
+                            <h3 class="text-[15px] font-bold text-[#1a1a1a]">Piste d'audit</h3>
+                            <p class="text-[13px] text-[#999]">Générez vos rapports certifiés Tracfin.</p>
+                        </div>
+                    </div>
+                </nav>
             </div>
 
-            {# Le Badge (Glassmorphism) #}
-            <div class="relative z-10 rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 backdrop-blur-xl shadow-2xl flex items-center gap-4">
-                <div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-400">
-                    <i class="fas fa-lock text-sm" aria-hidden="true"></i>
-                </div>
-                <div>
-                    <p class="text-sm font-medium text-slate-200">Chiffrement de bout en bout</p>
-                    <p class="text-xs text-slate-400 mt-0.5">Vos données KYC ne quittent jamais l'Union Européenne.</p>
-                </div>
+            {# Bas de page #}
+            <div class="relative z-10 mt-auto pt-12">
+                <div class="h-[1px] w-12 bg-[#e6e6e6] mb-4"></div>
+                <p class="text-[11px] font-bold text-[#bbb] uppercase tracking-widest">
+                    Simple · Sécurisé · Conforme
+                </p>
             </div>
         </aside>
 
         {# =========================================================
-       MOITIÉ DROITE : LE FORMULAIRE D'INSCRIPTION
-       ========================================================= #}
-        {# Sémantique : Devient une <section> #}
+           MOITIÉ DROITE : LE FORMULAIRE D'INSCRIPTION
+           ========================================================= #}
         <section class="relative flex w-full flex-col items-center justify-center p-6 lg:w-1/2 sm:p-12">
 
-            {# === NOUVEAU : LOGO MOBILE === #}
-            {# Indispensable pour que l'utilisateur mobile sache où il s'inscrit #}
-            <div class="absolute left-6 top-6 flex items-center gap-2 font-bold text-foreground lg:hidden">
-                <div class="flex size-9 items-center justify-center rounded-xl bg-gradient-to-b from-slate-700 to-slate-900 border border-slate-700 shadow-inner">
-                    <img src="{{ asset('kysure_logo.png') }}" alt="Logo de {{ company_name }}">
-                </div>
-                <a href="{{ path('website_home') }}" title="Retour à la page d'accueil">
+            {# Logo Mobile uniquement #}
+            <div class="absolute left-6 top-6 flex items-center gap-2 lg:hidden">
+                <div class="flex size-7 items-center justify-center rounded bg-black text-white font-bold text-sm" aria-hidden="true">K</div>
+                <a href="{{ path('website_home') }}" title="Retour à l'accueil {{ company_name }}" class="font-bold text-[#1a1a1a]">
                     {{ company_name }}
                 </a>
             </div>
 
-            {# Lien vers la connexion (En haut à droite) #}
+            {# Lien vers la connexion #}
             <div class="absolute right-6 top-6 md:right-8 md:top-8 flex items-center gap-2 z-10">
-                <span class="hidden text-sm text-muted-foreground sm:inline-block">Déjà un compte ?</span>
-                <twig:Button as="a" href="{{ path('app_login') }}" variant="ghost" class="text-foreground text-sm">
+                <span class="hidden text-[13px] text-[#999] sm:inline-block">Déjà un compte ?</span>
+                <a href="{{ path('app_login') }}" class="text-[14px] font-bold text-[#4d4d4d] hover:text-black transition-colors px-4 py-2 hover:bg-[#f5f5f5] rounded-[6px]">
                     Connexion
-                </twig:Button>
+                </a>
             </div>
 
-            {# Le conteneur du formulaire #}
-            {# Margin-top augmenté sur mobile (mt-20) pour ne pas chevaucher le logo/bouton du header #}
-            <div class="w-full max-w-[400px] space-y-8 mt-20 lg:mt-0">
+            {# Le formulaire #}
+            <div class="w-full max-w-[400px] space-y-8 mt-12 lg:mt-0">
 
-                <header class="space-y-2 text-center lg:text-left">
-                    {# SEO : C'est le vrai <h1>, l'action principale de la page #}
-                    <h1 class="text-2xl font-bold tracking-tight text-foreground">Créer votre espace.</h1>
-                    <p class="text-sm text-muted-foreground">
-                        Configurez votre accès auditeur en moins de deux minutes.
+                <header class="space-y-3">
+                    <h1 class="text-[28px] font-bold tracking-tight text-[#1a1a1a]">Créer votre espace.</h1>
+                    <p class="text-[15px] text-[#666] leading-relaxed">
+                        Rejoignez {{ company_name }} et automatisez vos vérifications en moins de deux minutes.
                     </p>
                 </header>
 
-                <twig:CreateUserFormComponent></twig:CreateUserFormComponent>
+                <div class="py-2">
+                    <twig:CreateUserFormComponent></twig:CreateUserFormComponent>
+                </div>
 
-                {# A11y : Ajout des états de focus pour la navigation au clavier #}
-                <footer class="text-center text-xs text-muted-foreground">
-                    En créant un compte, vous acceptez nos
-                    <br class="sm:hidden"> {# Retour à la ligne pour les petits écrans #}
-                    <a href="#" class="underline underline-offset-4 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-sm transition-colors">Conditions générales</a> et confirmez agir au nom d'une entité professionnelle.
+                <footer class="pt-6 border-t border-[#f0f0f0]">
+                    <p class="text-center text-[12px] text-[#999] leading-relaxed">
+                        En créant un compte, vous acceptez nos
+                        <a href="#" class="text-[#666] underline underline-offset-4 hover:text-black transition-colors">CGU</a>
+                        et confirmez agir au nom d'une entité professionnelle.
+                    </p>
                 </footer>
 
             </div>

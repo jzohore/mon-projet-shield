@@ -11,7 +11,7 @@ use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use App\Domain\Workspace\Repository\WorkspaceRepositoryInterface;
 use Webmozart\Assert\Assert;
 
-final readonly class SaveWorkspaceMemberUseCase
+readonly class SaveWorkspaceMemberUseCase
 {
     public function __construct(
         private WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
