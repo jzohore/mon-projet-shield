@@ -1,0 +1,100 @@
+{% extends '@website/base.html.twig' %}
+
+{% block title %}Politique de Confidentialité — {{ company_name }}{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-white text-[#1a1a1a] font-sans antialiased selection:bg-[#cce4ff]">
+
+        {# NAVBAR SIMPLE #}
+        <header role="banner">
+            <nav class="mx-auto flex h-[60px] max-w-7xl items-center justify-between px-6 border-b border-[#e6e6e6]">
+                <div class="flex items-center gap-2">
+                    <div class="flex size-7 items-center justify-center rounded bg-black text-white font-bold text-sm">K</div>
+                    <a href="{{ path('website_home') }}" class="text-[17px] font-bold tracking-tight">{{ company_name }}</a>
+                </div>
+                <a href="{{ path('website_home') }}" class="text-[14px] font-medium text-[#4d4d4d] hover:text-black">Retour au site</a>
+            </nav>
+        </header>
+
+        <main class="py-20 px-6">
+            <article class="mx-auto max-w-3xl">
+
+                <header class="mb-12 border-b border-[#f0f0f0] pb-8">
+                    <h1 class="text-[32px] sm:text-[40px] font-bold tracking-tight mb-4">Politique de Confidentialité</h1>
+                    <p class="text-[#999] text-[14px]">En vigueur au 16 avril 2026</p>
+                </header>
+
+                <div class="space-y-10 text-[16px] leading-relaxed text-[#37352f]">
+
+                    {# 1. RESPONSABLE DU TRAITEMENT #}
+                    <section>
+                        <h2 class="text-[20px] font-bold mb-4">1. Responsable du traitement</h2>
+                        <p>
+                            Le traitement des données à caractère personnel est effectué par <strong>Zohore Junior</strong>, entrepreneur individuel, immatriculé sous le numéro SIRET <strong>91331719400011</strong> (ci-après « l'Éditeur » ou « {{ company_name }} »).
+                        </p>
+                    </section>
+
+                    {# 2. DONNÉES COLLECTÉES #}
+                    <section>
+                        <h2 class="text-[20px] font-bold mb-4">2. Données collectées et finalités</h2>
+                        <p class="mb-4">Dans le cadre de l'utilisation de la plateforme et de l'achat de packs de crédits, nous collectons :</p>
+                        <ul class="list-disc pl-6 space-y-3">
+                            <li><strong>Données de gestion de compte :</strong> Nom, prénom, adresse email professionnelle (base légale : exécution du contrat).</li>
+                            <li><strong>Données KYC/KYB :</strong> Pièces d'identité, justificatifs de domicile, extraits Kbis, statuts. Ces données sont traitées exclusivement pour le compte de l'Utilisateur afin de remplir ses obligations de vigilance (base légale : obligation légale LCB-FT).</li>
+                            <li><strong>Données de facturation :</strong> Historique des achats de crédits et informations de paiement via Stripe (base légale : exécution du contrat et obligations comptables).</li>
+                        </ul>
+                    </section>
+
+                    {# 3. HÉBERGEMENT ET SÉCURITÉ #}
+                    <section class="p-6 bg-[#f7f7f5] rounded-xl border border-[#e6e6e6]">
+                        <h2 class="text-[18px] font-bold mb-3 flex items-center gap-2">
+                            <twig:ux:icon name="lucide:server" class="size-5 text-[#0060df]" />
+                            3. Hébergement et Localisation
+                        </h2>
+                        <p class="text-[15px] text-[#555]">
+                            L'intégralité de l'infrastructure technique et des données de {{ company_name }} est hébergée en <strong>France</strong> chez <strong>Scaleway</strong>.
+                            Aucun transfert de données n'est effectué hors de l'Union Européenne. Les documents téléchargés sont chiffrés au repos (AES-256).
+                        </p>
+                    </section>
+
+                    {# 4. CONSERVATION #}
+                    <section>
+                        <h2 class="text-[20px] font-bold mb-4">4. Durée de conservation</h2>
+                        <p>
+                            <strong>Données de compte :</strong> Supprimées 2 ans après la dernière activité du Client.<br>
+                            <strong>Données KYC :</strong> Conservées pendant toute la durée de validité du dossier. En cas de clôture de compte, les données sont supprimées, sauf demande contraire du Client pour répondre à ses obligations de conservation légale (5 ans au titre de la LCB-FT).
+                        </p>
+                    </section>
+
+                    {# 5. SOUS-TRAITANTS #}
+                    <section>
+                        <h2 class="text-[20px] font-bold mb-4">5. Destinataires des données</h2>
+                        <p>Les données ne sont jamais revendues. Elles sont partagées uniquement avec nos sous-traitants techniques strictement nécessaires :</p>
+                        <ul class="list-disc pl-6 mt-2 space-y-1">
+                            <li><strong>Scaleway :</strong> Hébergement infrastructure (France).</li>
+                            <li><strong>Stripe :</strong> Gestion sécurisée des paiements (Certification PCI-DSS).</li>
+                            <li><strong>Gotenberg :</strong> Moteur de génération de rapports PDF (exécuté sur nos serveurs Scaleway).</li>
+                        </ul>
+                    </section>
+
+                    {# 6. VOS DROITS #}
+                    <section>
+                        <h2 class="text-[20px] font-bold mb-4 border-t border-[#f0f0f0] pt-8">6. Vos Droits (RGPD)</h2>
+                        <p>
+                            Vous disposez d'un droit d'accès, de rectification, de portabilité et de suppression de vos données. Pour exercer ces droits, contactez Zohore Junior à l'adresse :
+                            <a href="mailto:contact@kysure.fr" class="text-[#0060df] font-bold">contact@kysure.fr</a>.
+                        </p>
+                    </section>
+
+                </div>
+
+                <footer class="mt-20 pt-8 border-t border-[#f0f0f0] text-center">
+                    <p class="text-[13px] text-[#999]">
+                        Zohore Junior · SIRET 91331719400011 · Kysure © 2026
+                    </p>
+                </footer>
+
+            </article>
+        </main>
+    </div>
+{% endblock %}

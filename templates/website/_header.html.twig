@@ -1,0 +1,66 @@
+<header role="banner">
+    <nav aria-label="Navigation principale" class="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-[#e6e6e6]">
+        <div class="mx-auto flex h-[60px] max-w-7xl items-center justify-between px-4 sm:px-6">
+
+            {# Logo #}
+            <div class="flex items-center gap-2 shrink-0">
+                <div class="flex size-7 items-center justify-center rounded bg-black text-white font-bold text-sm" aria-hidden="true">K</div>
+                <a href="{{ path('website_home') }}"
+                   data-controller="click-tracking"
+                   data-click-tracking-name-value="nav_home_logo"
+                   data-action="click->click-tracking#log"
+                   class="text-[17px] font-bold tracking-tight text-[#1a1a1a]"
+                   title="Retour à l'accueil {{ company_name }}">
+                    {{ company_name }}
+                </a>
+            </div>
+
+            {# Liens desktop #}
+            <div class="hidden md:flex items-center gap-6 text-[14px] font-medium text-[#4d4d4d]">
+                <a href="#produit"
+                   data-controller="click-tracking"
+                   data-click-tracking-name-value="nav_link_produit"
+                   data-action="click->click-tracking#log"
+                   class="hover:text-black transition-colors">
+                    Produit
+                </a>
+
+                <a href="#usage"
+                   data-controller="click-tracking"
+                   data-click-tracking-name-value="nav_link_solutions"
+                   data-action="click->click-tracking#log"
+                   class="hover:text-black transition-colors">
+                    Solutions
+                </a>
+
+                <a href="#tarifs"
+                   data-controller="click-tracking"
+                   data-click-tracking-name-value="nav_link_tarifs"
+                   data-action="click->click-tracking#log"
+                   class="hover:text-black transition-colors">
+                    Tarifs
+                </a>
+            </div>
+
+            {# CTAs nav #}
+            <div class="flex items-center gap-3">
+                <a href="{{ path('app_login') }}"
+                   data-controller="click-tracking"
+                   data-click-tracking-name-value="nav_button_login"
+                   data-action="click->click-tracking#log"
+                   class="hidden sm:block text-[14px] font-medium text-[#4d4d4d] hover:text-black transition-colors">
+                    Connexion
+                </a>
+
+                <a href="{{ path('app_register') }}"
+                   data-controller="click-tracking"
+                   data-click-tracking-name-value="nav_button_register"
+                   data-action="click->click-tracking#log"
+                   class="rounded-[6px] bg-[#0060df] px-4 py-2 text-[14px] font-bold text-white hover:bg-[#0050bc] transition-all focus:outline-none focus:ring-2 focus:ring-[#0060df] focus:ring-offset-2"
+                   aria-label="Créer un compte {{ company_name }} gratuitement">
+                    Essayer gratuitement
+                </a>
+            </div>
+        </div>
+    </nav>
+</header>

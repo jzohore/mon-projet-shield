@@ -235,7 +235,6 @@ final class PerformScreeningUseCaseTest extends TestCase
 
         $reflection = new \ReflectionObject($workspace);
         $property = $reflection->getProperty('balance');
-        $property->setAccessible(true);
         $property->setValue($workspace, $balance);
 
         return $workspace;

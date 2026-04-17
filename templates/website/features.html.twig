@@ -1,0 +1,138 @@
+{% extends '@website/base.html.twig' %}
+
+{% block title %}L'Infrastructure Kysure — {{ company_name }}{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-white text-[#1a1a1a] font-sans antialiased selection:bg-[#cce4ff]">
+
+        {% include '@website/_header.html.twig' %}
+
+        <main>
+            {# ==========================================
+               1. HERO MINIMALISTE
+               ========================================== #}
+            <section class="pt-32 pb-12 px-6">
+                <div class="mx-auto max-w-4xl">
+                    <div class="flex items-center gap-3 mb-6">
+                        <span class="px-2 py-0.5 rounded bg-[#f7f7f5] border border-[#e6e6e6] text-[11px] font-bold text-[#999] uppercase tracking-widest">Capabilities</span>
+                        <div class="h-px flex-1 bg-[#f0f0f0]"></div>
+                    </div>
+                    <h1 class="text-[48px] md:text-[64px] font-bold leading-[1] tracking-tighter mb-8">
+                        De la donnée brute <br>
+                        <span class="text-[#0060df]">au rapport d'adéquation.</span>
+                    </h1>
+                </div>
+            </section>
+
+            {# ==========================================
+               2. LE WORKFLOW VERTICAL (Le "Process")
+               ========================================== #}
+            <section class="pb-24 px-6">
+                <div class="mx-auto max-w-4xl space-y-32">
+
+                    {# ÉTAPE 01 : COLLECTE #}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+                        <div class="sticky top-32">
+                            <span class="text-[12px] font-black text-[#0060df] opacity-20 block mb-2">01.</span>
+                            <h2 class="text-[28px] font-bold mb-4 italic font-serif">Collecte intelligente.</h2>
+                            <p class="text-[#666] leading-relaxed mb-6">
+                                Ne perdez plus de temps à déchiffrer des Kbis ou des CNI. Notre moteur OCR extrait les données critiques en moins d'une seconde.
+                            </p>
+                            <div class="space-y-3">
+                                <div class="flex items-center gap-3 p-3 rounded-lg border border-[#f0f0f0] bg-[#fafafa]">
+                                    <twig:ux:icon name="lucide:scan-eye" class="size-5 text-blue-500" />
+                                    <span class="text-[14px] font-medium">Extraction automatique (OCR)</span>
+                                </div>
+                                <div class="flex items-center gap-3 p-3 rounded-lg border border-[#f0f0f0] bg-[#fafafa]">
+                                    <twig:ux:icon name="lucide:check-square" class="size-5 text-emerald-500" />
+                                    <span class="text-[14px] font-medium">Détection de fraude documentaire</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-2xl border border-[#e6e6e6] bg-[#f7f7f5] p-2 shadow-inner aspect-[4/3] flex items-center justify-center relative overflow-hidden group">
+                            {# Visuel abstrait de document #}
+                            <div class="w-48 h-64 bg-white rounded shadow-2xl border border-[#eee] transform group-hover:rotate-2 transition-transform duration-500 p-4 space-y-4">
+                                <div class="h-1 w-12 bg-blue-100 rounded"></div>
+                                <div class="h-1 w-full bg-slate-50 rounded"></div>
+                                <div class="h-1 w-3/4 bg-slate-50 rounded"></div>
+                                <div class="mt-8 border-t border-slate-50 pt-4 space-y-2">
+                                    <div class="h-1 w-full bg-slate-50 rounded"></div>
+                                    <div class="h-1 w-full bg-slate-50 rounded"></div>
+                                </div>
+                            </div>
+                            <div class="absolute inset-0 bg-blue-600/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <span class="bg-white px-4 py-2 rounded-full text-[12px] font-bold shadow-xl border border-blue-100 text-blue-600">Scan en cours...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# ÉTAPE 02 : ANALYSE (Focus ton dashboard Dark) #}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+                        <div class="md:order-last sticky top-32">
+                            <span class="text-[12px] font-black text-[#0060df] opacity-20 block mb-2">02.</span>
+                            <h2 class="text-[28px] font-bold mb-4 italic font-serif">Screening & Advisory.</h2>
+                            <p class="text-[#666] leading-relaxed mb-6">
+                                Nous croisons les données avec les listes de sanctions mondiales. Si un risque est détecté, Kysure vous alerte immédiatement.
+                            </p>
+                            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#6366F1]/10 text-[#6366F1] text-[13px] font-bold">
+                                <twig:ux:icon name="lucide:zap" class="size-4" />
+                                Module Advisory inclus
+                            </div>
+                        </div>
+                        <div class="rounded-2xl border border-slate-800 bg-[#0B1121] p-4 shadow-2xl aspect-[4/3] overflow-hidden flex flex-col">
+                            {# Mini Dashboard Preview #}
+                            <div class="flex items-center justify-between mb-6">
+                                <div class="h-2 w-16 bg-slate-700 rounded"></div>
+                                <div class="size-4 rounded-full bg-indigo-500"></div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3 mb-6">
+                                <div class="h-16 bg-white/5 border border-white/10 rounded-lg"></div>
+                                <div class="h-16 bg-white/5 border border-white/10 rounded-lg"></div>
+                            </div>
+                            <div class="space-y-2 flex-1">
+                                <div class="h-2 w-full bg-white/5 rounded"></div>
+                                <div class="h-2 w-full bg-white/5 rounded"></div>
+                                <div class="h-2 w-3/4 bg-white/5 rounded"></div>
+                                <div class="h-12 w-full bg-[#6366F1] rounded-lg mt-auto opacity-80"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# ÉTAPE 03 : PREUVE #}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-start">
+                        <div class="sticky top-32">
+                            <span class="text-[12px] font-black text-[#0060df] opacity-20 block mb-2">03.</span>
+                            <h2 class="text-[28px] font-bold mb-4 italic font-serif">Piste d'audit certifiée.</h2>
+                            <p class="text-[#666] leading-relaxed mb-6">
+                                Votre conformité n'est plus un doute, c'est un document. Générez vos rapports d'adéquation en PDF haute définition.
+                            </p>
+                            <div class="flex items-center gap-4">
+                                <div class="flex -space-x-3">
+                                    <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Felix" class="size-8 rounded-full border-2 border-white bg-slate-100 grayscale">
+                                    <img src="https://api.dicebear.com/7.x/notionists/svg?seed=Aneka" class="size-8 rounded-full border-2 border-white bg-slate-100 grayscale">
+                                </div>
+                                <span class="text-[12px] text-[#999] font-medium">Validé par des experts du patrimoine</span>
+                            </div>
+                        </div>
+                        <div class="rounded-2xl border border-emerald-100 bg-emerald-50/30 p-8 flex flex-col items-center justify-center gap-4 text-center">
+                            <div class="size-16 rounded-full bg-white border-2 border-emerald-500 flex items-center justify-center text-emerald-500 shadow-xl">
+                                <twig:ux:icon name="lucide:file-check-2" class="size-8" />
+                            </div>
+                            <div>
+                                <div class="font-bold text-emerald-900">Rapport_Audit_Final.pdf</div>
+                                <div class="text-[11px] text-emerald-600 font-mono">Signé numériquement · Tracfin-Ready</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            {# ==========================================
+               3. LE TABLEAU DES CRÉDITS (Actionable)
+               ========================================== #}
+        </main>
+
+        {% include '@website/_footer.html.twig' %}
+    </div>
+{% endblock %}

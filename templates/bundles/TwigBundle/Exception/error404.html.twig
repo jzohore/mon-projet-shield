@@ -1,0 +1,46 @@
+{% extends '@website/base.html.twig' %}
+
+{% block title %}Dossier introuvable (404) — {{ company_name }}{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-white flex flex-col antialiased">
+        {% include '@website/_header.html.twig' %}
+
+        <main class="flex-1 flex items-center justify-center px-6 pt-16 pb-16">
+            <div class="max-w-md w-full text-center space-y-8">
+
+                {# Illustration Notionist #}
+                <div class="relative mx-auto w-32 h-32">
+                    <img src="https://api.dicebear.com/7.x/notionists/svg?seed=lost&scale=110" alt="404" class="grayscale">
+                    <div class="absolute -bottom-2 -right-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg">404</div>
+                </div>
+
+                <div class="space-y-3">
+                    <h1 class="text-[32px] font-bold tracking-tight">Dossier introuvable.</h1>
+                    <p class="text-[#666] leading-relaxed">
+                        Il semblerait que cette pièce manque au dossier. La page que vous cherchez a été déplacée ou n'existe plus.
+                    </p>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <a href="{{ path('website_home') }}" class="rounded-[6px] bg-[#0060df] px-6 py-3 text-[15px] font-bold text-white hover:bg-[#0050bc] transition-all">
+                        Retourner à l'accueil
+                    </a>
+                    <a href="mailto:support@kysure.fr" class="text-[14px] font-medium text-[#999] hover:text-black transition-colors">
+                        Signaler une anomalie
+                    </a>
+                </div>
+
+                {# Petit rappel rassurance #}
+                <div class="pt-12 border-t border-[#f0f0f0]">
+                    <p class="text-[11px] font-bold text-[#bbb] uppercase tracking-widest flex items-center justify-center gap-2">
+                        <twig:ux:icon name="lucide:shield-check" class="size-3" />
+                        Vos données sont en sécurité
+                    </p>
+                </div>
+            </div>
+        </main>
+
+        {% include '@website/_footer.html.twig' %}
+    </div>
+{% endblock %}

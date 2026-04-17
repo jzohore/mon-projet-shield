@@ -61,7 +61,8 @@
         "twig/html-extra": "^3.12.0",
         "twig/intl-extra": "^3.24",
         "twig/twig": "^2.12|^3.24",
-        "webmozart/assert": "^2.1.6"
+        "webmozart/assert": "^2.1.6",
+        "ext-simplexml": "*"
     },
     "config": {
         "allow-plugins": {

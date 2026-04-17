@@ -31,6 +31,7 @@ class CreateUserType extends AbstractType
                     'autocomplete' => 'email',
                     'placeholder' => 'jean.dupont@cabinet.fr',
                 ],
+                'help' => 'Astuce : utilisez votre adresse e-mail professionnelle, si vous en avez une, afin de permettre à votre équipe de vous retrouver plus facilement.',
             ])
 
         ;

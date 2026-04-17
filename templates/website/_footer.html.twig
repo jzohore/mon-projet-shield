@@ -1,0 +1,41 @@
+<footer role="contentinfo" class="border-t border-[#f0f0f0] py-12 px-4 sm:px-6 bg-[#fafafa]">
+    <div class="mx-auto max-w-7xl">
+        <div class="flex flex-col md:flex-row justify-between items-start gap-10 mb-10">
+
+            <div class="max-w-xs">
+                <div class="flex items-center gap-2 mb-3">
+                    <div class="flex size-7 items-center justify-center rounded bg-black text-white font-bold text-sm" aria-hidden="true">K</div>
+                    <span class="font-bold text-[17px] tracking-tight">{{ company_name }}</span>
+                </div>
+                <p class="text-[13px] text-[#666] leading-relaxed">La plateforme KYC & KYB pour les professionnels réglementés. ACPR-ready, hébergement souverain France.</p>
+            </div>
+
+            <nav aria-label="Liens du footer" class="grid grid-cols-2 sm:grid-cols-3 gap-8 text-[14px]">
+                <div>
+                    <h3 class="font-bold text-[12px] uppercase tracking-widest text-[#999] mb-3">Produit</h3>
+                    <ul class="space-y-2">
+                        <li><a href="#produit" class="text-[#555] hover:text-black transition-colors">Fonctionnalités</a></li>
+                        <li><a href="#tarifs" class="text-[#555] hover:text-black transition-colors">Tarifs</a></li>
+                        <li><a href="#usage" class="text-[#555] hover:text-black transition-colors">Solutions</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[12px] uppercase tracking-widest text-[#999] mb-3">Légal</h3>
+                    <ul class="space-y-2">
+                        <li><a href="{{ path('website_policy') }}" class="text-[#555] hover:text-black transition-colors">Confidentialité</a></li>
+                        <li><a href="{{ path('website_terms_and_conditions') }}" class="text-[#555] hover:text-black transition-colors">CGU</a></li>
+                        <li><a href="{{ path('website_mentions') }}" class="text-[#555] hover:text-black transition-colors">Mentions légales</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+
+        <div class="border-t border-[#f0f0f0] pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-[13px] text-[#999]">
+            <span>© {{ "now"|date("Y") }} {{ company_name }}. Tous droits réservés.</span>
+            <div class="flex gap-6">
+                <a href="#" class="hover:text-black transition-colors" aria-label="{{ company_name }} sur LinkedIn">LinkedIn</a>
+                <a href="mailto:contact@kysure.fr" class="hover:text-black transition-colors">Contact</a>
+            </div>
+        </div>
+    </div>
+</footer>

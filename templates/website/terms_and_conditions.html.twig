@@ -1,0 +1,101 @@
+{% extends '@website/base.html.twig' %}
+
+{% block title %}Conditions Générales — {{ company_name }}{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-white text-[#1a1a1a] font-sans antialiased selection:bg-[#cce4ff]">
+
+        {# NAVBAR SIMPLE #}
+        <header role="banner">
+            <nav class="mx-auto flex h-[60px] max-w-7xl items-center justify-between px-6 border-b border-[#e6e6e6]">
+                <div class="flex items-center gap-2">
+                    <div class="flex size-7 items-center justify-center rounded bg-black text-white font-bold text-sm">K</div>
+                    <a href="{{ path('website_home') }}" class="text-[17px] font-bold tracking-tight">{{ company_name }}</a>
+                </div>
+                <a href="{{ path('website_home') }}" class="text-[14px] font-medium text-[#4d4d4d] hover:text-black">Retour au site</a>
+            </nav>
+        </header>
+
+        <main class="py-20 px-6">
+            <article class="mx-auto max-w-3xl">
+
+                <header class="mb-12 border-b border-[#f0f0f0] pb-8">
+                    <h1 class="text-[32px] sm:text-[40px] font-bold tracking-tight mb-4">Conditions Générales</h1>
+                    <p class="text-[#999] text-[14px]">Dernière mise à jour : 16 avril 2026</p>
+                </header>
+
+                <div class="space-y-10 text-[16px] leading-relaxed text-[#37352f]">
+
+                    {# 1. MENTIONS LÉGALES #}
+                    <section>
+                        <h2 class="text-[20px] font-bold mb-4 italic underline underline-offset-4 decoration-[#0060df]">1. Mentions Légales</h2>
+                        <p>
+                            Le site <strong>{{ company_name }}</strong> est édité par <strong>Zohore Junior</strong>, entrepreneur individuel, immatriculé sous le numéro SIRET <strong>91331719400011</strong>.<br>
+                            Contact : <a href="mailto:contact@kysure.fr" class="text-[#0060df]">contact@kysure.fr</a>.<br>
+                            Hébergeur : Scaleway SAS, 8 rue de la Ville l'Évêque, 75008 Paris.
+                        </p>
+                    </section>
+
+                    {# 2. OBJET DU SERVICE #}
+                    <section>
+                        <h2 class="text-[20px] font-bold mb-4">2. Description des Services</h2>
+                        <p>
+                            {{ company_name }} est une plateforme SaaS de RegTech destinée aux professionnels (CGP, agents immobiliers, cabinets d'audit, etc.). Le service permet de réaliser des vérifications de conformité KYC (Know Your Customer) et KYB (Know Your Business), d'effectuer des screenings de listes de sanctions/PPE et de générer des rapports PDF certifiés.
+                        </p>
+                    </section>
+
+                    {# 3. SYSTÈME DE CRÉDITS #}
+                    <section class="p-6 bg-[#f7f7f5] rounded-xl border border-[#e6e6e6]">
+                        <h2 class="text-[18px] font-bold mb-3 flex items-center gap-2">
+                            <twig:ux:icon name="lucide:coins" class="size-5 text-[#0060df]" />
+                            3. Utilisation des Crédits
+                        </h2>
+                        <ul class="list-disc pl-5 space-y-2 text-[15px] text-[#555]">
+                            <li><strong>Acquisition :</strong> L'accès aux fonctionnalités nécessite l'achat préalable de "packs de crédits".</li>
+                            <li><strong>Expiration :</strong> Les crédits acquis par l'Utilisateur <strong>n'ont pas de date d'expiration</strong>. Ils restent valables tant que le compte de l'Utilisateur est actif.</li>
+                            <li><strong>Consommation :</strong> Chaque action métier (vérification, export PDF) débite un nombre de crédits défini selon le tarif en vigueur au moment de l'action.</li>
+                            <li><strong>Remboursement :</strong> Aucun remboursement des crédits entamés ou inutilisés ne sera effectué, sauf cas de force majeure.</li>
+                        </ul>
+                    </section>
+
+                    {# 4. RESPONSABILITÉ #}
+                    <section>
+                        <h2 class="text-[20px] font-bold mb-4">4. Limitation de responsabilité</h2>
+                        <p class="mb-4">
+                            <strong>{{ company_name }} est un outil d'aide à la décision.</strong> L'Éditeur met en œuvre les meilleurs moyens pour garantir l'exactitude des données (OCR, APIs officielles), toutefois :
+                        </p>
+                        <ul class="list-disc pl-6 space-y-2 font-medium">
+                            <li>L'Utilisateur reste seul responsable de l'interprétation des résultats.</li>
+                            <li>L'Éditeur ne saurait être tenu responsable d'un manquement aux obligations légales de l'Utilisateur (notamment vis-à-vis de Tracfin ou de l'ACPR).</li>
+                            <li>La responsabilité de l'Éditeur est limitée au montant des packs de crédits achetés durant les 12 derniers mois par l'Utilisateur.</li>
+                        </ul>
+                    </section>
+
+                    {# 5. ACCÈS AU SERVICE #}
+                    <section>
+                        <h2 class="text-[20px] font-bold mb-4">5. Accès et Disponibilité</h2>
+                        <p>
+                            Le service est accessible 24h/24. L'Éditeur s'engage à assurer une disponibilité de 99,9% (hors maintenance programmée). En raison de l'hébergement chez <strong>Scaleway</strong> (France), l'utilisateur bénéficie d'une infrastructure robuste et souveraine.
+                        </p>
+                    </section>
+
+                    {# 6. DROIT APPLICABLE #}
+                    <section>
+                        <h2 class="text-[20px] font-bold mb-4 border-t border-[#f0f0f0] pt-8">6. Droit applicable et Litiges</h2>
+                        <p>
+                            Les présentes conditions sont régies par le droit français. Tout litige relatif à leur interprétation ou leur exécution relève de la compétence exclusive des tribunaux du ressort du siège social de l'Éditeur.
+                        </p>
+                    </section>
+
+                </div>
+
+                <footer class="mt-20 pt-8 border-t border-[#f0f0f0] text-center">
+                    <p class="text-[13px] text-[#999]">
+                        Zohore Junior (EI) · SIRET 91331719400011
+                    </p>
+                </footer>
+
+            </article>
+        </main>
+    </div>
+{% endblock %}

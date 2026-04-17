@@ -1,0 +1,66 @@
+{% extends '@website/base.html.twig' %}
+
+{% block title %}Accès restreint (403) — {{ company_name }}{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-white flex flex-col antialiased">
+        {% include '@website/_header.html.twig' %}
+
+        <main class="flex-1 flex items-center justify-center px-6 pt-16 pb-16">
+            <div class="max-w-md w-full text-center space-y-8">
+
+                {# Illustration Notionist "Security Check" #}
+                <div class="relative mx-auto w-32 h-32">
+                    <img src="https://api.dicebear.com/7.x/notionists/svg?seed=security&scale=110" alt="403" class="grayscale">
+                    {# Badge de verrouillage stylisé #}
+                    <div class="absolute -bottom-2 -right-2 bg-[#1a1a1a] text-white size-8 rounded-lg shadow-xl flex items-center justify-center">
+                        <twig:ux:icon name="lucide:lock" class="size-4" />
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <div class="inline-block px-3 py-1 rounded bg-red-50 text-red-600 text-[11px] font-bold uppercase tracking-widest mb-2">
+                        Erreur 403 : Accès interdit
+                    </div>
+                    <h1 class="text-[32px] font-bold tracking-tight text-[#1a1a1a]">Zone de haute sécurité.</h1>
+                    <p class="text-[#666] leading-relaxed">
+                        Désolé, vos habilitations actuelles ne vous permettent pas d'accéder à ce dossier ou à cette fonctionnalité.
+                    </p>
+                </div>
+
+                <div class="bg-[#f7f7f5] rounded-xl border border-[#e6e6e6] p-6 text-left space-y-4">
+                    <p class="text-[13px] font-medium text-[#1a1a1a]">Cela peut arriver si :</p>
+                    <ul class="space-y-2">
+                        <li class="flex items-center gap-3 text-[13px] text-[#666]">
+                            <span class="size-1.5 rounded-full bg-[#0060df]"></span>
+                            Vous n'êtes pas l'administrateur du compte.
+                        </li>
+                        <li class="flex items-center gap-3 text-[13px] text-[#666]">
+                            <span class="size-1.5 rounded-full bg-[#0060df]"></span>
+                            Le dossier appartient à un autre collaborateur.
+                        </li>
+                        <li class="flex items-center gap-3 text-[13px] text-[#666]">
+                            <span class="size-1.5 rounded-full bg-[#0060df]"></span>
+                            Votre session a expiré pour des raisons de sécurité.
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="flex flex-col gap-3">
+                    <a href="{{ path('app_login') }}" class="rounded-[6px] bg-[#0060df] px-6 py-3 text-[15px] font-bold text-white hover:bg-[#0050bc] transition-all">
+                        Retour au tableau de bord
+                    </a>
+                    <button onclick="history.back()" class="text-[14px] font-medium text-[#999] hover:text-black transition-colors">
+                        Revenir à la page précédente
+                    </button>
+                </div>
+
+                <p class="text-[11px] text-[#bbb] italic">
+                    ID de transaction : {{ 'now'|date('U') }}-403-SECURE
+                </p>
+            </div>
+        </main>
+
+        {% include '@website/_footer.html.twig' %}
+    </div>
+{% endblock %}

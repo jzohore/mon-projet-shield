@@ -1,0 +1,93 @@
+{% extends '@website/base.html.twig' %}
+
+{% block title %}Mentions Légales — {{ company_name }}{% endblock %}
+
+{% block body %}
+    <div class="min-h-screen bg-white text-[#1a1a1a] font-sans antialiased selection:bg-[#cce4ff]">
+
+        {# NAVBAR SIMPLE #}
+        <header role="banner">
+            <nav class="mx-auto flex h-[60px] max-w-7xl items-center justify-between px-6 border-b border-[#e6e6e6]">
+                <div class="flex items-center gap-2">
+                    <div class="flex size-7 items-center justify-center rounded bg-black text-white font-bold text-sm">K</div>
+                    <a href="{{ path('website_home') }}" class="text-[17px] font-bold tracking-tight">{{ company_name }}</a>
+                </div>
+                <a href="{{ path('website_home') }}" class="text-[14px] font-medium text-[#4d4d4d] hover:text-black">Retour au site</a>
+            </nav>
+        </header>
+
+        <main class="py-20 px-6">
+            <article class="mx-auto max-w-3xl">
+
+                <header class="mb-12 border-b border-[#f0f0f0] pb-8">
+                    <h1 class="text-[32px] sm:text-[40px] font-bold tracking-tight mb-4">Mentions Légales</h1>
+                    <p class="text-[#999] text-[14px]">Conformément à l'article 6 de la loi n° 2004-575 du 21 juin 2004</p>
+                </header>
+
+                <div class="space-y-12 text-[16px] leading-relaxed text-[#37352f]">
+
+                    {# 1. ÉDITEUR DU SITE #}
+                    <section>
+                        <h2 class="text-[20px] font-bold mb-4">1. Édition du site</h2>
+                        <p>
+                            Le site internet <strong>{{ company_name }}</strong> (accessible à l'adresse kysure.fr) est édité par :
+                        </p>
+                        <ul class="mt-4 space-y-1 border-l-2 border-[#0060df] pl-4">
+                            <li><strong>Zohore Junior</strong> (Entrepreneur Individuel)</li>
+                            <li><strong>SIRET :</strong> 91331719400011</li>
+                            <li><strong>Siège social :</strong> 1, rue Ernest Gouïn, 75017, Paris</li>
+                            <li><strong>Email :</strong> <a href="mailto:contact@kysure.fr" class="text-[#0060df]">contact@kysure.fr</a></li>
+                        </ul>
+                    </section>
+
+                    {# 2. DIRECTEUR DE PUBLICATION #}
+                    <section>
+                        <h2 class="text-[20px] font-bold mb-4">2. Direction de la publication</h2>
+                        <p>
+                            Le directeur de la publication du site est <strong>Zohore Junior</strong>, en sa qualité de responsable légal de l'entreprise.
+                        </p>
+                    </section>
+
+                    {# 3. HÉBERGEMENT #}
+                    <section class="p-6 bg-[#f7f7f5] rounded-xl border border-[#e6e6e6]">
+                        <h2 class="text-[18px] font-bold mb-3 flex items-center gap-2 text-[#1a1a1a]">
+                            <twig:ux:icon name="lucide:server" class="size-5 text-[#0060df]" />
+                            3. Hébergement
+                        </h2>
+                        <p class="text-[15px] text-[#555]">
+                            Le site est hébergé par la société <strong>Scaleway SAS</strong> :<br>
+                            Siège social : 8 rue de la Ville l'Évêque, 75008 Paris, France.<br>
+                            Site web : <a href="https://www.scaleway.com" target="_blank" class="underline underline-offset-4">www.scaleway.com</a>
+                        </p>
+                    </section>
+
+                    {# 4. PROPRIÉTÉ INTELLECTUELLE #}
+                    <section>
+                        <h2 class="text-[20px] font-bold mb-4">4. Propriété intellectuelle</h2>
+                        <p>
+                            L'ensemble de ce site (structure, design, textes, logos, graphismes) est la propriété exclusive de <strong>Zohore Junior</strong>.
+                            Toute reproduction, représentation, modification ou adaptation de tout ou partie du site, quel que soit le moyen ou le procédé utilisé, est interdite sans autorisation écrite préalable.
+                        </p>
+                    </section>
+
+                    {# 5. COOKIES #}
+                    <section>
+                        <h2 class="text-[20px] font-bold mb-4">5. Cookies</h2>
+                        <p>
+                            Le site {{ company_name }} peut utiliser des cookies strictement nécessaires au fonctionnement de la plateforme (session, sécurité, gestion des crédits).
+                            Conformément aux recommandations de la CNIL, ces traceurs sont dispensés de consentement préalable car ils sont indispensables à la fourniture du service expressément demandé par l'utilisateur.
+                        </p>
+                    </section>
+
+                </div>
+
+                <footer class="mt-20 pt-8 border-t border-[#f0f0f0] text-center">
+                    <a href="{{ path('website_home') }}" class="text-[14px] font-bold text-[#999] hover:text-black transition-colors">
+                        ← Retour à l'accueil
+                    </a>
+                </footer>
+
+            </article>
+        </main>
+    </div>
+{% endblock %}
