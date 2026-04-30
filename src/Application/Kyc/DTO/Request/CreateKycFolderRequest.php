@@ -14,7 +14,7 @@ class CreateKycFolderRequest
         minMessage: 'Le prénom doit contenir au moins {{ limit }} caractères.',
         maxMessage: 'Le prénom ne peut pas dépasser {{ limit }} caractères.'
     )]
-    public ?string $contactFirstName = null;
+    public string $contactFirstName = '';
 
     #[Assert\NotBlank(message: 'Le nom est obligatoire.')]
     #[Assert\Length(
@@ -27,7 +27,7 @@ class CreateKycFolderRequest
         pattern: '/^[\p{L}\s\-\']+$/u',
         message: 'Le nom contient des caractères non autorisés.'
     )]
-    public ?string $contactLastName = null;
+    public string $contactLastName = '';
 
     #[Assert\NotBlank(message: 'L\'adresse email est obligatoire.')]
     #[Assert\Email(
@@ -39,7 +39,7 @@ class CreateKycFolderRequest
         maxMessage: 'L\'email ne peut pas dépasser {{ limit }} caractères.'
     )]
     #[UniqueKycAwaitingClient]
-    public ?string $contactEmail = null;
+    public string $contactEmail = '';
 
-    public ?string $workspaceSlugId = null;
+    public string $workspaceSlugId = '';
 }

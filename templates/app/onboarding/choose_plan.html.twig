@@ -1,0 +1,21 @@
+{% extends '@app/onboarding/base_onboarding.html.twig' %}
+
+{% set current_step = 2 %}
+
+{% block title %}{{ page_title }} | {{ company_name }}{% endblock %}
+
+{% block form_content %}
+    <div class="mb-8 text-left animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <h1 class="text-3xl font-bold tracking-tight text-slate-900 mb-3">
+            {{ page_title }}
+        </h1>
+        <p class="text-slate-500 text-lg leading-relaxed">
+            {{ page_description }}
+        </p>
+    </div>
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 mb-8">
+        <twig:WorkspaceChoosePlanFormComponent userSlugId="{{ app.user.slugId }}"></twig:WorkspaceChoosePlanFormComponent>
+    </div>
+
+
+{% endblock %}

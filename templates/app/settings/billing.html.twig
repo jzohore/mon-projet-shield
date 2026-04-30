@@ -11,7 +11,7 @@
             <div class="space-y-1">
                 <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-2">Solde de votre organisation</p>
                 <div class="flex items-baseline gap-3">
-                    <span class="text-5xl font-black text-slate-900 tracking-tighter">{{ workspace.balance }}</span>
+                    <span class="text-5xl font-black text-slate-900 tracking-tighter">{{ workspaceInfo().balance }}</span>
                     <span class="text-sm font-bold text-violet-600 uppercase tracking-tight">Crédits disponibles</span>
                 </div>
             </div>
@@ -25,7 +25,7 @@
                 <p class="text-[10px] text-center text-slate-400">Paiement sécurisé par Stripe</p>
             </div>
         </div>
-        <twig:WalletTransactionsListComponent userSlugId="{{ app.user.slugId }}"></twig:WalletTransactionsListComponent>
+        <twig:WalletTransactionsListComponent></twig:WalletTransactionsListComponent>
 
     </div>
 {% endblock %}

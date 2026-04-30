@@ -11,6 +11,7 @@ final readonly class UserInfoResponse
         public string $slugId,
         public ?string $firstName = null,
         public ?string $lastName = null,
+        public ?string $customerStripeId = null
     ) {}
 
     public static function fromEntity(User $user): self

@@ -2,8 +2,8 @@
 
 namespace App\Infrastructure\Shared\Twig\Components;
 
-use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
-use Symfony\Component\Uid\Uuid;
+use App\Application\Workspace\DTO\Response\WorkspaceInfoResponse;
+use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 
 #[AsTwigComponent(
@@ -13,11 +13,12 @@ use Symfony\UX\TwigComponent\Attribute\AsTwigComponent;
 final readonly class HeaderCreditsCounter
 {
     public function __construct(
-        private GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
+        private CurrentWorkspaceProvider $currentWorkspaceProvider,
     ) {}
 
-    public function getCreditCount(Uuid $userId): int
+    public function getCreditCount(): WorkspaceInfoResponse
     {
-        return ($this->getCurrentWorkspaceInfo)($userId)->balance;
+        $workspace = $this->currentWorkspaceProvider->getWorkspace();
+        return WorkspaceInfoResponse::fromEntity($workspace);
     }
 }

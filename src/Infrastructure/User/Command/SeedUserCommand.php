@@ -6,6 +6,8 @@ use App\Application\User\DTO\Request\CreateUserRequest;
 use App\Application\User\UseCase\CreateUserUseCase;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
+use Symfony\Component\Console\Output\OutputInterface;
+use Webmozart\Assert\Assert;
 
 #[AsCommand(
     name: 'app:user:seed',
@@ -17,17 +19,19 @@ readonly class SeedUserCommand
         private CreateUserUseCase $createUserUseCase,
     ) {}
 
-    public function __invoke(): int
+    public function __invoke(OutputInterface $output): int
     {
         $request = new CreateUserRequest();
-        $request->email = 'test@gmail.com';
-        $request->firstName = 'John';
-        $request->lastName = 'Doe';
+        $request->email = 'contact@kysure.fr';
+        $request->firstName = 'Junior';
+        $request->lastName = 'Zohore';
         $request->isAdmin = true;
         $request->isVerified = true;
 
-        $this->createUserUseCase->__invoke($request);
+        $user = ($this->createUserUseCase)($request);
+        Assert::notNull($user);
 
+        $output->writeln('User created :' . $user->email);
         return Command::SUCCESS;
     }
 }

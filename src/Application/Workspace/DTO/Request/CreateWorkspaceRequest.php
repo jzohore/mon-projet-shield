@@ -20,14 +20,13 @@ class CreateWorkspaceRequest
         message: 'Ce champ contient des caractères non autorisés (les symboles spéciaux comme <, >, = sont interdits).'
     )]
     #[UniqueWorkspaceName]
-    public ?string $name = null;
+    public string $name = '';
 
-    #[Assert\NotBlank(message: 'Le numéro SIRET est obligatoire. Veuillez utiliser la recherche.')]
     #[Assert\Regex(
         pattern: '/^[0-9]{14}$/',
         message: 'Le SIRET doit contenir exactement 14 chiffres, sans espaces.'
     )]
-    public ?string $siret = null;
+    public string $siret = '';
 
     // 🛡️ NOUVEAU : Validation de l'adresse
     #[Assert\NotBlank(message: 'L\'adresse de la structure est obligatoire.')]
@@ -35,11 +34,11 @@ class CreateWorkspaceRequest
         max: 255,
         maxMessage: 'L\'adresse ne peut pas dépasser {{ limit }} caractères.'
     )]
-    public ?string $address = null;
+    public string $address = '';
 
-    public ?string $legalName = null;
+    public string $legalName = '';
 
     public Industry $workspaceIndustry = Industry::OTHER;
 
-    public ?string $userSlugId = null;
+    public string $userSlugId = '';
 }

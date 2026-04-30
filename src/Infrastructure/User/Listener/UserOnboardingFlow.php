@@ -4,11 +4,12 @@ namespace App\Infrastructure\User\Listener;
 
 use App\Application\Audit\DTO\Request\CreateAuditLogRequest;
 use App\Application\Audit\UseCase\CreateAuditLogUseCase;
+use App\Application\User\UseCase\UpdateProfilUseCase;
 use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
 use App\Domain\AuditLog\Enum\AuditEventType;
-use App\Domain\User\Entity\User;
 use App\Domain\User\Event\UserCreatedEvent;
 use App\Domain\User\Event\UserOnboardingCompletedEvent;
+use App\Infrastructure\Service\Payment\Stripe\StripeService;
 use App\Infrastructure\User\Message\SendOnboardingConfirmedMessage;
 use App\Infrastructure\User\Message\SendWelcomeEmailMessage;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -24,6 +25,8 @@ final readonly class UserOnboardingFlow
         private CreateAuditLogUseCase $auditLogUseCase,
         private GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
         private UrlGeneratorInterface $router,
+        private StripeService $stripeService,
+        private UpdateProfilUseCase $updateProfilUseCase,
     ) {}
 
     /**
@@ -35,9 +38,11 @@ final readonly class UserOnboardingFlow
         $magicLinkUrl = $this->router->generate('app_verify_magic_link', [
             'token' => $event->user->magicLinkToken,
         ], UrlGeneratorInterface::ABSOLUTE_URL);
+        $email = $event->user->email;
         Assert::notNull($magicLinkUrl);
+        Assert::notNull($email);
         $message = new SendWelcomeEmailMessage(
-            $event->user->email,
+            $email,
             $magicLinkUrl,
         );
 
@@ -67,9 +72,11 @@ final readonly class UserOnboardingFlow
     public function dispatchOnboardingConfirmedEmail(UserOnboardingCompletedEvent $event): void
     {
         $user = $event->user;
-        Assert::isInstanceOf($user, User::class);
+        $url = $this->router->generate('app_dashboard', [], UrlGeneratorInterface::ABSOLUTE_URL);
+        Assert::notNull($user->email);
         $message = new SendOnboardingConfirmedMessage(
             $user->email,
+            $url,
         );
 
         $this->messageBus->dispatch($message);
@@ -94,5 +101,13 @@ final readonly class UserOnboardingFlow
         );
 
         ($this->auditLogUseCase)($auditLog);
+    }
+
+    #[AsEventListener]
+    public function createStripeCustomerEvent(UserOnboardingCompletedEvent $event): void
+    {
+        $user = $event->user;
+        $this->stripeService->createStripeCustomer($user);
+        ($this->updateProfilUseCase)($user);
     }
 }

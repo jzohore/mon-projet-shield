@@ -2,42 +2,39 @@
 
 namespace App\Infrastructure\Controller\App\Settings;
 
-use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
-use App\Domain\User\Entity\User;
+use App\Application\Workspace\DTO\Response\WorkspaceInfoResponse;
+use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Http\Attribute\CurrentUser;
 use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
-use Webmozart\Assert\Assert;
 
 #[AsController]
 #[Route(path: '/app/settings/billing', name: 'app_settings_billing')]
-class BillingController
+readonly class BillingController
 {
+    public function __construct(
+        private Environment $twig,
+        private CurrentWorkspaceProvider $workspaceProvider,
+    ) {}
+
     /**
      * @throws RuntimeError
      * @throws SyntaxError
      * @throws LoaderError
      */
-    public function __invoke(
-        Environment $twig,
-        #[CurrentUser]
-        User $user,
-        GetCurrentWorkspaceInfo
-        $getCurrentWorkspaceInfo,
-    ): Response {
-        $userId = $user->id;
-        Assert::notNull($userId, "L'utilisateur doit avoir un ID pour récupérer le workspace.");
-        $workspace = ($getCurrentWorkspaceInfo)($userId);
+    public function __invoke(): Response
+    {
+        $workspace = $this->workspaceProvider->getWorkspace();
+        $dto = WorkspaceInfoResponse::fromEntity($workspace);
         return new Response(
-            $twig->render('@app/settings/billing.html.twig', [
+            $this->twig->render('@app/settings/billing.html.twig', [
                 'page_title' => 'Paramètres - Usage & Facturation',
                 'sub_title' => 'Gérez votre solde d\'analyses KYC, rechargez vos crédits et téléchargez vos factures.',
-                'workspace' => $workspace,
+                'workspace' => $dto,
             ])
         );
     }

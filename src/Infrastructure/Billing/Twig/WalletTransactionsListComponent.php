@@ -2,10 +2,10 @@
 
 namespace App\Infrastructure\Billing\Twig;
 
-use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Domain\Wallet\Entity\WalletTransaction;
 use App\Domain\Wallet\Repository\WalletTransactionsRepositoryInterface;
+use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use Pagerfanta\Pagerfanta;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -30,9 +30,6 @@ class WalletTransactionsListComponent
     #[LiveProp(writable: true, url: true)]
     public ?string $status = null;
 
-    #[LiveProp]
-    public ?string $userSlugId = null;
-
     #[LiveAction]
     public function previousPage(): void
     {
@@ -49,8 +46,8 @@ class WalletTransactionsListComponent
 
     public function __construct(
         public readonly WalletTransactionsRepositoryInterface $walletTransactionsRepository,
-        public readonly GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
         public readonly UserRepositoryInterface $userRepository,
+        private readonly CurrentWorkspaceProvider $workspaceProvider,
     ) {}
 
     /**
@@ -58,11 +55,7 @@ class WalletTransactionsListComponent
      */
     public function getTransactionsList(): Pagerfanta
     {
-        $user = $this->userRepository->findBySlug($this->userSlugId);
-        Assert::notNull($user);
-        $userId = $user->id;
-        Assert::notNull($userId, "L'utilisateur doit avoir un ID pour récupérer le workspace.");
-        $workspace = ($this->getCurrentWorkspaceInfo)($userId);
+        $workspace = $this->workspaceProvider->getWorkspace();
 
         $workspaceSlugId = $workspace->slugId;
         Assert::notNull($workspaceSlugId);

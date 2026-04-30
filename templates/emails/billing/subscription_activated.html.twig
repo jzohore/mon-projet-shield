@@ -1,0 +1,39 @@
+{% extends 'emails/base.html.twig' %}
+
+{# 1. Sujet du mail #}
+{% block title %}Confirmation d'activation de votre abonnement {{ company_name }}{% endblock %}
+
+{# 2. Contenu principal #}
+{% block content %}
+    <h1>Bienvenue</h1>
+
+    <p>Nous vous confirmons que votre abonnement au <strong>Enterprise</strong> pour l'espace <strong>{{ workspace_name }}</strong> est désormais actif.</p>
+
+    <p>Vous disposez dès à présent d'un accès complet aux services de {{ company_name }}. Votre abonnement a été structuré pour répondre aux exigences réglementaires LCB-FT à travers quatre piliers fondamentaux :</p>
+
+    <ul style="margin-top: 20px; margin-bottom: 20px; padding-left: 20px; line-height: 1.6; color: #334155;">
+        <li style="margin-bottom: 12px;">
+            <strong>Analyses KYC et KYB :</strong> Identification approfondie des personnes physiques et morales. Vous accédez en temps réel aux données légales, statuts et structures de bénéficiaires effectifs (UBO).
+        </li>
+        <li style="margin-bottom: 12px;">
+            <strong>Filtrage de conformité (Screening) :</strong> Contrôle systématique de vos tiers face aux listes de sanctions internationales, de gels des avoirs et de Personnes Politiquement Exposées (PPE).
+        </li>
+        <li style="margin-bottom: 12px;">
+            <strong>Surveillance automatisée (Monitoring) :</strong> Mise sous veille de vos dossiers pour une détection proactive de tout changement de profil de risque ou de nouvelle inscription sur les listes de sanctions.
+        </li>
+        <li style="margin-bottom: 12px;">
+            <strong>Collaboration d'équipe :</strong> Gestion centralisée permettant à vos collaborateurs de piloter conjointement la conformité et de partager l'historique des contrôles du cabinet.
+        </li>
+    </ul>
+
+    <p>Votre quota de vérifications mensuelles a été crédité. Vous pouvez dès maintenant vous connecter à votre interface pour initier vos premières recherches et constituer vos dossiers de conformité.</p>
+
+    <p style="font-size: 13px; color: #64748b; margin-top: 32px;">
+        L'historique de vos factures et le détail de votre consommation sont accessibles à tout moment dans la section "Facturation" de vos paramètres.
+    </p>
+{% endblock %}
+
+{# 3. Footer personnalisé #}
+{% block footer_text %}
+    <p>Ceci est un message automatique confirmant l'activation de vos services. Pour votre sécurité, ne communiquez jamais vos accès {{ company_name }} à des tiers.</p>
+{% endblock %}

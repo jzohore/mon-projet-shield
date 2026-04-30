@@ -5,6 +5,7 @@ namespace App\Infrastructure\Screening\Persistence;
 use App\Domain\Screening\Entity\ScreeningAudit;
 use App\Domain\Screening\Repository\ScreeningAuditRepositoryInterface;
 use App\Domain\Workspace\Entity\Workspace;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
@@ -33,7 +34,7 @@ readonly class DoctrineScreeningAuditRepository implements ScreeningAuditReposit
 
     public function findRecentIdenticalSearch(Workspace $workspace, string $query, int $hoursLimit): ?ScreeningAudit
     {
-        $limitDate = (new \DateTimeImmutable())->modify("-{$hoursLimit} hours");
+        $limitDate = (new DateTimeImmutable())->modify("-{$hoursLimit} hours");
 
         return $this->repository->createQueryBuilder('s')
             ->where('s.workspace = :workspace')
@@ -56,6 +57,7 @@ readonly class DoctrineScreeningAuditRepository implements ScreeningAuditReposit
     public function getScreeningList(string $workspaceSlugId, ?string $search = null): Pagerfanta
     {
         $qb = $this->repository->createQueryBuilder('screeningAudit')
+            ->select('screeningAudit', 'workspace')
             ->leftJoin('screeningAudit.workspace', 'workspace')
             ->andWhere('workspace.slugId = :workspaceSlugid')
             ->setParameter('workspaceSlugid', $workspaceSlugId)
@@ -67,5 +69,23 @@ readonly class DoctrineScreeningAuditRepository implements ScreeningAuditReposit
         }
 
         return new Pagerfanta(new QueryAdapter($qb));
+    }
+
+    /**
+     * @param Workspace $workspace
+     * @param DateTimeImmutable $since
+     * @return int
+     * Compte le nombre de recherches d'un Workspace depuis une date donnée.
+     */
+    public function countSearchesSince(Workspace $workspace, DateTimeImmutable $since): int
+    {
+        return (int) $this->repository->createQueryBuilder('sa')
+            ->select('COUNT(sa.id)')
+            ->where('sa.workspace = :workspace')
+            ->andWhere('sa.createdAt >= :since')
+            ->setParameter('workspace', $workspace)
+            ->setParameter('since', $since)
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 }

@@ -15,7 +15,7 @@ class CreateUserRequest
         max: 180,
         maxMessage: 'L\'email ne peut pas dépasser {{ limit }} caractères.'
     )]
-    public ?string $email = null;
+    public string $email = '';
 
     #[Assert\NotBlank(message: 'Le prénom est obligatoire.')]
     #[Assert\Length(
@@ -28,7 +28,7 @@ class CreateUserRequest
         pattern: '/^[\p{L}\s\-\']+$/u',
         message: 'Le prénom contient des caractères non autorisés.'
     )]
-    public ?string $firstName = null;
+    public string $firstName = '';
 
     #[Assert\NotBlank(message: 'Le nom est obligatoire.')]
     #[Assert\Length(
@@ -41,7 +41,7 @@ class CreateUserRequest
         pattern: '/^[\p{L}\s\-\']+$/u',
         message: 'Le nom contient des caractères non autorisés.'
     )]
-    public ?string $lastName = null;
+    public string $lastName = '';
 
     #[Assert\Type(type: 'bool')]
     public bool $isAdmin = false;

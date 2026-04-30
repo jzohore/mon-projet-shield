@@ -1,0 +1,20 @@
+{# emails/billing/subscription_canceled.html.twig #}
+{% extends 'emails/base.html.twig' %}
+
+{% block content %}
+    <h1>Confirmation de résiliation</h1>
+
+    <p>Bonjour,</p>
+
+    <p>Nous vous confirmons que votre demande de résiliation pour le <strong>Enterprise</strong> a bien été prise en compte.</p>
+
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin: 24px 0;">
+        <p style="margin: 0; font-size: 14px; color: #475569;">
+            <strong>Date de fin de service :</strong> {{ end_date }}
+        </p>
+    </div>
+
+    <p>Votre accès aux outils de recherche et de monitoring reste disponible jusqu'à cette date. Après le {{ end_date }}, votre espace passera en mode "Lecture seule" : vos dossiers resteront archivés mais aucune nouvelle analyse ne pourra être lancée.</p>
+
+    <p>Si vous changez d'avis, vous pouvez réactiver votre abonnement en un clic depuis vos paramètres de facturation avant la date d'échéance.</p>
+{% endblock %}

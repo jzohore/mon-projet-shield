@@ -4,12 +4,9 @@ namespace App\Infrastructure\Workspace\Listener;
 
 use App\Application\Audit\DTO\Request\CreateAuditLogRequest;
 use App\Application\Audit\UseCase\CreateAuditLogUseCase;
-use App\Application\Subscription\DTO\SubscriptionRequest;
-use App\Application\Subscription\UseCase\SaveSubscriptionUseCase;
 use App\Application\Workspace\DTO\Request\WorkspaceMemberRequest;
 use App\Application\Workspace\UseCase\SaveWorkspaceMemberUseCase;
 use App\Domain\AuditLog\Enum\AuditEventType;
-use App\Domain\Subscription\Enum\Plan;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Enum\InvitedRole;
@@ -22,8 +19,8 @@ final readonly class WorkspaceFlowListener
     public function __construct(
         private CreateAuditLogUseCase $auditLogUseCase,
         private SaveWorkspaceMemberUseCase $saveWorkspaceMemberUseCase,
-        private SaveSubscriptionUseCase $saveSubscriptionUseCase,
     ) {}
+
     #[AsEventListener]
     public function auditLog(WorkspaceCreatedEvent $event): void
     {
@@ -57,19 +54,5 @@ final readonly class WorkspaceFlowListener
         $member->role = InvitedRole::ROLE_WORKSPACE_ADMIN;
 
         ($this->saveWorkspaceMemberUseCase)($member);
-    }
-
-    #[AsEventListener]
-    public function saveSubscription(WorkspaceCreatedEvent $event): void
-    {
-        $workspace = $event->workspace;
-        Assert::isInstanceOf($workspace, Workspace::class);
-
-        $sub = new SubscriptionRequest();
-        $sub->workspaceSlugId = $workspace->slugId;
-        $sub->plan = Plan::TRIAL;
-        $sub->expiresAt = new \DateTimeImmutable('+1 month');
-
-        ($this->saveSubscriptionUseCase)($sub);
     }
 }

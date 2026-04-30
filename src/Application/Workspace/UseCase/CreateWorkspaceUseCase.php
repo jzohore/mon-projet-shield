@@ -5,15 +5,13 @@ declare(strict_types=1);
 namespace App\Application\Workspace\UseCase;
 
 use App\Application\Workspace\DTO\Request\CreateWorkspaceRequest;
-use App\Domain\User\Entity\User;
+use App\Application\Workspace\DTO\Response\WorkspaceInfoResponse;
 use App\Domain\User\Enum\OnboardingStatus;
 use App\Domain\User\Repository\UserRepositoryInterface;
-use App\Domain\Wallet\Enum\TransactionType;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Event\WorkspaceCreatedEvent;
 use App\Domain\Workspace\Repository\WorkspaceRepositoryInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Webmozart\Assert\Assert;
 
 final readonly class CreateWorkspaceUseCase
 {
@@ -23,16 +21,9 @@ final readonly class CreateWorkspaceUseCase
         private EventDispatcherInterface $eventDispatcher,
     ) {}
 
-    public function __invoke(CreateWorkspaceRequest $request): void
+    public function __invoke(CreateWorkspaceRequest $request): WorkspaceInfoResponse
     {
-        Assert::notNull($request->name);
-        Assert::notNull($request->userSlugId, 'Le slug utilisateur est requis.');
-        Assert::notNull($request->siret, 'Le numéro SIRET est requis.');
-        Assert::notNull($request->address, 'L\'adresse est requise.');
-        Assert::notNull($request->legalName, 'Le nom juridique est requis.');
-        $user = $this->userRepository->findBySlug($request->userSlugId);
-
-        Assert::isInstanceOf($user, User::class, sprintf('Aucun utilisateur trouvé pour le slug "%s"', $request->userSlugId));
+        $user = $this->userRepository->getBySlug($request->userSlugId);
 
         $workspace = Workspace::create(
             name: $request->name,
@@ -41,11 +32,13 @@ final readonly class CreateWorkspaceUseCase
             address: $request->address,
             industry: $request->workspaceIndustry,
         );
-        $workspace->credit(2, TransactionType::RETENTION_BONUS->value);
+
         $user->onboardingStatus = OnboardingStatus::WORKSPACE_SETUP;
         $this->workspaceRepository->save($workspace);
         $this->userRepository->save($user);
 
         $this->eventDispatcher->dispatch(new WorkspaceCreatedEvent($workspace, $user));
+
+        return WorkSpaceInfoResponse::fromEntity($workspace);
     }
 }

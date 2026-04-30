@@ -23,6 +23,9 @@ class Product
     }
 
     #[ORM\Column(type: Types::STRING, length: 255)]
+    public private(set) string $reference;
+
+    #[ORM\Column(type: Types::STRING, length: 255)]
     public private(set) string $name;
 
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
@@ -55,6 +58,9 @@ class Product
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     public private(set) bool $isRecommended = false;
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    public private(set) bool $isRecurring = false;
+
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public private(set) \DateTimeImmutable $createdAt;
 
@@ -62,39 +68,47 @@ class Product
     public private(set) ?\DateTimeImmutable $updatedAt = null;
 
     public function __construct(
+        string $reference,
         string $name,
         int $credits,
         int $priceInCents,
         string $stripePriceId,
         ?string $description = null,
         bool $isRecommended = false,
+        bool $isRecurring = false,
     ) {
+        $this->reference = $reference;
         $this->name = $name;
         $this->credits = $credits;
         $this->priceInCents = $priceInCents;
         $this->stripePriceId = $stripePriceId;
         $this->description = $description;
         $this->isRecommended = $isRecommended;
+        $this->isRecurring = $isRecurring;
         $this->slugId = $this->generate_ulid_prefixed('product_');
 
         $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
 
     public static function create(
+        string $reference,
         string $name,
         int $credits,
         int $priceInCents,
         string $stripePriceId,
         ?string $description = null,
         bool $isRecommended = false,
+        bool $isRecurring = false,
     ): self {
         return new self(
+            $reference,
             $name,
             $credits,
             $priceInCents,
             $stripePriceId,
             $description,
-            $isRecommended
+            $isRecommended,
+            $isRecurring,
         );
     }
 

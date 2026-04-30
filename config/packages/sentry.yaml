@@ -1,0 +1,26 @@
+# -----------------------------------------------------------------------------
+# ENVIRONNEMENT DE PRODUCTION (Serveur)
+# -----------------------------------------------------------------------------
+when@prod:
+    sentry:
+        dsn: '%env(SENTRY_DSN)%'
+        options:
+            send_default_pii: true
+
+            ignore_exceptions:
+                - 'Symfony\Component\ErrorHandler\Error\FatalError'
+                - 'Symfony\Component\Debug\Exception\FatalErrorException'
+                # Le bouclier métier : on ignore nos propres exceptions contrôlées
+                - 'App\Domain\Shared\Exception\DomainExceptionInterface'
+
+        register_error_listener: false
+        register_error_handler: false
+
+    # Intégration Monolog pour avoir le contexte avant le crash
+
+    services:
+        Sentry\Monolog\Handler:
+            arguments:
+                $hub: '@Sentry\State\HubInterface'
+                $level: !php/const Monolog\Logger::ERROR
+                $fillExtraContext: true

@@ -7,10 +7,8 @@ use App\Domain\Kyc\Entity\KycFolder;
 use App\Domain\Kyc\Enum\KycFolderStatus;
 use App\Domain\Kyc\Event\KycFolderCreatedEvent;
 use App\Domain\Kyc\Repository\KycFolderRepositoryInterface;
-use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Repository\WorkspaceRepositoryInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Webmozart\Assert\Assert;
 
 final readonly class CreateKycFolderUseCase
 {
@@ -22,13 +20,7 @@ final readonly class CreateKycFolderUseCase
 
     public function __invoke(CreateKycFolderRequest $request): void
     {
-        Assert::notNull($request->contactLastName);
-        Assert::notNull($request->contactFirstName);
-        Assert::notNull($request->contactEmail);
-        Assert::notNull($request->workspaceSlugId);
-
-        $workspace = $this->workspaceRepository->findOneBySlug($request->workspaceSlugId);
-        Assert::isInstanceOf($workspace, Workspace::class);
+        $workspace = $this->workspaceRepository->getBySlug($request->workspaceSlugId);
 
         $kyc = KycFolder::initiate(
             workspace: $workspace,

@@ -1,69 +1,68 @@
-# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
-
-# This file is the entry point to configure your own services.
-# Files in the packages/ subdirectory configure your dependencies.
-# See also https://symfony.com/doc/current/service_container/import.html
-
-# Put parameters here that don't need to change on each machine where the app is deployed
-# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     geoip_db_path: '%env(resolve:GEOIP_DB_PATH)%'
     app.kyc_upload_directory: '%kernel.project_dir%/public/uploads/kyc'
+    tempStorageDir: '%kernel.project_dir%/var/uploads/kyc_temp'
+
+    # Configuration du router pour le mode console (CLI) ou les URLs absolues
     router.request_context.host: 'kysure.fr'
     router.request_context.scheme: 'https'
     router.request_context.base_url: ''
-    tempStorageDir: '%kernel.project_dir%/var/uploads/kyc_temp'
+
 services:
-    # default configuration for services in *this* file
+    # ==========================================
+    # 1. CONFIGURATION PAR DÉFAUT
+    # ==========================================
     _defaults:
-        autowire: true      # Automatically injects dependencies in your services.
-        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        autowire: true      # Injecte automatiquement les dépendances
+        autoconfigure: true # Enregistre automatiquement les commandes, event subscribers, etc.
         bind:
-            $mindeeApiKey: '%env(MINDEE_API_KEY)%'
             $stripeSecretKey: '%env(STRIPE_SECRET_KEY)%'
-    # makes classes in src/ available to be used as services
-    # this creates a service per class whose id is the fully-qualified class name
+            $kysureCabinetPriceId: '%env(STRIPE_ABO)%'
+
+    # ==========================================
+    # 2. CHARGEMENT & EXCLUSIONS DDD (CLEAN ARCHITECTURE)
+    # ==========================================
     App\:
         resource: '../src/'
         exclude:
             - '../src/DependencyInjection/'
-            - '../src/Entity/'
             - '../src/Kernel.php'
-            # 👇 AJOUTE CES LIGNES POUR TON ARCHITECTURE DDD 👇
+
+            # --- Objets du Domaine (Ne doivent pas être dans le conteneur de services) ---
+            - '../src/Entity/'
             - '../src/Domain/*/Entity/'
             - '../src/Domain/*/Event/'
+            - '../src/Domain/*/ValueObject/'
+            - '../src/Domain/*/Exception/'
+
+            # --- Objets Applicatifs (Passés par paramètre, non instanciés par Symfony) ---
             - '../src/Application/DTO/'
             - '../src/Application/Request/'
-    Mindee\ClientV2:
-        arguments:
-            $apiKey: '%env(MINDEE_API_KEY)%'
-    App\Infrastructure\Ocr\MindeeProvider: ~
-    App\Infrastructure\Ocr\FakeOcrProvider: ~
 
-    App\Infrastructure\Ocr\OcrFactory: ~
+    # ==========================================
+    # 3. RÉSOLUTION DES INTERFACES (PORTS & ADAPTERS)
+    # ==========================================
 
-        # 🚀 ON DÉFINIT L'INTERFACE VIA LE FACTORY
+    # Résolution du système de stockage des documents (S3 par défaut)
+    App\Domain\Port\DocumentStorageInterface: '@App\Infrastructure\Storage\ScalewayS3DocumentStorage'
+
+    # Résolution de l'OCR via sa Factory
     App\Domain\Port\OcrProviderInterface:
         factory: [ '@App\Infrastructure\Ocr\OcrFactory', 'create' ]
         arguments:
             $mode: '%env(OCR_MODE)%'
 
+    # Résolution du client LCB-FT via sa Factory
     App\Domain\Port\OpenSanctionsClientInterface:
         factory: [ '@App\Infrastructure\Screening\Service\OpenSanctionsFactory', 'create' ]
         arguments:
             $mode: '%env(OPEN_SANCTIONS_MODE)%'
 
+    # ==========================================
+    # 4. CONFIGURATIONS EXPLICITES DES SERVICES
+    # ==========================================
 
-    App\Application\Kyc\UseCase\UploadKycDocumentUseCase:
-        arguments:
-            $tempStorageDir: '%tempStorageDir%'
-
-    # Définition des alias nommés pour matcher la variable d'env
-    real_ocr_provider:
-        alias: App\Infrastructure\Ocr\MindeeProvider
-
-    mock_ocr_provider:
-        alias: App\Infrastructure\Ocr\FakeOcrProvider
+    # Client S3 (Scaleway)
     Aws\S3\S3Client:
         arguments:
             -   version: 'latest'
@@ -72,21 +71,36 @@ services:
                 credentials:
                     key: '%env(S3_ACCESS_KEY)%'
                     secret: '%env(S3_SECRET_KEY)%'
-                    # Use_path_style_endpoint est souvent nécessaire pour les S3 alternatifs à AWS
                 use_path_style_endpoint: true
+
+    # Client SDK Mindee
+    Mindee\ClientV2:
+        arguments:
+            $apiKey: '%env(MINDEE_API_KEY)%'
+
+    # Client OpenSanctions natif
+    App\Infrastructure\Screening\Service\OpenSanctionsClient:
+        arguments:
+            $openSanctionsApiKey: '%env(OPEN_SANCTIONS_API_KEY)%'
+
+    # Générateur de PDF
+    App\Infrastructure\Pdf\GotenbergPdfGenerator:
+        arguments:
+            $gotenbergUrl: '%env(GOTENBERG_URL)%'
+
+    # ==========================================
+    # 5. INJECTION DES PARAMÈTRES SPÉCIFIQUES
+    # ==========================================
+
+    App\Application\Kyc\UseCase\UploadKycDocumentUseCase:
+        arguments:
+            $tempStorageDir: '%tempStorageDir%'
+
     App\Infrastructure\Storage\LocalDocumentStorage:
         arguments:
             $baseUploadDirectory: '%app.kyc_upload_directory%'
-    App\Domain\Port\DocumentStorageInterface: '@App\Infrastructure\Storage\ScalewayS3DocumentStorage'
+
     App\Infrastructure\Billing\Controller\StripeWebhookController:
         arguments:
             $stripeWebhookSecret: '%env(STRIPE_WEBHOOK_SECRET)%'
 
-    App\Infrastructure\Screening\Service\OpenSanctionsClient:
-        arguments:
-            $openSanctionsApiKey: '%env(OPEN_SANCTIONS_API_KEY)%'
-    App\Infrastructure\Pdf\GotenbergPdfGenerator:
-        arguments:
-            $gotenbergUrl: '%env(GOTENBERG_URL)%'
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones

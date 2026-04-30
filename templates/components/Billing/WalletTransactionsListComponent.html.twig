@@ -1,126 +1,162 @@
 <div {{ attributes }} class="space-y-6">
+    {# L'objet Pagerfanta complet #}
     {% set items = this.transactionsList %}
 
     {# --- 1. BARRE D'OUTILS --- #}
     <div class="flex justify-end items-center">
         <div class="text-sm font-medium text-slate-500 bg-white px-3 py-1.5 rounded-md shadow-sm border border-slate-200">
-            <span class="text-slate-900 font-bold">{{ items.nbResults|default(items|length) }}</span> transaction(s)
+            <span class="text-slate-900 font-bold">{{ items.nbResults }}</span> transaction(s)
         </div>
     </div>
 
     {# --- 2. GESTION DE L'AFFICHAGE --- #}
-    {% if items is empty %}
-        <twig:Empty class="border border-slate-200 rounded-xl py-12">
-            <twig:Empty:Header>
-                <twig:Empty:Title class="text-sm font-medium text-slate-500">Aucun mouvement enregistré</twig:Empty:Title>
-            </twig:Empty:Header>
-        </twig:Empty>
-    {% else %}
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-        <div class="overflow-x-auto">
-            <twig:Table>
-                <twig:Table:Header class="bg-slate-50/50 border-b border-slate-200">
-                    <twig:Table:Row class="border-none">
-                        <twig:Table:Head class="text-slate-500 text-xs uppercase font-bold px-6">Date</twig:Table:Head>
-                        <twig:Table:Head class="text-slate-500 text-xs uppercase font-bold px-6">Désignation</twig:Table:Head>
-                        <twig:Table:Head class="text-slate-500 text-xs uppercase font-bold px-6 text-right">Montant</twig:Table:Head>
-                        <twig:Table:Head class="text-slate-500 text-xs uppercase font-bold px-6 text-right">Référence</twig:Table:Head>
-                    </twig:Table:Row>
-                </twig:Table:Header>
-
-                <twig:Table:Body class="divide-y divide-slate-100">
-                    {% for transaction in items %}
-                        <twig:Table:Row>
-
-                            {# Colonne 1 : Date #}
-                            <twig:Table:Cell class="px-6 py-4">
-                                <span class="text-sm text-slate-900 font-medium">{{ transaction.createdAt|date('d/m/Y') }}</span>
-                                <span class="text-xs text-slate-400 ml-1">{{ transaction.createdAt|date('H:i') }}</span>
-                                {% if transaction.invoiceUrl %}
-                                    <a href="{{ transaction.invoiceUrl }}" target="_blank" class="text-xs font-bold text-blue-600 hover:text-blue-800">
-                                        FACTURE PDF
-                                    </a>
-                                {% endif %}
-                            </twig:Table:Cell>
-
-                            {# Colonne 2 : Désignation #}
-                            <twig:Table:Cell class="px-6 py-4">
-                                <span class="text-sm text-slate-700">
-
-                                    {{ enum('App\\Domain\\Wallet\\Enum\\TransactionType').from(transaction.type).label }}
-                                </span>
-                            </twig:Table:Cell>
-
-                            {# Colonne 3 : Montant #}
-                            <twig:Table:Cell class="px-6 py-4 text-right">
-                                <span class="text-sm font-bold text-slate-900">
-                                    {{ transaction.action == 'debit' ? '-' : '+' }}{{ transaction.amount }} crédit{{ transaction.amount > 1 ? 's'}}
-                                </span>
-                            </twig:Table:Cell>
-
-                            {# Colonne 4 : Action/Lien #}
-                            <twig:Table:Cell class="px-6 py-4 text-right">
-                                <span class="text-xs text-slate-300 font-mono">{{ transaction.referenceId|upper }}</span>
-                            </twig:Table:Cell>
-
-                        </twig:Table:Row>
-                    {% endfor %}
-                </twig:Table:Body>
-            </twig:Table>
+    {% if items.nbResults == 0 %}
+        {# --- 2A. ÉTAT VIDE --- #}
+        <div class="bg-white rounded-2xl p-8 shadow-sm">
+            <twig:Empty class="border border-dashed border-slate-200 bg-slate-50/50 rounded-xl py-12">
+                <twig:Empty:Header>
+                    <twig:Empty:Media variant="icon" class="bg-white shadow-sm ring-1 ring-slate-200">
+                        <twig:ux:icon name="tabler:receipt-off" class="size-6 text-slate-400" />
+                    </twig:Empty:Media>
+                    <twig:Empty:Title class="text-lg font-bold text-slate-900 mt-4">Aucun mouvement enregistré</twig:Empty:Title>
+                    <twig:Empty:Description class="text-slate-500">
+                        Votre historique de transactions est vide pour le moment.
+                    </twig:Empty:Description>
+                </twig:Empty:Header>
+            </twig:Empty>
         </div>
-        <div class="border-t border-slate-200 bg-slate-50/50 px-4 py-3 flex items-center justify-between sm:px-6 mt-auto">
+    {% else %}
 
-            {# Version Mobile (Boutons Simples) #}
-            <div class="flex-1 flex justify-between md:hidden">
-                <button type="button" data-action="live#action" data-live-action-param="previousPage" class="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50">
-                    Précédent
-                </button>
-                <button type="button" data-action="live#action" data-live-action-param="nextPage" class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50">
-                    Suivant
-                </button>
-            </div>
+        {# --- 2B. LE TABLEAU GRID VIA LES COMPOSANTS --- #}
+        <twig:Grid:Table aria-label="Historique des transactions">
 
-            {# Version Desktop (Informations + Chiffres) #}
-            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                    <p class="text-sm text-slate-600">
-                        Affichage de la page <span class="font-bold text-slate-900">{{ this.page|default(1) }}</span>
-                        sur <span class="font-bold text-slate-900">{{ items.nbResults|default(items|length) }}</span> résultats
-                    </p>
+            {# --- EN-TÊTE DU TABLEAU --- #}
+            <twig:Grid:Header>
+                <div role="columnheader" class="lg:col-span-5">Opération</div>
+                <div role="columnheader" class="lg:col-span-3">Référence</div>
+                <div role="columnheader" class="lg:col-span-3 lg:text-right">Montant</div>
+                <div role="columnheader" class="lg:col-span-1 text-right">Actions</div>
+            </twig:Grid:Header>
+
+            {# --- CORPS DU TABLEAU --- #}
+            <twig:Grid:Body>
+                {% for transaction in items.currentPageResults %}
+                    {% set isDebit = transaction.action == 'debit' %}
+
+                    <twig:Grid:Row>
+
+                        {# --- Colonne 1 : Opération --- #}
+                        <twig:Grid:Cell cols="5" label="Opération">
+                            <div class="flex items-center gap-3 text-left">
+                                {# Icône de flux #}
+                                <div class="size-9 shrink-0 rounded-full flex items-center justify-center shadow-sm border {{ isDebit ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100' }}" aria-hidden="true">
+                                    <twig:ux:icon name="{{ isDebit ? 'tabler:arrow-down-left' : 'tabler:arrow-up-right' }}" class="size-5" />
+                                </div>
+
+                                <div>
+                                    <p class="font-bold text-slate-900 text-sm">
+                                        {{ enum('App\\Domain\\Billing\\Enum\\CreditAction').from(transaction.type).label }}
+                                    </p>
+                                    <p class="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                        <twig:ux:icon name="tabler:calendar" class="size-3 text-slate-400" aria-hidden="true" />
+                                        <span class="sr-only">Effectué le </span>{{ transaction.createdAt|date('d/m/Y') }} à {{ transaction.createdAt|date('H:i') }}
+                                    </p>
+                                </div>
+                            </div>
+                        </twig:Grid:Cell>
+
+                        {# --- Colonne 2 : Référence --- #}
+                        <twig:Grid:Cell cols="3" label="Référence" class="mt-2 lg:mt-0">
+                            <span class="font-mono text-[11px] font-bold text-slate-500 bg-slate-50 px-2 py-1 rounded border border-slate-200 tracking-wider">
+                                <span class="sr-only">Numéro de référence : </span>{{ transaction.referenceId|upper }}
+                            </span>
+                        </twig:Grid:Cell>
+
+                        {# --- Colonne 3 : Montant --- #}
+                        <twig:Grid:Cell cols="3" label="Montant" class="lg:text-right mt-2 lg:mt-0">
+                            <span class="text-sm font-bold {{ isDebit ? 'text-red-600' : 'text-emerald-600' }}">
+                                {{ isDebit ? '-' : '+' }}{{ transaction.amount }} crédit{{ transaction.amount > 1 ? 's' : ''}}
+                            </span>
+                        </twig:Grid:Cell>
+
+                        {# --- Colonne 4 : Actions (Bouton adaptatif) --- #}
+                        <twig:Grid:Cell cols="1" class="flex lg:justify-end mt-3 pt-4 lg:mt-0 lg:pt-0 border-t border-slate-100 lg:border-t-0">
+                            {% if transaction.invoiceUrl %}
+                                <twig:Button as="a" href="{{ transaction.invoiceUrl }}" target="_blank"
+                                             variant="outline" size="sm" class="w-full lg:w-auto justify-center p-2 text-slate-500 hover:text-blue-600 hover:border-blue-200 rounded-md hover:bg-blue-50 transition-colors border-slate-200 lg:border-0"
+                                             title="Télécharger la facture">
+                                    <twig:ux:icon name="tabler:file-invoice" class="size-4 lg:mr-0 mr-2" aria-hidden="true" />
+
+                                    {# Texte visible sur mobile, caché sur desktop, lu par lecteur d'écran #}
+                                    <span class="lg:sr-only font-medium">Facture PDF</span>
+                                </twig:Button>
+                            {% else %}
+                                <span class="hidden lg:inline text-slate-300 px-2" aria-hidden="true">-</span>
+                                <span class="lg:hidden text-xs text-slate-400 italic">Aucune facture</span>
+                            {% endif %}
+                        </twig:Grid:Cell>
+
+                    </twig:Grid:Row>
+                {% endfor %}
+            </twig:Grid:Body>
+
+            {# --- 3. PAGINATION (Gérée par le block du composant Table) --- #}
+            <twig:block name="pagination">
+                {# Version Mobile (Boutons Simples) #}
+                <div class="flex-1 flex justify-between md:hidden">
+                    <button type="button"
+                            data-action="live#action"
+                            data-live-action-param="previousPage"
+                            class="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50"
+                            {% if not items.hasPreviousPage %}disabled{% endif %}>
+                        Précédent
+                    </button>
+                    <button type="button"
+                            data-action="live#action"
+                            data-live-action-param="nextPage"
+                            class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50"
+                            {% if not items.hasNextPage %}disabled{% endif %}>
+                        Suivant
+                    </button>
                 </div>
 
-                <div>
-                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                        {# Bouton Précédent #}
-                        <button type="button"
-                                data-action="live#action"
-                                data-live-action-param="previousPage"
-                                class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                {% if this.page|default(1) <= 1 %}disabled{% endif %}>
-                            <span class="sr-only">Précédent</span>
-                            <twig:ux:icon name="tabler:chevron-left" class="size-4" />
-                        </button>
+                {# Version Desktop (Informations + Chiffres) #}
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-slate-600">
+                            Affichage de la page <span class="font-bold text-slate-900">{{ items.currentPage }}</span>
+                            sur <span class="font-bold text-slate-900">{{ items.nbPages }}</span>
+                        </p>
+                    </div>
 
-                        {# Info Page Centrale (optionnel, pour montrer où on est) #}
-                        <span class="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-indigo-50 text-sm font-bold text-indigo-600">
-                                {{ this.page|default(1) }}
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            <button type="button"
+                                    data-action="live#action"
+                                    data-live-action-param="previousPage"
+                                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    {% if not items.hasPreviousPage %}disabled{% endif %}>
+                                <span class="sr-only">Précédent</span>
+                                <twig:ux:icon name="tabler:chevron-left" class="size-4" />
+                            </button>
+
+                            <span class="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-indigo-50 text-sm font-bold text-indigo-600">
+                                {{ items.currentPage }}
                             </span>
 
-                        {# Bouton Suivant #}
-                        <button type="button"
-                                data-action="live#action"
-                                data-live-action-param="nextPage"
-                                class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                            {# Remplace "has_next_page" par ta propre logique PHP pour désactiver la suite #}
-                            {% if items|length < 11 %}disabled{% endif %}>
-                            <span class="sr-only">Suivant</span>
-                            <twig:ux:icon name="tabler:chevron-right" class="size-4" />
-                        </button>
-                    </nav>
+                            <button type="button"
+                                    data-action="live#action"
+                                    data-live-action-param="nextPage"
+                                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    {% if not items.hasNextPage %}disabled{% endif %}>
+                                <span class="sr-only">Suivant</span>
+                                <twig:ux:icon name="tabler:chevron-right" class="size-4" />
+                            </button>
+                        </nav>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
+            </twig:block>
 
+        </twig:Grid:Table>
     {% endif %}
 </div>

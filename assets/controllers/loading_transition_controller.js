@@ -30,7 +30,7 @@ export default class extends Controller {
                 this.loaderTextTarget.innerText = 'Application des politiques de conformité';
                 this.loaderTextTarget.style.opacity = '1';
             }, 300);
-        }, 1200);
+        }, 1500);
 
         // 2. La grande transition fluide
         setTimeout(() => {

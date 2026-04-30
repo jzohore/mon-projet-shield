@@ -1,0 +1,58 @@
+<div{{ attributes }}>
+    <div>
+        {{ form_start(form, {
+            attr: {
+                novalidate: true,
+                'data-action': 'live#action:prevent',
+                'data-live-action-param': 'save',
+            }
+        }) }}
+
+        {# 💡 NOUVEAU PLACEMENT : Le lien en haut, bien visible #}
+        <div class="mb-6 pb-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <span class="text-sm text-slate-500">
+            Vous avez retrouvé votre SIREN ?
+        </span>
+            <a href="{{ path('app_onboarding_workspace') }}" class="inline-flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline underline-offset-4 transition-colors group">
+                <twig:ux:icon name="lucide:search" class="w-4 h-4" />
+                Rechercher dans l'INPI
+            </a>
+        </div>
+
+        {# Les champs du formulaire #}
+        <div class="space-y-4">
+            {{ form_row(form.name, {
+                label: 'Nom de la structure',
+                attr: {
+                    placeholder: 'Ex: Cabinet Dupont',
+                    class: 'font-medium'
+                }
+            }) }}
+
+            {{ form_row(form.address, {
+                label: 'Adresse légale',
+                attr: {
+                    placeholder: 'Ex: 123 avenue des Champs-Élysées, 75008 Paris',
+                }
+            }) }}
+        </div>
+
+        {# 💡 LE BAS DU FORMULAIRE : Épuré, bouton aligné à droite #}
+        <div class="mt-8 flex items-center justify-between">
+            <twig:Button as="button" type="submit" variant="dark" class="w-full">
+            <span data-loading="action(save)|hide" class="flex items-center justify-center gap-2">
+                Continuer
+            </span>
+
+                <span data-loading="action(save)|show" class="hidden items-center justify-center gap-2">
+                <twig:ux:icon name="lucide:loader-2" class="w-4 h-4 animate-spin" />
+                Création...
+            </span>
+            </twig:Button>
+        </div>
+
+        {{ form_end(form) }}
+    </div>
+
+        {{ form_end(form) }}
+</div>

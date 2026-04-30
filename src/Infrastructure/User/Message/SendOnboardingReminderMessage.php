@@ -8,6 +8,6 @@ use Symfony\Component\Messenger\Attribute\AsMessage;
 final readonly class SendOnboardingReminderMessage
 {
     public function __construct(
-        public ?string $userEmail,
+        public string $userEmail,
     ) {}
 }

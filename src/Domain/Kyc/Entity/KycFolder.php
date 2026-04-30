@@ -94,7 +94,7 @@ class KycFolder
     #[ORM\OneToMany(targetEntity: KycDocument::class, mappedBy: 'folder', cascade: ['persist', 'remove'], orphanRemoval: true)]
     public private(set) Collection $documents;
 
-    #[ORM\Column(type: 'string', nullable: true)]
+    #[ORM\Column(type: Types::BOOLEAN, nullable: true)]
     public private(set) ?bool $isCertified = false;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]

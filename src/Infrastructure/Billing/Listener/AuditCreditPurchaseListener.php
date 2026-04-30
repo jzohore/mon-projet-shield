@@ -21,7 +21,7 @@ readonly class AuditCreditPurchaseListener
             eventName: AuditEventType::CREDIT_PURCHASED, // À ajouter dans ton enum
             resourceId: $event->workspace->slugId,
             data: [
-                'user_email' => $event->user->email,
+                'workspace_name' => $event->workspace->name,
                 'credits_added' => $event->transaction->amount,
                 'new_balance' => $event->workspace->balance,
                 'transaction_id' => $event->transaction->id,

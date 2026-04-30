@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Product\Persistence;
 
 use App\Domain\Product\Entity\Product;
+use App\Domain\Product\Exception\ProductNotFoundException;
 use App\Domain\Product\Repository\ProductRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
@@ -40,6 +41,21 @@ final readonly class ProductRepository implements ProductRepositoryInterface
 
     public function findAllSortedByCredits(): array
     {
-        return $this->repository->findBy([], ['credits' => 'ASC']);
+        return $this->repository->findBy(['isRecurring' => false], ['credits' => 'ASC']);
+    }
+
+    /**
+     * @param string $reference
+     * @return Product|null
+     */
+    public function getByReference(string $reference): ?Product
+    {
+        $product = $this->repository->findOneBy(['reference' => $reference]);
+
+        if (null === $product) {
+            ProductNotFoundException::withReference($reference);
+        }
+
+        return $product;
     }
 }

@@ -33,7 +33,7 @@ class WalletTransactionsRepository implements WalletTransactionsRepositoryInterf
     public function getTransactionsList(string $workspaceSlugId): Pagerfanta
     {
         $qb = $this->repository->createQueryBuilder('walletTransaction')
-            ->leftJoin('walletTransaction.workspace', 'workspace')
+            ->innerJoin('walletTransaction.workspace', 'workspace')
             ->andWhere('workspace.slugId = :workspaceSlugId')
             ->setParameter('workspaceSlugId', $workspaceSlugId)
             ->orderBy('walletTransaction.createdAt', 'DESC');

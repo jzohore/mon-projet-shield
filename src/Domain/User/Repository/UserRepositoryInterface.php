@@ -5,6 +5,7 @@ namespace App\Domain\User\Repository;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use Pagerfanta\Pagerfanta;
+use Symfony\Component\Uid\Uuid;
 
 interface UserRepositoryInterface
 {
@@ -16,7 +17,7 @@ interface UserRepositoryInterface
     /**
      * Retrouve un utilisateur via son identifiant unique (UUID).
      */
-    public function findById(string $id): ?User;
+    public function getById(Uuid $id): User;
 
     /**
      * Indispensable pour le système de login (Symfony Security).
@@ -24,6 +25,14 @@ interface UserRepositoryInterface
     public function findByEmail(?string $email): ?User;
 
     public function findBySlug(?string $slug): ?User;
+
+    public function getBySlug(string $slug): User;
+
+    /**
+     * @param string $email
+     * @return User
+     */
+    public function getByEmail(string $email): User;
 
     /**
      * En RegTech, on préfère souvent une méthode "archive" plutôt que "delete",
@@ -41,5 +50,5 @@ interface UserRepositoryInterface
     /**
      * @return array<int, User>
      */
-    public function findOnboardingUsers(): array;
+    public function findUsersNeedingReminder(\DateTimeInterface $twoHoursAgo): array;
 }

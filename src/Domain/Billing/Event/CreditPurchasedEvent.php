@@ -10,9 +10,9 @@ use Symfony\Contracts\EventDispatcher\Event;
 class CreditPurchasedEvent extends Event
 {
     public function __construct(
+        public User $user,
         public Workspace $workspace,
         public WalletTransaction $transaction,
-        public User $user,
         public ?string $invoiceUrl = null
     ) {}
 }

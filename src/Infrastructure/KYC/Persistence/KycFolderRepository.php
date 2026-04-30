@@ -5,6 +5,8 @@ namespace App\Infrastructure\KYC\Persistence;
 use App\Domain\Kyc\Entity\KycFolder;
 use App\Domain\Kyc\Enum\KycFolderStatus;
 use App\Domain\Kyc\Repository\KycFolderRepositoryInterface;
+use App\Domain\Workspace\Entity\Workspace;
+use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
@@ -39,16 +41,14 @@ class KycFolderRepository implements KycFolderRepositoryInterface
     public function getKycFolderList(string $workspaceSlugId, ?string $search = null): Pagerfanta
     {
         $qb = $this->repository->createQueryBuilder('kycFolder')
+            ->select('kycFolder', 'workspace')
             ->leftJoin('kycFolder.workspace', 'workspace')
-            ->andWhere('workspace.slugId = :workspaceSlugid')
-            ->addSelect('workspace')
-            ->setParameter('workspaceSlugid', $workspaceSlugId)
-        ->orderBy('kycFolder.createdAt', 'DESC');
+            ->andWhere('workspace.slugId = :workspaceSlugId')
+            ->setParameter('workspaceSlugId', $workspaceSlugId)
+            ->orderBy('kycFolder.createdAt', 'DESC');
 
         if ($search) {
-            $qb->andWhere('kycFolder.contactEmail LIKE :search 
-            OR kycFolder.reference LIKE :search
-            ')
+            $qb->andWhere('kycFolder.contactEmail LIKE :search OR kycFolder.reference LIKE :search')
                 ->setParameter('search', '%' . $search . '%');
         }
 
@@ -93,6 +93,24 @@ class KycFolderRepository implements KycFolderRepositoryInterface
             ->andWhere('kf.status = :state')
             ->setParameter('workspaceId', $workspaceId)
             ->setParameter('state', KycFolderStatus::AWAITING_CLIENT->value)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * @param Workspace $workspace
+     * @param DateTimeImmutable $since
+     * @return int
+     * Compte le nombre de recherches d'un Workspace depuis une date donnée.
+     */
+    public function countSearchesSince(Workspace $workspace, DateTimeImmutable $since): int
+    {
+        return (int) $this->repository->createQueryBuilder('kf')
+            ->select('COUNT(kf.id)')
+            ->where('kf.workspace = :workspace')
+            ->andWhere('kf.createdAt >= :since')
+            ->setParameter('workspace', $workspace)
+            ->setParameter('since', $since)
             ->getQuery()
             ->getSingleScalarResult();
     }

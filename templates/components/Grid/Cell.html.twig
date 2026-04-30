@@ -1,0 +1,17 @@
+{# 💡 Le composant le plus intelligent : il gère le span Desktop et le Label Mobile #}
+{% props
+    label = null,
+    cols = 12
+%}
+
+<div role="cell" {{ attributes.defaults({'class': 'lg:col-span-' ~ cols ~ ' flex flex-col sm:flex-row sm:justify-between lg:block items-center'}) }}>
+
+    {# Auto-injection du label sur mobile si défini #}
+    {% if label %}
+        <span class="lg:hidden text-xs font-semibold text-slate-500 uppercase mb-2 sm:mb-0" aria-hidden="true">{{ label }}</span>
+    {% endif %}
+
+    <div class="w-full">
+        {% block content %}{% endblock %}
+    </div>
+</div>

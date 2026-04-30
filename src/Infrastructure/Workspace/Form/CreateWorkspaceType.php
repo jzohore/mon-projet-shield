@@ -15,16 +15,26 @@ class CreateWorkspaceType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('name', TextType::class)
-            ->add('siret', TextType::class)
-            ->add('address', TextType::class)
+            ->add('name', TextType::class, [
+                'empty_data' => '',
+            ])
+            ->add('address', TextType::class, [
+                'empty_data' => '',
+            ])
         ;
+
+        if ($options['include_siret']) {
+            $builder->add('siret', TextType::class, [
+                'empty_data' => '',
+            ]);
+        }
     }
 
     public function configureOptions(OptionsResolver $resolver): void
     {
         $resolver->setDefaults([
             'data_class' => CreateWorkspaceRequest::class,
+            'include_siret' => true,
         ]);
     }
 }

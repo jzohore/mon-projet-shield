@@ -76,7 +76,7 @@ final readonly class WorkspaceMemberRepository implements WorkspaceMemberReposit
     public function getMembersList(string $workspaceSlugId, ?string $search = null): Pagerfanta
     {
         $qb = $this->repository->createQueryBuilder('wm')
-            ->select()
+            ->select('wm', 'user')
             ->leftJoin('wm.workspace', 'workspace')
             ->leftJoin('wm.user', 'user')
             ->andWhere('workspace.slugId = :workspaceSlugid')

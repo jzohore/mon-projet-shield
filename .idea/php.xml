@@ -228,6 +228,7 @@
       <path value="$PROJECT_DIR$/vendor/sensiolabs/gotenberg-bundle" />
       <path value="$PROJECT_DIR$/vendor/twig/intl-extra" />
       <path value="$PROJECT_DIR$/vendor/symfony/intl" />
+      <path value="$PROJECT_DIR$/vendor/ergebnis/agent-detector" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.4">

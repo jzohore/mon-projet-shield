@@ -45,6 +45,7 @@ framework:
             'App\Infrastructure\User\Message\SendOnboardingConfirmedMessage': async_priority
             'App\Infrastructure\User\Message\SendWelcomeEmailMessage': async_priority
             'App\Infrastructure\Billing\Message\SendPurchaseConfirmationEmailMessage': async_priority
+            'App\Infrastructure\Billing\Message\SetupBillingModeMessage': async_priority
 
             # --- WORKFLOW KYC & S3 (Peut prendre 1 ou 2 secondes) ---
             'App\Infrastructure\KYC\Message\SendSubmittedKycFolderMessage': async_main
@@ -52,6 +53,8 @@ framework:
             'App\Infrastructure\KYC\Message\ProcessAndStoreKycDocumentMessage': async_main
             'App\Infrastructure\Screening\Message\GenerateScreeningPdfMessage': async_main
             'App\Infrastructure\Screening\Message\ShareDocumentMessage': async_main
+            'App\Infrastructure\Billing\Message\SendSubscriptionActivatedEmailMessage': async_main
+            'App\Infrastructure\Billing\Message\SendSubscriptionCanceledEmailMessage': async_main
 
             # --- OCR (Lourd, bloque le thread longtemps) ---
             'App\Infrastructure\Ocr\Message\ProcessOcrMessage': async_heavy

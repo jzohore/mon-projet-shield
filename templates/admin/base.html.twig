@@ -18,7 +18,7 @@
 </head>
 
 {# On ajoute le contrôleur Stimulus au body pour gérer l'ouverture/fermeture du menu #}
-<body class="h-full text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-700" data-controller="sidebar">
+<body class="h-full text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-700" data-controller="support">
 
 {# Skip to content : Accessibilité essentielle #}
 <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-white focus:text-blue-600">
@@ -172,8 +172,11 @@
                     <twig:Breadcrumb>
                         <twig:Breadcrumb:List>
                             <twig:Breadcrumb:Item>
-                                <twig:Breadcrumb:Link href="{{ path('app_dashboard') }}">
+                                <twig:Breadcrumb:Link href="{{ path('app_dashboard') }}" class="flex items-center gap-1">
                                     <twig:ux:icon name="material-symbols:home-rounded" />
+                                    <span class="text-xs font-semibold">
+                                        {{ workspaceInfo().name | lower | capitalize }}
+                                    </span>
                                 </twig:Breadcrumb:Link>
                             </twig:Breadcrumb:Item>
 
@@ -196,37 +199,99 @@
             </div>
 
             <div class="flex items-center gap-3 sm:gap-5">
-
                 {# 1. Le Badge des Crédits #}
-                <a href="{{ path('app_settings_billing') }}"
-                   class="flex items-center gap-2 h-8 px-2 sm:px-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-all cursor-pointer group text-[13px]">
+                {% if not workspaceInfo().isFirm %}
+                    {# 🧑‍💻 DESIGN POUR LES INDÉPENDANTS (CRÉDITS) #}
+                    <a href="{{ path('app_settings_billing') }}"
+                       class="flex items-center gap-2 h-8 px-2 sm:px-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-lg shadow-sm transition-all cursor-pointer group text-[13px]">
 
-                    <span class="relative flex h-2 w-2">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-20 group-hover:opacity-40"></span>
-                        <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500 group-hover:bg-indigo-600 transition-colors"></span>
-                    </span>
+        <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-20 group-hover:opacity-40"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-indigo-500 group-hover:bg-indigo-600 transition-colors"></span>
+        </span>
 
-                    <span class="font-medium text-slate-500">
-                        <strong class="font-semibold text-slate-900"><twig:HeaderCreditsCounter></twig:HeaderCreditsCounter></strong>
-                        <span class="hidden sm:inline">crédits</span>
-                    </span>
-                </a>
+                        <span class="font-medium text-slate-500">
+            <strong class="font-semibold text-slate-900">{{ workspaceInfo().balance }}</strong>
+            <span class="hidden sm:inline">crédits</span>
+        </span>
+                    </a>
+                {% else %}
+                    {% set isTrial = subInfo().status == 'trialing' %}
 
+                    {# On affiche le badge SI c'est un essai ET qu'il reste 10 jours ou moins ET que l'essai n'est pas expiré #}
+                    {% if isTrial and subInfo().trialDaysRemaining <= 10 and subInfo().trialDaysRemaining > 0 %}
+                        <a href="{{ path('app_settings_subscription') }}">
+                      <span class="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+        {# Petite icône horloge pour l'urgence #}
+        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        Essai : {{ subInfo().trialDaysRemaining }} jours restants
+    </span>
+                        </a>
+
+                    {% endif %}
+                {% endif %}
                 {% block button_page %}
-                    <div class="relative group">
+                    {% set has_active_thread = true %} {# Simulation #}
+                    {% set unread_support_count = 1 %} {# Simulation #}
+                    {% if has_active_thread %}
+                        <div class="relative">
+                            <button type="button"
+                                    data-action="click->support#open"
+                                    class="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-violet-600 hover:border-violet-300 hover:bg-violet-50 transition-all shadow-sm group">
+                                {{ ux_icon('lucide:message-circle', { class: 'size-4' }) }}
 
-                        {# 2. L'Avatar cliquable #}
+                                {# Badge de notification si message non lu #}
+                                {% if unread_support_count > 0 %}
+                                    <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
+                            {{ unread_support_count }}
+                        </span>
+                                    {# Petit effet de halo pour attirer l'oeil si c'est non lu #}
+                                    <span class="absolute -top-1 -right-1 animate-ping inline-flex h-4 w-4 rounded-full bg-red-400 opacity-75"></span>
+                                {% endif %}
+                            </button>
+                        </div>
+                    {% endif %}
+
+                    {# 3. Le bouton Plus (Harmonisé en violet) #}
+                    <div class="relative group">
                         <div class="cursor-pointer transition-transform duration-200 active:scale-95">
-                            <div class="w-8 h-8 rounded-lg bg-violet-200 flex items-center justify-center text-[10px] font-black border border-white/10 shadow-sm uppercase group-hover:bg-slate-50 group-hover:border-blue-500/30 transition-all text-violet-900">
+                            <div class="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center text-white border border-violet-500 shadow-sm group-hover:bg-violet-700 transition-all">
+                                {{ ux_icon('lucide:plus', { class: 'size-4' }) }}
+                            </div>
+                        </div>
+
+                        <div class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200/60
+                opacity-0 invisible translate-y-2
+                group-hover:opacity-100 group-hover:visible group-hover:translate-y-0
+                transition-all duration-200 z-50 overflow-hidden">
+                            <div class="p-1">
+                                <a href="{{ path('app_settings_account') }}" class="flex items-center gap-2 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors">
+                                    Dossier KYC
+                                </a>
+                                <a href="{{ path('app_settings_account') }}" class="flex items-center gap-2 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors">
+                                    Dossier KYB
+                                </a>
+                                <a href="{{ path('app_settings_account') }}" class="flex items-center gap-2 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors">
+                                    Criblage LCB-FT
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# 4. L'Avatar #}
+                    <div class="relative group">
+                        <div class="cursor-pointer transition-transform duration-200 active:scale-95">
+                            <div class="w-7 h-7 rounded-lg bg-violet-200 flex items-center justify-center text-[10px] font-black border border-violet-300 shadow-sm uppercase group-hover:bg-violet-300 transition-all text-violet-900">
                                 {{ app.user.fullName|slice(0, 2) }}
                             </div>
                         </div>
 
-                        {# 3. La div qui s'affiche au Hover (Dropdown de profil) #}
                         <div class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-200/60
-            opacity-0 invisible translate-y-2
-            group-hover:opacity-100 group-hover:visible group-hover:translate-y-0
-            transition-all duration-200 z-50 overflow-hidden">
+                opacity-0 invisible translate-y-2
+                group-hover:opacity-100 group-hover:visible group-hover:translate-y-0
+                transition-all duration-200 z-50 overflow-hidden">
                             <div class="px-4 py-3 border-b border-slate-100">
                                 <p class="text-xs font-semibold text-slate-900">{{ app.user.fullName }}</p>
                                 <p class="text-[10px] text-slate-500 truncate">{{ app.user.email }}</p>
@@ -236,6 +301,21 @@
                                     <twig:ux:icon name="material-symbols:account-circle-outline" class="w-4 h-4" />
                                     Paramètres
                                 </a>
+                                <button type="button"
+                                        data-action="click->support#open"
+                                        class="w-full flex items-center justify-between px-3 py-2 text-xs text-slate-600 hover:bg-violet-50 hover:text-violet-700 rounded-lg transition-colors text-left group/support">
+                                    <div class="flex items-center gap-2">
+                                        {{ ux_icon('lucide:life-buoy', { class: 'size-4 group-hover/support:text-violet-600 transition-colors' }) }}
+                                        Support
+                                    </div>
+
+                                    {# Le badge répété dans le menu pour attirer l'oeil #}
+                                    {% if unread_support_count > 0 %}
+                                        <span class="flex h-4 w-4 items-center justify-center rounded-full bg-red-100 text-[10px] font-bold text-red-600">
+                        {{ unread_support_count }}
+                    </span>
+                                    {% endif %}
+                                </button>
                                 <a href="{{ path('app_logout') }}" class="flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                                     <twig:ux:icon name="material-symbols:logout-rounded" class="w-4 h-4" />
                                     Déconnexion
@@ -248,11 +328,14 @@
         </header>
 
         {# 4. LA MAGIE EST ICI : Marges ajustées pour le mobile (p-4 vs p-8) #}
-        <div class="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8">
-            {% block content %}{% endblock %}
+        <div class="flex-1 overflow-y-auto p-4 sm:p-4 md:p-8">
+            <div class="max-w-8xl mx-auto space-y-8 pb-20">
+                {% block content %}{% endblock %}
+            </div>
         </div>
     </main>
 </div>
 {% include '@app/partials/_flashes.html.twig' %}
+{{ include('components/_support_panel.html.twig') }}
 </body>
 </html>

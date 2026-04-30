@@ -4,6 +4,8 @@ namespace App\Domain\Kyc\Repository;
 
 use App\Domain\Kyc\Entity\KycFolder;
 use App\Domain\Kyc\Enum\KycFolderStatus;
+use App\Domain\Workspace\Entity\Workspace;
+use DateTimeImmutable;
 use Pagerfanta\Pagerfanta;
 
 interface KycFolderRepositoryInterface
@@ -28,4 +30,11 @@ interface KycFolderRepositoryInterface
     public function remove(KycFolder $kycFolder): void;
 
     public function countDraftsForWorkspace(string $workspaceId): int;
+
+    /**
+     * @param Workspace $workspace
+     * @param DateTimeImmutable $since
+     * @return int
+     */
+    public function countSearchesSince(Workspace $workspace, DateTimeImmutable $since): int;
 }

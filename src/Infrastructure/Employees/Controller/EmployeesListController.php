@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Employees\Controller;
 
-use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
 use App\Domain\User\Entity\User;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
@@ -29,18 +28,14 @@ final readonly class EmployeesListController
         Environment $twig,
         #[CurrentUser]
         User $user,
-        GetCurrentWorkspaceInfo
-        $getCurrentWorkspaceInfo,
     ): Response {
         $userId = $user->id;
         Assert::notNull($userId, "L'utilisateur doit avoir un ID pour récupérer le workspace.");
-        $workspace = ($getCurrentWorkspaceInfo)($userId);
 
         return new Response(
             $twig->render('@app/employees/list.html.twig', [
                 'page_title' => 'Équipe & Accès',
                 'sub_title' => 'Gérez les accès, les rôles et la sécurité de vos collaborateurs.',
-                'workspace_id' => $workspace->slugId,
             ])
         );
     }

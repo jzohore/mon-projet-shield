@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Infrastructure\User\Twig\Components;
 
 use App\Application\User\DTO\Request\UserProfilRequest;
-use App\Application\User\UseCase\UpdateProfilUseCase;
 use App\Infrastructure\User\Form\UpdateProfilType;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Form\FormFactoryInterface;
@@ -34,7 +33,6 @@ class UpdateProfilFormComponent
 
     public function __construct(
         private readonly FormFactoryInterface $formFactory,
-        private readonly UpdateProfilUseCase $updateProfilUseCase,
         private readonly LoggerInterface $logger,
         private readonly UrlGeneratorInterface $router,
         private readonly RequestStack $requestStack,
@@ -60,7 +58,7 @@ class UpdateProfilFormComponent
             Assert::notNull($request, 'Cette action doit être exécutée dans un contexte HTTP.');
 
             $dto->lang = $request->getLocale();
-            ($this->updateProfilUseCase)($dto);
+            //($this->updateProfilUseCase)($dto);
 
         } catch (\DomainException $e) {
             $this->logger->error('Erreur métier lors de la mise à jour du profil', [

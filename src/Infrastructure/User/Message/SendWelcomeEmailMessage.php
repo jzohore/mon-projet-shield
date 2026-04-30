@@ -8,7 +8,7 @@ use Symfony\Component\Messenger\Attribute\AsMessage;
 final readonly class SendWelcomeEmailMessage
 {
     public function __construct(
-        public ?string $userEmail,
+        public string $userEmail,
         public string $magicLinkUrl
     ) {}
 }

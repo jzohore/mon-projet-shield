@@ -1,0 +1,4 @@
+{# Ligne de données : Flexbox (colonnes) sur mobile, Grille 12 colonnes sur desktop #}
+<div role="row" {{ attributes.defaults({'class': 'flex flex-col lg:grid lg:grid-cols-12 gap-4 lg:items-center p-4 lg:px-6 lg:py-4 hover:bg-slate-50/50 transition-colors'}) }}>
+    {% block content %}{% endblock %}
+</div>

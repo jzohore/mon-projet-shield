@@ -1,0 +1,33 @@
+<?php
+
+namespace App\Infrastructure\Billing\Handler;
+
+use App\Infrastructure\Billing\Message\SendSubscriptionCanceledEmailMessage;
+use App\Infrastructure\Notification\Email\Billing\DispatchSubscriptionCanceledEmail;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+
+#[AsMessageHandler]
+readonly class SendSubscriptionCanceledEmailHandler
+{
+    public function __construct(
+        private MailerInterface $mailer
+    ) {}
+
+    /**
+     * @param SendSubscriptionCanceledEmailMessage $message
+     * @return void
+     * @throws TransportExceptionInterface
+     */
+    public function __invoke(SendSubscriptionCanceledEmailMessage $message): void
+    {
+        $email = new DispatchSubscriptionCanceledEmail(
+            recipientEmail: $message->recipientEmail,
+            workspaceName: $message->workspaceName,
+            end_date: $message->endDate,
+        );
+
+        $this->mailer->send($email);
+    }
+}

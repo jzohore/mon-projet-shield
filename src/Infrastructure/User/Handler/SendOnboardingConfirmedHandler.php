@@ -10,30 +10,36 @@ use App\Infrastructure\Notification\Email\OnboardingCompletedEmail;
 use App\Infrastructure\User\Message\SendOnboardingConfirmedMessage;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Webmozart\Assert\Assert;
 
 #[AsMessageHandler]
 final readonly class SendOnboardingConfirmedHandler
 {
+    /**
+     * @param UserRepositoryInterface $userRepository
+     * @param MailerInterface $mailer
+     * @param GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo
+     */
     public function __construct(
         private UserRepositoryInterface $userRepository,
-        private UrlGeneratorInterface $router,
         private MailerInterface $mailer,
         private GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
     ) {}
 
+    /**
+     * @param SendOnboardingConfirmedMessage $message
+     * @return void
+     * @throws \Symfony\Component\Mailer\Exception\TransportExceptionInterface
+     */
     public function __invoke(SendOnboardingConfirmedMessage $message): void
     {
-        $user = $this->userRepository->findByEmail($message->userEmail);
+        $user = $this->userRepository->getByEmail($message->userEmail);
 
-        Assert::notNull($user);
         $userId = $user->id;
         Assert::notNull($userId, "L'utilisateur doit avoir un ID pour récupérer le workspace.");
         $workspaceInfo = ($this->getCurrentWorkspaceInfo)($userId);
-        $url = $this->router->generate('app_dashboard', [], UrlGeneratorInterface::ABSOLUTE_URL);
 
-        $email = new OnboardingCompletedEmail($user->email, $user->firstName, $workspaceInfo->name, $url);
+        $email = new OnboardingCompletedEmail($user->email, $user->firstName, $workspaceInfo->name, $message->url);
         $this->mailer->send($email);
     }
 }

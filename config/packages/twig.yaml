@@ -10,6 +10,7 @@ twig:
         '%kernel.project_dir%/templates/emails': emails
     globals:
         company_name: '%env(COMPANY_NAME)%'
+        workspace_info: '@App\Infrastructure\Shared\Twig\AppExtension'
     date:
         timezone: Europe/Paris
 when@test:

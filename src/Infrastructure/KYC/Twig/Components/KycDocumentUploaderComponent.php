@@ -73,7 +73,7 @@ class KycDocumentUploaderComponent
     public function getExpectedDocumentSlots(): array
     {
         $folder = ($this->getCurrentKycFolderUseCase)($this->folderSlugId);
-        $existingDocuments = $folder->documents ?? [];
+        $existingDocuments = $folder->documents;
 
         // Closure de vérification inchangée et robuste
         $getDocInfo = function (DocumentType $type, ?string $stakeholderSlug = null) use ($existingDocuments): array {

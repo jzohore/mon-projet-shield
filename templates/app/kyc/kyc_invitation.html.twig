@@ -36,7 +36,7 @@
                         <p>Renseignez les coordonnées de votre contact. {{ company_name }} lui enverra un lien sécurisé pour qu'il saisisse lui-même les informations de sa société et dépose ses documents d'identité.</p>
                     </div>
 
-                    <twig:CreateKycFolderFormComponent userSlugId="{{ app.user.slugId }}"></twig:CreateKycFolderFormComponent>
+                    <twig:CreateKycFolderFormComponent workspaceSlugId="{{ workspace_slug }}"></twig:CreateKycFolderFormComponent>
                 </div>
             </div>
         </div>

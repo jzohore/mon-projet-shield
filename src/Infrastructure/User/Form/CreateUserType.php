@@ -19,18 +19,21 @@ class CreateUserType extends AbstractType
                     'autocomplete' => 'given-name',
                     'placeholder' => 'Ex: Jean',
                 ],
+                'empty_data' => '',
             ])
             ->add('lastName', TextType::class, [
                 'attr' => [
                     'autocomplete' => 'family-name',
                     'placeholder' => 'Ex: Dupont',
                 ],
+                'empty_data' => '',
             ])
             ->add('email', EmailType::class, [
                 'attr' => [
                     'autocomplete' => 'email',
                     'placeholder' => 'jean.dupont@cabinet.fr',
                 ],
+                'empty_data' => '',
                 'help' => 'Astuce : utilisez votre adresse e-mail professionnelle, si vous en avez une, afin de permettre à votre équipe de vous retrouver plus facilement.',
             ])
 

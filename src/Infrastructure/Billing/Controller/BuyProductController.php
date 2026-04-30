@@ -2,8 +2,9 @@
 
 namespace App\Infrastructure\Billing\Controller;
 
-use App\Application\Billing\UseCase\GetProductUseCase;
+use App\Application\Billing\UseCase\Products\GetProductUseCase;
 use App\Domain\User\Entity\User;
+use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use App\Infrastructure\Service\Payment\Stripe\StripeCheckoutService;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,6 +22,7 @@ readonly class BuyProductController
         private StripeCheckoutService $stripeCheckoutService,
         private UrlGeneratorInterface $urlGenerator,
         private GetProductUseCase $getProductUseCase,
+        private CurrentWorkspaceProvider $workspaceProvider,
     ) {}
 
     public function __invoke(
@@ -31,25 +33,40 @@ readonly class BuyProductController
     ): Response {
         $product = ($this->getProductUseCase)($id);
         Assert::notNull($product);
+        $workspace = $this->workspaceProvider->getWorkspace();
+        $isFirm = $workspace->isFirm();
+        $successRoute = $isFirm ? 'app_settings_subscription' : 'app_settings_billing';
+        $cancelRoute = $isFirm ? 'app_settings_subscription' : 'app_billing_products';
         $successUrl = $this->urlGenerator->generate(
-            'app_settings_billing',
+            $successRoute,
             [],
             UrlGeneratorInterface::ABSOLUTE_URL
         );
 
         $cancelUrl = $this->urlGenerator->generate(
-            'app_billing_products', // On le renvoie sur la grille des prix s'il annule
+            $cancelRoute, // On le renvoie sur la grille des prix s'il annule
             [],
             UrlGeneratorInterface::ABSOLUTE_URL
         );
 
+        $workspace = $this->workspaceProvider->getWorkspace();
         // 2. Création de la session Stripe
-        $checkoutUrl = $this->stripeCheckoutService->createSessionUrl(
-            $user,
-            $product,
-            $successUrl,
-            $cancelUrl
-        );
+        if ($isFirm && $workspace->subscription !== null && $workspace->subscription->stripeSubscriptionId !== null) {
+            $checkoutUrl = $this->stripeCheckoutService->createSetupSessionUrl(
+                $user,
+                $workspace,
+                $successUrl,
+                $cancelUrl
+            );
+        } else {
+            $checkoutUrl = $this->stripeCheckoutService->createSessionUrl(
+                $user,
+                $product,
+                $workspace,
+                $successUrl,
+                $cancelUrl
+            );
+        }
 
         // 3. Redirection 303 (See Other) recommandée par Stripe
         return new RedirectResponse($checkoutUrl, 303);

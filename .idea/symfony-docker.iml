@@ -205,6 +205,7 @@
       <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/resend-mailer" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/webhook" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/sebastian/git-state" />
+      <excludeFolder url="file://$MODULE_DIR$/vendor/ergebnis/agent-detector" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/sensiolabs/gotenberg-bundle" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/stripe/stripe-php" />
       <excludeFolder url="file://$MODULE_DIR$/vendor/symfony/intl" />

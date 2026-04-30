@@ -1,0 +1,46 @@
+{% extends '@app/billing/base_billing.html.twig' %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% set container_width = 'max-w-6xl' %}
+
+{% block portal_content %}
+    <div class="py-10">
+        <div class="max-w-2xl mx-auto py-12 px-4">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
+                <h1 class="text-2xl font-bold text-slate-900">Nous sommes désolés de vous voir partir</h1>
+                <p class="mt-4 text-slate-600">
+                    En résiliant votre abonnement <strong>{{ product.name }}</strong>, vous perdrez l'accès à vos outils de monitoring automatique le
+                    <span class="font-semibold text-slate-900">{{ subInfo.currentPeriodEnd|date('d/m/Y') }}</span>.
+                </p>
+
+                <div class="mt-8 p-4 rounded-xl bg-indigo-50 border border-indigo-100 text-left">
+                    <h3 class="font-semibold text-indigo-900 text-sm">Besoin d'une pause ?</h3>
+                    <p class="text-xs text-indigo-700 mt-1">Mettez votre abonnement en pause pendant 1 mois au lieu de résilier.</p>
+                    <button class="mt-3 text-sm font-bold text-indigo-600">Suspendre l'abonnement</button>
+                </div>
+
+                <form action="{{ path('app_settings_subscription_cancel_confirm') }}" method="POST" class="mt-10">
+
+                    <input type="hidden" name="_token" value="{{ csrf_token('cancel-subscription') }}">
+
+                    <div class="text-left">
+                        <label class="block text-sm font-medium text-slate-700 mb-2">Dites-nous pourquoi vous nous quittez :</label>
+                        <select name="reason" class="w-full rounded-lg border-slate-200 text-sm">
+                            <option value="too_expensive">Le prix est trop élevé</option>
+                            <option value="missing_features">Il manque des fonctionnalités</option>
+                            <option value="too_complex">L'outil est trop complexe</option>
+                            <option value="other">Autre raison</option>
+                        </select>
+                    </div>
+
+                    <div class="mt-8 flex items-center justify-between">
+                        <a href="{{ path('app_settings_billing') }}" class="text-sm font-medium text-slate-500">Garder mon abonnement</a>
+                        <twig:Button type="submit" variant="dark">
+                            Confirmer la résiliation
+                        </twig:Button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -2,21 +2,26 @@
     {% set items = this.screeningList %}
 
     {# --- 1. BARRE D'OUTILS (Recherche & Compteur) --- #}
-    <div class="flex flex-wrap gap-4 justify-between items-center">
+    <div class="flex flex-col sm:flex-row gap-4 justify-between items-center">
         <div class="relative w-full sm:w-72">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
                 <twig:ux:icon name="tabler:search" class="size-4 text-slate-400" />
             </div>
+
+            {# Ajout de aria-label pour remplacer l'absence de <label> #}
             <input
                 type="search"
-                placeholder="Rechercher un nom, une entité..."
+                aria-label="Rechercher un dossier ou un audit"
+                placeholder="Rechercher un dossier..."
                 data-model="query"
                 value="{{ query }}"
                 class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors shadow-sm"
             />
         </div>
-        <div class="text-sm font-medium text-slate-500 bg-white px-3 py-1.5 rounded-md shadow-sm border border-slate-200">
-            <span class="text-slate-900 font-bold">{{ items.nbResults|default(items|length) }}</span> recherche(s)
+
+        {# Ajout de aria-live pour que le lecteur annonce la mise à jour des résultats #}
+        <div class="text-sm font-medium text-slate-500 bg-white px-3 py-1.5 rounded-md shadow-sm border border-slate-200 w-full sm:w-auto text-center" aria-live="polite">
+            <span class="text-slate-900 font-bold">{{ items.nbResults|default(items|length) }}</span> résultat(s)
         </div>
     </div>
 
@@ -45,102 +50,107 @@
         </div>
 
     {% else %}
-
+        {% set statusColors = {
+            'wait': 'bg-blue-100 text-blue-800 border-blue-200',
+            'pending': 'bg-amber-100 text-amber-800 border-amber-200',
+            'generated': 'bg-emerald-100 text-emerald-800 border-emerald-200',
+            'failed': 'bg-red-100 text-red-800 border-red-200'
+        } %}
+        {% set statusDots = {
+            'wait': 'bg-blue-500 animate-pulse',
+            'pending': 'bg-amber-500 animate-pulse',
+            'generated': 'bg-emerald-500',
+            'failed': 'bg-red-500'
+        } %}
         {# --- 2B. LE TABLEAU DE DONNÉES --- #}
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
             <div class="overflow-x-auto">
-                <twig:Table>
-                    <twig:Table:Header class="bg-slate-50/80 border-b border-slate-200">
-                        <twig:Table:Row class="border-none">
-                            <twig:Table:Head class="text-slate-500 font-semibold text-xs uppercase tracking-wider">Entité Recherchée</twig:Table:Head>
-                            <twig:Table:Head class="text-slate-500 font-semibold text-xs uppercase tracking-wider">Analyse (PEP / Sanctions)</twig:Table:Head>
-                            <twig:Table:Head class="text-slate-500 font-semibold text-xs uppercase tracking-wider">Certificat</twig:Table:Head>
-                            <twig:Table:Head class="text-right text-slate-500 font-semibold text-xs uppercase tracking-wider">Actions</twig:Table:Head>
-                        </twig:Table:Row>
-                    </twig:Table:Header>
+                {# --- EN-TÊTE DU TABLEAU (Masqué sur mobile, visible en grille sur Desktop) --- #}
+                <div role="rowgroup" class="hidden lg:grid lg:grid-cols-12 gap-4 px-6 py-3 bg-slate-50/80 border-b border-slate-200 text-slate-500 font-semibold text-xs uppercase tracking-wider">
+                    <div role="columnheader" class="lg:col-span-4">Entité Recherchée</div>
+                    <div role="columnheader" class="lg:col-span-4">Analyse (PEP / Sanctions)</div>
+                    <div role="columnheader" class="lg:col-span-3">Certificat</div>
+                    <div role="columnheader" class="lg:col-span-1 text-right">Actions</div>
+                </div>
 
-                    <twig:Table:Body class="divide-y divide-slate-100">
-                        {% for audit in items %}
-                            <twig:Table:Row class="hover:bg-slate-50/50 transition-colors">
+                {# --- CORPS DU TABLEAU --- #}
+                <div role="rowgroup" class="divide-y divide-slate-100">
+                    {% for audit in items %}
 
-                                {# Colonne 1 : La Requête (Le nom cherché + Date) #}
-                                <twig:Table:Cell>
+                        <div role="row" class="flex flex-col lg:grid lg:grid-cols-12 gap-4 lg:items-center p-4 lg:px-6 lg:py-4 hover:bg-slate-50/50 transition-colors">
+
+                            {# --- Colonne 1 --- #}
+                            <div role="cell" class="lg:col-span-4 flex flex-col sm:flex-row sm:justify-between lg:block">
+                                <span class="lg:hidden text-xs font-semibold text-slate-500 uppercase mb-1 sm:mb-0" aria-hidden="true">Entité</span>
+
+                                <div class="text-left">
                                     <div class="mb-1">
-                                        <span class="font-mono text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                                            {{ audit.createdAt|date('d/m/Y à H:i') }}
-                                        </span>
+                                <span class="font-mono text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                                    {# Ajout d'une lecture lisible de la date pour le lecteur d'écran #}
+                                    <span class="sr-only">Recherché le </span>{{ audit.createdAt|date('d/m/Y à H:i') }}
+                                </span>
                                     </div>
-                                    <div class="flex items-center gap-3">
-                                        <div>
-                                            <p class="font-bold text-slate-900 uppercase">{{ audit.query }}</p>
+                                    <p class="font-bold text-slate-900 uppercase">{{ audit.query }}</p>
+                                </div>
+                            </div>
+
+                            {# --- Colonne 2 --- #}
+                            <div role="cell" class="lg:col-span-4 flex justify-between lg:block items-center">
+                                <span class="lg:hidden text-xs font-semibold text-slate-500 uppercase" aria-hidden="true">Analyse</span>
+
+                                {% if audit.totalMatches == 0 %}
+                                    <div class="flex items-center gap-2">
+                                        <div class="size-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0" aria-hidden="true">
+                                            <twig:ux:icon name="tabler:check" class="size-3.5 text-emerald-600" />
+                                        </div>
+                                        <div class="text-right lg:text-left">
+                                            <p class="text-sm font-bold text-emerald-700">Aucun résultat</p>
+                                            <p class="text-[10px] sm:text-xs text-slate-500">Profil jugé sans risque</p>
                                         </div>
                                     </div>
-                                </twig:Table:Cell>
-
-                                {# Colonne 2 : L'Analyse des Risques (Basée sur totalMatches) #}
-                                <twig:Table:Cell>
-                                    {% if audit.totalMatches == 0 %}
-                                        <div class="flex items-center gap-2">
-                                            <div class="size-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                                                <twig:ux:icon name="tabler:check" class="size-3.5 text-emerald-600" />
-                                            </div>
-                                            <div>
-                                                <p class="text-sm font-bold text-emerald-700">Aucun résultat trouvé</p>
-                                                <p class="text-xs text-slate-500">Profil jugé sans risque</p>
-                                            </div>
+                                {% else %}
+                                    <div class="flex items-center gap-2">
+                                        <div class="size-6 rounded-full bg-rose-100 flex items-center justify-center shrink-0" aria-hidden="true">
+                                            <twig:ux:icon name="tabler:alert-triangle" class="size-3.5 text-rose-600" />
                                         </div>
-                                    {% else %}
-                                        <div class="flex items-center gap-2">
-                                            <div class="size-6 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
-                                                <twig:ux:icon name="tabler:alert-triangle" class="size-3.5 text-rose-600" />
-                                            </div>
-                                            <div>
-                                                <p class="text-sm font-bold text-rose-700">{{ audit.totalMatches }} correspondance(s)</p>
-                                                <p class="text-xs text-slate-500">Vérification requise</p>
-                                            </div>
+                                        <div class="text-right lg:text-left">
+                                            <p class="text-sm font-bold text-rose-700">{{ audit.totalMatches }} correspondance(s)</p>
+                                            <p class="text-[10px] sm:text-xs text-slate-500">Vérification requise</p>
                                         </div>
-                                    {% endif %}
-                                </twig:Table:Cell>
-
-                                {# Colonne 3 : Statut du Certificat PDF #}
-                                <twig:Table:Cell>
-                                    {% set statusColors = {
-                                        'wait': 'bg-blue-100 text-blue-800 border-blue-200',
-                                        'pending': 'bg-amber-100 text-amber-800 border-amber-200',
-                                        'generated': 'bg-emerald-100 text-emerald-800 border-emerald-200',
-                                        'failed': 'bg-red-100 text-red-800 border-red-200'
-                                    } %}
-                                    {% set statusDots = {
-                                        'wait': 'bg-blue-500 animate-pulse',
-                                        'pending': 'bg-amber-500 animate-pulse',
-                                        'generated': 'bg-emerald-500',
-                                        'failed': 'bg-red-500'
-                                    } %}
-
-                                    {% set colorClass = statusColors[audit.status.value] | default('bg-slate-100 text-slate-800 border-slate-200') %}
-                                    {% set dotClass = statusDots[audit.status.value] | default('bg-slate-500') %}
-
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ring-1 ring-inset {{ colorClass }}">
-                                        <span class="h-1.5 w-1.5 rounded-full {{ dotClass }}"></span>
-                                        {{ audit.status.label }}
-                                    </span>
-                                </twig:Table:Cell>
-
-                                {# Colonne 4 : Actions #}
-                                <twig:Table:Cell class="text-right">
-                                    <div class="flex justify-end gap-1">
-                                        <twig:Button as="a" href="{{ path('app_screening_show',{slugId: audit.slugId}) }}"
-                                                     variant="outline" size="sm" class="p-2 text-slate-400 hover:text-slate-900 rounded-md hover:bg-slate-100 transition-colors border-0"
-                                                     title="Consulter l'historique">
-                                            <twig:ux:icon name="tabler:eye" class="size-4" />
-                                        </twig:Button>
                                     </div>
-                                </twig:Table:Cell>
+                                {% endif %}
+                            </div>
 
-                            </twig:Table:Row>
-                        {% endfor %}
-                    </twig:Table:Body>
-                </twig:Table>
+                            {# --- Colonne 3 --- #}
+                            <div role="cell" class="lg:col-span-3 flex justify-between lg:block items-center">
+                                <span class="lg:hidden text-xs font-semibold text-slate-500 uppercase" aria-hidden="true">Certificat</span>
+
+                                {% set colorClass = statusColors[audit.status.value] | default('bg-slate-100 text-slate-800 border-slate-200') %}
+                                {% set dotClass = statusDots[audit.status.value] | default('bg-slate-500') %}
+
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium ring-1 ring-inset {{ colorClass }}">
+                            <span class="h-1.5 w-1.5 rounded-full {{ dotClass }}" aria-hidden="true"></span>
+                            {{ audit.status.label }}
+                        </span>
+                            </div>
+
+                            {# --- Colonne 4 : Actions (Accessible) --- #}
+                            <div role="cell" class="lg:col-span-1 flex justify-end items-center mt-2 pt-4 lg:mt-0 lg:pt-0 border-t border-slate-100 lg:border-t-0">
+                                <twig:Button as="a" href="{{ path('app_screening_show',{slugId: audit.slugId}) }}"
+                                             variant="outline" size="sm" class="w-full lg:w-auto justify-center p-2 text-slate-500 hover:text-slate-900 rounded-md hover:bg-slate-100 transition-colors border-slate-200 lg:border-0"
+                                             title="Consulter l'historique de {{ audit.query }}">
+
+                                    <twig:ux:icon name="tabler:eye" class="size-4 lg:mr-0 mr-2" aria-hidden="true" />
+
+                                    {# Texte visible sur mobile, caché sur desktop MAIS toujours lu par le lecteur d'écran #}
+                                    <span class="lg:sr-only font-medium">Consulter les détails de {{ audit.query }}</span>
+
+                                </twig:Button>
+                            </div>
+
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
 
             {# --- 2C. LA PAGINATION --- #}

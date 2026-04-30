@@ -32,7 +32,7 @@ class ScreeningAudit
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     public private(set) Workspace $workspace;
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'owner')]
+    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'screeningAudits')]
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     public private(set) User $owner;
 
@@ -72,7 +72,7 @@ class ScreeningAudit
         $this->query = $query;
         $this->results = $results;
         $this->totalMatches = $totalMatches;
-        $this->createdAt = new \DateTimeImmutable();
+        $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $this->status = ScreeningStatus::WAIT;
         $this->slugId = $this->generate_ulid_prefixed('scr_aud_');
     }

@@ -32,7 +32,9 @@ final class OnBoardingWorkspaceController
 
         return new Response(
             $twig->render('@app/onboarding/workspace.html.twig', [
-                'page_title' => 'Votre tableau de bord',
+                'page_title' => 'Trouvons votre entreprise',
+                'sub_title' => 'Saisissez le nom de votre société ou votre numéro SIREN. 
+                Nous récupérerons automatiquement vos informations légales pour configurer votre espace.',
                 'user_slug_id' => $user->slugId,
             ])
         );

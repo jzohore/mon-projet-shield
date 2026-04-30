@@ -6,9 +6,11 @@ namespace App\Infrastructure\Workspace\Persistence;
 
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
+use App\Domain\Workspace\Exception\WorkspaceNotFoundException;
 use App\Domain\Workspace\Repository\WorkspaceRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @method Workspace|null find($id, $lockMode = null, $lockVersion = null)
@@ -47,5 +49,27 @@ final readonly class WorkspaceRepository implements WorkspaceRepositoryInterface
     public function findOneByName(?string $name): ?Workspace
     {
         return $this->repository->findOneBy(['name' => $name]);
+    }
+
+    public function getBySlug(string $slug): Workspace
+    {
+        $workspace = $this->repository->findOneBy(['slugId' => $slug]);
+
+        if (null === $workspace) {
+            throw WorkspaceNotFoundException::withSlug($slug);
+        }
+
+        return $workspace;
+    }
+
+    public function getById(Uuid $id): Workspace
+    {
+        $workspace = $this->repository->findOneBy(['id' => $id]);
+
+        if (null === $workspace) {
+            throw WorkspaceNotFoundException::withId($id);
+        }
+
+        return $workspace;
     }
 }

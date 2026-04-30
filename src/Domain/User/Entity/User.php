@@ -32,12 +32,23 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
     #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
     public ?Uuid $id = null {
-        get => $this->id;
+        get {
+            if (null === $this->id) {
+                throw new \LogicException('L\'ID de l\'entité n\'a pas encore été généré.');
+            }
+            return $this->id;
+        }
     }
 
     #[ORM\Column(type: Types::STRING, length: 180, unique: true)]
     public ?string $email = null {
-        get => $this->email;
+        get {
+            if (null === $this->email) {
+                throw new \LogicException('L\'email de cet utilisateur n\'a pas encore été défini.');
+            }
+
+            return $this->email;
+        }
         set => $this->email = strtolower(trim($value ?? ''));
     }
 
@@ -115,6 +126,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         set => $this->lang = $value;
     }
 
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    public ?string $stripeCustomerId = null {
+        get => $this->stripeCustomerId;
+        set => $this->stripeCustomerId = $value;
+    }
+
     // ==================== TIMESTAMPS ====================
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
@@ -125,6 +142,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public \DateTimeImmutable $updatedAt {
         get => $this->updatedAt;
+    }
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public ?\DateTimeImmutable $onboardingReminderSentAt = null {
+        get => $this->onboardingReminderSentAt;
+        set => $this->onboardingReminderSentAt = $value;
     }
 
     #[ORM\Column(type: Types::STRING, length: 50, nullable: true, enumType: OnboardingStatus::class)]
@@ -164,6 +187,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     public private(set) bool $dismissOnboarding = false;
+
+
 
     /**
      * @param list<string> $roles
@@ -319,9 +344,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function promoteToAdmin(): void
     {
-        if (!in_array('ROLE_ADMIN', $this->roles, true)) {
-            $this->roles = array_values(array_unique([...$this->roles, 'ROLE_ADMIN']));
+        if (!in_array('ROLE_SUPER_ADMIN', $this->roles, true)) {
+            $this->roles = array_values(array_unique([...$this->roles, 'ROLE_SUPER_ADMIN']));
         }
+        $this->onboardingStatus = OnboardingStatus::COMPLETED;
     }
 
     public function updateName(string $firstName, string $lastName): void

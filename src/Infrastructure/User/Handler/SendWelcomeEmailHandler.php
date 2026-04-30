@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\User\Handler;
 
-use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Notification\Email\DispatchWelcomeEmail;
 use App\Infrastructure\User\Message\SendWelcomeEmailMessage;
@@ -26,15 +25,15 @@ final readonly class SendWelcomeEmailHandler
      */
     public function __invoke(SendWelcomeEmailMessage $message): void
     {
-        $user = $this->userRepository->findByEmail($message->userEmail);
-
-        Assert::isInstanceOf($user, User::class);
+        $user = $this->userRepository->getByEmail($message->userEmail);
 
         $userEmail = $user->email;
         $userFirstName = $user->firstName;
+
         Assert::notNull($userEmail);
         Assert::notNull($userFirstName);
-        $email = new DispatchWelcomeEmail($user->email, $user->firstName, $message->magicLinkUrl);
+
+        $email = new DispatchWelcomeEmail($userEmail, $userFirstName, $message->magicLinkUrl);
         $this->mailer->send($email);
     }
 }

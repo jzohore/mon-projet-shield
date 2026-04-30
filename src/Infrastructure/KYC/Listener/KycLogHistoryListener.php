@@ -93,7 +93,7 @@ final readonly class KycLogHistoryListener
     public function logRemoveStakeholderHistory(RemoveStakeholderEvent $event): void
     {
         $folder = $event->kycFolder;
-        $name = $event->stakeholderName ?? 'Un intervenant';
+        $name = $event->stakeholderName;
 
         $folder->saveHistory(
             'Retrait d\'un intervenant',

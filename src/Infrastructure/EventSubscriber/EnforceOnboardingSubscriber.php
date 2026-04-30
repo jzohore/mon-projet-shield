@@ -64,15 +64,30 @@ final class EnforceOnboardingSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $redirectTo = match ($user->onboardingStatus) {
-            OnboardingStatus::WORKSPACE_SETUP => 'app_onboarding_profile',
-            OnboardingStatus::PENDING => 'app_onboarding_workspace',
-            OnboardingStatus::PROFIL_SETUP => 'app_onboarding_finalization',
-            default => null,
+        if ($this->security->isGranted('ROLE_SUPER_ADMIN')) {
+            return;
+        }
+
+        $allowedRoutesForStatus = match ($user->onboardingStatus) {
+            OnboardingStatus::PENDING => [
+                'app_onboarding_workspace',
+                'app_onboarding_workspace_manual_config',
+            ],
+            OnboardingStatus::WORKSPACE_SETUP => [
+                'app_onboarding_plan',
+            ],
+            OnboardingStatus::PLAN_SETUP => [
+                'app_onboarding_finalization',
+            ],
+            default => [], // Tableau vide = onboarding terminé, accès libre
         };
 
-        if ($redirectTo !== null && $currentRoute !== $redirectTo) {
-            $url = $this->router->generate($redirectTo);
+        if (!empty($allowedRoutesForStatus) && !in_array($currentRoute, $allowedRoutesForStatus, true)) {
+
+            // On le redirige par défaut vers la PREMIÈRE route du tableau (la route principale)
+            $defaultRoute = $allowedRoutesForStatus[0];
+
+            $url = $this->router->generate($defaultRoute);
             $this->requestStack->getSession()->set('usr_slug_id', $user->slugId);
             $event->setResponse(new RedirectResponse($url));
         }

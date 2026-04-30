@@ -2,10 +2,9 @@
 
 namespace App\Infrastructure\Screening\Twig\Components;
 
-use App\Application\Screening\DTO\Response\ScreeningResponse;
 use App\Application\Screening\UseCase\GenerateScreeningPdfUseCase;
-use App\Application\Screening\UseCase\GetScreeningInfo;
 use App\Application\Screening\UseCase\ShareDocumentUseCase;
+use App\Domain\Screening\Entity\ScreeningAudit;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
@@ -26,10 +25,7 @@ class ScreeningPdfActionComponent
     use ComponentToolsTrait;
 
     #[LiveProp]
-    public ?string $screeningId = null;
-
-    #[LiveProp]
-    public ?string $workSpaceId = null;
+    public ?ScreeningAudit $audit = null;
 
     /**
      * @var array<int, string>
@@ -42,28 +38,20 @@ class ScreeningPdfActionComponent
 
     public function __construct(
         private readonly GenerateScreeningPdfUseCase $generateScreeningPdfUseCase,
-        private readonly GetScreeningInfo $getScreeningInfo,
         private readonly WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
         private readonly ShareDocumentUseCase $shareDocumentUseCase,
         private readonly LoggerInterface $logger,
     ) {}
-
-    public function getAudit(): ScreeningResponse
-    {
-        Assert::notNull($this->screeningId);
-
-        return ($this->getScreeningInfo)($this->screeningId);
-    }
 
     /**
      * @return array<int, mixed>
      */
     public function getMembers(): array
     {
-        $audit = $this->getAudit();
-        Assert::notNull($audit->workspaceSlugId);
+        Assert::notNull($this->audit);
+        Assert::notNull($this->audit->workspace->slugId);
 
-        return $this->workspaceMemberRepository->getMembersActive($audit->workspaceSlugId);
+        return $this->workspaceMemberRepository->getMembersActive($this->audit->workspace->slugId);
     }
 
     /**
@@ -72,21 +60,21 @@ class ScreeningPdfActionComponent
     #[LiveAction]
     public function generatePdf(): void
     {
-        Assert::notNull($this->screeningId);
+        Assert::notNull($this->audit);
+        Assert::notNull($this->audit->slugId);
 
-        ($this->generateScreeningPdfUseCase)($this->screeningId);
+        ($this->generateScreeningPdfUseCase)($this->audit);
     }
 
     #[LiveAction]
     public function sendDocument(): void
     {
         try {
-            $audit = $this->getAudit();
+            Assert::notNull($this->audit);
+            Assert::notNull($this->audit->slugId);
+            Assert::notNull($this->audit->owner->slugId);
 
-            Assert::notNull($audit->slugId);
-            Assert::notNull($audit->userSlugId);
-
-            ($this->shareDocumentUseCase)($this->selectedEmails, $audit->slugId, $audit->userSlugId);
+            ($this->shareDocumentUseCase)($this->selectedEmails, $this->audit->slugId, $this->audit->owner->slugId);
 
             $this->isDocumentSent = true;
             $this->selectedEmails = [];

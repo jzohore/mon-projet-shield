@@ -6,12 +6,14 @@ namespace App\Infrastructure\User\Persistence;
 
 use App\Domain\User\Entity\User;
 use App\Domain\User\Enum\OnboardingStatus;
+use App\Domain\User\Exception\UserNotFoundException;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Domain\Workspace\Entity\Workspace;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @method User|null find($id, $lockMode = null, $lockVersion = null)
@@ -35,9 +37,14 @@ final readonly class UserRepository implements UserRepositoryInterface
         $em->flush();
     }
 
-    public function findById(string $id): ?User
+    public function getById(Uuid $id): User
     {
-        return $this->repository->find($id);
+        $user =  $this->repository->find($id);
+
+        if (null === $user) {
+            throw UserNotFoundException::withId($id);
+        }
+        return $user;
     }
 
     public function findByEmail(?string $email): ?User
@@ -45,9 +52,37 @@ final readonly class UserRepository implements UserRepositoryInterface
         return $this->repository->findOneBy(['email' => $email]);
     }
 
+    /**
+     * @param string $email
+     * @return User
+     */
+    public function getByEmail(string $email): User
+    {
+        $user =  $this->repository->findOneBy(['email' => $email]);
+
+        if (null === $user) {
+            throw UserNotFoundException::withEmail($email);
+        }
+        return $user;
+    }
+
+    /**
+     * @param string|null $slug
+     * @return User|null
+     */
     public function findBySlug(?string $slug): ?User
     {
         return $this->repository->findOneBy(['slugId' => $slug]);
+    }
+
+    public function getBySlug(string $slug): User
+    {
+        $user =  $this->repository->findOneBy(['slugId' => $slug]);
+
+        if (null === $user) {
+            throw UserNotFoundException::withSlug($slug);
+        }
+        return $user;
     }
 
     public function delete(User $user): void
@@ -65,12 +100,17 @@ final readonly class UserRepository implements UserRepositoryInterface
     /**
      * @return array<int, User>
      */
-    public function findOnboardingUsers(): array
+    public function findUsersNeedingReminder(\DateTimeInterface $twoHoursAgo): array
     {
-
         return $this->repository->createQueryBuilder('u')
-            ->andWhere('u.onboardingStatus IN (:onboarding_status)')
-            ->setParameter('onboarding_status', [OnboardingStatus::PENDING, OnboardingStatus::WORKSPACE_SETUP])
+            ->where('u.onboardingStatus IN (:onboarding_status)')
+            ->setParameter('onboarding_status', [
+                OnboardingStatus::PENDING,
+                OnboardingStatus::WORKSPACE_SETUP,
+            ])
+            ->andWhere('u.createdAt <= :twoHoursAgo')
+            ->setParameter('twoHoursAgo', $twoHoursAgo)
+            ->andWhere('u.onboardingReminderSentAt IS NULL')
             ->getQuery()
             ->getResult();
     }

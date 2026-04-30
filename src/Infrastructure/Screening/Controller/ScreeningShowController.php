@@ -3,7 +3,9 @@
 namespace App\Infrastructure\Screening\Controller;
 
 use App\Application\Screening\UseCase\GetScreeningInfo;
+use App\Domain\Screening\Entity\ScreeningAudit;
 use App\Domain\User\Entity\User;
+use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Attribute\Route;
@@ -27,17 +29,19 @@ readonly class ScreeningShowController
      * @throws LoaderError
      */
     public function __invoke(
-        string $slugId,
+        #[MapEntity(mapping: ['slugId' => 'slugId'])]
+        ScreeningAudit $audit,
         Environment $twig,
         #[CurrentUser]
         User $user,
     ): Response {
-        $screening = ($this->getScreeningInfo)($slugId);
+        $screening = ($this->getScreeningInfo)($audit);
 
         return new Response(
             $twig->render('@app/screening/screening_show.html.twig', [
                 'page_title' => 'Rapport de Criblage -',
                 'audit' => $screening,
+                'raw_audit' => $audit,
             ])
         );
     }

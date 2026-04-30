@@ -23,6 +23,7 @@ use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
+use Webmozart\Assert\Assert;
 
 #[AsLiveComponent(
     name: 'CreateWorkspaceFormComponent',
@@ -103,6 +104,7 @@ class CreateWorkspaceFormComponent
         $dto = $this->getForm()->getData();
 
         try {
+            Assert::notNull($this->userSlugId);
             $dto->userSlugId = $this->userSlugId;
             $dto->legalName = $this->formValues['name'];
             $dto->workspaceIndustry = Industry::fromApeCode($this->workspaceIndustry);
@@ -117,7 +119,7 @@ class CreateWorkspaceFormComponent
             return null;
         }
 
-        return new RedirectResponse($this->router->generate('app_onboarding_profile'));
+        return new RedirectResponse($this->router->generate('app_onboarding_plan'));
     }
 
     /**

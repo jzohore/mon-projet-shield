@@ -2,12 +2,13 @@
 
 namespace App\Domain\Workspace\Entity;
 
+use App\Domain\Billing\Entity\Subscription;
 use App\Domain\Billing\Enum\CreditAction;
 use App\Domain\Screening\Entity\ScreeningAudit;
-use App\Domain\Subscription\Entity\Subscription;
 use App\Domain\Wallet\Entity\WalletTransaction;
 use App\Domain\Wallet\Exception\InsufficientCreditsException;
 use App\Domain\Workspace\Enum\Industry;
+use App\Domain\Workspace\Enum\WorkspaceType;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -73,20 +74,6 @@ class Workspace
         get => $this->industry;
     }
 
-    // --- RELATIONS ---
-
-    #[ORM\OneToOne(targetEntity: Subscription::class, mappedBy: 'workspace', cascade: ['persist', 'remove'])]
-    public ?Subscription $subscription = null {
-        get => $this->subscription;
-        set {
-            $this->subscription = $value;
-            // Garantir l'intégrité de la relation bilatérale
-            if ($value !== null && $value->workspace !== $this) {
-                // $value->workspace = $this; // Sera fait via le constructeur de Subscription
-            }
-        }
-    }
-
     /**
      * @var Collection<int, WorkspaceMember>
      */
@@ -125,11 +112,17 @@ class Workspace
     #[ORM\Column(type: Types::JSON, nullable: true)]
     public private(set) ?array $transactions = null;
 
+    #[ORM\Column(type: 'string', nullable: true, enumType: WorkspaceType::class)]
+    public private(set) WorkspaceType $type = WorkspaceType::INDIVIDUAL;
+
     /**
      * @var Collection<int, WalletTransaction>
      */
     #[ORM\OneToMany(targetEntity: WalletTransaction::class, mappedBy: 'workspace', cascade: ['persist', 'remove'], orphanRemoval: true)]
     public private(set) Collection $walletTransactions;
+
+    #[ORM\OneToOne(targetEntity: Subscription::class, mappedBy: 'workspace', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    public private(set) ?Subscription $subscription = null;
 
     private function __construct(string $name, string $siret, string $legalName, string $address, Industry $industry)
     {
@@ -139,7 +132,6 @@ class Workspace
         $this->address = trim($address);
         $this->slugId = $this->generate_ulid_prefixed('wrk_');
         $this->industry = $industry;
-        $this->balance = 2;
 
         $this->members = new ArrayCollection();
         $this->invitations = new ArrayCollection();
@@ -165,14 +157,14 @@ class Workspace
 
     public function debit(CreditAction $action, string $type): void
     {
-        $cost = $action->getCost();
+        $cost = $action->getAmount();
 
         // Si l'action est gratuite, on ne fait rien
         if ($cost === 0) {
             return;
         }
 
-        if ($action->getCost() <= 0) {
+        if ($action->getAmount() <= 0) {
             throw new \DomainException("Le montant à débiter doit être strictement positif.");
         }
 
@@ -212,5 +204,24 @@ class Workspace
 
         // 3. On retourne l'objet créé
         return $transaction;
+    }
+
+    /**
+     * @param WorkspaceType $type
+     * @return void
+     */
+    public function addWorkspaceType(WorkspaceType $type): void
+    {
+        $this->type = $type;
+    }
+
+    public function isFirm(): bool
+    {
+        $isFirm = false;
+        if ($this->type === WorkspaceType::FIRM) {
+            $isFirm = true;
+        }
+
+        return $isFirm;
     }
 }

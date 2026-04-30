@@ -20,6 +20,7 @@ class LoginUserType extends AbstractType
                     'autocomplete' => 'email',
                     'placeholder' => 'jean.dupont@cabinet.fr',
                 ],
+                'empty_data' => '',
                 'help' => 'Optez pour une adresse e-mail de votre organisation afin de fluidifier vos échanges avec vos collègues.',
             ])
         ;

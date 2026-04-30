@@ -267,7 +267,9 @@
                     <div class="bg-white rounded-2xl shadow-sm ring-1 ring-slate-900/5 p-5 space-y-3">
 
                         {# LOGIQUE DU BOUTON PDF SELON L'ÉTAT DE L'ENTITÉ #}
-                        <twig:ScreeningPdfActionComponent screeningId="{{ audit.slugId }}" workSpaceId="{{ audit.workspaceSlugId }}"></twig:ScreeningPdfActionComponent>
+                        <twig:ScreeningPdfActionComponent
+                            audit="{{ raw_audit }}">
+                        </twig:ScreeningPdfActionComponent>
 
                     </div>
 

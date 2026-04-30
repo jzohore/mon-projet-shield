@@ -4,10 +4,9 @@ namespace App\Infrastructure\KYC\Twig\Components;
 
 use App\Application\Kyc\DTO\Request\CreateKycFolderRequest;
 use App\Application\Kyc\UseCase\CreateKycFolderUseCase;
-use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
-use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\KYC\Form\CreateKycFolderType;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
+use DomainException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
@@ -16,7 +15,6 @@ use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
-use Webmozart\Assert\Assert;
 
 #[AsLiveComponent(
     name: 'CreateKycFolderFormComponent',
@@ -29,19 +27,20 @@ class CreateKycFolderFormComponent
     use LiveFlashTrait;
 
     #[LiveProp]
-    public ?string $userSlugId = null;
+    public string $workspaceSlugId = '';
 
     public function __construct(
         private readonly FormFactoryInterface $formFactory,
         private readonly LoggerInterface $logger,
-        private readonly GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
-        private readonly UserRepositoryInterface $userRepository,
         private readonly CreateKycFolderUseCase $createKycFolderUseCase,
     ) {}
 
     protected function instantiateForm(): FormInterface
     {
-        return $this->formFactory->create(CreateKycFolderType::class, new CreateKycFolderRequest());
+        $dto = new CreateKycFolderRequest();
+        $dto->workspaceSlugId = $this->workspaceSlugId;
+
+        return $this->formFactory->create(CreateKycFolderType::class, $dto);
     }
 
     #[LiveAction]
@@ -54,16 +53,10 @@ class CreateKycFolderFormComponent
         $dto = $this->getForm()->getData();
         try {
 
-            $user = $this->userRepository->findBySlug($this->userSlugId);
-            Assert::notNull($user);
-            $userId = $user->id;
-            Assert::notNull($userId, "L'utilisateur doit avoir un ID pour récupérer le workspace.");
-            $workspace = ($this->getCurrentWorkspaceInfo)($userId);
-            $dto->workspaceSlugId = $workspace->slugId;
             ($this->createKycFolderUseCase)($dto);
             $this->resetForm();
             $this->addLiveFlash('success', 'La dossier à été initier  et l\'invitation a bien été envoyée.');
-        } catch (\DomainException $e) {
+        } catch (DomainException $e) {
             $this->logger->error('Erreur métier lors de la création du dossier KYC', [
                 'contactEmail' => $dto->contactEmail,
                 'contactFirstName' => $dto->contactFirstName,

@@ -4,104 +4,96 @@
 {% block title %}{{ page_title }} - {{ company_name }}{% endblock %}
 
 {% block content %}
-    <div class="max-w-7xl mx-auto space-y-8 pb-20">
-        {# HEADER : LES 3 ACTIONS CLÉS #}
-        <header class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-            <div>
-                <h1 class="text-2xl font-bold tracking-tight text-slate-900">Tableau de bord</h1>
-                <p class="text-sm text-slate-500 mt-1">Gérez vos analyses de conformité et vos rapports d'adéquation.</p>
-            </div>
+    {% set is_cabinet = workspaceInfo().isFirm %}
 
-            <div class="flex flex-wrap gap-3">
-                {# Module 3 #}
-                <a href="#" class="inline-flex items-center justify-center rounded-lg text-sm font-semibold transition-all border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2.5 bg-white shadow-sm gap-2">
-                    {{ ux_icon('lucide:building-2', { class: 'size-4 text-slate-400' }) }}
-                    Nouveau KYB
-                </a>
-                {# Module 1 #}
-                <a href="{{ path('app_kyc_invitation') }}" class="inline-flex items-center justify-center rounded-lg text-sm font-semibold transition-all border border-slate-200 text-slate-700 hover:bg-slate-50 px-4 py-2.5 bg-white shadow-sm gap-2">
-                    {{ ux_icon('lucide:user-plus', { class: 'size-4 text-slate-400' }) }}
-                    Nouveau KYC
-                </a>
-                {# Module 2 #}
-                <a href="#" class="inline-flex items-center justify-center rounded-lg text-sm font-semibold transition-all bg-indigo-600 text-white hover:bg-indigo-700 px-4 py-2.5 shadow-sm gap-2">
-                    {{ ux_icon('lucide:sparkles', { class: 'size-4' }) }}
-                    Conseil Advisory
-                </a>
-            </div>
-        </header>
+    {# HEADER : LES 3 ACTIONS CLÉS #}
+    <header class="flex flex-col lg:flex-row lg:items-end">
+        <div>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Espace  <span class="text-blue-600">{{ workspaceInfo().name | lower | capitalize }}</span></h1>
+            <p class="text-sm text-slate-500 mt-1">Gérez vos analyses de conformité et vos rapports d'adéquation.</p>
+        </div>
+    </header>
 
-        {# SECTION KPIs #}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {# SOLDE #}
-            <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm group">
+    {# SECTION KPIs #}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {# SOLDE #}
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm group">
+            {% if is_cabinet %}
+                <div class="flex justify-between items-start mb-2">
+                    <h2 class="text-sm font-medium text-slate-500">Analyses ce mois-ci</h2>
+                    {{ ux_icon('lucide:activity', { class: 'size-4 text-indigo-500' }) }}
+                </div>
+                <div class="flex items-baseline gap-2 mt-2">
+                    <span class="text-3xl font-bold text-slate-900">{{ subInfo().searchesUsedThisMonth }}<span class="text-lg text-slate-400">/{{ subInfo().maxSearches }}</span></span>
+                </div>
+            {% else %}
                 <div class="flex justify-between items-start mb-2">
                     <h2 class="text-sm font-medium text-slate-500">Crédits disponibles</h2>
-                    {{ ux_icon('lucide:wallet', { class: 'size-4 text-indigo-500' }) }}
+                    {{ ux_icon('lucide:wallet', { class: 'size-4 text-emerald-500' }) }}
                 </div>
                 <div class="flex items-baseline gap-2 mt-2">
                     <span class="text-3xl font-bold text-slate-900"><twig:HeaderCreditsCounter /></span>
-                    <a href="{{ path('app_settings_billing') }}" class="text-xs font-medium text-indigo-600 hover:underline">Recharger</a>
+                    <a href="{{ path('app_settings_billing') }}" class="text-xs font-medium text-emerald-600 hover:underline">Recharger</a>
                 </div>
-            </div>
+            {% endif %}
+        </div>
 
-            {# EN COURS #}
-            <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-                <div class="flex justify-between items-start mb-2">
-                    <h2 class="text-sm font-medium text-slate-500">Dossiers en cours</h2>
-                    {{ ux_icon('lucide:loader-2', { class: 'size-4 text-amber-500 animate-spin-slow' }) }}
-                </div>
-                <div class="flex items-baseline gap-2 mt-2">
-                    <span class="text-3xl font-bold text-slate-900">3</span>
-                    <span class="text-xs text-slate-500">KYC/KYB actifs</span>
-                </div>
+        {# EN COURS #}
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <div class="flex justify-between items-start mb-2">
+                <h2 class="text-sm font-medium text-slate-500">Dossiers en cours</h2>
+                {{ ux_icon('lucide:loader-2', { class: 'size-4 text-amber-500 animate-spin-slow' }) }}
             </div>
-
-            {# ADVISORY #}
-            <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-                <div class="flex justify-between items-start mb-2">
-                    <h2 class="text-sm font-medium text-slate-500">Rapports Advisory</h2>
-                    {{ ux_icon('lucide:file-text', { class: 'size-4 text-emerald-500' }) }}
-                </div>
-                <div class="flex items-baseline gap-2 mt-2">
-                    <span class="text-3xl font-bold text-slate-900">12</span>
-                    <span class="text-xs text-slate-500">ce mois-ci</span>
-                </div>
-            </div>
-
-            {# ALERTES #}
-            <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-                <div class="flex justify-between items-start mb-2">
-                    <h2 class="text-sm font-medium text-slate-500">Alertes Risques</h2>
-                    {{ ux_icon('lucide:shield-alert', { class: 'size-4 text-red-500' }) }}
-                </div>
-                <div class="flex items-baseline gap-2 mt-2">
-                    <span class="text-3xl font-bold text-slate-900">0</span>
-                    <span class="text-xs text-slate-500">Sanctions/PEPs</span>
-                </div>
+            <div class="flex items-baseline gap-2 mt-2">
+                <span class="text-3xl font-bold text-slate-900">3</span>
+                <span class="text-xs text-slate-500">KYC/KYB actifs</span>
             </div>
         </div>
 
-        {# ACTIVITÉ RÉCENTE #}
-        <section>
-            <div class="flex items-center justify-between mb-4">
-                <h2 class="text-lg font-bold text-slate-900">Activité récente</h2>
-                <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-700">Voir tout</a>
+        {# ADVISORY #}
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <div class="flex justify-between items-start mb-2">
+                <h2 class="text-sm font-medium text-slate-500">Rapports Advisory</h2>
+                {{ ux_icon('lucide:file-text', { class: 'size-4 text-emerald-500' }) }}
             </div>
+            <div class="flex items-baseline gap-2 mt-2">
+                <span class="text-3xl font-bold text-slate-900">12</span>
+                <span class="text-xs text-slate-500">ce mois-ci</span>
+            </div>
+        </div>
 
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="p-16 text-center">
-                    <div class="size-16 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 mb-4 mx-auto">
-                        {{ ux_icon('lucide:fingerprint', { class: 'size-8 text-slate-300' }) }}
-                    </div>
-                    <h4 class="text-base font-semibold text-slate-900">Prêt à sécuriser vos relations ?</h4>
-                    <p class="text-sm text-slate-500 mt-2 max-w-sm mx-auto">
-                        Lancez un premier module pour générer vos fiches de synthèse ou vos rapports d'adéquation.
-                    </p>
-                </div>
+        {# ALERTES #}
+        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+            <div class="flex justify-between items-start mb-2">
+                <h2 class="text-sm font-medium text-slate-500">Alertes Risques</h2>
+                {{ ux_icon('lucide:shield-alert', { class: 'size-4 text-red-500' }) }}
             </div>
-        </section>
+            <div class="flex items-baseline gap-2 mt-2">
+                <span class="text-3xl font-bold text-slate-900">0</span>
+                <span class="text-xs text-slate-500">Sanctions/PEPs</span>
+            </div>
+        </div>
     </div>
+
+    {# ACTIVITÉ RÉCENTE #}
+    <section>
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-bold text-slate-900">Activité récente</h2>
+            <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-700">Voir tout</a>
+        </div>
+
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="p-16 text-center">
+                <div class="size-16 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 mb-4 mx-auto">
+                    {{ ux_icon('lucide:fingerprint', { class: 'size-8 text-slate-300' }) }}
+                </div>
+                <h4 class="text-base font-semibold text-slate-900">Prêt à sécuriser vos relations ?</h4>
+                <p class="text-sm text-slate-500 mt-2 max-w-sm mx-auto">
+                    Lancez un premier module pour générer vos fiches de synthèse ou vos rapports d'adéquation.
+                </p>
+            </div>
+        </div>
+    </section>
 
     {# ========================================================= #}
     {# WIDGET ONBOARDING (Stimulus)                              #}
@@ -181,10 +173,17 @@
                     <div class="flex items-start gap-3 p-3 rounded-xl group hover:bg-slate-50 transition-colors">
                         <div class="mt-0.5 size-5 rounded-full border-2 border-slate-200 group-hover:border-slate-400 flex items-center justify-center transition-colors"></div>
                         <div class="flex-1">
-                            <a href="{{ path('app_settings_billing') }}" class="block">
-                                <p class="text-sm font-medium text-slate-700">Recharger des crédits</p>
-                                <p class="text-xs text-slate-500 mt-0.5">Packs de crédits sans expiration.</p>
-                            </a>
+                            {% if is_cabinet %}
+                                <a href="{{ path('app_employees_invitation') }}" class="block">
+                                    <p class="text-sm font-medium text-slate-700">Inviter des collaborateurs</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">Travaillez en équipe sur vos dossiers.</p>
+                                </a>
+                            {% else %}
+                                <a href="{{ path('app_settings_billing') }}" class="block">
+                                    <p class="text-sm font-medium text-slate-700">Recharger des crédits</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">Packs de crédits sans expiration.</p>
+                                </a>
+                            {% endif %}
                         </div>
                     </div>
                 </div>

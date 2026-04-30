@@ -18,6 +18,7 @@ class CreateKycFolderType extends AbstractType
         $builder
             ->add('contactEmail', EmailType::class, [
                 'label' => 'Adresse email professionnelle',
+                'empty_data' => '',
                 'attr' => [
                     'placeholder' => 'jean.dupont@entreprise.com',
                     'autocomplete' => 'email',
@@ -25,6 +26,7 @@ class CreateKycFolderType extends AbstractType
             ])
             ->add('contactFirstName', TextType::class, [
                 'label' => 'Prénom du contact',
+                'empty_data' => '',
                 'attr' => [
                     'placeholder' => 'Ex: Jean',
                     'autocomplete' => 'given-name',
@@ -32,6 +34,7 @@ class CreateKycFolderType extends AbstractType
             ])
             ->add('contactLastName', TextType::class, [
                 'label' => 'Nom du contact',
+                'empty_data' => '',
                 'attr' => [
                     'placeholder' => 'Ex: Dupont',
                     'autocomplete' => 'family-name',

@@ -46,6 +46,8 @@ enum AuditEventType: string
     case ADVISORY_REPORT_GENERATED = 'advisory.generated'; // Analyse IA de l'adéquation
 
     case DOCUMENT_SHARED = 'document_shared';
+    case SUBSCRIPTION_ACTIVATED = 'subscription_activated';
+    case SUBSCRIPTION_CANCELED = 'subscription_canceled';
     /**
      * Retourne un libellé lisible par un humain pour l'affichage dans la frise chronologique (Audit Trail).
      */
@@ -95,6 +97,8 @@ enum AuditEventType: string
             self::ADVISORY_REPORT_GENERATED => 'Génération du rapport Advisory',
 
             self::DOCUMENT_SHARED => 'Partage d\'un document',
+            self::SUBSCRIPTION_ACTIVATED => 'Abonnement activé',
+            self::SUBSCRIPTION_CANCELED => 'Abonnement désactivé',
         };
     }
 }

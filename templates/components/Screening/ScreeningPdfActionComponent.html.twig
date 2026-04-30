@@ -1,14 +1,14 @@
 
-<div {{ attributes }} class="w-full" {% if this.audit.status == 'pending' %}data-poll="delay(2000)|$render"{% endif %}>
+<div {{ attributes }} class="w-full" {% if this.audit.status.value == 'pending' %}data-poll="delay(2000)|$render"{% endif %}>
 
-    {% if this.audit.status == 'pending' %}
+    {% if this.audit.status.value == 'pending' %}
         {# ÉTAT 1 : EN COURS DE GÉNÉRATION #}
         <twig:Button disabled class="w-full flex justify-center bg-slate-100 text-slate-500 shadow-sm border border-slate-200">
             <twig:ux:icon name="tabler:loader" class="size-4 mr-2 animate-spin text-indigo-500" />
             Génération en cours...
         </twig:Button>
 
-    {% elseif this.audit.status == 'generated' and this.audit.pdfPath %}
+    {% elseif this.audit.status.value == 'generated' and this.audit.pdfPath %}
         {# ÉTAT 2 : GÉNÉRÉ (Prêt à télécharger) #}
 
         {# On initialise notre contrôleur Stimulus pour gérer les deux panneaux #}
@@ -164,7 +164,7 @@
     {% else %}
         {# ÉTAT 3 : INITIAL OU FAILED (Bouton d'action normal) #}
 
-        {% if this.audit.status == 'failed' %}
+        {% if this.audit.status.value == 'failed' %}
             <div class="mb-2 text-xs text-rose-600 flex items-center justify-center">
                 <twig:ux:icon name="tabler:alert-circle" class="size-3 mr-1" />
                 La dernière génération a échoué.

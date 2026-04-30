@@ -6,10 +6,20 @@ namespace App\Domain\Workspace\Repository;
 
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
+use Symfony\Component\Uid\Uuid;
 
 interface WorkspaceRepositoryInterface
 {
+    /**
+     * @param Workspace $workspace
+     * @return void
+     */
     public function save(Workspace $workspace): void;
+
+    /**
+     * @param string $slug
+     * @return Workspace|null
+     */
     public function findOneBySlug(string $slug): ?Workspace;
 
     /**
@@ -17,6 +27,22 @@ interface WorkspaceRepositoryInterface
      */
     public function findMembersByWorkspaceId(string $workspaceId): array;
 
+    /**
+     * @param string|null $name
+     * @return Workspace|null
+     */
     public function findOneByName(?string $name): ?Workspace;
+
+    /**
+     * @param string $slug
+     * @return Workspace
+     */
+    public function getBySlug(string $slug): Workspace;
+
+    /**
+     * @param Uuid $id
+     * @return Workspace
+     */
+    public function getById(Uuid $id): Workspace;
 
 }

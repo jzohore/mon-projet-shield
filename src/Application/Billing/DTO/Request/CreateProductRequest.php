@@ -6,6 +6,8 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 class CreateProductRequest
 {
+    public string $reference;
+
     #[Assert\NotBlank(message: "Le nom du pack est obligatoire")]
     #[Assert\Length(min: 3, max: 50)]
     public string $name;
@@ -23,6 +25,7 @@ class CreateProductRequest
     public string $stripePriceId;
 
     public ?string $description = null;
-
     public bool $isRecommended = false;
+
+    public bool $isRecurring;
 }

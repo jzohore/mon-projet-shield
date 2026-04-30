@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\User\Handler;
 
-use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Notification\Email\MagicLinkEmail;
 use App\Infrastructure\User\Message\SendMagicLinkMessage;
+use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Webmozart\Assert\Assert;
@@ -15,19 +15,26 @@ use Webmozart\Assert\Assert;
 #[AsMessageHandler]
 final readonly class SendMagicLinkHandler
 {
+    /**
+     * @param UserRepositoryInterface $userRepository
+     * @param MailerInterface $mailer
+     */
     public function __construct(
         private UserRepositoryInterface $userRepository,
         private MailerInterface $mailer
     ) {}
 
+    /**
+     * @param SendMagicLinkMessage $message
+     * @return void
+     * @throws TransportExceptionInterface
+     */
     public function __invoke(SendMagicLinkMessage $message): void
     {
-        // 1. On récupère l'entité fraîche depuis la base de données
-        $user = $this->userRepository->findByEmail($message->userEmail);
+        $user = $this->userRepository->getByEmail($message->userEmail);
 
-        Assert::isInstanceOf($user, User::class);
+        Assert::notNull($user->email);
 
-        // 3. Instanciation et Envoi
         $email = new MagicLinkEmail($user->email, $message->magicLinkUrl);
         $this->mailer->send($email);
     }
