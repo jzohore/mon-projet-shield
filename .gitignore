@@ -8,7 +8,6 @@
 /var/
 /vendor/
 /public/ressources/GeoLite2-City.mmdb
-/config
 ###< symfony/framework-bundle ###
 
 ###> symfony/asset-mapper ###
