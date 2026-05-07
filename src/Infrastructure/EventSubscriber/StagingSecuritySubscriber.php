@@ -13,7 +13,11 @@ final readonly class StagingSecuritySubscriber implements EventSubscriberInterfa
 {
     public function __construct(
         #[Autowire(env: 'bool:IS_STAGING')]
-        private bool $isStaging
+        private bool $isStaging,
+        #[Autowire(env: 'string:EXPECTED_USER')]
+        private string $expectedUserEnv,
+        #[Autowire(env: 'string:EXPECTED_PASS')]
+        private string $expectedPassEnv,
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -49,8 +53,8 @@ final readonly class StagingSecuritySubscriber implements EventSubscriberInterfa
         $pass = $request->headers->get('php-auth-pw');
 
         // Remplace par tes propres codes secrets
-        $expectedUser = 'kysure_team';
-        $expectedPass = 'StagingSecure2026!';
+        $expectedUser = $this->expectedUserEnv;
+        $expectedPass = $this->expectedPassEnv;
 
         if ($user !== $expectedUser || $pass !== $expectedPass) {
             // Si c'est faux, on renvoie une erreur 401 qui force le navigateur à (ré)afficher la fenêtre de mot de passe
