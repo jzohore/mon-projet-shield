@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Domain\Shared\Notifier;
+namespace App\Infrastructure\Shared\Notifier;
 
 use App\Domain\Shared\Port\RealTimeNotifierInterface;
 use Symfony\Component\Mercure\HubInterface;

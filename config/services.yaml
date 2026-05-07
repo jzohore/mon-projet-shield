@@ -109,4 +109,5 @@ services:
     App\Infrastructure\Security\MessageCipher:
         arguments:
             $encryptionKey: '%env(base64:default::ENCRYPTION_KEY)%'
-
+    App\Domain\Shared\Port\RealTimeNotifierInterface:
+        alias: App\Infrastructure\Shared\Notifier\MercureRealTimeNotifier
