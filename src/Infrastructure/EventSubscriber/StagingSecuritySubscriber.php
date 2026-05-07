@@ -12,8 +12,8 @@ use Symfony\Component\HttpKernel\KernelEvents;
 final readonly class StagingSecuritySubscriber implements EventSubscriberInterface
 {
     public function __construct(
-        #[Autowire('%kernel.environment%')]
-        private string $appEnv
+        #[Autowire(env: 'bool:IS_STAGING')]
+        private bool $isStaging
     ) {}
 
     public static function getSubscribedEvents(): array
@@ -28,7 +28,7 @@ final readonly class StagingSecuritySubscriber implements EventSubscriberInterfa
     public function onKernelRequest(RequestEvent $event): void
     {
         // 1. On ne bloque jamais la vraie Production
-        if ($this->appEnv === 'prod') {
+        if (!$this->isStaging) {
             return;
         }
 
@@ -64,7 +64,7 @@ final readonly class StagingSecuritySubscriber implements EventSubscriberInterfa
     public function onKernelResponse(ResponseEvent $event): void
     {
         // On garde notre protection SEO
-        if ($this->appEnv !== 'prod') {
+        if ($this->isStaging) {
             $event->getResponse()->headers->set('X-Robots-Tag', 'noindex, nofollow');
         }
     }
