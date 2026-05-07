@@ -57,6 +57,7 @@
         "symfony/ux-chartjs": "^3.0",
         "symfony/ux-icons": "^2.35",
         "symfony/ux-live-component": "^2.35",
+        "symfony/ux-toolkit": "^3.0",
         "symfony/ux-turbo": "^2.35",
         "symfony/validator": "8.0.*",
         "symfony/webhook": "8.0.*",
@@ -156,7 +157,6 @@
         "symfony/debug-bundle": "8.0.*",
         "symfony/maker-bundle": "^1.67",
         "symfony/stopwatch": "8.0.*",
-        "symfony/ux-toolkit": "^2.35",
         "symfony/web-profiler-bundle": "8.0.*"
     }
 }
