@@ -1,0 +1,81 @@
+<?php
+
+namespace App\Application\Support\UseCase;
+
+use App\Domain\Shared\Port\RealTimeNotifierInterface;
+use App\Domain\Support\Entity\SupportMessage;
+use App\Domain\Support\Entity\SupportThread;
+use App\Domain\Support\Enum\SupportCategory;
+use App\Domain\Support\Enum\SupportSenderType;
+use App\Domain\Support\Enum\SupportTopic;
+use App\Domain\Support\Repository\SupportThreadRepositoryInterface;
+use App\Domain\User\Entity\User;
+use App\Domain\Workspace\Entity\Workspace;
+use DateMalformedStringException;
+use Doctrine\ORM\EntityManagerInterface;
+
+readonly class PostSupportMessageUseCase
+{
+    public function __construct(
+        private SupportThreadRepositoryInterface $threadRepository,
+        private EntityManagerInterface $entityManager,
+        private RealTimeNotifierInterface $notifier,
+    ) {}
+
+    /**
+     * @param string $content Le message tapé par le client
+     * @param string|null $urlContext L'URL où se trouvait le client (pour le contexte)
+     * @throws DateMalformedStringException
+     */
+    public function execute(
+        Workspace $workspace,
+        User $user,
+        string $content,
+        SupportCategory $category,
+        SupportTopic $topic,
+        ?string $urlContext = null
+    ): void {
+        $managedWorkspace = $this->entityManager->find(Workspace::class, (string) $workspace->id);
+        $managedUser      = $this->entityManager->find(User::class, (string) $user->id);
+
+        if (!$managedWorkspace || !$managedUser) {
+            throw new \LogicException('Erreur critique : Workspace ou User introuvable lors de la création du ticket.');
+        }
+
+        // 1. On cherche avec les entités fraîchement managées
+        $activeThread = $this->threadRepository->findActiveThreadForUser($managedWorkspace, $managedUser);
+
+        $isNewTicket = false;
+
+        // 1. LAZY CREATION
+        if (!$activeThread) {
+            $activeThread = SupportThread::open($managedWorkspace, $managedUser, $category->value, $topic->value, $urlContext);
+            $isNewTicket = true; // On flag que c'est un tout nouveau ticket
+        }
+
+        // 2. Ajout du message du client
+        SupportMessage::write($activeThread, SupportSenderType::CLIENT, $content);
+
+        // 3. 🪄 AUTO-RÉPONSE (Réassurance immédiate)
+        // Si c'est un nouveau ticket, on injecte immédiatement un message système pour rassurer le client.
+
+        if ($isNewTicket) {
+            $autoReplyContent = sprintf(
+                "Bonjour 👋\nNous avons bien reçu votre demande concernant <b>%s (%s)</b>.\nUn expert de l'équipe va prendre le relais et vous répondre très rapidement ici même.",
+                $category->getContextLabel(),
+                strtolower($topic->getTitle())
+            );
+            // On écrit ce message en tant qu'ADMIN
+            SupportMessage::write($activeThread, SupportSenderType::ADMIN, $autoReplyContent);
+        }
+
+        $activeThread->markAsReadByClient();
+        // 4. On sauvegarde et on flush
+        $this->threadRepository->save($activeThread);
+
+        $this->notifier->notify(
+            topic: 'support_thread_' . $activeThread->slugId,
+            payload: ['action' => 'new_message', 'sender' => SupportSenderType::CLIENT]
+        );
+    }
+}

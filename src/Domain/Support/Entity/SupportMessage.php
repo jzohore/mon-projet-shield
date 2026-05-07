@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Domain\Support\Entity;
+
+use App\Domain\Common\Attribute\Encrypted;
+use App\Domain\Support\Enum\SupportSenderType;
+use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Types\UuidType;
+use Symfony\Component\Uid\Uuid;
+
+#[ORM\Entity]
+#[ORM\Table(name: 'support_messages')]
+class SupportMessage
+{
+    use GenerateSlugPrefixedTrait;
+
+    #[ORM\Id]
+    #[ORM\Column(type: UuidType::NAME, unique: true)]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
+    public ?Uuid $id = null {
+        get => $this->id;
+    }
+
+    #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
+    public private(set) string $slugId;
+
+    #[ORM\ManyToOne(targetEntity: SupportThread::class, inversedBy: 'messages')]
+    #[ORM\JoinColumn(nullable: false)]
+    public private(set) SupportThread $thread;
+
+    #[ORM\Column(type: 'string', enumType: SupportSenderType::class)]
+    public private(set) SupportSenderType $senderType;
+
+    #[Encrypted]
+    #[ORM\Column(type: Types::TEXT)]
+    public private(set) string $content;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $readAt = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
+    public private(set) \DateTimeImmutable $createdAt;
+
+    private function __construct(SupportThread $thread, SupportSenderType $senderType, string $content)
+    {
+        $this->thread = $thread;
+        $this->senderType = $senderType;
+        $this->content = $content;
+        $this->slugId = $this->generate_ulid_prefixed('sup_msg_');
+        $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+
+        // DDD: Le message informe son Thread parent de son existence
+        $this->thread->addMessage($this);
+    }
+
+    /**
+     * 🪄 Named Constructor : Écrit un nouveau message
+     */
+    public static function write(SupportThread $thread, SupportSenderType $senderType, string $content): self
+    {
+        return new self($thread, $senderType, $content);
+    }
+
+    // --- LOGIQUE MÉTIER ---
+
+    public function markAsRead(): void
+    {
+        if (null === $this->readAt) {
+            $this->readAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        }
+    }
+}

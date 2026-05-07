@@ -88,4 +88,12 @@ readonly class DoctrineScreeningAuditRepository implements ScreeningAuditReposit
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    public function countAll(): int
+    {
+        return (int) $this->repository->createQueryBuilder('sa')
+            ->select('COUNT(sa.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

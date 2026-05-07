@@ -83,4 +83,16 @@ final readonly class AuditLogRepository implements AuditLogRepositoryInterface
 
         return new Pagerfanta(new QueryAdapter($qb));
     }
+
+    /**
+     * @return AuditLog[]
+     */
+    public function findLatestLogs(int $limit = 5): array
+    {
+        return $this->repository->createQueryBuilder('a')
+            ->orderBy('a.occurredAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }

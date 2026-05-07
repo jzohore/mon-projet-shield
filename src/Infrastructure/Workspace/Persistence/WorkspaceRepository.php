@@ -72,4 +72,36 @@ final readonly class WorkspaceRepository implements WorkspaceRepositoryInterface
 
         return $workspace;
     }
+
+    public function countAll(): int
+    {
+        return (int) $this->repository->createQueryBuilder('w')
+            ->select('COUNT(w.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countActive(): int
+    {
+        return (int) $this->repository->createQueryBuilder('w')
+            ->select('COUNT(w.id)')
+            // Adapte cette condition selon ton entité (ex: status, isTrial, etc.)
+            ->where('w.isActive = :active')
+            ->setParameter('active', true)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+
+    /**
+     * @return Workspace[]
+     */
+    public function findLatest(int $limit = 5): array
+    {
+        return $this->repository->createQueryBuilder('w')
+            ->orderBy('w.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }

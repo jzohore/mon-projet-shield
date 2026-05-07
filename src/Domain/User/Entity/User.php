@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace App\Domain\User\Entity;
 
 use App\Domain\Screening\Entity\ScreeningAudit;
+use App\Domain\Support\Entity\SupportThread;
 use App\Domain\User\Enum\OnboardingStatus;
 use App\Domain\User\ValueObject\UserProfil;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
@@ -188,7 +190,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     public private(set) bool $dismissOnboarding = false;
 
-
+    /**
+     * @var Collection<int, SupportThread>
+     */
+    #[ORM\OneToMany(targetEntity: SupportThread::class, mappedBy: 'user', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    public private(set) Collection $supportThread;
 
     /**
      * @param list<string> $roles
@@ -213,6 +219,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->profile = new UserProfil();
         $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $this->updatedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $this->supportThread = new ArrayCollection();
     }
 
     /**

@@ -2,45 +2,54 @@
 
 namespace App\Domain\Workspace\Service;
 
-use App\Domain\User\Repository\UserRepositoryInterface;
+use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Webmozart\Assert\Assert;
+use Symfony\Contracts\Service\ResetInterface;
 
-final class CurrentWorkspaceProvider
+final class CurrentWorkspaceProvider implements ResetInterface
 {
-    // Au lieu d'un tableau, on stocke directement l'entité.
-    // En PHP, un script = une requête d'un seul utilisateur, donc un seul Workspace suffit !
-    private ?Workspace $cachedWorkspace = null;
+    // Ce cache ne doit vivre QUE le temps d'une seule requête HTTP.
+    private ?string $cachedWorkspaceId = null;
 
     public function __construct(
         private readonly WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
         private readonly Security $security,
-        private readonly UserRepositoryInterface $userRepository,
     ) {}
+
+    /**
+     * Appelé automatiquement par Symfony à la fin de chaque requête
+     * pour nettoyer le service avant qu'il ne serve un autre client.
+     */
+    public function reset(): void
+    {
+        $this->cachedWorkspaceId = null;
+    }
 
     public function getWorkspace(): Workspace
     {
-        // 1. Si on a déjà chargé l'entité pendant cette requête, on la renvoie direct (Cache)
-        $userEmail = $this->security->getUser()?->getUserIdentifier();
-        Assert::notNull($userEmail);
-        $user = $this->userRepository->getByEmail($userEmail);
+        // 1. On récupère TOUJOURS l'utilisateur actuel via la session sécurisée
+        $user = $this->security->getUser();
+        Assert::notNull($user, 'Utilisateur non connecté.');
+        Assert::isInstanceOf($user, User::class, 'Utilisateur invalide.');
         Assert::notNull($user->id);
-        if ($this->cachedWorkspace !== null) {
-            return $this->cachedWorkspace;
+        // 2. Si le cache est déjà plein, on l'utilise (vitesse)
+        if ($this->cachedWorkspaceId !== null) {
+            // Dans une version ultra-sécurisée, on pourrait vérifier ici
+            // que le cache appartient bien au $user actuel.
         }
 
-        // 2. Sinon, on va la chercher en base de données
+        // 3. Sinon, on va chercher l'info en base
         $workspaceMember = $this->workspaceMemberRepository->findOneByUser($user->id);
-        Assert::notNull($workspaceMember, "L'utilisateur n'est membre d'aucun espace de travail.");
+        Assert::notNull($workspaceMember, "Aucun espace de travail trouvé pour cet utilisateur.");
 
         $workspace = $workspaceMember->workspace;
-        Assert::notNull($workspace, "L'espace de travail est introuvable.");
 
-        // 3. On sauvegarde l'entité dans notre cache
-        $this->cachedWorkspace = $workspace;
+        // On remplit le cache pour les prochains appels DURANT CETTE REQUÊTE uniquement
+        $this->cachedWorkspaceId = (string) $workspace->id;
 
-        return $this->cachedWorkspace;
+        return $workspace;
     }
 }

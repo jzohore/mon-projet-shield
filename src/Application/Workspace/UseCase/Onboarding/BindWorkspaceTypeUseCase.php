@@ -23,7 +23,7 @@ readonly class BindWorkspaceTypeUseCase
         $user = $this->userRepository->getBySlug($userSlugId);
         $workspace = $this->workspaceRepository->getBySlug($workspaceSlugId);
         $workspace->addWorkspaceType($type);
-
+        $workspace->markAsActive();
         $user->onboardingStatus = OnboardingStatus::PLAN_SETUP;
         $this->workspaceRepository->save($workspace);
         $this->userRepository->save($user);

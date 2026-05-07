@@ -33,4 +33,9 @@ interface AuditLogRepositoryInterface
      * @return Pagerfanta<AuditLog>
      */
     public function getAuditLogsList(?AuditEventType $type = null): Pagerfanta;
+
+    /**
+     * @return AuditLog[]
+     */
+    public function findLatestLogs(int $limit = 5): array;
 }

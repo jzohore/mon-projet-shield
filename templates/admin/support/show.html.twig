@@ -1,0 +1,119 @@
+{% extends '@admin/base_admin.html.twig' %}
+
+{% block title %}Ticket #{{ thread.slugId|slice(0, 8) }}{% endblock %}
+
+{% block page_title %}Ticket #{{ thread.slugId|slice(0, 8) }}{% endblock %}
+
+{% block breadcrumb_items %}
+    <twig:Breadcrumb:Separator />
+    <twig:Breadcrumb:Item>
+        <twig:Breadcrumb:Page class="text-xs">Support & Tickets</twig:Breadcrumb:Page>
+    </twig:Breadcrumb:Item>
+{% endblock %}
+{% block content %}
+    <div class="max-w-7xl mx-auto space-y-6">
+
+        {# --- HEADER --- #}
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-8">
+            <div class="flex items-center gap-4">
+                <a href="{{ path('app_support_list') }}" class="p-2 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-slate-600 transition-colors">
+                    {{ ux_icon('lucide:arrow-left', { class: 'size-5' }) }}
+                </a>
+                <div>
+                    <h1 class="text-xl font-black text-slate-900 leading-tight">{{ thread.categoryTitle }} : {{ thread.topicTitle }}</h1>
+                    <div class="flex items-center gap-2 mt-1">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ thread.status.badgeClasses }}">
+                        {{ thread.status.label }}
+                    </span>
+                        <span class="text-xs text-slate-400">Ouvert le {{ thread.createdAt|format_datetime(locale: 'fr') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+
+                {% if thread.status.value == 'open' %}
+                    <form action="{{ path('app_support_mark_as_resolve',{slugId: thread.slugId}) }}" method="POST" onsubmit="return confirm('Confirmer la résolution du ticket ?');">
+                        <twig:Button type="submit"  class="px-4 py-2 text-sm font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-700 shadow-sm shadow-emerald-200 transition-all">
+                            Marquer comme résolu
+                            <twig:ux:icon name="tabler:arrow-right" class="ml-2 size-4" />
+                        </twig:Button>
+                        <input type="hidden" name="_token" value="{{ csrf_token('support-resolve') }}">
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+
+        {# --- MAIN LAYOUT --- #}
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+            {# COLONNE GAUCHE : LE CHAT #}
+            <div class="lg:col-span-8 space-y-6">
+                <twig:AdminSupportChatComponent thread="{{ thread }}"></twig:AdminSupportChatComponent>
+            </div>
+
+            {# COLONNE DROITE : INFOS CLIENT #}
+            <aside class="lg:col-span-4 space-y-6">
+
+                {# Fiche Client #}
+                <div class="bg-white border border-slate-200 rounded-md p-6 shadow-sm">
+                    <h2 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Informations Client</h2>
+
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-3">
+                            <div class="size-10 rounded-xl bg-slate-100 flex items-center justify-center">
+                                {{ ux_icon('lucide:building-2', { class: 'size-5 text-slate-500' }) }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-slate-900">{{ thread.workspace.name }}</p>
+                                <p class="text-[11px] text-slate-500">Workspace ID: {{ thread.workspace.slugId|slice(0,8) }}</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-100 space-y-3">
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-slate-500">Contact principal</span>
+                                <span class="text-xs font-bold text-slate-900">{{ thread.user.firstName }} {{ thread.user.lastName|default('') }}</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-xs text-slate-500">Création compte</span>
+                                <span class="text-xs font-medium text-slate-700">{{ thread.user.createdAt|format_datetime(locale: 'fr') }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="#" class="mt-6 w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-slate-50 text-slate-600 text-xs font-bold rounded-xl hover:bg-slate-100 transition-all border border-slate-100">
+                        {{ ux_icon('lucide:external-link', { class: 'size-3' }) }}
+                        Voir l'espace client
+                    </a>
+                </div>
+
+                {# Métadonnées du Ticket #}
+                <div class="bg-slate-900 rounded-md p-6 text-white shadow-xl shadow-slate-200">
+                    <h2 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-6">Détails Techniques</h2>
+                    <div class="space-y-4">
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[10px] text-slate-500 font-bold uppercase">Catégorie</span>
+                            <div class="flex items-center gap-2">
+                                {# On peut dynamiser l'icône selon la catégorie #}
+                                {{ ux_icon('lucide:folder-check', { class: 'size-4 text-violet-400' }) }}
+                                <span class="text-sm font-medium capitalize">{{ thread.category }}</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <span class="text-[10px] text-slate-500 font-bold uppercase">Contexte / Origine</span>
+                            {% if thread.urlContext %}
+                                <a href="{{ thread.urlContext }}" target="_blank" class="text-sm font-medium text-violet-300 hover:text-violet-100 truncate break-all">
+                                    {{ thread.urlContext }}
+                                </a>
+                            {% else %}
+                                <span class="text-sm font-medium text-slate-400">Non spécifié</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+    </div>
+{% endblock %}

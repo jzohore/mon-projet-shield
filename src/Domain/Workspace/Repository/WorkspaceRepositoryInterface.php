@@ -45,4 +45,15 @@ interface WorkspaceRepositoryInterface
      */
     public function getById(Uuid $id): Workspace;
 
+    public function countAll(): int;
+    public function countActive(): int;
+
+    /**
+     * Récupère les derniers Workspaces créés.
+     *
+     * @param int $limit Le nombre maximum de résultats
+     * @return Workspace[]
+     */
+    public function findLatest(int $limit = 5): array;
+
 }

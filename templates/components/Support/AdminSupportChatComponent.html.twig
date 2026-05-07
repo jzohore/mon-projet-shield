@@ -1,0 +1,74 @@
+{# templates/components/admin_support_chat.html.twig #}
+
+<div {{ attributes.defaults({
+    'data-controller': 'mercure-sync',
+    'data-mercure-sync-topic-value': mercure('support_thread_' ~ this.thread.slugId)
+}) }} class="bg-white border border-slate-200 rounded-md shadow-sm overflow-hidden flex flex-col h-[600px]">
+
+    {# ZONE DE MESSAGES #}
+    <div class="flex-1 overflow-y-auto p-6 space-y-8 bg-slate-50/30" data-controller="scroll-bottom">
+        {% for msg in this.thread.messages %}
+            {% set isClient = msg.senderType.value == 'client' %}
+            {% set initials = isClient ? (this.thread.user.firstName|slice(0,1) ~ this.thread.user.lastName|default('')|slice(0,1))|upper : 'ST' %}
+
+            {% if isClient %}
+                {# Message Client #}
+                <div class="flex items-start gap-4 max-w-[85%]">
+                    <div class="size-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-xs text-slate-600 shrink-0 uppercase">
+                        {{ initials }}
+                    </div>
+                    <div class="space-y-1">
+                        <div class="p-4 bg-white border border-slate-200 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-700 leading-relaxed">
+                            {{ msg.content|raw|nl2br }}
+                        </div>
+                        <span class="text-[10px] text-slate-400 ml-1">
+                            {{ this.thread.user.firstName }} &bull; {{ msg.createdAt|date('H:i') }}
+                        </span>
+                    </div>
+                </div>
+            {% else %}
+                {# Message Admin #}
+                <div class="flex items-start flex-row-reverse gap-4 max-w-[85%] ml-auto text-right">
+                    <div class="size-8 rounded-full bg-violet-600 flex items-center justify-center font-bold text-xs text-white shrink-0 uppercase">
+                        {{ initials }}
+                    </div>
+                    <div class="space-y-1">
+                        <div class="p-4 bg-violet-600 text-white rounded-2xl rounded-tr-none shadow-sm text-sm leading-relaxed text-left">
+                            {{ msg.content|raw|nl2br }}
+                        </div>
+                        <div class="flex items-center justify-end gap-1">
+                            {% if msg.readAt %}
+                                {{ ux_icon('lucide:check-check', { class: 'size-3 text-blue-500' }) }}
+                            {% endif %}
+                            <span class="text-[10px] text-slate-400 mr-1">
+                                Support Kysure &bull; {{ msg.createdAt|date('H:i') }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    {# ZONE DE RÉPONSE #}
+    <div class="p-4 bg-white border-t border-slate-100">
+        {% if this.thread.status.value == 'open' %}
+            <form data-action="live#action:prevent" data-live-action-param="sendMessage" class="flex items-center gap-2">
+                        <textarea data-model="norender|message"
+                                  rows="1"
+                                  placeholder="Écrivez votre message..."
+                                  class="flex-1 bg-slate-50 border-0 rounded-xl py-2.5 px-4 text-sm focus:ring-2 focus:ring-slate-900 resize-none overflow-hidden"
+                                  data-action="keydown.enter->live#action:prevent"
+                                  data-live-action-param="sendMessage"></textarea>
+                <button type="submit" class="p-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors shadow-lg active:scale-95">
+                    {{ ux_icon('lucide:send', { class: 'size-4' }) }}
+                </button>
+            </form>
+        {% else %}
+            <div class="text-center py-4 text-emerald-600 bg-emerald-50 rounded-2xl text-sm font-medium">
+                Ce ticket a été marqué comme résolu.
+            </div>
+        {% endif %}
+    </div>
+
+</div>

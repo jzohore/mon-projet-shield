@@ -114,4 +114,12 @@ class KycFolderRepository implements KycFolderRepositoryInterface
             ->getQuery()
             ->getSingleScalarResult();
     }
+
+    public function countAll(): int
+    {
+        return (int) $this->repository->createQueryBuilder('kf')
+            ->select('COUNT(kf.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
 }

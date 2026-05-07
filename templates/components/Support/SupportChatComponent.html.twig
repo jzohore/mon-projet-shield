@@ -1,0 +1,162 @@
+{# templates/components/support_chat.html.twig #}
+
+{% set thread = this.thread %}
+{% set topic = thread ? mercure('support_thread_' ~ thread.slugId) : '' %}
+
+<div {{ attributes.defaults({
+    'data-controller': 'chat-widget mercure-sync',
+    'data-mercure-sync-topic-value': topic
+}) }} class="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
+
+    {# ========================================================= #}
+    {# 1. LA FENÊTRE DE CHAT (WIDGET) #}
+    {# ========================================================= #}
+    <div data-chat-widget-target="container"
+
+         class="kysure-chat-container mb-4 w-96 max-w-[calc(100vw-2rem)] h-[600px] bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-200 flex flex-col overflow-hidden transition-all duration-500 ease-in-out">
+        {# HEADER #}
+        <div class="px-5 py-4 bg-slate-900 text-white flex justify-between items-center shrink-0">
+            <div class="flex items-center gap-3">
+                <div class="relative flex h-2 w-2">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </div>
+                <div>
+                    <h3 class="text-sm font-bold text-white">Support Kysure</h3>
+                    <p class="text-[10px] text-slate-400 leading-none">On vous répond en moins de 2 heures ⚡</p>
+                </div>
+            </div>
+            <button type="button" data-action="click->chat-widget#close" class="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
+                {{ ux_icon('lucide:x', { class: 'size-5 text-slate-300' }) }}
+            </button>
+        </div>
+
+        {# CORPS DU CHAT (WIZARD OU MESSAGES) #}
+        <div id="support-messages-container"
+             class="flex-1 overflow-y-auto bg-slate-50 p-5 flex flex-col"
+             data-controller="scroll-bottom">
+
+            {% set current_step = thread ? 3 : this.step %}
+
+            {# ÉTAPE 1 : CATÉGORIES #}
+            {% if current_step == 1 %}
+                <div class="m-auto w-full text-center">
+                    <div class="size-12 rounded-2xl bg-violet-100 text-violet-600 flex items-center justify-center mx-auto mb-4">
+                        {{ ux_icon('lucide:life-buoy', { class: 'size-6' }) }}
+                    </div>
+                    <h3 class="text-base font-bold text-slate-900">Comment pouvons-nous aider ?</h3>
+                    <div class="mt-6 space-y-2">
+                        {% for category in this.categories %}
+                            <button type="button"
+                                    data-action="live#action"
+                                    data-live-action-param="chooseCategory"
+                                    data-live-category-param="{{ category.value }}"
+                                    class="w-full bg-white border border-slate-200 p-3 rounded-xl flex items-center gap-3 hover:border-violet-300 hover:shadow-md transition-all text-left group">
+                                <div class="size-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-500 group-hover:text-violet-600 transition-colors shrink-0">
+                                    {{ ux_icon(category.icon, { class: 'size-4' }) }}
+                                </div>
+                                <span class="text-sm font-semibold text-slate-700">{{ category.title }}</span>
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {# ÉTAPE 2 : TOPICS #}
+            {% elseif current_step == 2 %}
+                <div class="w-full">
+                    <button type="button" data-action="live#action" data-live-action-param="goBack" class="text-xs text-slate-500 hover:text-slate-900 flex items-center gap-1 mb-4">
+                        {{ ux_icon('lucide:arrow-left', { class: 'size-3' }) }} Retour
+                    </button>
+                    <h3 class="text-sm font-bold text-slate-900 mb-4">Précisez votre demande :</h3>
+                    <div class="space-y-2">
+                        {% for topic in this.topics %}
+                            <button type="button"
+                                    data-action="live#action"
+                                    data-live-action-param="chooseTopic"
+                                    data-live-topic-param="{{ topic.value }}"
+                                    class="w-full bg-white border border-slate-200 p-3 rounded-xl flex justify-between items-center hover:border-violet-300 transition-all text-sm font-medium text-slate-700 shadow-sm">
+                                {{ topic.title }}
+                                {{ ux_icon('lucide:chevron-right', { class: 'size-4 text-slate-300' }) }}
+                            </button>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {# ÉTAPE 3 : CHAT ACTIF #}
+            {% elseif current_step == 3 %}
+                {% if not thread %}
+                    <div class="flex flex-col items-center mb-6">
+                        <button type="button" data-action="live#action" data-live-action-param="resetWizard" class="text-[10px] text-slate-400 hover:underline mb-4 uppercase tracking-wider">
+                            Recommencer la demande
+                        </button>
+                        <div class="bg-white border border-slate-200 p-4 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-600">
+                            Bonjour ! Expliquez-nous votre besoin concernant <strong>{{ this.category?.title }}</strong> ({{ this.topic.title }}).
+                        </div>
+                    </div>
+                {% endif %}
+
+                {% if thread %}
+                    <div class="space-y-4" data-support-target="messages">
+                        {% for msg in thread.messages %}
+                            {% set isClient = msg.senderType.value == 'client' %}
+                            <div class="flex flex-col {{ isClient ? 'items-end' : 'items-start' }} w-full">
+                                <div class="max-w-[85%] p-3 rounded-2xl text-sm shadow-sm {{ isClient ? 'bg-slate-900 text-white rounded-tr-none' : 'bg-white border border-slate-200 text-slate-700 rounded-tl-none' }}">
+                                    {{ msg.content|raw|nl2br }}
+                                </div>
+                                <span class="text-[9px] text-slate-400 mt-1 px-1">
+                                    {{ msg.createdAt|date('H:i') }}
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        {# FOOTER : SAISIE (Uniquement étape 3) #}
+        {% if current_step == 3 %}
+            <div class="p-4 bg-white border-t border-slate-100 shrink-0">
+                {% if thread and thread.status.value == 'resolved' %}
+                    <div class="text-center text-emerald-600 text-xs font-bold py-2 bg-emerald-50 rounded-lg">
+                        Discussion clôturée
+                    </div>
+                {% else %}
+                    <form data-action="live#action:prevent" data-live-action-param="sendMessage" class="flex items-center gap-2">
+                        <textarea data-model="norender|message"
+                                  rows="1"
+                                  placeholder="Écrivez votre message..."
+                                  class="flex-1 bg-slate-50 border-0 rounded-xl py-2.5 px-4 text-sm focus:ring-2 focus:ring-slate-900 resize-none overflow-hidden"
+                                  data-action="keydown.enter->live#action:prevent"
+                                  data-live-action-param="sendMessage"></textarea>
+                        <button type="submit" class="p-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors shadow-lg active:scale-95">
+                            {{ ux_icon('lucide:send', { class: 'size-4' }) }}
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    {# ========================================================= #}
+    {# 2. LE BOUTON DÉCLENCHEUR (LA BULLE) #}
+    {# ========================================================= #}
+    <button type="button"
+            data-action="click->chat-widget#toggle"
+            class="relative size-14 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all active:scale-95 group border-2 border-white/10">
+
+        <div data-chat-widget-target="iconOpen" class="transition-all duration-300">
+            {{ ux_icon('lucide:message-circle', { class: 'size-6 group-hover:rotate-12' }) }}
+        </div>
+        <div data-chat-widget-target="iconClose" class="hidden transition-all duration-300">
+            {{ ux_icon('lucide:chevron-down', { class: 'size-6' }) }}
+        </div>
+
+        {# Badge de notification conditionnel #}
+        {% if thread and this.stats.unreadCount|default(0) > 0 %}
+            <span class="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
+                {{ this.stats.unreadCount }}
+            </span>
+        {% endif %}
+    </button>
+
+</div>

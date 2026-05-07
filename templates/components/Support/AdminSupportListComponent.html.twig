@@ -1,0 +1,235 @@
+{# templates/components/support_list.html.twig #}
+<div {{ attributes }} class="space-y-6">
+
+    {# On suppose que ton LiveComponent expose une méthode getThreads() qui appelle ton Repo #}
+    {% set items = this.supportThreads %}
+
+    {# --- 1. BARRE D'OUTILS (Recherche & Compteur) --- #}
+    {# --- 1. BARRE D'OUTILS (Recherche, Filtre & Compteur) --- #}
+    <div class="flex flex-col lg:flex-row gap-4 justify-between items-center mb-6">
+
+        {# Groupe Gauche : Recherche + Select Statut #}
+        <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+
+            {# Barre de recherche existante #}
+            <div class="relative w-full sm:w-72">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
+                    <twig:ux:icon name="tabler:search" class="size-4 text-slate-400" />
+                </div>
+                <input type="search"
+                       aria-label="Rechercher un ticket"
+                       placeholder="Sujet, catégorie, email..."
+                       data-model="query"
+                       value="{{ query }}"
+                       class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 sm:text-sm transition-colors shadow-sm" />
+            </div>
+
+            {# 🪄 NOUVEAU : Filtre par Statut dynamique #}
+            <div class="relative w-full sm:w-48">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
+                    <twig:ux:icon name="tabler:filter" class="size-4 text-slate-400" />
+                </div>
+                <select data-model="statusFilter"
+                        aria-label="Filtrer par statut"
+                        class="block w-full pl-10 pr-8 py-2 border border-slate-200 rounded-lg leading-5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 sm:text-sm transition-colors shadow-sm appearance-none cursor-pointer">
+                    <option value="">Tous les statuts</option>
+
+                    {# Boucle sur ton Enum exposée par le composant PHP #}
+                    {% for status in this.availableStatuses %}
+                        <option value="{{ status.value }}" {% if this.statusFilter == status %}selected{% endif %}>
+                            {{ status.label }}
+                        </option>
+                    {% endfor %}
+                </select>
+                {# Petite flèche custom pour remplacer celle par défaut du select #}
+                <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-slate-400">
+                    <twig:ux:icon name="tabler:chevron-down" class="size-4" />
+                </div>
+            </div>
+
+        </div>
+
+        {# Groupe Droite : Compteur #}
+        <div class="text-sm font-medium text-slate-500 bg-white px-3 py-1.5 rounded-md shadow-sm border border-slate-200 w-full sm:w-auto text-center" aria-live="polite">
+            <span class="text-slate-900 font-bold">{{ items.nbResults }}</span> ticket(s)
+        </div>
+
+    </div>
+
+    {# --- 2. GESTION DE L'AFFICHAGE --- #}
+    {% if items is empty %}
+
+        {# --- 2A. L'ÉTAT VIDE (Empty State) --- #}
+        <div class="bg-white rounded-2xl p-8 shadow-sm">
+            <twig:Empty class="border border-dashed border-slate-200 bg-slate-50/50 rounded-xl py-12">
+                <twig:Empty:Header>
+                    <twig:Empty:Media variant="icon" class="bg-white shadow-sm ring-1 ring-slate-200">
+                        <twig:ux:icon name="tabler:messages" class="size-6 text-slate-400" />
+                    </twig:Empty:Media>
+                    <twig:Empty:Title class="text-lg font-bold text-slate-900 mt-4">Aucun ticket de support</twig:Empty:Title>
+                    <twig:Empty:Description class="text-slate-500">
+                        {% if query %}
+                            Aucun ticket ne correspond à votre recherche "{{ query }}".
+                        {% else %}
+                            La boîte de réception est vide. Tout le monde est heureux !
+                        {% endif %}
+                    </twig:Empty:Description>
+                </twig:Empty:Header>
+            </twig:Empty>
+        </div>
+
+    {% else %}
+        {# Adaptation des couleurs pour le Support #}
+        {% set statusColors = {
+            'open': 'bg-amber-100 text-amber-800 border-amber-200',
+            'resolved': 'bg-emerald-100 text-emerald-800 border-emerald-200'
+        } %}
+        {% set statusDots = {
+            'open': 'bg-amber-500 animate-pulse',
+            'resolved': 'bg-emerald-500'
+        } %}
+
+        {# --- 2B. LE TABLEAU DE DONNÉES --- #}
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+            <div class="overflow-x-auto">
+                {# --- EN-TÊTE DU TABLEAU --- #}
+                <div role="rowgroup" class="hidden lg:grid lg:grid-cols-12 gap-4 bg-slate-50/50 border-b border-slate-100">
+                    <div role="columnheader" class="lg:col-span-3 px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">Client / Workspace</div>
+                    <div role="columnheader" class="lg:col-span-4 px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">Sujet & Message</div>
+                    <div role="columnheader" class="lg:col-span-2 px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">Catégorie</div>
+                    <div role="columnheader" class="lg:col-span-2 px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest">Statut</div>
+                    <div role="columnheader" class="lg:col-span-1 px-6 py-4 text-[11px] font-black text-slate-400 uppercase tracking-widest text-right"></div>
+                </div>
+
+                {# --- CORPS DU TABLEAU --- #}
+                <div role="rowgroup" class="divide-y divide-slate-50">
+                    {% for thread in items %}
+
+                        {# Génération des initiales du Workspace (Les 2 premières lettres) #}
+                        {% set initials = thread.workspace.name|slice(0, 2)|upper %}
+
+                        {# Récupération du dernier message pour l'aperçu #}
+                        {% set lastMessage = thread.messages|last %}
+
+                        {# Ligne complète cliquable (UX) #}
+                        <div role="row"
+                             class="flex flex-col lg:grid lg:grid-cols-12 gap-4 lg:items-center hover:bg-slate-50/50 transition-colors group">
+                            {# --- Colonne 1 : Client & Avatar --- #}
+                            <div role="cell" class="lg:col-span-3 px-6 py-4 flex items-center gap-3">
+                                {# Avatar #}
+                                <div class="size-9 rounded-xl bg-violet-100 text-violet-600 flex items-center justify-center font-bold text-xs shrink-0">
+                                    {{ initials }}
+                                </div>
+                                {# Textes #}
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-bold text-slate-900">{{ thread.workspace.name }}</span>
+                                    <span class="text-[11px] text-slate-500">{{ thread.user.firstName }} {{ thread.user.lastName|default('')|slice(0, 1) }}.</span>
+                                </div>
+                            </div>
+
+                            {# --- Colonne 2 : Sujet & Extrait de message --- #}
+                            <div role="cell" class="lg:col-span-4 px-6 py-4 flex flex-col lg:max-w-[16rem] xl:max-w-xs">
+                                <span class="lg:hidden text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1" aria-hidden="true">Sujet</span>
+                                <span class="text-sm font-semibold text-slate-800 truncate">{{ thread.topic }}</span>
+                                <span class="text-xs text-slate-500 truncate italic">
+                    </span>
+                            </div>
+
+                            {# --- Colonne 3 : Catégorie --- #}
+                            <div role="cell" class="lg:col-span-2 px-6 py-4">
+                                <span class="lg:hidden text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1 block" aria-hidden="true">Catégorie</span>
+                                <div class="flex items-center gap-2">
+                                    {# Tu peux rendre l'icône dynamique en fonction de thread.category si besoin #}
+                                    {{ ux_icon('lucide:folder-check', { class: 'size-4 text-violet-500' }) }}
+                                    <span class="text-xs font-medium text-slate-600 capitalize">{{ thread.category }}</span>
+                                </div>
+                            </div>
+
+                            {# --- Colonne 4 : Statut --- #}
+                            <div role="cell" class="lg:col-span-2 px-6 py-4">
+                                <span class="lg:hidden text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1 block" aria-hidden="true">Statut</span>
+
+                                {# On utilise les méthodes de ton Enum #}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase {{ thread.status.badgeClasses }}">
+                        {{ thread.status.label }}
+                    </span>
+                            </div>
+
+                            {# --- Colonne 5 : Activité --- #}
+                            <div role="cell" class="lg:col-span-1 px-6 py-4 lg:text-right flex flex-row lg:flex-col justify-between lg:justify-center items-center lg:items-end">
+
+                                <twig:Button as="a" href="{{ path('app_support_show', {slugId: thread.slugId}) }}"
+                                             variant="ghost" size="sm"
+                                             class="w-full lg:w-auto justify-center p-2 text-slate-400 hover:text-violet-600 hover:bg-violet-50 transition-colors rounded-lg group-hover:border-violet-200"
+                                             title="Ouvrir la discussion">
+                                    <twig:ux:icon name="tabler:arrow-right" class="size-4 lg:mr-0 mr-2" aria-hidden="true" />
+                                    <span class="lg:sr-only font-medium">Ouvrir</span>
+                                </twig:Button>
+                            </div>
+
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            {# --- 2C. LA PAGINATION (Optimisée Pagerfanta) --- #}
+            <div class="border-t border-slate-200 bg-slate-50/50 px-4 py-3 flex items-center justify-between sm:px-6 mt-auto">
+
+                {# Version Mobile #}
+                <div class="flex-1 flex justify-between md:hidden">
+                    <button type="button"
+                            data-action="live#action"
+                            data-live-action-param="previousPage"
+                            class="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50"
+                            {% if not items.hasPreviousPage %}disabled{% endif %}>
+                        Précédent
+                    </button>
+                    <button type="button"
+                            data-action="live#action"
+                            data-live-action-param="nextPage"
+                            class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50"
+                            {% if not items.hasNextPage %}disabled{% endif %}>
+                        Suivant
+                    </button>
+                </div>
+
+                {# Version Desktop #}
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-slate-600">
+                            Page <span class="font-bold text-slate-900">{{ items.currentPage }}</span>
+                            sur <span class="font-bold text-slate-900">{{ items.nbPages }}</span>
+                            (Total: {{ items.nbResults }})
+                        </p>
+                    </div>
+
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            <button type="button"
+                                    data-action="live#action"
+                                    data-live-action-param="previousPage"
+                                    class="cursor-pointer relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    {% if not items.hasPreviousPage %}disabled{% endif %}>
+                                <span class="sr-only">Précédent</span>
+                                <twig:ux:icon name="tabler:chevron-left" class="size-4" />
+                            </button>
+
+                            <span class="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-indigo-50 text-sm font-bold text-indigo-600">
+                                {{ items.currentPage }}
+                            </span>
+
+                            <button type="button"
+                                    data-action="live#action"
+                                    data-live-action-param="nextPage"
+                                    class="cursor-pointer relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    {% if not items.hasNextPage %}disabled{% endif %}>
+                                <span class="sr-only">Suivant</span>
+                                <twig:ux:icon name="tabler:chevron-right" class="size-4" />
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>

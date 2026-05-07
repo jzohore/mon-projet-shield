@@ -40,4 +40,6 @@ interface ScreeningAuditRepositoryInterface
      * @return int
      */
     public function countSearchesSince(Workspace $workspace, DateTimeImmutable $since): int;
+
+    public function countAll(): int;
 }

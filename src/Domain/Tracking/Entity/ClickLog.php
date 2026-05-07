@@ -10,6 +10,8 @@ use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'click_logs')]
+#[ORM\Index(name: 'idx_click_created_at', columns: ['created_at'])]
+#[ORM\Index(name: 'idx_click_element_name', columns: ['element_name'])]
 class ClickLog
 {
     use GenerateSlugPrefixedTrait;

@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Billing\Persistence;
 
 use App\Domain\Billing\Entity\Subscription;
+use App\Domain\Billing\Enum\SubscriptionStatus;
 use App\Domain\Billing\Exception\SubscriptionNotFoundException;
 use App\Domain\Billing\Repository\SubscriptionRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
@@ -37,5 +38,23 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
     {
         $this->entityManager->persist($subscription);
         $this->entityManager->flush();
+    }
+
+    /**
+     * @param SubscriptionStatus[] $statuses
+     */
+    public function countByStatuses(array $statuses): int
+    {
+        if (empty($statuses)) {
+            return 0;
+        }
+
+        return (int) $this->repository->createQueryBuilder('s')
+            ->select('COUNT(s.id)')
+            // 🪄 MAGIE DOCTRINE : Le IN() supporte nativement un tableau d'Enums PHP 8.1
+            ->where('s.status IN (:statuses)')
+            ->setParameter('statuses', $statuses)
+            ->getQuery()
+            ->getSingleScalarResult();
     }
 }

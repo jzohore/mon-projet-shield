@@ -5,6 +5,7 @@ namespace App\Domain\Workspace\Entity;
 use App\Domain\Billing\Entity\Subscription;
 use App\Domain\Billing\Enum\CreditAction;
 use App\Domain\Screening\Entity\ScreeningAudit;
+use App\Domain\Support\Entity\SupportThread;
 use App\Domain\Wallet\Entity\WalletTransaction;
 use App\Domain\Wallet\Exception\InsufficientCreditsException;
 use App\Domain\Workspace\Enum\Industry;
@@ -112,8 +113,12 @@ class Workspace
     #[ORM\Column(type: Types::JSON, nullable: true)]
     public private(set) ?array $transactions = null;
 
+    #[ORM\Column(type: Types::BOOLEAN, nullable: true, options: ['default' => false])]
+    public private(set) bool $isActive = false;
+
     #[ORM\Column(type: 'string', nullable: true, enumType: WorkspaceType::class)]
     public private(set) WorkspaceType $type = WorkspaceType::INDIVIDUAL;
+
 
     /**
      * @var Collection<int, WalletTransaction>
@@ -123,6 +128,12 @@ class Workspace
 
     #[ORM\OneToOne(targetEntity: Subscription::class, mappedBy: 'workspace', cascade: ['persist', 'remove'], orphanRemoval: true)]
     public private(set) ?Subscription $subscription = null;
+
+    /**
+     * @var Collection<int, SupportThread>
+     */
+    #[ORM\OneToMany(targetEntity: SupportThread::class, mappedBy: 'workspace', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    public private(set) Collection $supportThread;
 
     private function __construct(string $name, string $siret, string $legalName, string $address, Industry $industry)
     {
@@ -136,6 +147,7 @@ class Workspace
         $this->members = new ArrayCollection();
         $this->invitations = new ArrayCollection();
         $this->walletTransactions = new ArrayCollection();
+        $this->supportThread = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
 
@@ -213,6 +225,16 @@ class Workspace
     public function addWorkspaceType(WorkspaceType $type): void
     {
         $this->type = $type;
+    }
+
+    public function markAsActive(): void
+    {
+        $this->isActive = true;
+    }
+
+    public function markAsUnActive(): void
+    {
+        $this->isActive = false;
     }
 
     public function isFirm(): bool

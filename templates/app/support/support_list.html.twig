@@ -1,0 +1,164 @@
+{# templates/dashboard/index.html.twig #}
+{% extends '@app/base_app.html.twig' %}
+
+{% block title %}{{ page_title }} - {{ company_name }}{% endblock %}
+
+{% block content %}
+    <div class="max-w-5xl mx-auto pb-12" data-controller="faq-search">
+
+        {# ========================================================= #}
+        {# 1. HERO SECTION : Focus sur la recherche                  #}
+        {# ========================================================= #}
+        <div class="mb-16 pt-8 pb-4 text-center">
+            <h1 class="text-3xl font-semibold text-slate-900 tracking-tight mb-3">
+                Comment pouvons-nous vous aider ?
+            </h1>
+            <p class="text-slate-500 text-sm mb-10">
+                Bonjour {{ app.user.firstName }}, recherchez un mot-clé ou parcourez nos questions fréquentes ci-dessous.
+            </p>
+
+            <div class="max-w-xl mx-auto relative group">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    {{ ux_icon('lucide:search', { class: 'size-4 text-slate-400 group-focus-within:text-violet-600 transition-colors duration-200' }) }}
+                </div>
+                <input type="text"
+                       data-action="input->faq-search#filter"
+                       placeholder="Rechercher une notion métier (ex: UBO, facturation, crédits)..."
+                       class="block w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:bg-white focus:ring-[3px] focus:ring-violet-600/10 focus:border-violet-600 sm:text-sm transition-all duration-200 placeholder:text-slate-400 shadow-sm">
+            </div>
+        </div>
+
+        {# ========================================================= #}
+        {# 2. LA LISTE FAQ (10 Questions Métier KYC/KYB)             #}
+        {# ========================================================= #}
+        <div class="mb-16">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
+
+                {# Q1: Crédits #}
+                <div data-faq-search-target="item"
+                     data-searchable-text="comment fonctionne le débit des crédits consommation prix cout kyc kyb">
+                    <h4 class="text-sm font-semibold text-slate-900 mb-2">Comment fonctionne le débit des crédits ?</h4>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Chaque analyse KYC complète (particulier) consomme 1 crédit. Les rapports KYB (entreprises) qui nécessitent l'analyse des bénéficiaires effectifs consomment 3 crédits.
+                    </p>
+                </div>
+
+                {# Q2: Export #}
+                <div data-faq-search-target="item"
+                     data-searchable-text="exporter rapports advisory pdf marque blanche logo client impression">
+                    <h4 class="text-sm font-semibold text-slate-900 mb-2">Puis-je exporter mes rapports Advisory en PDF ?</h4>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Oui, tous les rapports de conformité peuvent être exportés en un clic. Si vous êtes sur le plan "Cabinet", vous pouvez configurer l'export en marque blanche avec votre propre logo.
+                    </p>
+                </div>
+
+                {# Q3: Relance #}
+                <div data-faq-search-target="item"
+                     data-searchable-text="client pas recu lien verification email sms relance spam">
+                    <h4 class="text-sm font-semibold text-slate-900 mb-2">Mon client n'a pas reçu son lien de vérification.</h4>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Demandez-lui d'abord de vérifier ses courriers indésirables (Spams). Vous pouvez à tout moment renvoyer le lien directement depuis son dossier en cliquant sur le bouton "Relancer".
+                    </p>
+                </div>
+
+                {# Q4: Bénéficiaires Effectifs (UBO) #}
+                <div data-faq-search-target="item"
+                     data-searchable-text="beneficiaires effectifs ubo rbe inpi rne registre dirigeants kyb">
+                    <h4 class="text-sm font-semibold text-slate-900 mb-2">D'où proviennent les données des Bénéficiaires Effectifs ?</h4>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Nos rapports KYB se connectent en temps réel aux registres officiels (INPI, RNE, Infogreffe) pour identifier les personnes physiques détenant plus de 25% du capital ou des droits de vote.
+                    </p>
+                </div>
+
+                {# Q5: LCB-FT & PPE #}
+                <div data-faq-search-target="item"
+                     data-searchable-text="criblage lcb-ft lcb ft ppe gel avoirs sanctions internationales listes alertes">
+                    <h4 class="text-sm font-semibold text-slate-900 mb-2">À quelle fréquence les listes de sanctions sont-elles mises à jour ?</h4>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Le criblage LCB-FT (Personnes Politiquement Exposées et listes de sanctions internationales) s'appuie sur des bases de données consolidées qui sont mises à jour toutes les 24 heures.
+                    </p>
+                </div>
+
+                {# Q6: Échec CNI #}
+                <div data-faq-search-target="item"
+                     data-searchable-text="echec verification identite piece carte cni passeport perimee flou refus">
+                    <h4 class="text-sm font-semibold text-slate-900 mb-2">Pourquoi la pièce d'identité de mon client est-elle refusée ?</h4>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Les causes principales sont : une photo floue, un reflet du flash cachant les informations, ou un document expiré. Le client est automatiquement invité à soumettre une nouvelle photo.
+                    </p>
+                </div>
+
+                {# Q7: Facturation #}
+                <div data-faq-search-target="item"
+                     data-searchable-text="trouver facture facturation abonnement paiement carte bancaire tva stripe">
+                    <h4 class="text-sm font-semibold text-slate-900 mb-2">Où puis-je retrouver mes factures ?</h4>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Rendez-vous dans "Paramètres", onglet "Facturation & Crédits", puis cliquez sur "Historique des paiements" pour télécharger vos factures au format PDF.
+                    </p>
+                </div>
+
+                {# Q8: Équipe #}
+                <div data-faq-search-target="item"
+                     data-searchable-text="inviter ajouter collaborateur membre equipe associe cabinet droits">
+                    <h4 class="text-sm font-semibold text-slate-900 mb-2">Comment inviter un collaborateur sur mon compte ?</h4>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Depuis les paramètres de votre Workspace, allez dans l'onglet "Équipe" et cliquez sur "Inviter un membre". Vous pourrez définir s'il aura un accès administrateur ou en simple lecture.
+                    </p>
+                </div>
+
+                {# Q9: Sécurité #}
+                <div data-faq-search-target="item"
+                     data-searchable-text="securite donnees rgpd hebergement france europe cloud chiffrement privacy">
+                    <h4 class="text-sm font-semibold text-slate-900 mb-2">Où sont hébergées les données de mes clients ?</h4>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        La sécurité est notre priorité. Toutes les données, documents et pièces d'identité sont chiffrés au repos (AES-256) et hébergés exclusivement sur des serveurs situés en France (conforme RGPD).
+                    </p>
+                </div>
+
+                {# Q10: Suppression #}
+                <div data-faq-search-target="item"
+                     data-searchable-text="supprimer archiver dossier client droit oubli effacer rgpd cloturer">
+                    <h4 class="text-sm font-semibold text-slate-900 mb-2">Puis-je supprimer définitivement un dossier KYC ?</h4>
+                    <p class="text-sm text-slate-500 leading-relaxed">
+                        Oui, vous pouvez archiver ou supprimer un dossier pour respecter le droit à l'oubli. Attention, la suppression entraîne la destruction définitive des pièces d'identité associées sur nos serveurs.
+                    </p>
+                </div>
+
+                {# Le message d'erreur si la recherche ne donne rien (prend toute la largeur) #}
+                <div data-faq-search-target="empty" class="hidden col-span-full text-center py-12 border border-dashed border-slate-200 rounded-2xl bg-slate-50/50">
+                    <div class="size-12 rounded-full bg-white border border-slate-100 shadow-sm flex items-center justify-center mx-auto mb-3">
+                        {{ ux_icon('lucide:search-x', { class: 'size-5 text-slate-400' }) }}
+                    </div>
+                    <p class="text-sm font-medium text-slate-900">Aucun résultat trouvé.</p>
+                    <p class="text-sm text-slate-500 mt-1">
+                        Essayez d'autres mots-clés ou n'hésitez pas à nous poser la question directement.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+        {# ========================================================= #}
+        {# 3. LE BOUTON CONTACT EN BAS (Le Slide-Over)               #}
+        {# ========================================================= #}
+        <div class="border border-slate-200 bg-white rounded-2xl p-8 sm:p-12 text-center flex flex-col items-center shadow-sm">
+
+            <div class="size-12 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center mb-5">
+                {{ ux_icon('lucide:messages-square', { class: 'size-5 text-slate-600' }) }}
+            </div>
+
+            <h2 class="text-lg font-semibold text-slate-900 mb-2">Vous n'avez pas trouvé votre réponse ?</h2>
+            <p class="text-slate-500 text-sm max-w-md mx-auto mb-8">
+                Notre équipe d'experts métiers est disponible pour vous accompagner. Nous répondons généralement en moins de 2 heures.
+            </p>
+
+            <button type="button"
+                    data-action="click->support#open"
+                    class="inline-flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-lg font-medium text-sm hover:bg-slate-800 transition-colors shadow-sm focus:ring-2 focus:ring-slate-900/20 focus:outline-none">
+                {{ ux_icon('lucide:message-circle', { class: 'size-4' }) }}
+                Ouvrir une discussion
+            </button>
+        </div>
+
+    </div>
+{% endblock %}

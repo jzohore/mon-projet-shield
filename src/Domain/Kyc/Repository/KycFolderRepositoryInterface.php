@@ -37,4 +37,6 @@ interface KycFolderRepositoryInterface
      * @return int
      */
     public function countSearchesSince(Workspace $workspace, DateTimeImmutable $since): int;
+
+    public function countAll(): int;
 }

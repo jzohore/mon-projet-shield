@@ -1,11 +1,11 @@
 {# templates/dashboard/index.html.twig #}
-{% extends '@admin/base.html.twig' %}
+{% extends '@app/base_app.html.twig' %}
 
 {% block title %}{{ page_title }} - {{ company_name }}{% endblock %}
 
 {% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
     {% set is_cabinet = workspaceInfo().isFirm %}
-
     {# HEADER : LES 3 ACTIONS CLÉS #}
     <header class="flex flex-col lg:flex-row lg:items-end">
         <div>
@@ -190,4 +190,5 @@
             </div>
         </div>
     {% endif %}
+</div>
 {% endblock %}

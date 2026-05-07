@@ -12,6 +12,20 @@
     --color-shield-primary: #2563eb; /* Blue 600 */
 }
 
+/* L'état par défaut (Fermé) */
+.kysure-chat-container {
+    transform: translateY(120%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* L'état quand le body a la classe "ouvert" */
+body.kysure-chat-open .kysure-chat-container {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+
 @layer base {
     body {
         @apply bg-[--color-background-sable] text-slate-900 antialiased;

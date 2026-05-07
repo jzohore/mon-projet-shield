@@ -55,40 +55,6 @@
 
         <nav class="flex-1 px-4 md:px-5 space-y-6 overflow-y-auto pb-6">
 
-            <div>
-                <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] mb-3">Conformité</p>
-                <div class="space-y-1">
-                    {% set compliance_items = [
-                        {'icon': 'lucide:layout-dashboard', 'label': 'Tableau de Bord', 'badge': null, 'link': 'app_dashboard'},
-                        {'icon': 'lucide:shield-check', 'label': 'Dossiers', 'badge': '3', 'link': 'app_kyc_list'},
-                        {'icon': 'lucide:sparkles', 'label': 'Rapports Advisory', 'badge': null, 'link': 'app_employees_list'},
-                        {'label': 'Criblage LCB-FT', 'icon': 'lucide:user-round-search', 'badge': null, 'link': 'app_screening_list'},
-                        {'icon': 'lucide:users-round', 'label': 'Parties Prenantes', 'badge': null, 'link': 'app_employees_list'},
-                        {'icon': 'lucide:folder-open', 'label': 'Documents Collectés', 'badge': null, 'link': 'app_employees_list'}
-                    ] %}
-
-                    {% for item in compliance_items %}
-                        {% set is_active = (app.request.attributes.get('_route') == item.link) %}
-                        <a href="{{ path(item.link) }}" class="group flex items-center justify-between px-4 py-2.5 md:py-2 rounded-md transition-all
-                        {% if is_active %}
-                            bg-blue-600/10 border border-blue-500/20 text-blue-400
-                        {% else %}
-                            text-slate-500 hover:text-white border border-transparent hover:bg-white/[0.03]
-                        {% endif %}"
-                           {% if is_active %}aria-current="page"{% endif %}>
-
-                            <div class="flex items-center gap-3">
-                                <twig:ux:icon name="{{ item.icon }}" class="w-4 h-4 transition-opacity {% if is_active %}opacity-100{% else %}opacity-40 group-hover:opacity-100{% endif %}" />
-                                <span class="text-[13px] md:text-[12px] font-bold">{{ item.label }}</span>
-                            </div>
-
-                            {% if item.badge %}
-                                <twig:SidebarKycCounter></twig:SidebarKycCounter>
-                            {% endif %}
-                        </a>
-                    {% endfor %}
-                </div>
-            </div>
 
             {#            <div>#}
             {#                <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.15em] mb-3">Organisation</p>#}
@@ -115,34 +81,28 @@
             {#                </div>#}
             {#            </div>#}
 
-            {% if is_granted('ROLE_ADMIN') %}
-                <div class="pt-6 mt-4 border-t border-white/5">
-                    <p class="px-4 text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4">Administration Système</p>
-                    <div class="space-y-1">
-                        {% set system_items = [
-                            {'icon': 'lucide:user-cog', 'label': 'Administrateurs', 'link': 'account_admin_list'},
-                            {'icon': 'lucide:scroll-text', 'label': 'Journal d\'Audit', 'link': 'admin_audit_logs_list'},
-                            {'icon': 'lucide:webhook', 'label': 'Intégrations API', 'link': 'admin_integration_api_list'},
-                            {'icon': 'lucide:credit-card', 'label': 'Abonnements', 'link': 'admin_subscriptions_list'},
-                            {'icon': 'lucide:scale', 'label': 'Règles Compliance', 'link': 'admin_compliance_list'}
-                        ] %}
+            <div class="space-y-1">
+                {# 🪄 MAGIE TWIG : On récupère dynamiquement les cas de l'Enum PHP #}
+                {% set system_items = enum('App\\Infrastructure\\Shared\\Menu\\ComplianceMenuItem').cases %}
 
-                        {% for item in system_items %}
-                            {% set is_active = (app.request.attributes.get('_route') == item.link) %}
-                            <a href="{{ path(item.link) }}" class="group flex items-center gap-3 px-4 py-2.5 md:py-2 rounded-md transition-all
-                            {% if is_active %}
-                                bg-slate-800/80 border border-slate-700/50 text-white
-                            {% else %}
-                                text-slate-500 hover:text-white border border-transparent hover:bg-white/[0.03]
-                            {% endif %}"
-                               {% if is_active %}aria-current="page"{% endif %}>
-                                <twig:ux:icon name="{{ item.icon }}" class="w-4 h-4 transition-opacity {% if is_active %}opacity-100{% else %}opacity-40 group-hover:opacity-100{% endif %}" />
-                                <span class="text-[13px] md:text-[12px] font-bold">{{ item.label }}</span>
-                            </a>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
+                {% for item in system_items %}
+                    {# On utilise dynamiquement les méthodes getRoute(), getIcon() et getLabel() de l'Enum #}
+                    {% set is_active = (app.request.attributes.get('_route') == item.route) %}
+
+                    <a href="{{ path(item.route) }}" class="group flex items-center gap-3 px-4 py-2.5 md:py-2 rounded-md transition-all
+        {% if is_active %}
+            bg-slate-800/80 border border-slate-700/50 text-white
+        {% else %}
+            text-slate-500 hover:text-white border border-transparent hover:bg-white/[0.03]
+        {% endif %}"
+                       {% if is_active %}aria-current="page"{% endif %}>
+
+                        <twig:ux:icon name="{{ item.icon }}" class="w-4 h-4 transition-opacity {% if is_active %}opacity-100{% else %}opacity-40 group-hover:opacity-100{% endif %}" />
+                        <span class="text-[13px] md:text-[12px] font-bold">{{ item.label }}</span>
+
+                    </a>
+                {% endfor %}
+            </div>
 
         </nav>
     </aside>
@@ -222,37 +182,13 @@
                     {% if isTrial and subInfo().trialDaysRemaining <= 10 and subInfo().trialDaysRemaining > 0 %}
                         <a href="{{ path('app_settings_subscription') }}">
                       <span class="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
-        {# Petite icône horloge pour l'urgence #}
-        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        Essai : {{ subInfo().trialDaysRemaining }} jours restants
-    </span>
+                          Essai : {{ subInfo().trialDaysRemaining }} jours restants
+                      </span>
                         </a>
 
                     {% endif %}
                 {% endif %}
                 {% block button_page %}
-                    {% set has_active_thread = true %} {# Simulation #}
-                    {% set unread_support_count = 1 %} {# Simulation #}
-                    {% if has_active_thread %}
-                        <div class="relative">
-                            <button type="button"
-                                    data-action="click->support#open"
-                                    class="w-7 h-7 cursor-pointer flex items-center justify-center rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-violet-600 hover:border-violet-300 hover:bg-violet-50 transition-all shadow-sm group">
-                                {{ ux_icon('lucide:message-circle', { class: 'size-4' }) }}
-
-                                {# Badge de notification si message non lu #}
-                                {% if unread_support_count > 0 %}
-                                    <span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
-                            {{ unread_support_count }}
-                        </span>
-                                    {# Petit effet de halo pour attirer l'oeil si c'est non lu #}
-                                    <span class="absolute -top-1 -right-1 animate-ping inline-flex h-4 w-4 rounded-full bg-red-400 opacity-75"></span>
-                                {% endif %}
-                            </button>
-                        </div>
-                    {% endif %}
 
                     {# 3. Le bouton Plus (Harmonisé en violet) #}
                     <div class="relative group">
@@ -301,21 +237,11 @@
                                     <twig:ux:icon name="material-symbols:account-circle-outline" class="w-4 h-4" />
                                     Paramètres
                                 </a>
-                                <button type="button"
-                                        data-action="click->support#open"
-                                        class="w-full flex items-center justify-between px-3 py-2 text-xs text-slate-600 hover:bg-violet-50 hover:text-violet-700 rounded-lg transition-colors text-left group/support">
-                                    <div class="flex items-center gap-2">
-                                        {{ ux_icon('lucide:life-buoy', { class: 'size-4 group-hover/support:text-violet-600 transition-colors' }) }}
-                                        Support
-                                    </div>
+                                <a href="{{ path('app_support_list') }}" class="flex items-center gap-2 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors">
+                                    {{ ux_icon('lucide:life-buoy', { class: 'size-4 group-hover/support:text-violet-600 transition-colors' }) }}
+                                    Support & Aide
+                                </a>
 
-                                    {# Le badge répété dans le menu pour attirer l'oeil #}
-                                    {% if unread_support_count > 0 %}
-                                        <span class="flex h-4 w-4 items-center justify-center rounded-full bg-red-100 text-[10px] font-bold text-red-600">
-                        {{ unread_support_count }}
-                    </span>
-                                    {% endif %}
-                                </button>
                                 <a href="{{ path('app_logout') }}" class="flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                                     <twig:ux:icon name="material-symbols:logout-rounded" class="w-4 h-4" />
                                     Déconnexion
@@ -334,8 +260,10 @@
             </div>
         </div>
     </main>
+
 </div>
 {% include '@app/partials/_flashes.html.twig' %}
-{{ include('components/_support_panel.html.twig') }}
+
+<twig:SupportChatComponent userUuid="{{ app.user.id }}" urlContext="{{ app.request.uri }}"></twig:SupportChatComponent>
 </body>
 </html>
