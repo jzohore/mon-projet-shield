@@ -1,11 +1,30 @@
----
 # Production environment override
 services:
+  # 1. TON SERVEUR WEB (FrankenPHP)
   php:
     build:
       context: .
       target: frankenphp_prod
     environment:
       APP_SECRET: ${APP_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN}
+      MAILER_DSN: ${MAILER_DSN}
       MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
       MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
+
+  # 2. TON NOUVEAU WORKER (Traitement en arrière-plan)
+  messenger-worker:
+    build:
+      context: .
+      target: frankenphp_prod
+    command: php bin/console messenger:consume async_priority async --memory-limit=128M
+    environment:
+      # Le worker a besoin exactement des mêmes variables pour se connecter à la BDD, RabbitMQ et Mailpit
+      APP_SECRET: ${APP_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      MESSENGER_TRANSPORT_DSN: ${MESSENGER_TRANSPORT_DSN}
+      MAILER_DSN: ${MAILER_DSN}
+      MERCURE_PUBLISHER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
+      MERCURE_SUBSCRIBER_JWT_KEY: ${CADDY_MERCURE_JWT_SECRET}
+    restart: always
