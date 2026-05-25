@@ -7,15 +7,21 @@ use App\Application\User\DTO\Response\UserInfoResponse;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Event\UserCreatedEvent;
 use App\Domain\User\Repository\UserRepositoryInterface;
+use Exception;
+use Random\RandomException;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
-final readonly class CreateUserUseCase
+readonly class CreateUserUseCase
 {
     public function __construct(
         private UserRepositoryInterface $userRepository,
         private EventDispatcherInterface $eventDispatcher,
     ) {}
 
+    /**
+     * @throws RandomException
+     * @throws Exception
+     */
     public function __invoke(CreateUserRequest $request): UserInfoResponse
     {
         $user = User::create(
@@ -23,9 +29,7 @@ final readonly class CreateUserUseCase
             $request->firstName,
             $request->lastName,
         );
-        if ($request->isAdmin) {
-            $user->promoteToAdmin();
-        }
+
         $user->generateMagicLinkToken();
         $this->userRepository->save($user);
 

@@ -2,12 +2,13 @@
 
 namespace App\Infrastructure\User\Command;
 
-use App\Application\User\DTO\Request\CreateUserRequest;
-use App\Application\User\UseCase\CreateUserUseCase;
+use App\Domain\User\Entity\User;
+use App\Domain\User\Enum\OnboardingStatus;
+use App\Domain\User\Repository\UserRepositoryInterface;
+use Exception;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Output\OutputInterface;
-use Webmozart\Assert\Assert;
 
 #[AsCommand(
     name: 'app:user:seed',
@@ -16,22 +17,27 @@ use Webmozart\Assert\Assert;
 readonly class SeedUserCommand
 {
     public function __construct(
-        private CreateUserUseCase $createUserUseCase,
+        private UserRepositoryInterface $userRepository,
     ) {}
 
+    /**
+     * @throws Exception
+     */
     public function __invoke(OutputInterface $output): int
     {
-        $request = new CreateUserRequest();
-        $request->email = 'contact@kysure.fr';
-        $request->firstName = 'Junior';
-        $request->lastName = 'Zohore';
-        $request->isAdmin = true;
-        $request->isVerified = true;
+        $user = User::create(
+            email: 'contact@kysure.fr',
+            firstName: 'Junior',
+            lastName: 'Zohore',
+            isVerified: true,
+            roles: ['ROLE_SUPER_ADMIN'],
+            onboardingStatus: OnboardingStatus::COMPLETED,
+        );
 
-        $user = ($this->createUserUseCase)($request);
-        Assert::notNull($user);
+        $this->userRepository->save($user);
 
         $output->writeln('User created :' . $user->email);
+
         return Command::SUCCESS;
     }
 }

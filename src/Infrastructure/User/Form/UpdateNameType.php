@@ -25,6 +25,12 @@ class UpdateNameType extends AbstractType
                     'placeholder' => 'Ex: Dupont',
                 ],
             ])
+            ->add('number', TextType::class, [
+                'attr' => [
+                    'autocomplete' => 'family-name',
+                    'placeholder' => 'Ex: Dupont',
+                ],
+            ])
         ;
     }
 

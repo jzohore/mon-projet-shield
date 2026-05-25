@@ -6,8 +6,11 @@ use App\Domain\Billing\Enum\SubscriptionStatus;
 use App\Domain\Workspace\Entity\Workspace;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Exception;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
+
+use function Symfony\Component\Clock\now;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'subscriptions')]
@@ -77,6 +80,7 @@ class Subscription
     /**
      * 1. On passe le constructeur en PRIVATE.
      * Seule la classe elle-même a le droit de s'instancier.
+     * @throws Exception
      */
     private function __construct(
         Workspace $workspace,
@@ -90,8 +94,8 @@ class Subscription
         $this->stripePriceId = $stripePriceId;
         $this->planReference = $planReference;
         $this->status = $status;
-        $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-        $this->updateAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $this->createdAt = now();
+        $this->updateAt = now();
     }
 
     /**

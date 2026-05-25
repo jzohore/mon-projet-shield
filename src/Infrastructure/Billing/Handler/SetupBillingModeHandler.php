@@ -10,6 +10,7 @@ use App\Domain\Workspace\Enum\WorkspaceType;
 use App\Infrastructure\Billing\Message\SetupBillingModeMessage;
 use App\Infrastructure\Billing\Service\CreateSubscription;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Uid\Uuid;
 use Webmozart\Assert\Assert;
 
 #[AsMessageHandler]
@@ -24,19 +25,23 @@ readonly class SetupBillingModeHandler
 
     public function __invoke(SetupBillingModeMessage $message): void
     {
-        $workspace = $this->workspaceRepository->getById($message->workspaceId);
-        $user = $this->userRepository->getBySlug($message->userId);
+        $userUuid = Uuid::fromString($message->userId);
+        $user = $this->userRepository->getById($userUuid);
+        Assert::notNull($user->id);
 
-        if (!$user->stripeCustomerId) {
+        $workspaceUuid = Uuid::fromString($message->workspaceId);
+        $workspace = $this->workspaceRepository->getById($workspaceUuid);
+        Assert::notNull($workspace->id);
+
+        if (!$user->profile->stripeCustomerId) {
             return; // Sécurité
         }
 
         $credit = CreditAction::PROMO_CREDIT;
-        Assert::notNull($workspace->id);
-        Assert::notNull($user->id);
+
         match ($workspace->type) {
             WorkspaceType::INDIVIDUAL => ($this->addCreditsUseCase)($workspace->id, $user->id, $credit->getAmount(), $credit),
-            WorkspaceType::FIRM       => $this->createSubscription->create($workspace, $user->stripeCustomerId),
+            WorkspaceType::FIRM       => $this->createSubscription->create($workspace, $user->profile->stripeCustomerId),
         };
     }
 }

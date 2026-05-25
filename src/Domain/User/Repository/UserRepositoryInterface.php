@@ -12,7 +12,7 @@ interface UserRepositoryInterface
     /**
      * Sauvegarde ou met à jour un utilisateur en base de données.
      */
-    public function save(User $user): void;
+    public function save(User $user, bool $flush = true): void;
 
     /**
      * Retrouve un utilisateur via son identifiant unique (UUID).
@@ -51,4 +51,10 @@ interface UserRepositoryInterface
      * @return array<int, User>
      */
     public function findUsersNeedingReminder(\DateTimeInterface $twoHoursAgo): array;
+
+    /**
+     * @param Uuid $id
+     * @return User
+     */
+    public function getReference(Uuid $id): User;
 }

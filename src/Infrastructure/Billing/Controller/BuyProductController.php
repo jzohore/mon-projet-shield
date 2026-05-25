@@ -49,7 +49,6 @@ readonly class BuyProductController
             UrlGeneratorInterface::ABSOLUTE_URL
         );
 
-        $workspace = $this->workspaceProvider->getWorkspace();
         // 2. Création de la session Stripe
         if ($isFirm && $workspace->subscription !== null && $workspace->subscription->stripeSubscriptionId !== null) {
             $checkoutUrl = $this->stripeCheckoutService->createSetupSessionUrl(

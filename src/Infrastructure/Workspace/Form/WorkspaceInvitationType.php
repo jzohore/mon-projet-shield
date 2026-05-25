@@ -21,18 +21,21 @@ class WorkspaceInvitationType extends AbstractType
                     'autocomplete' => 'given-name',
                     'placeholder' => 'Ex: Jean',
                 ],
+                'empty_data' => '',
             ])
             ->add('lastName', TextType::class, [
                 'attr' => [
                     'autocomplete' => 'family-name',
                     'placeholder' => 'Ex: Dupont',
                 ],
+                'empty_data' => '',
             ])
             ->add('email', EmailType::class, [
                 'attr' => [
                     'autocomplete' => 'email',
                     'placeholder' => 'jean.dupont@cabinet.fr',
                 ],
+                'empty_data' => '',
             ])
         ;
     }

@@ -1,0 +1,174 @@
+{% extends '@app/billing/base_billing.html.twig' %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% set container_width = 'max-w-6xl' %}
+{% block header %}
+    <header class="bg-white/80 backdrop-blur-xl border-b border-slate-200 px-4 sm:px-6 py-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sticky top-0 z-40 shadow-sm">
+        <div class="flex items-center gap-4">
+            <a href="javascript:history.back()" class="p-2 hover:bg-slate-100 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400" title="Retour à l'étape précédente">
+                {{ ux_icon('lucide:arrow-left', { class: 'size-5 text-slate-600' }) }}
+            </a>
+            <div>
+                <h1 class="text-sm font-bold text-slate-900 uppercase tracking-wider">
+                    Dossier {{ folder.reference }}
+                </h1>
+                <p class="text-xs text-slate-500">
+                    {{ type == 'individual' ? 'Personne physique' : 'Personne morale' }}
+                    • <span class="text-indigo-600 font-medium">{{ method == 'request' ? 'Envoi par lien sécurisé' : 'Saisie manuelle' }}</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3 w-full sm:w-auto">
+            {# ACTION DESTRUCTIVE #}
+            <button type="submit" form="delete-form" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-red-500" title="Supprimer le brouillon">
+                {{ ux_icon('lucide:trash-2', { class: 'size-5' }) }}
+            </button>
+
+            {# ACTION PRINCIPALE #}
+            <button type="submit" form="setup-form" class="flex-1 sm:flex-none bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2">
+                {{ method == 'request' ? 'Envoyer la demande' : 'Valider & Importer' }}
+            </button>
+        </div>
+    </header>
+{% endblock %}
+{% block portal_content %}
+    {# Formulaire caché pour la suppression du brouillon #}
+    <form id="delete-form" method="POST" action="{{ path('app_compliance_delete_folder', {slugId: folder.slugId}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce brouillon ?');">
+        <input type="hidden" name="_token" value="{{ csrf_token('remove-compliance') }}">
+    </form>
+
+    <div class="py-6 sm:py-10">
+        <div class="bg-slate-50/50 pb-24 rounded-3xl relative">
+
+
+            {# ========================================== #}
+            {# CONTENU PRINCIPAL                          #}
+            {# ========================================== #}
+            <div class="mx-auto px-2 sm:px-6 {{ method == 'request' ? 'max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12' : 'max-w-3xl' }}">
+                {# COLONNE GAUCHE : CONFIGURATION #}
+                <div class="{{ method == 'request' ? 'lg:col-span-2' : '' }} space-y-8">
+                    <form id="setup-form" method="POST" action="">
+
+                        {# 1. LE SUJET DU DOSSIER #}
+                        <section class="bg-white rounded-md border border-slate-200 p-6 sm:p-8 shadow-sm">
+                            <h3 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-3">
+                                <span class="size-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-black">1</span>
+                                Qui est le client ?
+                            </h3>
+
+                            <div class="grid grid-cols-2 gap-4">
+                                {% if type == 'individual' %}
+                                    <div class="space-y-1.5 col-span-2 sm:col-span-1">
+                                        <label for="firstName" class="text-xs font-bold text-slate-700 ml-1">Prénom</label>
+                                        <input type="text" id="firstName" name="firstName" required placeholder="Jean" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
+                                    </div>
+                                    <div class="space-y-1.5 col-span-2 sm:col-span-1">
+                                        <label for="lastName" class="text-xs font-bold text-slate-700 ml-1">Nom</label>
+                                        <input type="text" id="lastName" name="lastName" required placeholder="Dupont" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
+                                    </div>
+                                {% else %}
+                                    <div class="space-y-1.5 col-span-2 sm:col-span-1">
+                                        <label for="companyName" class="text-xs font-bold text-slate-700 ml-1">Raison sociale</label>
+                                        <input type="text" id="companyName" name="companyName" required placeholder="Acme Corp" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
+                                    </div>
+                                    <div class="space-y-1.5 col-span-2 sm:col-span-1">
+                                        <label for="registrationNumber" class="text-xs font-bold text-slate-700 ml-1">N° SIRET</label>
+                                        <input type="text" id="registrationNumber" name="registrationNumber" placeholder="123 456 789 00012" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
+                                    </div>
+                                {% endif %}
+
+                                <div class="space-y-1.5 col-span-2">
+                                    <label for="email" class="text-xs font-bold text-slate-700 ml-1 flex justify-between">
+                                        Email de contact
+                                        {% if method == 'manual' %}<span class="text-slate-400 font-normal">Optionnel</span>{% endif %}
+                                    </label>
+                                    <input type="email" id="email" name="email" {{ method == 'request' ? 'required' : '' }} placeholder="client@entreprise.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
+                                </div>
+                            </div>
+                        </section>
+
+                        {# 2. DOCUMENTS (Générés par le Moteur LCB-FT) #}
+                        <section class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm mt-8">
+                            <div class="flex justify-between items-start mb-6">
+                                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-3">
+                                    <span class="size-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-black">2</span>
+                                    Pièces justificatives
+                                </h3>
+                                <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide">Standard LCB-FT</span>
+                            </div>
+
+                            <div class="space-y-3">
+                                {# MAGIE DU DOMAINE : On utilise doc.type.label ! #}
+                                {% for doc in folder.documents %}
+                                    <div class="flex items-center p-4 rounded-2xl group transition-all border
+                                        {{ doc.isMandatory ? 'bg-indigo-50/30 border-indigo-100' : 'bg-white border-slate-200 hover:border-slate-300' }}">
+
+                                        <input type="checkbox" checked {{ doc.isMandatory ? 'disabled' : '' }} name="required_docs[]" value="{{ doc.id }}"
+                                               class="size-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50">
+
+                                        <div class="ml-4">
+                                            <p class="text-sm font-bold text-slate-900">{{ doc.type.label }}</p>
+                                        </div>
+
+                                        {% if doc.isMandatory %}
+                                            <span class="ml-auto text-[10px] font-bold text-indigo-600 bg-white border border-indigo-100 px-2 py-1 rounded-md uppercase">Requis</span>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+
+                                <button type="button" class="w-full mt-4 py-3 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 text-sm font-bold hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all flex items-center justify-center gap-2 group focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                    {{ ux_icon('lucide:plus', { class: 'size-4 group-hover:scale-110 transition-transform' }) }}
+                                    Ajouter un document spécifique
+                                </button>
+                            </div>
+                        </section>
+                    </form>
+                </div>
+
+                {# COLONNE DROITE : APERÇU #}
+                {% if method == 'request' %}
+                    <div class="hidden lg:block relative">
+                        <div class="sticky top-32">
+                            <div class="flex items-center gap-2 mb-4 ml-2">
+                                {{ ux_icon('lucide:eye', { class: 'size-4 text-slate-400' }) }}
+                                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Aperçu client</p>
+                            </div>
+
+                            <div class="bg-white rounded-3xl border border-slate-200 shadow-2xl overflow-hidden scale-95 origin-top">
+                                <div class="h-1 bg-indigo-600"></div>
+                                <div class="p-8">
+                                    <div class="size-10 bg-slate-900 rounded-xl mb-6 flex items-center justify-center font-black text-white text-xs">
+                                        {{ company_name|default('S')|slice(0,1) }}
+                                    </div>
+                                    <p class="text-sm text-slate-800 font-bold mb-4">Bonjour,</p>
+                                    <p class="text-xs text-slate-500 leading-relaxed mb-6">
+                                        Dans le cadre de votre dossier de conformité, nous avons besoin que vous nous transmettiez quelques documents de manière sécurisée.
+                                    </p>
+
+                                    <div class="space-y-2 mb-8">
+                                        {# MAGIE DU DOMAINE : On utilise doc.type.label ! #}
+                                        {% for doc in folder.documents %}
+                                            <div class="flex items-center gap-2 text-[10px] text-slate-600 bg-slate-50 p-2.5 rounded-lg font-medium border border-slate-100">
+                                                {{ ux_icon('lucide:file-text', { class: 'size-3.5 text-indigo-500' }) }}
+                                                {{ doc.type.label }}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+
+                                    <div class="w-full py-3 bg-indigo-600 rounded-xl text-center text-white text-xs font-bold shadow-md shadow-indigo-200">
+                                        Déposer mes documents
+                                    </div>
+                                    <p class="mt-8 text-[10px] text-slate-400 text-center flex items-center justify-center gap-1">
+                                        {{ ux_icon('lucide:lock', { class: 'size-3' }) }}
+                                        Lien sécurisé et crypté.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

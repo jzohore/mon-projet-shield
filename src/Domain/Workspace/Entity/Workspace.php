@@ -2,8 +2,10 @@
 
 namespace App\Domain\Workspace\Entity;
 
+use App\Domain\AuditLog\Entity\AuditLog;
 use App\Domain\Billing\Entity\Subscription;
 use App\Domain\Billing\Enum\CreditAction;
+use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Screening\Entity\ScreeningAudit;
 use App\Domain\Support\Entity\SupportThread;
 use App\Domain\Wallet\Entity\WalletTransaction;
@@ -17,6 +19,8 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
+
+use function Symfony\Component\Clock\now;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'workspaces')]
@@ -36,24 +40,15 @@ class Workspace
 
     // Le nom usuel/commercial du cabinet
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
-    public ?string $name = null {
-        get => $this->name;
-        set => $this->name = trim($value ?? '');
-    }
+    public private(set) string $name;
 
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
-    public ?string $slugId = null {
-        get => $this->slugId;
-    }
+    public private(set) string $slugId;
 
     // --- DONNÉES REGTECH & FACTURATION ---
 
     #[ORM\Column(type: Types::STRING, length: 14, unique: true, nullable: true)]
-    public ?string $siret = null {
-        get => $this->siret;
-        set => $this->siret = $value ? trim($value) : null;
-    }
-
+    public private(set) string $siret;
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     public ?string $legalName = null {
         get => $this->legalName;
@@ -135,6 +130,14 @@ class Workspace
     #[ORM\OneToMany(targetEntity: SupportThread::class, mappedBy: 'workspace', cascade: ['persist', 'remove'], orphanRemoval: true)]
     public private(set) Collection $supportThread;
 
+    /** @var Collection<int, ComplianceFolder> */
+    #[ORM\OneToMany(targetEntity: ComplianceFolder::class, mappedBy: 'workspace', cascade: ['persist', 'remove'])]
+    public private(set) Collection $folders;
+
+    /** @var Collection<int, ComplianceFolder> */
+    #[ORM\OneToMany(targetEntity: AuditLog::class, mappedBy: 'workspace', cascade: ['persist', 'remove'])]
+    public private(set) Collection $auditLogs;
+
     private function __construct(string $name, string $siret, string $legalName, string $address, Industry $industry)
     {
         $this->name = trim($name);
@@ -148,7 +151,9 @@ class Workspace
         $this->invitations = new ArrayCollection();
         $this->walletTransactions = new ArrayCollection();
         $this->supportThread = new ArrayCollection();
-        $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $this->folders = new ArrayCollection();
+        $this->auditLogs = new ArrayCollection();
+        $this->createdAt = now();
     }
 
     public static function create(string $name, string $siret, string $legalName, string $address, Industry $industry): self

@@ -2,16 +2,20 @@
 
 namespace App\Infrastructure\User\Twig\Components;
 
-use App\Application\User\DTO\Request\UpdateNameRequest;
-use App\Application\User\UseCase\UpdateNameUseCase;
+use App\Application\User\DTO\Request\UserProfilRequest;
+use App\Application\User\UseCase\UpdateUserInformationUseCase;
+use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
-use App\Infrastructure\User\Form\UpdateNameType;
+use App\Infrastructure\User\Form\UpdateProfilType;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
-use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
@@ -25,54 +29,57 @@ class UpdateNameFormComponent
     use ComponentWithFormTrait;
     use LiveFlashTrait;
 
-    #[LiveProp]
-    public ?string $userSlugId = null;
-
-    #[LiveProp]
-    public ?string $firstName = null;
-
-    #[LiveProp]
-    public ?string $lastName = null;
-
     public function __construct(
-        private readonly FormFactoryInterface $formFactory,
-        private readonly UpdateNameUseCase $updateNameUseCase,
-        private readonly LoggerInterface $logger,
+        private readonly FormFactoryInterface         $formFactory,
+        private readonly UpdateUserInformationUseCase $updateNameUseCase,
+        private readonly LoggerInterface              $logger,
+        private readonly RequestStack                 $requestStack,
+        private readonly UrlGeneratorInterface        $urlGenerator,
+        private readonly CurrentUserProvider          $currentUserProvider,
     ) {}
 
     protected function instantiateForm(): FormInterface
     {
-        $dto = new UpdateNameRequest();
+        $user = $this->currentUserProvider->getUser();
+        $dto = new UserProfilRequest();
 
-        $dto->firstName = $this->firstName;
-        $dto->lastName = $this->lastName;
-        return $this->formFactory->create(UpdateNameType::class, $dto);
+        $dto->firstName = $user->firstName;
+        $dto->lastName = $user->lastName;
+        $dto->jobTitle = $user->profile->jobTitle;
+        $dto->phoneNumber = $user->profile->phoneNumber;
+        return $this->formFactory->create(UpdateProfilType::class, $dto);
     }
 
     #[LiveAction]
-    public function save(): void
+    public function save(): RedirectResponse
     {
         $this->submitForm();
 
-        if (!$this->getForm()->isValid()) {
-            return; // LiveComponent gérera l'affichage des erreurs automatiquement
-        }
-
-        /** @var UpdateNameRequest $userDTO */
+        /** @var UserProfilRequest $userDTO */
         $userDTO = $this->getForm()->getData();
 
         try {
-            $userDTO->userSlugId = $this->userSlugId;
             ($this->updateNameUseCase)($userDTO);
-            $this->addLiveFlash('success', 'Vos informations ont bien été modifié.');
 
+            /** @var FlashBagAwareSessionInterface $session */
+            $session = $this->requestStack->getSession();
+            $session->getFlashBag()->add(
+                type: 'success',
+                message: 'Vos informations ont bien été modifié.'
+            );
         } catch (\DomainException $e) {
             $this->logger->error('Erreur métier lors de la mise à jour du nom et prénom', [
-                'email' => $userDTO->userSlugId,
                 'error' => $e->getMessage(),
             ]);
-            return;
+
+            /** @var FlashBagAwareSessionInterface $session */
+            $session = $this->requestStack->getSession();
+            $session->getFlashBag()->add(
+                type: 'error',
+                message: 'Une erreur est survenue lors de la modification de vos informations. Veuillez réessayer.'
+            );
         }
 
+        return new RedirectResponse($this->urlGenerator->generate('app_settings_account'));
     }
 }

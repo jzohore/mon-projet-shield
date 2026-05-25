@@ -2,30 +2,39 @@
 
 namespace App\Infrastructure\Billing\Listener\Subscription\Canceled;
 
-use App\Application\Audit\DTO\Request\CreateAuditLogRequest;
-use App\Application\Audit\UseCase\CreateAuditLogUseCase;
+use App\Domain\AuditLog\Entity\AuditLog;
 use App\Domain\AuditLog\Enum\AuditEventType;
+use App\Domain\AuditLog\Repository\AuditLogRepositoryInterface;
 use App\Domain\Billing\Event\SubscriptionCanceledEvent;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Webmozart\Assert\Assert;
 
-#[AsEventListener(event: SubscriptionCanceledEvent::class)]
+#[AsEventListener]
 readonly class SubscriptionCanceledAuditListener
 {
     public function __construct(
-        private CreateAuditLogUseCase $auditLogUseCase,
+        private AuditLogRepositoryInterface $auditLogRepository,
     ) {}
 
     public function __invoke(SubscriptionCanceledEvent $event): void
     {
-        $auditLog = new CreateAuditLogRequest(
-            eventName: AuditEventType::SUBSCRIPTION_ACTIVATED,
-            resourceId: $event->subscription->workspace->slugId,
-            data: [
-                'reason' => $event->reason,
-                'end_date' => $event->subscription->currentPeriodEnd->format('d/m/Y'),
-            ]
+        $user = $event->user;
+        $workspace = $event->workspace;
+        $subscription = $event->subscription;
+
+        Assert::notNull($user->id);
+        Assert::notNull($subscription->stripeSubscriptionId);
+
+        $audit = AuditLog::initiate(
+            eventName: AuditEventType::SUBSCRIPTION_CANCELED,
+            payload: [
+                'reason' => $subscription->reason,
+                'end_date' => $subscription->currentPeriodEnd->format('d/m/Y'),
+            ],
+            actor: $user->id->toString(),
+            workspace: $workspace,
         );
 
-        ($this->auditLogUseCase)($auditLog);
+        $this->auditLogRepository->save($audit);
     }
 }

@@ -1,0 +1,43 @@
+<div {{ attributes }}>
+    {% include 'components/partials/_live_alerts.html.twig' with {
+        message: this.actionMessage|default(null),
+        type: this.actionMessageType|default('success')
+    } %}
+    <div data-controller="inline-confirm"
+         data-action="click@window->inline-confirm#clickOutside"
+         class="inline-block">
+
+        <button
+            type="button"
+            data-action="inline-confirm#toggle"
+            class="p-1.5 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors cursor-pointer"
+            title="Révoquer">
+            <twig:ux:icon name="lucide:send" class="w-4 h-4" />
+        </button>
+
+        <div data-inline-confirm-target="popover"
+             class="hidden z-[100] w-64 bg-white border border-slate-200 rounded-md shadow-xl p-3 animate-in fade-in zoom-in-95 duration-200">
+
+            <p class="text-sm text-slate-700 font-medium mb-3 text-center">
+                Êtes-vous sûr de vouloir renvoyer l'invitation de <span class="font-bold text-slate-900">{{ workspaceInvitation.email }}</span> ?
+            </p>
+
+            <div class="flex gap-2">
+                <twig:Button variant="secondary"
+                             data-action="live#action inline-confirm#close"
+                             size="sm"
+                >
+                    Annuler
+                </twig:Button>
+                <twig:Button variant="primary"
+                             data-action="live#action inline-confirm#close"
+                             data-live-action-param="resendInvitation"
+                             size="sm"
+                >
+                    Oui, renvoyer
+                </twig:Button>
+            </div>
+        </div>
+    </div>
+</div>
+

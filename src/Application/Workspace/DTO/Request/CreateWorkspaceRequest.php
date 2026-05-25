@@ -39,6 +39,4 @@ class CreateWorkspaceRequest
     public string $legalName = '';
 
     public Industry $workspaceIndustry = Industry::OTHER;
-
-    public string $userSlugId = '';
 }

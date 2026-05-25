@@ -1,0 +1,10 @@
+{% extends '@app/billing/base_billing.html.twig' %}
+{% block title %}{{ page_title }}{% endblock %}
+
+{% set container_width = 'max-w-6xl' %}
+
+{% block portal_content %}
+    <div class="py-10">
+        <twig:KycCreationWizard></twig:KycCreationWizard>
+    </div>
+{% endblock %}

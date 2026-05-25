@@ -42,10 +42,4 @@ class CreateUserRequest
         message: 'Le nom contient des caractères non autorisés.'
     )]
     public string $lastName = '';
-
-    #[Assert\Type(type: 'bool')]
-    public bool $isAdmin = false;
-
-    #[Assert\Type(type: 'bool')]
-    public bool $isVerified = false;
 }

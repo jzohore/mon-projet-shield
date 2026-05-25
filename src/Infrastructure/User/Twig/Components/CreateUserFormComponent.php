@@ -6,6 +6,7 @@ use App\Application\User\DTO\Request\CreateUserRequest;
 use App\Application\User\UseCase\CreateUserUseCase;
 use App\Infrastructure\User\Form\CreateUserType;
 use Psr\Log\LoggerInterface;
+use Random\RandomException;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -51,17 +52,29 @@ final class CreateUserFormComponent
         try {
             ($this->createUser)($userDTO);
 
-        } catch (\DomainException $e) {
+        } catch (\DomainException|RandomException $e) {
             $this->logger->error('Erreur métier lors de l\'inscription', [
                 'email' => $userDTO->email,
                 'error' => $e->getMessage(),
             ]);
+            return; // On arrête tout, c'est une erreur de validation/métier
+
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+            $this->logger->info('Tentative d\'inscription avec un email existant', [
+                'email' => $userDTO->email,
+            ]);
+
+        } catch (\Exception $e) {
+            // 🚨 CAS CRITIQUE : Base de données HS, Serveur plein, etc.
+            $this->logger->critical('Crash système lors de l\'inscription', [
+                'error' => $e->getMessage(),
+            ]);
+            // Ici tu pourrais ajouter un message d'erreur générique pour l'UI
+            $this->message = "Une erreur technique est survenue, veuillez réessayer plus tard.";
             return;
         }
 
         $this->isSuccessful = true;
-
-
         $this->message = 'Si cette adresse est valide, un lien vous a été envoyé.';
     }
 }

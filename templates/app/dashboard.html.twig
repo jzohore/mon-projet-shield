@@ -4,7 +4,6 @@
 {% block title %}{{ page_title }} - {{ company_name }}{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto space-y-6">
     {% set is_cabinet = workspaceInfo().isFirm %}
     {# HEADER : LES 3 ACTIONS CLÉS #}
     <header class="flex flex-col lg:flex-row lg:items-end">
@@ -45,7 +44,7 @@
                 {{ ux_icon('lucide:loader-2', { class: 'size-4 text-amber-500 animate-spin-slow' }) }}
             </div>
             <div class="flex items-baseline gap-2 mt-2">
-                <span class="text-3xl font-bold text-slate-900">3</span>
+                <span class="text-3xl font-bold text-slate-900">{{ stats_user.folderDraftWorkspaces }}</span>
                 <span class="text-xs text-slate-500">KYC/KYB actifs</span>
             </div>
         </div>
@@ -99,11 +98,11 @@
     {# WIDGET ONBOARDING (Stimulus)                              #}
     {# ========================================================= #}
 
-    {% if not app.user.dismissOnboarding %}
+    {% if not app.user.profile.dismissOnboarding %}
         <div data-controller="onboarding"
              data-onboarding-target="widget"
              data-onboarding-dismiss-url-value="{{ path('app_user_dismiss_onboarding') }}"
-             class="fixed bottom-6 right-6 w-85 bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-200 z-50 flex flex-col transition-all duration-500 ease-in-out">
+             class="fixed bottom-6 right-14 w-85 bg-white rounded-md shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-200 z-50 flex flex-col transition-all duration-500 ease-in-out">
 
             {# HEADER #}
             <div data-action="click->onboarding#toggle" class="px-5 py-4 border-b border-slate-50 flex justify-between items-center cursor-pointer select-none">
@@ -113,12 +112,12 @@
                     </h3>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
+                    <button type="button" class="p-1.5 cursor-pointer text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
                         {{ ux_icon('lucide:chevron-down', { class: 'size-4' }) }}
                     </button>
                     <button type="button"
                             data-action="click->onboarding#dismiss"
-                            class="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+                            class="p-1.5 cursor-pointer text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
                         {{ ux_icon('lucide:x', { class: 'size-4' }) }}
                     </button>
                 </div>
@@ -190,5 +189,5 @@
             </div>
         </div>
     {% endif %}
-</div>
+
 {% endblock %}

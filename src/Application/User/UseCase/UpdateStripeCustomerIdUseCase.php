@@ -13,7 +13,7 @@ readonly class UpdateStripeCustomerIdUseCase
 
     public function __invoke(User $user, string $customerId): void
     {
-        $user->stripeCustomerId = $customerId;
+        $user->profile->updateStripeCustomerId($customerId);
         $this->userRepository->save($user);
     }
 }

@@ -10,18 +10,17 @@ use Webmozart\Assert\Assert;
 
 class OnboardingCompletedEmail extends TemplatedEmail
 {
-    public function __construct(?string $email, ?string $firstname, ?string $workspaceName, string $dashboardUrl)
+    public function __construct(?string $email, ?string $firstname, ?string $workspaceName)
     {
         parent::__construct();
         Assert::notNull($email);
         $this
             ->to(new Address(address: $email))
-            ->subject('Votre espace est prêt')
+            ->subject(sprintf('Votre espace %s est prêt.', $workspaceName))
             ->htmlTemplate('emails/onboarding/completed.html.twig')
             ->context([
                 'first_name' => $firstname,
                 'workspace_name' => $workspaceName,
-                'action_url' => $dashboardUrl,
             ]);
     }
 }

@@ -3,7 +3,7 @@
 namespace App\Infrastructure\Workspace\Command;
 
 use App\Application\Workspace\DTO\Request\CreateWorkspaceRequest;
-use App\Application\Workspace\UseCase\CreateWorkspaceUseCase;
+use App\Application\Workspace\UseCase\Onboarding\CreateWorkspaceUseCase;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -30,7 +30,6 @@ readonly class SeedWorkspaceCommand
         $workspaceRequest->siret = '90900900';
         $workspaceRequest->address = 'Paris';
         $workspaceRequest->legalName = 'Kysure';
-        $workspaceRequest->userSlugId = $user->slugId;
 
         $workspaceResponse = ($this->createWorkspaceUseCase)($workspaceRequest);
 

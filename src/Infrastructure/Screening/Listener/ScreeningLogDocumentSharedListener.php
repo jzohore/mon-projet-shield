@@ -1,32 +1,45 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Screening\Listener;
 
-use App\Application\Audit\DTO\Request\CreateAuditLogRequest;
-use App\Application\Audit\UseCase\CreateAuditLogUseCase;
+use App\Domain\AuditLog\Entity\AuditLog;
 use App\Domain\AuditLog\Enum\AuditEventType;
+use App\Domain\AuditLog\Repository\AuditLogRepositoryInterface;
 use App\Domain\Screening\Event\DocumentSharedEvent;
+use Exception;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Webmozart\Assert\Assert;
 
 #[AsEventListener]
 readonly class ScreeningLogDocumentSharedListener
 {
     public function __construct(
-        private CreateAuditLogUseCase $auditLogUseCase,
+        private AuditLogRepositoryInterface $auditLogRepository,
     ) {}
 
+    /**
+     * @param DocumentSharedEvent $event
+     * @return void
+     * @throws Exception
+     */
     public function __invoke(DocumentSharedEvent $event): void
     {
-        $auditLog = new CreateAuditLogRequest(
+        $user = $event->user;
+        Assert::notNull($user->id);
+
+        $audit = AuditLog::initiate(
             eventName: AuditEventType::DOCUMENT_SHARED,
-            resourceId: $event->workspaceSlugId,
-            data: [
-                'user_email' => $event->userEmail,
-                'audit_id' => $event->auditId,
+            payload: [
+                'user_email' => $event->user->email,
+                'audit_slug_id' => $event->audit->slugId,
                 'recipients' => $event->recipients,
-            ]
+            ],
+            actor: $user->id->toString(),
+            workspace: $event->workspace
         );
 
-        ($this->auditLogUseCase)($auditLog);
+        $this->auditLogRepository->save($audit);
     }
 }

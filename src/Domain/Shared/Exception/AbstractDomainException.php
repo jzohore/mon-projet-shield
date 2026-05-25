@@ -10,7 +10,7 @@ abstract class AbstractDomainException extends \DomainException implements Domai
      * @param string $message
      * @param ErrorCode $errorCode
      * @param int $statusCode
-     * @param array<mixed, string> $payload
+     * @param array<mixed, string|list<string>> $payload
      */
     public function __construct(
         string $message,
@@ -32,7 +32,7 @@ abstract class AbstractDomainException extends \DomainException implements Domai
     }
 
     /**
-     * @return array<mixed, string>
+     * @return array<mixed, string|list<string>>
      */
     public function getPayload(): array
     {

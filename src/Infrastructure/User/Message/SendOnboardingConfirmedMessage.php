@@ -8,7 +8,7 @@ use Symfony\Component\Messenger\Attribute\AsMessage;
 final readonly class SendOnboardingConfirmedMessage
 {
     public function __construct(
-        public string $userEmail,
-        public string $url,
+        public string $userId,
+        public string $workspaceId,
     ) {}
 }

@@ -6,6 +6,7 @@ use App\Domain\Screening\Entity\ScreeningAudit;
 use App\Domain\Workspace\Entity\Workspace;
 use DateTimeImmutable;
 use Pagerfanta\Pagerfanta;
+use Symfony\Component\Uid\Uuid;
 
 interface ScreeningAuditRepositoryInterface
 {
@@ -28,6 +29,12 @@ interface ScreeningAuditRepositoryInterface
      * @return ScreeningAudit|null
      */
     public function findOneBySlug(string $id): ?ScreeningAudit;
+
+    /**
+     * @param Uuid $id
+     * @return ScreeningAudit
+     */
+    public function getById(Uuid $id): ScreeningAudit;
 
     /**
      * @return Pagerfanta<ScreeningAudit>

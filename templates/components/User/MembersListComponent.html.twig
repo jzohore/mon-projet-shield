@@ -42,138 +42,138 @@
         </div>
 
     {% else %}
-    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-        <div class="overflow-x-auto">
-            <twig:Table>
-                <twig:Table:Header class="bg-slate-50/50">
-                    <twig:Table:Row class="border-b-slate-100"> {# Optionnel: adoucir la bordure d'en-tête #}
-                        <twig:Table:Head class="text-slate-500 font-semibold">Collaborateur</twig:Table:Head>
-                        <twig:Table:Head class="text-slate-500 font-semibold">Niveau d'accès</twig:Table:Head>
-                        <twig:Table:Head class="text-slate-500 font-semibold">Statut</twig:Table:Head>
-                        <twig:Table:Head class="text-right text-slate-500 font-semibold">Actions</twig:Table:Head>
-                    </twig:Table:Row>
-                </twig:Table:Header>
+        <twig:Grid:Table aria-label="Liste des collaborateurs">
 
-                <twig:Table:Body>
-                    {% for member in items %}
-                        {# J'ai ajouté border-b-slate-50 ou border-none si tu veux vraiment zéro ligne entre les rangées #}
-                        <twig:Table:Row class="hover:bg-slate-50/80 transition-colors border-b-slate-100 last:border-none">
+            {# --- EN-TÊTE DU TABLEAU --- #}
+            <twig:Grid:Header>
+                <div role="columnheader" class="lg:col-span-4">Collaborateur</div>
+                <div role="columnheader" class="lg:col-span-4">Niveau d'accès</div>
+                <div role="columnheader" class="lg:col-span-3">Statut</div>
+                <div role="columnheader" class="lg:col-span-1 text-right">Actions</div>
+            </twig:Grid:Header>
 
-                            {# Info Utilisateur #}
-                            <twig:Table:Cell>
-                                <div class="flex items-center gap-3">
-                                    <div class="size-9 rounded-full {{ member.user.isOwner ? 'bg-slate-900 text-white' : 'bg-blue-100 text-blue-700' }} flex items-center justify-center text-xs font-bold shadow-sm">
-                                        {{ member.user.firstName|slice(0, 1) ~ member.user.lastName|split(' ')|last|slice(0, 1) }}
-                                    </div>
-                                    <div>
-                                        <p class="font-bold text-slate-900">{{ member.user.fullName }}</p>
-                                        <p class="text-xs text-slate-500">{{ member.user.email }}</p>
-                                    </div>
+            {# --- CORPS DU TABLEAU --- #}
+            <twig:Grid:Body>
+                {% for member in items %}
+                    <twig:Grid:Row>
+
+                        {# --- Colonne 1 : Collaborateur --- #}
+                        <twig:Grid:Cell cols="4" label="Collaborateur">
+                            <div class="flex items-center gap-3">
+                                <div class="size-9 shrink-0 rounded-full {{ member.user.isOwner ? 'bg-slate-900 text-white' : 'bg-blue-100 text-blue-700' }} border border-slate-200 flex items-center justify-center text-xs font-bold shadow-sm" aria-hidden="true">
+                                    {{ member.user.firstName|slice(0, 1) ~ member.user.lastName|split(' ')|last|slice(0, 1) }}
                                 </div>
-                            </twig:Table:Cell>
+                                <div>
+                                    <p class="font-bold text-slate-900">{{ member.user.fullName }}</p>
+                                    <p class="text-xs text-slate-500">{{ member.user.email }}</p>
+                                </div>
+                            </div>
+                        </twig:Grid:Cell>
 
-                            {# Rôle (Sans bordures) #}
-                            <twig:Table:Cell>
-                                {% if member.user.isOwner %}
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700">
-                                <twig:ux:icon name="tabler:crown" class="size-3 text-indigo-500" /> Gérant(e)
+                        {# --- Colonne 2 : Niveau d'accès --- #}
+                        <twig:Grid:Cell cols="4" label="Niveau d'accès" class="mt-3 lg:mt-0">
+                            {% if member.user.isOwner %}
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-indigo-50 text-indigo-700">
+                            <twig:ux:icon name="tabler:crown" class="size-3 text-indigo-500" /> Gérant(e)
+                        </span>
+                            {% else %}
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700">
+                            <twig:ux:icon name="tabler:shield" class="size-3 text-slate-500" />{{ enum('App\\Domain\\Workspace\\Enum\\InvitedRole').(member.user.roles[0]).label }}
+                        </span>
+                            {% endif %}
+                        </twig:Grid:Cell>
+
+                        {# --- Colonne 3 : Statut --- #}
+                        <twig:Grid:Cell cols="3" label="Statut" class="mt-3 lg:mt-0">
+                            <div class="flex items-center gap-2">
+                                {% if member.user.isActif %}
+                                    <span class="relative flex size-2">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span class="relative inline-flex rounded-full size-2 bg-emerald-500"></span>
                             </span>
                                 {% else %}
-                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700">
-                                <twig:ux:icon name="tabler:shield" class="size-3 text-slate-500" />{{ enum('App\\Domain\\Workspace\\Enum\\InvitedRole').(member.user.roles[0]).label }}
-                            </span>
+                                    <span class="size-2 rounded-full bg-slate-300"></span>
                                 {% endif %}
-                            </twig:Table:Cell>
+                                <span class="text-xs font-medium text-slate-600">Compte {{ member.user.isActif ? 'actif' : 'non actif' }}</span>
+                            </div>
+                        </twig:Grid:Cell>
 
-                            {# Statut #}
-                            <twig:Table:Cell>
-                                <div class="flex items-center gap-2">
-                                    {% if member.user.isActif %}
-                                        <span class="relative flex size-2">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full size-2 bg-emerald-500"></span>
-                                </span>
-                                    {% else %}
-                                        <span class="size-2 rounded-full bg-slate-300"></span>
-                                    {% endif %}
-                                    <span class="text-xs font-medium text-slate-600">Compte {{ member.user.isActif ? 'actif' : 'non actif' }}</span>
-                                </div>
-                            </twig:Table:Cell>
+                        {# --- Colonne 4 : Actions --- #}
+                        <twig:Grid:Cell cols="1" class="flex flex-row lg:justify-end items-center gap-2 mt-4 pt-4 lg:mt-0 lg:pt-0 border-t border-slate-100 lg:border-t-0">
+                            {% if member.user.isOwner %}
+                                <span class="text-xs italic text-slate-400 lg:text-right w-full">Compte principal</span>
+                            {% else %}
 
-                            {# Actions (Toujours visibles) #}
-                            <twig:Table:Cell class="text-right">
-                                {% if member.user.isOwner %}
-                                    <span class="text-xs italic text-slate-400">Compte principal</span>
-                                {% else %}
-                                    {# J'ai retiré opacity-0 group-hover:opacity-100 et assombri légèrement l'icône de base (text-slate-500) #}
-                                    <div class="flex justify-end gap-1">
-                                        <button class="p-1.5 text-slate-500 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors" title="Modifier les droits">
-                                            <twig:ux:icon name="tabler:pencil" class="size-4" />
-                                        </button>
-                                        <button class="p-1.5 text-slate-500 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors" title="Révoquer l'accès">
-                                            <twig:ux:icon name="tabler:trash" class="size-4" />
-                                        </button>
-                                    </div>
-                                {% endif %}
-                            </twig:Table:Cell>
+                                {# Bouton Modifier #}
+                                <twig:Button
+                                    as="a"
+                                    href="{{ path('app_employees_show', {slugId: member.user.slugId}) }}"
+                                    class="flex-1 lg:flex-none p-2 text-slate-500 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors border border-slate-200 lg:border-transparent flex items-center justify-center"
+                                >
+                                    <twig:ux:icon name="tabler:pencil" class="size-4 shrink-0" aria-hidden="true" />
+                                    <span class="ml-2 lg:sr-only text-xs font-medium">Modifier</span>
+                                </twig:Button>
+                            {% endif %}
+                        </twig:Grid:Cell>
 
-                        </twig:Table:Row>
-                    {% endfor %}
-                </twig:Table:Body>
-            </twig:Table>
-        </div>
-        <div class="border-t border-slate-200 bg-slate-50/50 px-4 py-3 flex items-center justify-between sm:px-6 mt-auto">
-
-            {# Version Mobile (Boutons Simples) #}
-            <div class="flex-1 flex justify-between md:hidden">
-                <button type="button" data-action="live#action" data-live-action-param="previousPage" class="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50">
-                    Précédent
-                </button>
-                <button type="button" data-action="live#action" data-live-action-param="nextPage" class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50">
-                    Suivant
-                </button>
-            </div>
-
-            {# Version Desktop (Informations + Chiffres) #}
-            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                <div>
-                    <p class="text-sm text-slate-600">
-                        Affichage de la page <span class="font-bold text-slate-900">{{ this.page|default(1) }}</span>
-                        sur <span class="font-bold text-slate-900">{{ items.nbResults|default(items|length) }}</span> résultats
-                    </p>
+                    </twig:Grid:Row>
+                {% endfor %}
+            </twig:Grid:Body>
+            <twig:block name="pagination">
+                {# Version Mobile (Boutons Simples) #}
+                <div class="flex-1 flex justify-between md:hidden">
+                    <button type="button"
+                            data-action="live#action"
+                            data-live-action-param="previousPage"
+                            class="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50"
+                            {% if not items.hasPreviousPage %}disabled{% endif %}>
+                        Précédent
+                    </button>
+                    <button type="button"
+                            data-action="live#action"
+                            data-live-action-param="nextPage"
+                            class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50"
+                            {% if not items.hasNextPage %}disabled{% endif %}>
+                        Suivant
+                    </button>
                 </div>
 
-                <div>
-                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                        {# Bouton Précédent #}
-                        <button type="button"
-                                data-action="live#action"
-                                data-live-action-param="previousPage"
-                                class="cursor-pointer relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                {% if this.page|default(1) <= 1 %}disabled{% endif %}>
-                            <span class="sr-only">Précédent</span>
-                            <twig:ux:icon name="tabler:chevron-left" class="size-4" />
-                        </button>
+                {# Version Desktop (Informations + Chiffres) #}
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-slate-600">
+                            Affichage de la page <span class="font-bold text-slate-900">{{ items.currentPage }}</span>
+                            sur <span class="font-bold text-slate-900">{{ items.nbPages }}</span>
+                        </p>
+                    </div>
 
-                        {# Info Page Centrale (optionnel, pour montrer où on est) #}
-                        <span class="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-indigo-50 text-sm font-bold text-indigo-600">
-                                {{ this.page|default(1) }}
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            <button type="button"
+                                    data-action="live#action"
+                                    data-live-action-param="previousPage"
+                                    class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    {% if not items.hasPreviousPage %}disabled{% endif %}>
+                                <span class="sr-only">Précédent</span>
+                                <twig:ux:icon name="tabler:chevron-left" class="size-4" />
+                            </button>
+
+                            <span class="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-indigo-50 text-sm font-bold text-indigo-600">
+                                {{ items.currentPage }}
                             </span>
 
-                        {# Bouton Suivant #}
-                        <button type="button"
-                                data-action="live#action"
-                                data-live-action-param="nextPage"
-                                class="cursor-pointer relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                            {# Remplace "has_next_page" par ta propre logique PHP pour désactiver la suite #}
-                            {% if items|length < 11 %}disabled{% endif %}>
-                            <span class="sr-only">Suivant</span>
-                            <twig:ux:icon name="tabler:chevron-right" class="size-4" />
-                        </button>
-                    </nav>
+                            <button type="button"
+                                    data-action="live#action"
+                                    data-live-action-param="nextPage"
+                                    class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    {% if not items.hasNextPage %}disabled{% endif %}>
+                                <span class="sr-only">Suivant</span>
+                                <twig:ux:icon name="tabler:chevron-right" class="size-4" />
+                            </button>
+                        </nav>
+                    </div>
                 </div>
-            </div>
-        </div>
-    </div>
+            </twig:block>
+        </twig:Grid:Table>
     {% endif %}
 </div>

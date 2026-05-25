@@ -6,10 +6,14 @@ use App\Domain\Screening\Enum\ScreeningStatus;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
+use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Exception;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
+
+use function Symfony\Component\Clock\now;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'screening_audits')]
@@ -49,7 +53,7 @@ class ScreeningAudit
     public private(set) int $totalMatches;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    public private(set) \DateTimeImmutable $createdAt;
+    public private(set) DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: Types::STRING, enumType: ScreeningStatus::class)]
     public private(set) ScreeningStatus $status;
@@ -59,6 +63,7 @@ class ScreeningAudit
 
     /**
      * @param array<int, array<string, mixed>> $results
+     * @throws Exception
      */
     private function __construct(
         Workspace $workspace,
@@ -72,13 +77,14 @@ class ScreeningAudit
         $this->query = $query;
         $this->results = $results;
         $this->totalMatches = $totalMatches;
-        $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $this->createdAt = now();
         $this->status = ScreeningStatus::WAIT;
         $this->slugId = $this->generate_ulid_prefixed('scr_aud_');
     }
 
     /**
      * @param array<int, array<string, mixed>> $results
+     * @throws Exception
      */
     public static function create(Workspace $workspace, User $ower, string $query, array $results, int $totalMatches): self
     {

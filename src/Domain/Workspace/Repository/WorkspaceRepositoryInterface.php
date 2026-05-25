@@ -56,4 +56,22 @@ interface WorkspaceRepositoryInterface
      */
     public function findLatest(int $limit = 5): array;
 
+    /**
+     * @param Uuid $id
+     * @return Workspace
+     */
+    public function getReference(Uuid $id): Workspace;
+
+    /**
+     * @param string $name
+     * @return bool
+     */
+    public function existsByName(string $name): bool;
+
+    /**
+     * @param string $siret
+     * @return bool
+     */
+    public function existsBySiret(string $siret): bool;
+
 }

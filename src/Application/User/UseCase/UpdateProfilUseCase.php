@@ -15,9 +15,7 @@ final readonly class UpdateProfilUseCase
 
     public function __invoke(User $user): void
     {
-        $user->isVerified = true;
-        $user->isOwner = true;
-        $user->isActif = true;
+        $user->enabledProfil();
         $this->userRepository->save($user);
     }
 }

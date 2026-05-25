@@ -101,7 +101,8 @@ readonly class StripeWebhookController
                         if (in_array($updatedSubscription->status, ['active', 'trialing'])) {
 
                             $workspaceUuid = Uuid::fromString($workspaceIdString);
-                            ($this->activateSubscriptionUseCase)($workspaceUuid, $stripeSubscriptionId, $userEmail);
+                            $userUuid = Uuid::fromString($userIdString);
+                            ($this->activateSubscriptionUseCase)($workspaceUuid, $stripeSubscriptionId, $userEmail, $userUuid);
 
                         } else {
                             // Le paiement a échoué (fonds insuffisants, etc.)

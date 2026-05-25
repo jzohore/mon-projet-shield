@@ -3,14 +3,18 @@
 namespace App\Infrastructure\Workspace\Twig\Components;
 
 use App\Application\Workspace\DTO\Request\CreateWorkspaceRequest;
-use App\Application\Workspace\UseCase\CreateWorkspaceUseCase;
+use App\Application\Workspace\UseCase\Onboarding\CreateWorkspaceUseCase;
+use App\Domain\Shared\Exception\AbstractDomainException;
 use App\Domain\Workspace\Enum\Industry;
 use App\Infrastructure\Service\SiretSearchService;
 use App\Infrastructure\Workspace\Form\CreateWorkspaceType;
+use Exception;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
@@ -23,7 +27,6 @@ use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
-use Webmozart\Assert\Assert;
 
 #[AsLiveComponent(
     name: 'CreateWorkspaceFormComponent',
@@ -34,20 +37,11 @@ class CreateWorkspaceFormComponent
     use DefaultActionTrait;
     use ComponentWithFormTrait;
 
-    #[LiveProp]
-    public ?string $userSlugId = null;
-
     #[LiveProp(writable: true)]
     public string $searchQuery = '';
 
     #[LiveProp]
-    public ?string $workspaceName = null;
-
-    #[LiveProp]
     public ?string $workspaceSiret = null;
-
-    #[LiveProp]
-    public ?string $workspaceAddress = null;
 
     #[LiveProp]
     public ?string $workspaceIndustry = null;
@@ -58,6 +52,7 @@ class CreateWorkspaceFormComponent
         private readonly LoggerInterface $logger,
         private readonly UrlGeneratorInterface $router,
         private readonly SiretSearchService $siretSearchService,
+        private readonly RequestStack $requestStack,
     ) {}
 
     protected function instantiateForm(): FormInterface
@@ -104,22 +99,37 @@ class CreateWorkspaceFormComponent
         $dto = $this->getForm()->getData();
 
         try {
-            Assert::notNull($this->userSlugId);
-            $dto->userSlugId = $this->userSlugId;
-            $dto->legalName = $this->formValues['name'];
+            $dto->legalName = $this->formValues['name'] ?? null;
             $dto->workspaceIndustry = Industry::fromApeCode($this->workspaceIndustry);
 
             ($this->workspaceUseCase)($dto);
-
-        } catch (\DomainException $e) {
+            return new RedirectResponse($this->router->generate('app_onboarding_plan'));
+        } catch (AbstractDomainException $e) {
             $this->logger->error('Erreur métier lors de la création du workspace', [
                 'workspace_name' => $dto->name,
                 'error' => $e->getMessage(),
             ]);
-            return null;
-        }
+            /** @var FlashBagAwareSessionInterface $session */
+            $session = $this->requestStack->getSession();
+            $session->getFlashBag()->add(
+                type: 'error',
+                message: $e->getMessage(),
+            );
+            return new RedirectResponse($this->router->generate('app_onboarding_workspace'));
+        } catch (Exception $e) {
+            $this->logger->critical('Crash système lors de la création du workspace', [
+                'error' => $e->getMessage(),
+            ]);
 
-        return new RedirectResponse($this->router->generate('app_onboarding_plan'));
+            /** @var FlashBagAwareSessionInterface $session */
+            $session = $this->requestStack->getSession();
+            $session->getFlashBag()->add(
+                type: 'error',
+                message: 'Une erreur technique est survenue lors de la création de votre espace. Veuillez réessayer.'
+            );
+
+            return new RedirectResponse($this->router->generate('app_onboarding_workspace'));
+        }
     }
 
     /**

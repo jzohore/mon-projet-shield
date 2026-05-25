@@ -1,0 +1,24 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block title %}Accès révoqué | {{ company_name }}{% endblock %}
+
+{% block content %}
+    <h1>Mise à jour de vos accès</h1>
+
+    <p>Bonjour {{ first_name }},</p>
+
+    <p>Nous vous informons que votre accès à l'espace de travail <strong>"{{ workspace_name }}"</strong> a été révoqué par un administrateur.</p>
+
+    <p>Vous ne pourrez plus accéder aux dossiers, clients et documents associés à cet espace. Si vous faites partie d'autres espaces de travail sur {{ company_name }}, vos accès à ces derniers restent inchangés.</p>
+
+    <div style="background-color: #f8fafc; border-left: 4px solid #94a3b8; padding: 16px; margin: 24px 0; border-radius: 4px;">
+        <p style="margin: 0; color: #475569; font-size: 14px;">
+            <strong>Une question ?</strong> Si vous pensez qu'il s'agit d'une erreur, veuillez contacter directement l'administrateur de l'entreprise <em>{{ workspace_name }}</em>.
+        </p>
+    </div>
+
+{% endblock %}
+
+{% block footer_text %}
+    <p>Ceci est une notification automatique de sécurité concernant votre compte {{ company_name }}.</p>
+{% endblock %}

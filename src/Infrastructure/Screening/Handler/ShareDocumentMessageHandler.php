@@ -10,6 +10,7 @@ use App\Infrastructure\Shared\Twig\S3UrlExtension;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Uid\Uuid;
 use Webmozart\Assert\Assert;
 
 #[AsMessageHandler]
@@ -27,8 +28,11 @@ readonly class ShareDocumentMessageHandler
      */
     public function __invoke(ShareDocumentMessage $message): void
     {
-        $audit = $this->screeningAuditRepository->findOneBySlug($message->auditSlugId);
-        $sender = $this->userRepository->findBySlug($message->senderSlugId);
+        $auditUuid = Uuid::fromString($message->auditId);
+        $audit = $this->screeningAuditRepository->getById($auditUuid);
+
+        $userUuid = Uuid::fromString($message->senderId);
+        $sender = $this->userRepository->getById($userUuid);
 
         Assert::notNull($audit);
         Assert::notNull($sender);

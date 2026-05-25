@@ -2,9 +2,6 @@
 
 namespace App\Infrastructure\KYC\Listener;
 
-use App\Application\Audit\DTO\Request\CreateAuditLogRequest;
-use App\Application\Audit\UseCase\CreateAuditLogUseCase;
-use App\Domain\AuditLog\Enum\AuditEventType;
 use App\Domain\Kyc\Event\KycDocumentReceivedLocalEvent;
 use App\Domain\Kyc\Repository\KycFolderRepositoryInterface;
 use App\Infrastructure\KYC\Message\ProcessAndStoreKycDocumentMessage;
@@ -16,28 +13,27 @@ final readonly class KycDocumentReceivedLocalListener
 {
     public function __construct(
         private KycFolderRepositoryInterface $kycFolderRepository,
-        private CreateAuditLogUseCase $auditLogUseCase,
         private MessageBusInterface $messageBus,
     ) {}
 
-    #[AsEventListener]
-    public function auditLog(KycDocumentReceivedLocalEvent $event): void
-    {
-        $kyc = $event->kycFolder;
-        $document = $event->kycDocument;
-        $auditLog = new CreateAuditLogRequest(
-            eventName: AuditEventType::KYC_DOCUMENT_UPLOADED,
-            resourceId: $kyc->workspace->slugId,
-            data: [
-                'uploaded_by' => $kyc->contactEmail,
-                'first_name' => $kyc->contactFirstName,
-                'last_name' => $kyc->contactLastName,
-                'doc_uploaded' => $document->type->getLabel(),
-            ]
-        );
-
-        ($this->auditLogUseCase)($auditLog);
-    }
+    //    #[AsEventListener]
+    //    public function auditLog(KycDocumentReceivedLocalEvent $event): void
+    //    {
+    //        $kyc = $event->kycFolder;
+    //        $document = $event->kycDocument;
+    //        $auditLog = new CreateAuditLogRequest(
+    //            eventName: AuditEventType::KYC_DOCUMENT_UPLOADED,
+    //            resourceId: $kyc->workspace->slugId,
+    //            data: [
+    //                'uploaded_by' => $kyc->contactEmail,
+    //                'first_name' => $kyc->contactFirstName,
+    //                'last_name' => $kyc->contactLastName,
+    //                'doc_uploaded' => $document->type->getLabel(),
+    //            ]
+    //        );
+    //
+    //        ($this->auditLogUseCase)($auditLog);
+    //    }
 
     #[AsEventListener]
     public function logUploadDocumentHistory(KycDocumentReceivedLocalEvent $event): void

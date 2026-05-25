@@ -2,31 +2,41 @@
 
 namespace App\Infrastructure\Screening\Listener;
 
-use App\Application\Audit\DTO\Request\CreateAuditLogRequest;
-use App\Application\Audit\UseCase\CreateAuditLogUseCase;
+use App\Domain\AuditLog\Entity\AuditLog;
 use App\Domain\AuditLog\Enum\AuditEventType;
+use App\Domain\AuditLog\Repository\AuditLogRepositoryInterface;
 use App\Domain\Screening\Event\ScreeningCompletedEvent;
+use Exception;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Webmozart\Assert\Assert;
 
 #[AsEventListener]
 readonly class ScreeningAuditLogListener
 {
     public function __construct(
-        private CreateAuditLogUseCase $auditLogUseCase,
+        private AuditLogRepositoryInterface $auditLogRepository,
     ) {}
 
+    /**
+     * @throws Exception
+     */
     public function __invoke(ScreeningCompletedEvent $event): void
     {
-        $auditLog = new CreateAuditLogRequest(
-            eventName: AuditEventType::SCREENING_PERFORMED,
-            resourceId: $event->workspaceSlugId,
-            data: [
-                'user_email' => $event->userEmail,
-                'query_searched' => $event->query,
-                'audit_id' => $event->auditId,
+        $user = $event->user;
+        Assert::notNull($user->id);
+
+        $audit = AuditLog::initiate(
+            eventName: AuditEventType::USER_REGISTERED,
+            payload: [
+                'user_email' => $user->email,
+                'query_searched' => $event->screeningAudit->query,
+                'audit_slug_id' => $event->screeningAudit->slugId,
                 'credits_cost' => $event->cost,
-            ]
+            ],
+            actor: $user->id->toString(),
+            workspace: $event->workspace
         );
-        ($this->auditLogUseCase)($auditLog);
+
+        $this->auditLogRepository->save($audit);
     }
 }

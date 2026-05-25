@@ -71,10 +71,8 @@ class ScreeningPdfActionComponent
     {
         try {
             Assert::notNull($this->audit);
-            Assert::notNull($this->audit->slugId);
-            Assert::notNull($this->audit->owner->slugId);
 
-            ($this->shareDocumentUseCase)($this->selectedEmails, $this->audit->slugId, $this->audit->owner->slugId);
+            ($this->shareDocumentUseCase)($this->selectedEmails, $this->audit);
 
             $this->isDocumentSent = true;
             $this->selectedEmails = [];

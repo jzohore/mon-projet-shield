@@ -32,5 +32,4 @@ class UpdateNameRequest
     )]
     public ?string $lastName = null;
 
-    public ?string $userSlugId = null;
 }

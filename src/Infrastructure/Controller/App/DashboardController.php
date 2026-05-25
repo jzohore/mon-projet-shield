@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Controller\App;
 
 use App\Application\Dashboard\UseCase\GetAdminDashboardStatsUseCase;
-use App\Application\User\UseCase\Dashboard\GetCountMemberUseCase;
+use App\Application\Dashboard\UseCase\GetUserDashboardStatsUseCase;
 use App\Domain\User\Entity\User;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\Response;
@@ -22,9 +22,9 @@ use Twig\Error\SyntaxError;
 final readonly class DashboardController
 {
     public function __construct(
-        private GetCountMemberUseCase $getCountMemberUseCase,
         private GetAdminDashboardStatsUseCase $adminDashboardStatsUseCase,
         private Security $security,
+        private GetUserDashboardStatsUseCase $getUserDashboardStatsUseCase,
     ) {}
 
     /**
@@ -50,7 +50,7 @@ final readonly class DashboardController
         return new Response(
             $twig->render('@app/dashboard.html.twig', [
                 'page_title' => 'Votre tableau de bord',
-                'count_members' => ($this->getCountMemberUseCase)($user),
+                'stats_user' => ($this->getUserDashboardStatsUseCase)(),
             ])
         );
     }

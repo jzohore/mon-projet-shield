@@ -73,6 +73,17 @@ final readonly class WorkspaceRepository implements WorkspaceRepositoryInterface
         return $workspace;
     }
 
+    public function getReference(Uuid $id): Workspace
+    {
+        $workspace = $this->entityManager->getReference(Workspace::class, $id);
+
+        if (null === $workspace) {
+            throw WorkspaceNotFoundException::withId($id);
+        }
+
+        return $workspace;
+    }
+
     public function countAll(): int
     {
         return (int) $this->repository->createQueryBuilder('w')
@@ -103,5 +114,27 @@ final readonly class WorkspaceRepository implements WorkspaceRepositoryInterface
             ->setMaxResults($limit)
             ->getQuery()
             ->getResult();
+    }
+
+    /**
+     * @param string $name
+     * @return bool
+     */
+    public function existsByName(string $name): bool
+    {
+        $nameCount = $this->repository->count(['name' => $name]);
+
+        return $nameCount > 0;
+    }
+
+    /**
+     * @param string $siret
+     * @return bool
+     */
+    public function existsBySiret(string $siret): bool
+    {
+        $siretCount = $this->repository->count(['siret' => $siret]);
+
+        return $siretCount > 0;
     }
 }

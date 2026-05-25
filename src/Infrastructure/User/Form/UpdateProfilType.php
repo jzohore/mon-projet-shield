@@ -9,6 +9,7 @@ use App\Domain\User\Enum\JobRole;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TelType;
+use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 
@@ -17,6 +18,18 @@ class UpdateProfilType extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
+            ->add('firstName', TextType::class, [
+                'attr' => [
+                    'autocomplete' => 'given-name',
+                    'placeholder' => 'Ex: Jean',
+                ],
+            ])
+            ->add('lastName', TextType::class, [
+                'attr' => [
+                    'autocomplete' => 'family-name',
+                    'placeholder' => 'Ex: Dupont',
+                ],
+            ])
             ->add('jobTitle', ChoiceType::class, [
                 'label' => 'Quel est votre rôle principal ?',
                 'placeholder' => 'Sélectionnez votre métier...',
@@ -28,7 +41,6 @@ class UpdateProfilType extends AbstractType
                     'placeholder' => '+33 6 12 34 56 78',
                     'maxlength' => 10,
                 ],
-                'help' => 'Nécessaire pour la double authentification (MFA) lors d\'actions sensibles.',
             ])
         ;
     }

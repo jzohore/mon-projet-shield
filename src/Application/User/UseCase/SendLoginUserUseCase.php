@@ -1,16 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\User\UseCase;
 
 use App\Application\User\DTO\Request\LoginUserRequest;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\User\Message\SendMagicLinkMessage;
+use Random\RandomException;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Webmozart\Assert\Assert;
 
-final readonly class SendLoginUserUseCase
+readonly class SendLoginUserUseCase
 {
     /**
      * @param UserRepositoryInterface $userRepository
@@ -26,7 +29,7 @@ final readonly class SendLoginUserUseCase
     /**
      * @param LoginUserRequest $request
      * @return void
-     * @throws ExceptionInterface
+     * @throws ExceptionInterface|RandomException
      */
     public function __invoke(LoginUserRequest $request): void
     {

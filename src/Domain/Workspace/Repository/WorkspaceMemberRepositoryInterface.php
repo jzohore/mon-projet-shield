@@ -10,7 +10,7 @@ use Symfony\Component\Uid\Uuid;
 
 interface WorkspaceMemberRepositoryInterface
 {
-    public function save(WorkspaceMember $workspaceMember): void;
+    public function save(WorkspaceMember $workspaceMember, bool $flush = true): void;
 
     public function findByWorkspaceAndUser(Workspace $workspace, User $user): ?WorkspaceMember;
 
@@ -33,15 +33,29 @@ interface WorkspaceMemberRepositoryInterface
     public function isUserAdminOfWorkspace(User $user, Workspace $workspace): bool;
 
     /**
-     * @param string $workspaceSlugId
+     * @param Workspace $workspace
      * @param string|null $search
      * @return Pagerfanta<WorkspaceMember>
      */
-    public function getMembersList(string $workspaceSlugId, ?string $search = null): Pagerfanta;
+    public function getMembersList(Workspace $workspace, ?string $search = null): Pagerfanta;
 
     /**
      * @param string $workspaceSlugId
      * @return array<int, WorkspaceMember>
      */
     public function getMembersActive(string $workspaceSlugId): array;
+
+    /**
+     * @param Workspace $workspace
+     * @param string $email
+     * @return bool
+     */
+    public function isAlreadyMember(Workspace $workspace, string $email): bool;
+
+    /**
+     * @param string $userSlugId
+     * @param string $workspaceId
+     * @return WorkspaceMember|null
+     */
+    public function findOneByUserSlugAndWorkspace(string $userSlugId, string $workspaceId): ?WorkspaceMember;
 }

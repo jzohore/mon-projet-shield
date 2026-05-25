@@ -24,12 +24,12 @@ readonly class StripeCheckoutService
         Stripe::setApiKey($this->stripeSecretKey);
 
         Assert::notNull($user->email);
-        Assert::notNull($user->stripeCustomerId);
+        Assert::notNull($user->profile->stripeCustomerId);
         Assert::notNull($workspace->subscription);
         Assert::notNull($workspace->subscription->stripeSubscriptionId);
 
         $session = Session::create([
-            'customer' => $user->stripeCustomerId,
+            'customer' => $user->profile->stripeCustomerId,
             'payment_method_types' => ['card'],
             'mode' => 'setup',
             'success_url' => $successUrl,

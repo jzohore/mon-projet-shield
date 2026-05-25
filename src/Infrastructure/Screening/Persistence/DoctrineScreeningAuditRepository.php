@@ -3,6 +3,7 @@
 namespace App\Infrastructure\Screening\Persistence;
 
 use App\Domain\Screening\Entity\ScreeningAudit;
+use App\Domain\Screening\Exception\AuditNotFoundException;
 use App\Domain\Screening\Repository\ScreeningAuditRepositoryInterface;
 use App\Domain\Workspace\Entity\Workspace;
 use DateTimeImmutable;
@@ -10,6 +11,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
 use Pagerfanta\Pagerfanta;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @method ScreeningAudit|null find($id, $lockMode = null, $lockVersion = null)
@@ -95,5 +97,16 @@ readonly class DoctrineScreeningAuditRepository implements ScreeningAuditReposit
             ->select('COUNT(sa.id)')
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    public function getById(Uuid $id): ScreeningAudit
+    {
+        $audit = $this->repository->find($id);
+
+        if (null === $audit) {
+            throw AuditNotFoundException::withId($id);
+        }
+
+        return $audit;
     }
 }

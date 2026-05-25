@@ -8,6 +8,7 @@ use App\Domain\AuditLog\Enum\AuditEventType;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\DeviceDetectorService;
+use Exception;
 use GeoIp2\Exception\AddressNotFoundException;
 use MaxMind\Db\Reader\InvalidDatabaseException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -47,6 +48,10 @@ final readonly class UserLoginListener implements EventSubscriberInterface
         $this->deviceDetectorService->createDeviceDetector($user->slugId);
     }
 
+    /**
+     * @param LoginSuccessEvent $event
+     * @return void
+     */
     public function onClearMagicLinkToken(LoginSuccessEvent $event): void
     {
         $user = $event->getPassport()->getUser();
@@ -55,19 +60,27 @@ final readonly class UserLoginListener implements EventSubscriberInterface
         $this->userRepository->save($user);
     }
 
+    /**
+     * @param LoginSuccessEvent $event
+     * @return void
+     * @throws Exception
+     */
     public function onAuditLogin(LoginSuccessEvent $event): void
     {
         $user = $event->getPassport()->getUser();
         Assert::isInstanceOf($user, User::class);
-        $auditLog = new CreateAuditLogRequest(
+
+        $requestAuditLog = new CreateAuditLogRequest(
             eventName: AuditEventType::USER_LOGGED_IN,
-            resourceId: $user->slugId,
             data: [
-                'email' => $user->email,
-                'first_name' => $user->firstName,
-            ]
+                'target_user_id' => $user->slugId,
+                'email'          => $user->email,
+                'full_name'      => $user->getFullName(),
+            ],
+            actorId: (string) $user->id,
+            workspaceId: null,
         );
 
-        ($this->auditLogUseCase)($auditLog);
+        ($this->auditLogUseCase)($requestAuditLog);
     }
 }

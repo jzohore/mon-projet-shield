@@ -30,11 +30,12 @@ final readonly class UserRepository implements UserRepositoryInterface
         $this->repository = $entityManager->getRepository(User::class);
     }
 
-    public function save(User $user): void
+    public function save(User $user, bool $flush = true): void
     {
-        $em = $this->entityManager;
-        $em->persist($user);
-        $em->flush();
+        $this->entityManager->persist($user);
+        if ($flush) {
+            $this->entityManager->flush();
+        }
     }
 
     public function getById(Uuid $id): User
@@ -138,5 +139,16 @@ final readonly class UserRepository implements UserRepositoryInterface
         }
 
         return new Pagerfanta(new QueryAdapter($qb));
+    }
+
+
+    public function getReference(Uuid $id): User
+    {
+        $user =  $this->entityManager->getReference(User::class, $id);
+
+        if (null === $user) {
+            throw UserNotFoundException::withId($id);
+        }
+        return $user;
     }
 }

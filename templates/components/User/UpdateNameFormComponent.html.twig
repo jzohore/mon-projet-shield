@@ -29,6 +29,16 @@
                     }) }}
                 </div>
             </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    {{ form_row(form.jobTitle) }}
+
+                </div>
+
+                <div class="space-y-2">
+                    {{ form_row(form.phoneNumber) }}
+                </div>
+            </div>
 
             <div class="h-px bg-slate-100 w-full"></div>
 
@@ -42,16 +52,6 @@
                     <input type="email" id="email" value="{{ app.user.email }}" disabled readonly
                            class="flex h-10 w-full md:w-2/3 rounded-md border border-slate-200 bg-slate-50 text-slate-500 px-3 py-2 text-sm cursor-not-allowed opacity-80">
                     <p class="text-[11px] text-slate-500">Votre email sert de clé d'authentification unique. Contactez le support pour le modifier.</p>
-                </div>
-
-                <div class="space-y-2">
-                    <div class="flex items-center gap-2">
-                        <label for="phone" class="text-sm font-medium leading-none text-slate-700">Numéro de téléphone</label>
-                        <twig:ux:icon name="material-symbols:lock-outline" class="w-3.5 h-3.5 text-slate-400" />
-                    </div>
-                    <input type="tel" id="phone" value="{{ app.user.profile.phoneNumber }}" disabled readonly
-                           class="flex h-10 w-full md:w-2/3 rounded-md border border-slate-200 bg-slate-50 text-slate-500 px-3 py-2 text-sm cursor-not-allowed opacity-80">
-                    <p class="text-[11px] text-slate-500">Lié à votre authentification forte (MFA).</p>
                 </div>
             </div>
         </div>
