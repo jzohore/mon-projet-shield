@@ -56,4 +56,12 @@ class IndividualFolder extends ComplianceFolder
         $this->email = $newEmail;
         $this->saveHistory('Email mis à jour', "De {$oldEmail} vers {$newEmail}");
     }
+
+    public function setClientInfo(string $firstName, string $lastName, string $email): void
+    {
+        $this->firstName = $firstName;
+        $this->lastName = $lastName;
+        $this->email = $email;
+        $this->saveHistory('Les informations clients ont été mis à jour');
+    }
 }

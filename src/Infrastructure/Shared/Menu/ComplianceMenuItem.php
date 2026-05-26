@@ -39,7 +39,7 @@ enum ComplianceMenuItem: string
     {
         return match ($this) {
             self::DASHBOARD => 'app_dashboard',
-            self::DOSSIERS => 'app_kyc_list',
+            self::DOSSIERS => 'app_compliance_list',
             self::ADVISORY => 'app_employees_list', // À ajuster vers app_advisory_list plus tard
             self::SCREENING => 'app_screening_list',
             self::STAKEHOLDERS => 'app_employees_list', // À ajuster vers app_stakeholders_list

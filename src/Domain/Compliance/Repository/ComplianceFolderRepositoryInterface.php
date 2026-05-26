@@ -3,7 +3,9 @@
 namespace App\Domain\Compliance\Repository;
 
 use App\Domain\Compliance\Entity\ComplianceFolder;
+use App\Domain\Compliance\Enum\ComplianceFolderStatus;
 use App\Domain\Workspace\Entity\Workspace;
+use Pagerfanta\Pagerfanta;
 use Symfony\Component\Uid\Uuid;
 
 interface ComplianceFolderRepositoryInterface
@@ -44,4 +46,14 @@ interface ComplianceFolderRepositoryInterface
     public function findAllActiveByWorkspace(Workspace $workspace): array;
 
     public function countDraftsForWorkspace(Workspace $workspace): int;
+
+    /**
+     * @param Workspace $workspace
+     * @param string|null $search
+     * @param ComplianceFolderStatus|null $status
+     * @return Pagerfanta<ComplianceFolder>
+     */
+    public function findAllByWorkspace(Workspace $workspace, ?string $search = null, ?ComplianceFolderStatus $status = null): Pagerfanta;
+
+    public function findOneLastDraftIndividuals(): ?ComplianceFolder;
 }

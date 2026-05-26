@@ -20,9 +20,9 @@ use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 class DeleteComplianceController extends AbstractController
 {
     public function __construct(
-        private DeleteComplianceFolderUseCase $deleteComplianceFolderUseCase,
-        private UrlGeneratorInterface $urlGenerator,
-        private LoggerInterface $logger,
+        private readonly DeleteComplianceFolderUseCase $deleteComplianceFolderUseCase,
+        private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly LoggerInterface $logger,
     ) {}
 
     public function __invoke(
@@ -31,10 +31,11 @@ class DeleteComplianceController extends AbstractController
     ): RedirectResponse {
         try {
             // 2. Exécution du UseCase
+            $reference = $complianceFolder->reference;
             ($this->deleteComplianceFolderUseCase)($complianceFolder);
 
             // 3. Feedback positif pour l'UX
-            $this->addFlash('success', 'Le brouillon a été supprimé avec succès.');
+            $this->addFlash('success', sprintf('Le dossier %s a été supprimé avec succès.', $reference));
 
         } catch (CannotDeleteActiveFolderException $exception) {
             // 4. On gère NOTRE exception métier (l'utilisateur a fait une bêtise)
@@ -49,6 +50,6 @@ class DeleteComplianceController extends AbstractController
             ]);
         }
 
-        return new RedirectResponse($this->urlGenerator->generate('app_kyc_list'));
+        return new RedirectResponse($this->urlGenerator->generate('app_compliance_list'));
     }
 }

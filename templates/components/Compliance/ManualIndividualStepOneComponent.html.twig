@@ -1,0 +1,58 @@
+<div {{ attributes }}>
+    <section class="bg-white rounded-md border border-slate-200 p-6 sm:p-8 shadow-sm">
+        <h3 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-3">
+            <span class="size-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-black">1</span>
+            Qui est le client ?
+        </h3>
+
+        {# Le Formulaire #}
+        {{ form_start(form, {
+            attr: {
+                novalidate: true,
+                'data-action': 'submit->live#action:prevent',
+                'data-live-action-param': 'save',
+            }
+        }) }}
+
+        <div class="space-y-6">
+
+            {# Prénom & Nom (Côte à côte sur grand écran) #}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    {{ form_row(form.firstName) }}
+                </div>
+                <div>
+                    {{ form_row(form.lastName) }}
+                </div>
+            </div>
+
+            {# Email #}
+            <div>
+                {{ form_row(form.email) }}
+            </div>
+
+        </div>
+
+        <div class="flex items-center justify-end mt-8 pt-4">
+            {# 🪄 On détecte si on est en mode édition en vérifiant si le prénom est déjà rempli #}
+            {% set isEditing = form.firstName.vars.value is not empty %}
+
+            <twig:Button as="button" type="submit" variant="dark" class="w-full sm:w-auto px-8">
+
+                {# État normal #}
+                <span data-loading="action(save)|hide">
+            {{ isEditing ? 'Modifier' : 'Enregistrer' }}
+        </span>
+
+                {# État de chargement (loading) #}
+                <span data-loading="action(save)|show" class="hidden items-center gap-2">
+            <twig:ux:icon name="tabler:loader" class="size-4 animate-spin" />
+            {{ isEditing ? 'Modification...' : 'Enregistrement...' }}
+        </span>
+
+            </twig:Button>
+        </div>
+
+        {{ form_end(form) }}
+    </section>
+</div>

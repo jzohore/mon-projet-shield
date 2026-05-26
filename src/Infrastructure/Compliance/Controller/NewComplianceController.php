@@ -11,7 +11,7 @@ use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 
 #[AsController]
-#[Route(path: '/app/compliance/new', name: 'app_compliance_new', methods: ['GET', 'POST'])]
+#[Route(path: '/app/compliance/new', name: 'app_compliance_new', methods: ['GET'])]
 readonly class NewComplianceController
 {
     public function __construct(

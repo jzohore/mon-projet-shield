@@ -1,0 +1,23 @@
+<?php
+
+namespace App\Application\Compliance\DTO\Request;
+
+use Symfony\Component\Validator\Constraints as Assert;
+
+class SetIndividualClientRequest
+{
+    // On stocke le slug du dossier pour savoir lequel mettre à jour
+    public string $reference = '';
+
+    #[Assert\NotBlank(message: 'Le prénom est obligatoire.')]
+    #[Assert\Length(max: 100, maxMessage: 'Le prénom ne peut pas dépasser 100 caractères.')]
+    public string $firstName = '';
+
+    #[Assert\NotBlank(message: 'Le nom est obligatoire.')]
+    #[Assert\Length(max: 100, maxMessage: 'Le nom ne peut pas dépasser 100 caractères.')]
+    public string $lastName = '';
+
+    #[Assert\Email(message: 'L\'adresse email n\'est pas valide.')]
+    #[Assert\NotBlank(message: 'L\'adresse email est obligatoire.')]
+    public string $email = '';
+}

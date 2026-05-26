@@ -21,9 +21,46 @@
 
         <div class="flex items-center gap-3 w-full sm:w-auto">
             {# ACTION DESTRUCTIVE #}
-            <button type="submit" form="delete-form" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-red-500" title="Supprimer le brouillon">
-                {{ ux_icon('lucide:trash-2', { class: 'size-5' }) }}
-            </button>
+            <div data-controller="inline-confirm"
+                 data-action="click@window->inline-confirm#clickOutside"
+                 class="inline-block">
+                <twig:Button
+                    class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
+                    title="Supprimer le brouillon"
+                    data-action="inline-confirm#toggle"
+                    title="Révoquer"
+                >
+                    {{ ux_icon('lucide:trash-2', { class: 'size-5' }) }}
+                </twig:Button>
+
+                <div data-inline-confirm-target="popover"
+                     class="hidden z-[100] w-64 bg-white border border-slate-200 rounded-md shadow-xl p-3 animate-in fade-in zoom-in-95 duration-200">
+
+                    <p class="text-sm text-slate-700 font-medium mb-3 text-center">
+                        Êtes-vous sûr de vouloir supprimer ce dossier ?
+                    </p>
+
+                    <div class="flex gap-2">
+                        <twig:Button variant="secondary"
+                                     data-action="live#action inline-confirm#close"
+                                     size="sm"
+                        >
+                            Annuler
+                        </twig:Button>
+                        <div>
+                            <twig:Button
+                                type="submit"
+                                form="delete-form"
+                                variant="destructive"
+                            >
+                                <twig:ux:icon name="lucide:user-x" class="w-4 h-4 mr-2" />
+                                Supprimer
+                            </twig:Button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
 
             {# ACTION PRINCIPALE #}
             <button type="submit" form="setup-form" class="flex-1 sm:flex-none bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10 active:scale-95 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2">
@@ -34,7 +71,7 @@
 {% endblock %}
 {% block portal_content %}
     {# Formulaire caché pour la suppression du brouillon #}
-    <form id="delete-form" method="POST" action="{{ path('app_compliance_delete_folder', {slugId: folder.slugId}) }}" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer ce brouillon ?');">
+    <form id="delete-form" method="POST" action="{{ path('app_compliance_delete_folder', {slugId: folder.slugId}) }}">
         <input type="hidden" name="_token" value="{{ csrf_token('remove-compliance') }}">
     </form>
 
@@ -48,82 +85,43 @@
             <div class="mx-auto px-2 sm:px-6 {{ method == 'request' ? 'max-w-5xl grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12' : 'max-w-3xl' }}">
                 {# COLONNE GAUCHE : CONFIGURATION #}
                 <div class="{{ method == 'request' ? 'lg:col-span-2' : '' }} space-y-8">
-                    <form id="setup-form" method="POST" action="">
+                    <twig:ManualIndividualStepOneComponent complianceFolder="{{ folder }}" method="{{ method }}" type="{{ type }}"></twig:ManualIndividualStepOneComponent>
 
-                        {# 1. LE SUJET DU DOSSIER #}
-                        <section class="bg-white rounded-md border border-slate-200 p-6 sm:p-8 shadow-sm">
-                            <h3 class="text-lg font-bold text-slate-900 mb-6 flex items-center gap-3">
-                                <span class="size-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-black">1</span>
-                                Qui est le client ?
+                    {# 2. DOCUMENTS (Générés par le Moteur LCB-FT) #}
+                    <section class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm mt-8">
+                        <div class="flex justify-between items-start mb-6">
+                            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-3">
+                                <span class="size-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-black">2</span>
+                                Pièces justificatives
                             </h3>
+                            <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide">Standard LCB-FT</span>
+                        </div>
 
-                            <div class="grid grid-cols-2 gap-4">
-                                {% if type == 'individual' %}
-                                    <div class="space-y-1.5 col-span-2 sm:col-span-1">
-                                        <label for="firstName" class="text-xs font-bold text-slate-700 ml-1">Prénom</label>
-                                        <input type="text" id="firstName" name="firstName" required placeholder="Jean" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
-                                    </div>
-                                    <div class="space-y-1.5 col-span-2 sm:col-span-1">
-                                        <label for="lastName" class="text-xs font-bold text-slate-700 ml-1">Nom</label>
-                                        <input type="text" id="lastName" name="lastName" required placeholder="Dupont" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
-                                    </div>
-                                {% else %}
-                                    <div class="space-y-1.5 col-span-2 sm:col-span-1">
-                                        <label for="companyName" class="text-xs font-bold text-slate-700 ml-1">Raison sociale</label>
-                                        <input type="text" id="companyName" name="companyName" required placeholder="Acme Corp" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
-                                    </div>
-                                    <div class="space-y-1.5 col-span-2 sm:col-span-1">
-                                        <label for="registrationNumber" class="text-xs font-bold text-slate-700 ml-1">N° SIRET</label>
-                                        <input type="text" id="registrationNumber" name="registrationNumber" placeholder="123 456 789 00012" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
-                                    </div>
-                                {% endif %}
-
-                                <div class="space-y-1.5 col-span-2">
-                                    <label for="email" class="text-xs font-bold text-slate-700 ml-1 flex justify-between">
-                                        Email de contact
-                                        {% if method == 'manual' %}<span class="text-slate-400 font-normal">Optionnel</span>{% endif %}
-                                    </label>
-                                    <input type="email" id="email" name="email" {{ method == 'request' ? 'required' : '' }} placeholder="client@entreprise.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all outline-none">
-                                </div>
-                            </div>
-                        </section>
-
-                        {# 2. DOCUMENTS (Générés par le Moteur LCB-FT) #}
-                        <section class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm mt-8">
-                            <div class="flex justify-between items-start mb-6">
-                                <h3 class="text-lg font-bold text-slate-900 flex items-center gap-3">
-                                    <span class="size-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-black">2</span>
-                                    Pièces justificatives
-                                </h3>
-                                <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide">Standard LCB-FT</span>
-                            </div>
-
-                            <div class="space-y-3">
-                                {# MAGIE DU DOMAINE : On utilise doc.type.label ! #}
-                                {% for doc in folder.documents %}
-                                    <div class="flex items-center p-4 rounded-2xl group transition-all border
+                        <div class="space-y-3">
+                            {# MAGIE DU DOMAINE : On utilise doc.type.label ! #}
+                            {% for doc in folder.documents %}
+                                <div class="flex items-center p-4 rounded-2xl group transition-all border
                                         {{ doc.isMandatory ? 'bg-indigo-50/30 border-indigo-100' : 'bg-white border-slate-200 hover:border-slate-300' }}">
 
-                                        <input type="checkbox" checked {{ doc.isMandatory ? 'disabled' : '' }} name="required_docs[]" value="{{ doc.id }}"
-                                               class="size-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50">
+                                    <input type="checkbox" checked {{ doc.isMandatory ? 'disabled' : '' }} name="required_docs[]" value="{{ doc.id }}"
+                                           class="size-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50">
 
-                                        <div class="ml-4">
-                                            <p class="text-sm font-bold text-slate-900">{{ doc.type.label }}</p>
-                                        </div>
-
-                                        {% if doc.isMandatory %}
-                                            <span class="ml-auto text-[10px] font-bold text-indigo-600 bg-white border border-indigo-100 px-2 py-1 rounded-md uppercase">Requis</span>
-                                        {% endif %}
+                                    <div class="ml-4">
+                                        <p class="text-sm font-bold text-slate-900">{{ doc.type.label }}</p>
                                     </div>
-                                {% endfor %}
 
-                                <button type="button" class="w-full mt-4 py-3 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 text-sm font-bold hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all flex items-center justify-center gap-2 group focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                                    {{ ux_icon('lucide:plus', { class: 'size-4 group-hover:scale-110 transition-transform' }) }}
-                                    Ajouter un document spécifique
-                                </button>
-                            </div>
-                        </section>
-                    </form>
+                                    {% if doc.isMandatory %}
+                                        <span class="ml-auto text-[10px] font-bold text-indigo-600 bg-white border border-indigo-100 px-2 py-1 rounded-md uppercase">Requis</span>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+
+                            <button type="button" class="w-full mt-4 py-3 border-2 border-dashed border-slate-200 rounded-2xl text-slate-500 text-sm font-bold hover:border-indigo-300 hover:text-indigo-600 hover:bg-indigo-50/50 transition-all flex items-center justify-center gap-2 group focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                {{ ux_icon('lucide:plus', { class: 'size-4 group-hover:scale-110 transition-transform' }) }}
+                                Ajouter un document spécifique
+                            </button>
+                        </div>
+                    </section>
                 </div>
 
                 {# COLONNE DROITE : APERÇU #}
