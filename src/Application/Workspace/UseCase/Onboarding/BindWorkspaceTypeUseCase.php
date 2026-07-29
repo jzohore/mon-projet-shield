@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Workspace\UseCase\Onboarding;
 
 use App\Domain\Billing\Event\CreateBillingModeEvent;
@@ -20,7 +22,8 @@ readonly class BindWorkspaceTypeUseCase
         private UserRepositoryInterface $userRepository,
         private EventDispatcherInterface $eventDispatcher,
         private TransactionManagerInterface $transactionManager,
-    ) {}
+    ) {
+    }
 
     public function __invoke(WorkspaceType $workspaceType, User $user, Workspace $workspace): void
     {

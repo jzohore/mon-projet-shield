@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Controller;
 
 use App\Application\Workspace\UseCase\Invitation\AcceptInvitationUseCase;
@@ -21,7 +23,8 @@ class AcceptWorkspaceInvitationController extends AbstractController
         private readonly RequestStack $requestStack,
         private readonly AcceptInvitationUseCase $acceptInvitationUseCase,
         private readonly Security $security,
-    ) {}
+    ) {
+    }
 
     public function __invoke(): Response
     {
@@ -29,6 +32,7 @@ class AcceptWorkspaceInvitationController extends AbstractController
 
         if (!$id) {
             $this->addFlash('error', 'Le lien d\'invitation est invalide ou expiré.');
+
             return $this->redirectToRoute('portal_user_invitation');
         }
 
@@ -44,10 +48,11 @@ class AcceptWorkspaceInvitationController extends AbstractController
             );
 
             $this->addFlash('success', 'Bienvenue dans votre nouvel espace !');
-            return $this->redirectToRoute('app_dashboard');
 
+            return $this->redirectToRoute('app_dashboard');
         } catch (InvitationNotFoundException $e) {
             $this->addFlash('error', $e->getMessage());
+
             return $this->redirectToRoute('app_login');
         }
     }

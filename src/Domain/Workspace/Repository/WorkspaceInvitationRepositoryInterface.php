@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Workspace\Repository;
 
 use App\Domain\Workspace\Entity\Workspace;
@@ -25,17 +27,7 @@ interface WorkspaceInvitationRepositoryInterface
 
     public function countMemberInvitation(?string $workspaceId = null): bool|float|int|string|null;
 
-    /**
-     * @param Uuid $id
-     * @return WorkspaceInvitation
-     */
-    public function getById(Uuid $id): WorkspaceInvitation;
+    public function getById(Uuid $id): ?WorkspaceInvitation;
 
-    /**
-     * @param Workspace $workspace
-     * @param string $email
-     * @return bool
-     */
     public function hasPendingInvitation(Workspace $workspace, string $email): bool;
-
 }

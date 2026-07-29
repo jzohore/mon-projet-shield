@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Workspace\DTO\Response;
 
 use App\Domain\Workspace\Entity\WorkspaceMember;
@@ -12,7 +14,8 @@ readonly class WorkspaceMemberDetailsResponse
         public string $email,
         public string $role,
         public string $joinedAt,
-    ) {}
+    ) {
+    }
 
     // 🪄 Le DTO extrait les infos de la relation Member -> User
     public static function fromEntity(WorkspaceMember $member): self

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Workspace\Enum;
 
 enum InvitedRole: string
@@ -26,9 +28,6 @@ enum InvitedRole: string
         ];
     }
 
-    /**
-     * @return string
-     */
     public function getColorClasses(): string
     {
         return match ($this) {

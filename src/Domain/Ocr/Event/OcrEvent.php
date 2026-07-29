@@ -15,5 +15,6 @@ final class OcrEvent extends Event
         public readonly KycDocument $kycDocument,
         public readonly User $user,
         public readonly Workspace $workspace,
-    ) {}
+    ) {
+    }
 }

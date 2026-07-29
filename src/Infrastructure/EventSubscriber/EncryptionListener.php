@@ -1,26 +1,29 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\EventSubscriber;
 
 use App\Domain\Common\Attribute\Encrypted;
 use App\Infrastructure\Security\MessageCipher;
 use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
-use Doctrine\ORM\Event\PrePersistEventArgs;
-use Doctrine\ORM\Event\PostPersistEventArgs;
-use Doctrine\ORM\Event\PreUpdateEventArgs;
-use Doctrine\ORM\Event\PostUpdateEventArgs;
 use Doctrine\ORM\Event\PostLoadEventArgs;
+use Doctrine\ORM\Event\PostPersistEventArgs;
+use Doctrine\ORM\Event\PostUpdateEventArgs;
+use Doctrine\ORM\Event\PrePersistEventArgs;
+use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Events;
-use ReflectionClass;
 
 #[AsDoctrineListener(event: Events::prePersist)]
 #[AsDoctrineListener(event: Events::postPersist)]
-#[AsDoctrineListener(event: Events::preUpdate)]   // 🛡️ NOUVEAU
-#[AsDoctrineListener(event: Events::postUpdate)]  // 🛡️ NOUVEAU
+#[AsDoctrineListener(event: Events::preUpdate)] // 🛡️ NOUVEAU
+#[AsDoctrineListener(event: Events::postUpdate)] // 🛡️ NOUVEAU
 #[AsDoctrineListener(event: Events::postLoad)]
 final readonly class EncryptionListener
 {
-    public function __construct(private MessageCipher $cipher) {}
+    public function __construct(private MessageCipher $cipher)
+    {
+    }
 
     public function prePersist(PrePersistEventArgs $args): void
     {
@@ -51,10 +54,9 @@ final readonly class EncryptionListener
 
     private function process(object $entity, bool $isEncrypting): void
     {
-        $reflection = new ReflectionClass($entity);
+        $reflection = new \ReflectionClass($entity);
         foreach ($reflection->getProperties() as $property) {
             if ($property->getAttributes(Encrypted::class)) {
-                $property->setAccessible(true);
                 $value = $property->getValue($entity);
 
                 if (null === $value || '' === $value) {

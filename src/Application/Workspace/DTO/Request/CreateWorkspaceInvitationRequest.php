@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Workspace\DTO\Request;
 
 use App\Domain\Workspace\Enum\InvitedRole;

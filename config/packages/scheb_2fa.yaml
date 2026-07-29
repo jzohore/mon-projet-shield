@@ -1,0 +1,19 @@
+# config/packages/scheb_2fa.yaml
+scheb_two_factor:
+    google:
+        enabled: true                  # If Google Authenticator should be enabled, default false
+        server_name: Kysure       # Server name used in QR code
+        issuer: Kysure           # Issuer name used in QR code
+        digits: 6                      # Number of digits in authentication code
+        leeway: 0                      # Acceptable time drift in seconds, must be less or equal than 30 seconds
+        template: security/2fa_form.html.twig   # Template used to render the authentication form
+
+    trusted_device:
+        enabled: true                 # If the trusted device feature should be enabled
+        lifetime: 2592000              # Lifetime of the trusted device token
+        extend_lifetime: true         # Automatically extend lifetime of the trusted cookie on re-login
+        cookie_name: kysure_trusted_device    # Name of the trusted device cookie
+        cookie_secure: auto           # Set the 'Secure' (HTTPS Only) flag on the trusted device cookie
+        cookie_same_site: "lax"        # The same-site option of the cookie, can be "lax" or "strict"
+        #cookie_domain: ".example.com"  # Domain to use when setting the cookie, fallback to the request domain if not set
+        #cookie_path: "/"               # Path to use when setting the cookie

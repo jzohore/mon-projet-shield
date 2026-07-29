@@ -13,7 +13,8 @@ readonly class UpdateOnboardingStatusUseCase
     public function __construct(
         private CurrentUserProvider $currentUserProvider,
         private UserRepositoryInterface $userRepository,
-    ) {}
+    ) {
+    }
 
     public function __invoke(OnboardingStatus $status): void
     {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Billing\Service;
 
 use App\Domain\Billing\Entity\Subscription;
@@ -12,12 +14,12 @@ readonly class WorkspaceQuotaManager
     public function __construct(
         private ScreeningAuditRepositoryInterface $screeningAuditRepository,
         private KycFolderRepositoryInterface $kycFolderRepository,
-    ) {}
+    ) {
+    }
 
     /**
-     * @param Workspace $workspace
      * @return int
-     * Renvoie le nombre de vérifications effectuées pendant le mois de facturation en cours.
+     *             Renvoie le nombre de vérifications effectuées pendant le mois de facturation en cours
      */
     public function getSearchesCountThisMonth(Workspace $workspace): int
     {
@@ -26,7 +28,7 @@ readonly class WorkspaceQuotaManager
         // FIX 1: If you want to return 0 when there is no subscription,
         // remove the Assert::notNull and keep the check.
         // If a subscription is MANDATORY for this logic, keep the Assert and remove the null check.
-        if ($subscription === null || !$subscription->isValid()) {
+        if (!$subscription instanceof Subscription || !$subscription->isValid()) {
             return 0;
         }
 
@@ -43,9 +45,8 @@ readonly class WorkspaceQuotaManager
     }
 
     /**
-     * @param Workspace $workspace
      * @return bool
-     * Autorise ou bloque une nouvelle recherche
+     *              Autorise ou bloque une nouvelle recherche
      */
     public function canPerformNewSearch(Workspace $workspace): bool
     {

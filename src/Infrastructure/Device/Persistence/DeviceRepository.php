@@ -10,7 +10,6 @@ use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 
 /**
- *
  * @method Device|null find($id, $lockMode = null, $lockVersion = null)
  * @method Device|null findOneBy(array<string, mixed> $criteria, array<string, string>|null $orderBy = null)
  * @method Device[]    findAll()
@@ -20,6 +19,7 @@ final readonly class DeviceRepository implements DeviceRepositoryInterface
 {
     /** @var EntityRepository<Device> */
     private EntityRepository $repository;
+
     public function __construct(private EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(Device::class);

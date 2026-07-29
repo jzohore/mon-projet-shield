@@ -1,19 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Twig\Components;
 
 use App\Application\Workspace\UseCase\Onboarding\BindWorkspaceTypeUseCase;
+use App\Domain\Workspace\Enum\WorkspaceType;
 use App\Domain\Workspace\Exception\WorkspaceTypeNotFoundException;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
-use Exception;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
-use App\Domain\Workspace\Enum\WorkspaceType;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -36,7 +37,8 @@ class WorkspaceChoosePlanFormComponent
         private readonly UrlGeneratorInterface $generator,
         private readonly LoggerInterface $logger,
         private readonly RequestStack $requestStack,
-    ) {}
+    ) {
+    }
 
     #[LiveAction]
     public function finish(): RedirectResponse // ✅ Plus précis que Response
@@ -58,8 +60,7 @@ class WorkspaceChoosePlanFormComponent
             );
 
             return new RedirectResponse($this->generator->generate('app_onboarding_finalization'));
-
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->logger->error('Échec lors de l\'attribution du plan au Workspace : ', [
                 'error' => $e->getMessage(),
                 'workspace_type' => $this->workspaceType,

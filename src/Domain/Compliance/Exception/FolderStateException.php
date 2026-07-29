@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Compliance\Exception;
 
 use App\Domain\Shared\Enum\ErrorCode;
@@ -16,8 +18,8 @@ class FolderStateException extends AbstractDomainException
             statusCode: Response::HTTP_CONFLICT, // 409 Conflict est parfait pour une erreur d'état métier
             payload: [
                 'folder_reference' => $reference,
-                'current_status'   => $currentStatus,
-                'expected_status'  => 'IN_REVIEW',
+                'current_status' => $currentStatus,
+                'expected_status' => 'IN_REVIEW',
             ]
         );
     }

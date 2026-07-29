@@ -79,7 +79,6 @@ enum CreditAction: string
             self::REWARD_FIRST_SEARCH => 1,
             self::REWARD_WORKSPACE_SETUP => 3,
             self::STRIPE_PURCHASE => 0,
-
         };
     }
 

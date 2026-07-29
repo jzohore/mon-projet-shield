@@ -1,0 +1,205 @@
+<div {{ attributes }} class="space-y-6">
+    {% set items = this.items %}
+    <div class="flex flex-col lg:flex-row gap-4 justify-between items-center mb-6">
+
+        {# Groupe Gauche : Recherche + Select Type d'Événement #}
+        <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+
+            {# Barre de recherche (Acteur, détails...) #}
+            <div class="relative w-full sm:w-72">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
+                    <twig:ux:icon name="tabler:search" class="size-4 text-slate-400" />
+                </div>
+                <input type="search"
+                       aria-label="Rechercher dans l'historique"
+                       placeholder="Rechercher un acteur ou une action..."
+                       data-model="query"
+                       value="{{ query }}"
+                       class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 sm:text-sm transition-colors shadow-sm" />
+            </div>
+
+            {# Filtre par Type d'Événement (AuditEventType) #}
+            <div class="relative w-full sm:w-56">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
+                    <twig:ux:icon name="tabler:filter" class="size-4 text-slate-400" />
+                </div>
+                <select data-model="eventTypeFilter"
+                        aria-label="Filtrer par type"
+                        class="block w-full pl-10 pr-8 py-2 border border-slate-200 rounded-lg leading-5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 sm:text-sm transition-colors shadow-sm appearance-none cursor-pointer">
+                    <option value="">Tous les événements</option>
+
+                    {# Boucle sur ton Enum AuditEventType #}
+                    {% for type in this.statuses %}
+                        <option value="{{ type.value }}" {% if this.statusFilter == type %}selected{% endif %}>
+                            {{ type.label|capitalize|replace({'_': ' '}) }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-slate-400">
+                    <twig:ux:icon name="tabler:chevron-down" class="size-4" />
+                </div>
+            </div>
+
+        </div>
+
+        {# Groupe Droite : Compteur #}
+        <div class="text-sm font-medium text-slate-500 bg-white px-3 py-1.5 rounded-md shadow-sm border border-slate-200 w-full sm:w-auto text-center" aria-live="polite">
+            <span class="text-slate-900 font-bold">{{ items.nbResults }}</span> événement(s)
+        </div>
+
+    </div>
+
+    {% if items is empty %}
+
+        {# --- 1. L'ÉTAT VIDE (Empty State) --- #}
+        <div class="bg-white rounded-2xl p-8">
+            <twig:Empty class="border border-dashed border-slate-200 bg-slate-50/50 rounded-xl py-12">
+                <twig:Empty:Header>
+                    <twig:Empty:Media variant="icon" class="bg-white shadow-sm ring-1 ring-slate-200">
+                        <twig:ux:icon name="tabler:history" class="size-6 text-slate-400" />
+                    </twig:Empty:Media>
+                    <twig:Empty:Title class="text-lg font-bold text-slate-900 mt-4">Journal d'audit vide</twig:Empty:Title>
+                    <twig:Empty:Description class="text-slate-500">
+                        Aucune activité n'a encore été enregistrée pour le moment. Toutes les actions sensibles apparaîtront ici.
+                    </twig:Empty:Description>
+                </twig:Empty:Header>
+            </twig:Empty>
+        </div>
+
+    {% else %}
+        <twig:Grid:Table aria-label="Journal d'audit">
+
+            {# --- 2. EN-TÊTE DU TABLEAU --- #}
+            <twig:Grid:Header>
+                <div role="columnheader" class="lg:col-span-2">Date & Heure</div>
+                <div role="columnheader" class="lg:col-span-3">Acteur</div>
+                <div role="columnheader" class="lg:col-span-2">Action</div>
+{#                <div role="columnheader" class="lg:col-span-3">Détails (Payload)</div>#}
+{#                <div role="columnheader" class="lg:col-span-1 text-right">Actions</div>#}
+            </twig:Grid:Header>
+
+            {# --- 3. CORPS DU TABLEAU --- #}
+            <twig:Grid:Body>
+                {% for log in items %}
+                    <twig:Grid:Row>
+
+                        {# --- Colonne 1 : Date de l'événement --- #}
+                        <twig:Grid:Cell cols="2" label="Date & Heure">
+                            <div class="text-sm text-slate-600">
+                                <p class="font-bold text-slate-900">{{ log.occurredAt|date('d/m/Y') }}</p>
+                                <p class="text-xs text-slate-500 flex items-center gap-1">
+                                    <twig:ux:icon name="tabler:clock" class="size-3" />
+                                    {{ log.occurredAt|date('H:i:s') }}
+                                </p>
+                            </div>
+                        </twig:Grid:Cell>
+
+                        {# --- Colonne 2 : Acteur --- #}
+                        <twig:Grid:Cell cols="3" label="Acteur" class="mt-3 lg:mt-0">
+                            <div class="flex items-center gap-2">
+                                <div class="size-7 shrink-0 rounded-full bg-slate-100 text-slate-600 border border-slate-200 flex items-center justify-center shadow-sm" aria-hidden="true">
+                                    <twig:ux:icon name="tabler:user-shield" class="size-4" />
+                                </div>
+                                <div class="flex flex-col min-w-0">
+                                    {# 1. On va chercher le nom dans le payload, avec un fallback de sécurité #}
+                                    <span class="text-sm font-medium text-slate-900 truncate">
+                {{ log.payload.actor_name | default('Système / Inconnu') }}
+            </span>
+
+                                    {# 2. (Optionnel) Si tu as aussi stocké l'email, c'est super UX de l'afficher en petit ! #}
+                                    {% if log.payload.actor_email is defined %}
+                                        <span class="text-[10px] text-slate-500 truncate">
+                    {{ log.payload.actor_email }}
+                </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </twig:Grid:Cell>
+
+                        {# --- Colonne 3 : Événement --- #}
+                        <twig:Grid:Cell cols="3" label="Action" class="mt-3 lg:mt-0">
+                            {# Tu pourras mapper les couleurs selon la sévérité de l'événement plus tard #}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200/60">
+                                {{ log.eventName.label|replace({'_': ' '}) }}
+                            </span>
+                        </twig:Grid:Cell>
+
+                        {# --- Colonne 4 : Détails (Payload) --- #}
+{#                        <twig:Grid:Cell cols="3" label="Détails" class="mt-3 lg:mt-0">#}
+{#                            <div class="text-xs text-slate-500 bg-slate-50 border border-slate-100 rounded p-2 max-h-16 overflow-hidden relative">#}
+{#                                {% if log.payload is iterable and log.payload is not empty %}#}
+{#                                    <ul class="space-y-0.5">#}
+{#                                        {% for key, value in log.payload %}#}
+{#                                            <li class="truncate">#}
+{#                                                <span class="font-medium text-slate-700">{{ key }}:</span>#}
+{#                                                #}{# On vérifie si c'est un tableau ou un scalaire pour éviter les crashs Twig #}
+{#                                                {{ value is iterable ? '...' : value }}#}
+{#                                            </li>#}
+{#                                        {% endfor %}#}
+{#                                    </ul>#}
+{#                                    {% if log.payload|length > 2 %}#}
+{#                                        <div class="absolute bottom-0 right-0 bg-gradient-to-l from-slate-50 pl-4 pr-1 text-[10px] italic text-slate-400">#}
+{#                                            +{{ log.payload|length - 2 }} champs#}
+{#                                        </div>#}
+{#                                    {% endif %}#}
+{#                                {% else %}#}
+{#                                    <span class="italic text-slate-400">Aucun détail supplémentaire</span>#}
+{#                                {% endif %}#}
+{#                            </div>#}
+{#                        </twig:Grid:Cell>#}
+
+                        {# --- Colonne 5 : Actions --- #}
+{#                        <twig:Grid:Cell cols="1" class="flex flex-row lg:justify-end items-center gap-2 mt-4 pt-4 lg:mt-0 lg:pt-0 border-t border-slate-100 lg:border-t-0">#}
+{#                            #}{# Bouton pour ouvrir une modale ou une page avec le JSON complet #}
+{#                            <twig:Button#}
+{#                                as="a"#}
+{#                                href=""#}
+{#                                class="flex-1 lg:flex-none p-2 text-slate-500 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors border border-slate-200 lg:border-transparent flex items-center justify-center"#}
+{#                                title="Voir les détails bruts"#}
+{#                            >#}
+{#                                <twig:ux:icon name="tabler:file-code" class="size-4 shrink-0" aria-hidden="true" />#}
+{#                                <span class="ml-2 lg:sr-only text-xs font-medium">Détails</span>#}
+{#                            </twig:Button>#}
+{#                        </twig:Grid:Cell>#}
+
+                    </twig:Grid:Row>
+                {% endfor %}
+            </twig:Grid:Body>
+
+            {# --- 4. CONFIGURATION PAGINATION --- #}
+            <twig:block name="pagination">
+                {# Version Mobile #}
+                <div class="flex-1 flex justify-between md:hidden">
+                    <button type="button" data-action="live#action" data-live-action-param="previousPage" class="relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50" {% if not items.hasPreviousPage %}disabled{% endif %}>
+                        Précédent
+                    </button>
+                    <button type="button" data-action="live#action" data-live-action-param="nextPage" class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-300 text-sm font-medium rounded-md text-slate-700 bg-white hover:bg-slate-50 disabled:opacity-50" {% if not items.hasNextPage %}disabled{% endif %}>
+                        Suivant
+                    </button>
+                </div>
+
+                {# Version Desktop #}
+                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                    <div>
+                        <p class="text-sm text-slate-600">
+                            Événements <span class="font-bold text-slate-900">{{ items.currentPage }}</span> sur <span class="font-bold text-slate-900">{{ items.nbPages }}</span>
+                        </p>
+                    </div>
+                    <div>
+                        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            <button type="button" data-action="live#action" data-live-action-param="previousPage" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed" {% if not items.hasPreviousPage %}disabled{% endif %}>
+                                <twig:ux:icon name="tabler:chevron-left" class="size-4" />
+                            </button>
+                            <span class="relative inline-flex items-center px-4 py-2 border border-slate-300 bg-indigo-50 text-sm font-bold text-indigo-600">
+                                {{ items.currentPage }}
+                            </span>
+                            <button type="button" data-action="live#action" data-live-action-param="nextPage" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-slate-300 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed" {% if not items.hasNextPage %}disabled{% endif %}>
+                                <twig:ux:icon name="tabler:chevron-right" class="size-4" />
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+            </twig:block>
+        </twig:Grid:Table>
+    {% endif %}
+</div>

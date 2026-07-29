@@ -9,12 +9,11 @@ use App\Domain\User\Enum\OnboardingStatus;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Routing\RouterInterface;
 
-final class EnforceOnboardingSubscriber implements EventSubscriberInterface
+final readonly class EnforceOnboardingSubscriber implements EventSubscriberInterface
 {
     private const array ALLOWED_ROUTES = [
         'app_logout',               // Il faut toujours laisser le droit de se déconnecter !
@@ -25,10 +24,10 @@ final class EnforceOnboardingSubscriber implements EventSubscriberInterface
     ];
 
     public function __construct(
-        private readonly Security $security,
-        private readonly RouterInterface $router,
-        private readonly RequestStack $requestStack,
-    ) {}
+        private Security $security,
+        private RouterInterface $router,
+    ) {
+    }
 
     public static function getSubscribedEvents(): array
     {
@@ -82,14 +81,15 @@ final class EnforceOnboardingSubscriber implements EventSubscriberInterface
             default => [], // Tableau vide = onboarding terminé, accès libre
         };
 
-        if (!empty($allowedRoutesForStatus) && !in_array($currentRoute, $allowedRoutesForStatus, true)) {
-
+        if ([] !== $allowedRoutesForStatus && !in_array($currentRoute, $allowedRoutesForStatus, true)) {
             // On le redirige par défaut vers la PREMIÈRE route du tableau (la route principale)
             $defaultRoute = $allowedRoutesForStatus[0];
 
             $url = $this->router->generate($defaultRoute);
-            $this->requestStack->getSession()->set('usr_slug_id', $user->slugId);
             $event->setResponse(new RedirectResponse($url));
+            $event->stopPropagation();
+
+            return;
         }
     }
 }

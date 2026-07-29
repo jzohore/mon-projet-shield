@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Support\Enum;
 
 enum SupportSenderType: string
@@ -8,15 +10,15 @@ enum SupportSenderType: string
     case ADMIN = 'admin';
 
     /**
-     * Permet de savoir instantanément si c'est un message de l'équipe Kysure
+     * Permet de savoir instantanément si c'est un message de l'équipe Kysure.
      */
     public function isAdmin(): bool
     {
-        return $this === self::ADMIN;
+        return self::ADMIN === $this;
     }
 
     /**
-     * Utilisé pour la configuration de l'UI (ex: alignement des bulles)
+     * Utilisé pour la configuration de l'UI (ex: alignement des bulles).
      */
     public function getAlignmentClass(): string
     {
@@ -27,7 +29,7 @@ enum SupportSenderType: string
     }
 
     /**
-     * Couleurs des bulles de chat
+     * Couleurs des bulles de chat.
      */
     public function getBubbleClasses(): string
     {

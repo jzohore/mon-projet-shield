@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Billing\UseCase\Products;
 
 use App\Application\Billing\DTO\Response\ProductResponse;
@@ -9,8 +11,9 @@ use Webmozart\Assert\Assert;
 readonly class GetProductUseCase
 {
     public function __construct(
-        private ProductRepositoryInterface $productRepository
-    ) {}
+        private ProductRepositoryInterface $productRepository,
+    ) {
+    }
 
     public function __invoke(string $slugId): ProductResponse
     {

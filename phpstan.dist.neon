@@ -5,6 +5,7 @@ parameters:
         - config/
         - public/
         - src/
+        - .php-cs-fixer.php
     excludePaths:
         - tests/*
         - config/secrets/*

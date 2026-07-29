@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Listener;
 
 use App\Domain\User\Event\UserOnboardingCompletedEvent;
@@ -10,8 +12,9 @@ use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 final readonly class RefreshUserSessionListener
 {
     public function __construct(
-        private Security $security
-    ) {}
+        private Security $security,
+    ) {
+    }
 
     public function __invoke(UserOnboardingCompletedEvent $event): void
     {

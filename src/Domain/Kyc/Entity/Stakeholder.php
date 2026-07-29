@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Kyc\Entity;
 
 use App\Domain\Kyc\Enum\StakeholderRole;
@@ -26,19 +28,6 @@ class Stakeholder
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
     public private(set) string $slugId;
 
-    #[ORM\ManyToOne(targetEntity: KycFolder::class, inversedBy: 'stakeholders')]
-    #[ORM\JoinColumn(nullable: false)]
-    public private(set) KycFolder $folder;
-
-    #[ORM\Column(length: 100)]
-    public private(set) string $firstName;
-
-    #[ORM\Column(length: 100)]
-    public private(set) string $lastName;
-
-    #[ORM\Column(type: 'string', enumType: StakeholderRole::class)]
-    public private(set) StakeholderRole $role;
-
     #[ORM\Column(type: 'float', nullable: true)]
     public private(set) ?float $ownershipPercentage = null;
 
@@ -50,7 +39,7 @@ class Stakeholder
             }
 
             // Règle 2 : Il a été explicitement flaggé comme UBO (via le rôle)
-            if ($this->role === StakeholderRole::BENEFICIAL_OWNER) {
+            if (StakeholderRole::BENEFICIAL_OWNER === $this->role) {
                 return true;
             }
 
@@ -58,17 +47,18 @@ class Stakeholder
         }
     }
 
-    private function __construct(KycFolder $folder, string $firstName, string $lastName, StakeholderRole $role)
+    private function __construct(#[ORM\ManyToOne(targetEntity: KycFolder::class, inversedBy: 'stakeholders')]
+        #[ORM\JoinColumn(nullable: false)]
+        public private(set) KycFolder $folder, #[ORM\Column(length: 100)]
+        public private(set) string $firstName, #[ORM\Column(length: 100)]
+        public private(set) string $lastName, #[ORM\Column(type: 'string', enumType: StakeholderRole::class)]
+        public private(set) StakeholderRole $role)
     {
-        $this->folder = $folder;
-        $this->firstName = $firstName;
-        $this->lastName = $lastName;
-        $this->role = $role;
         $this->slugId = $this->generate_ulid_prefixed('stake_');
     }
 
     /**
-     * 🪄 Named Constructor : Créer un Bénéficiaire Effectif
+     * 🪄 Named Constructor : Créer un Bénéficiaire Effectif.
      */
     public static function createBeneficialOwner(KycFolder $folder, string $firstName, string $lastName, StakeholderRole $role, ?float $percentage = null): self
     {
@@ -79,7 +69,7 @@ class Stakeholder
     }
 
     /**
-     * 🪄 Named Constructor : Créer un Dirigeant simple
+     * 🪄 Named Constructor : Créer un Dirigeant simple.
      */
     public static function createDirector(KycFolder $folder, string $firstName, string $lastName): self
     {

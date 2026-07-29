@@ -8,7 +8,6 @@ use App\Domain\AuditLog\Entity\AuditLog;
 use App\Domain\AuditLog\Enum\AuditEventType;
 use App\Domain\AuditLog\Repository\AuditLogRepositoryInterface;
 use App\Domain\Screening\Event\DocumentSharedEvent;
-use Exception;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Webmozart\Assert\Assert;
 
@@ -17,12 +16,11 @@ readonly class ScreeningLogDocumentSharedListener
 {
     public function __construct(
         private AuditLogRepositoryInterface $auditLogRepository,
-    ) {}
+    ) {
+    }
 
     /**
-     * @param DocumentSharedEvent $event
-     * @return void
-     * @throws Exception
+     * @throws \Exception
      */
     public function __invoke(DocumentSharedEvent $event): void
     {
@@ -32,11 +30,11 @@ readonly class ScreeningLogDocumentSharedListener
         $audit = AuditLog::initiate(
             eventName: AuditEventType::DOCUMENT_SHARED,
             payload: [
-                'user_email' => $event->user->email,
+                'actor_name' => $user->getFullName(),
+                'actor_email' => $user->email,
                 'audit_slug_id' => $event->audit->slugId,
                 'recipients' => $event->recipients,
             ],
-            actor: $user->id->toString(),
             workspace: $event->workspace
         );
 

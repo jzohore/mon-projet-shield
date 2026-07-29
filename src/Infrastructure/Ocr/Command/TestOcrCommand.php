@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Ocr\Command;
 
 use App\Domain\Kyc\Repository\KycDocumentRepositoryInterface;
@@ -21,7 +23,7 @@ class TestOcrCommand extends Command
 
     public function __invoke(OutputInterface $output): int
     {
-        $document = $this->kycDocumentRepository->findPendingDocuments();
+        $this->kycDocumentRepository->findPendingDocuments();
 
         //        foreach ($document as $doc) {
         //            $this->eventDispatcher->dispatch(new OcrEvent($doc));

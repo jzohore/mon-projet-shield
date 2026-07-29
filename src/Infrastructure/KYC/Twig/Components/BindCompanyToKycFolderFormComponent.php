@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Twig\Components;
 
 use App\Application\Kyc\DTO\Request\BindCompanyToKycFolderRequest;
@@ -81,13 +83,9 @@ class BindCompanyToKycFolderFormComponent
         private readonly UrlGeneratorInterface $router,
         private readonly GetCurrentKycFolderUseCase $getCurrentKycFolderUseCase,
         private readonly ResetCompanyToKycFolderUseCase $resetCompanyToKycFolderUseCase,
-    ) {}
+    ) {
+    }
 
-    /**
-     * @param string|null $folderSlugId
-     * @return void
-     *
-     */
     public function mount(?string $folderSlugId = null): void
     {
         $this->folderSlugId = $folderSlugId;
@@ -102,7 +100,7 @@ class BindCompanyToKycFolderFormComponent
             if ($folder->companyName) {
                 $this->isAlreadySavedInDatabase = true;
 
-                if ($folder->siren === 'IN_FORMATION' || $folder->siret === 'IN_FORMATION') {
+                if ('IN_FORMATION' === $folder->siren || 'IN_FORMATION' === $folder->siret) {
                     $this->isInFormation = true;
                     $this->companyName = $folder->companyName;
                 } else {
@@ -118,14 +116,7 @@ class BindCompanyToKycFolderFormComponent
     }
 
     /**
-     * @param string $name
-     * @param string $siret
-     * @param string $siren
-     * @param string $address
-     * @param string $legalform
-     * @param string $administratif
      * @param array<int, array<string, mixed>> $stakeholders
-     * @return void
      */
     #[LiveAction]
     public function selectCompany(
@@ -212,6 +203,7 @@ class BindCompanyToKycFolderFormComponent
                 'companyName' => $this->companyName,
                 'error' => $e->getMessage(),
             ]);
+
             return null;
         }
 
@@ -220,6 +212,7 @@ class BindCompanyToKycFolderFormComponent
 
     /**
      * @return array<int, array{siret: string, name: string, address: string}>
+     *
      * @throws ClientExceptionInterface
      * @throws DecodingExceptionInterface
      * @throws RedirectionExceptionInterface
@@ -234,14 +227,16 @@ class BindCompanyToKycFolderFormComponent
 
         try {
             $this->hasApiError = false; // On reset l'erreur à chaque tentative
+
             return $this->siretSearchService->search($this->searchQuery);
         } catch (ClientException $e) {
             // Si l'API renvoie 429
-            if ($e->getResponse()->getStatusCode() === 429) {
+            if (429 === $e->getResponse()->getStatusCode()) {
                 $this->hasApiError = true;
             }
+
             return [];
-        } catch (\Exception $e) {
+        } catch (\Exception) {
             // Pour toute autre erreur (API down, etc.)
             return [];
         }

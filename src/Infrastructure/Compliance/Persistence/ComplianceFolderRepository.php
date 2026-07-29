@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Compliance\Persistence;
 
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Enum\ComplianceFolderStatus;
 use App\Domain\Compliance\Exception\ComplianceFolderNotFoundException;
 use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
+use App\Domain\User\Entity\Client;
 use App\Domain\Workspace\Entity\Workspace;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
@@ -23,7 +26,8 @@ class ComplianceFolderRepository implements ComplianceFolderRepositoryInterface
 {
     /** @var EntityRepository<ComplianceFolder> */
     private readonly EntityRepository $repository;
-    public function __construct(private EntityManagerInterface $entityManager)
+
+    public function __construct(private readonly EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(ComplianceFolder::class);
     }
@@ -48,7 +52,7 @@ class ComplianceFolderRepository implements ComplianceFolderRepositoryInterface
     {
         $folder = $this->repository->find($id);
 
-        if (!$folder) {
+        if (!$folder instanceof ComplianceFolder) {
             throw ComplianceFolderNotFoundException::withId((string) $id);
         }
 
@@ -59,7 +63,7 @@ class ComplianceFolderRepository implements ComplianceFolderRepositoryInterface
     {
         $folder = $this->repository->findOneBy(['reference' => $reference]);
 
-        if (!$folder) {
+        if (!$folder instanceof ComplianceFolder) {
             throw ComplianceFolderNotFoundException::withReference($reference);
         }
 
@@ -80,9 +84,6 @@ class ComplianceFolderRepository implements ComplianceFolderRepositoryInterface
     }
 
     /**
-     * @param Workspace $workspace
-     * @param string|null $search
-     * @param ComplianceFolderStatus|null $status
      * @return Pagerfanta<ComplianceFolder>
      */
     public function findAllByWorkspace(Workspace $workspace, ?string $search = null, ?ComplianceFolderStatus $status = null): Pagerfanta
@@ -100,7 +101,7 @@ class ComplianceFolderRepository implements ComplianceFolderRepositoryInterface
                 ->setParameter('search', '%' . $search . '%');
         }
 
-        if ($status) {
+        if ($status instanceof ComplianceFolderStatus) {
             $qb->andWhere('cf.status = :status')
                 ->setParameter('status', $status);
         }
@@ -121,15 +122,68 @@ class ComplianceFolderRepository implements ComplianceFolderRepositoryInterface
             ->getSingleScalarResult();
     }
 
-    public function findOneLastDraftIndividuals(): ?ComplianceFolder
+    public function findOneLastDraftIndividuals(string $method, Workspace $workspace): ?ComplianceFolder
     {
         return $this->repository->createQueryBuilder('cf')
             ->select('cf')
             ->where('cf.status = :state')
+            ->andWhere('cf.workspace = :workspace')
+            ->andWhere('cf.creationMethod = :method')
             ->setParameter('state', ComplianceFolderStatus::DRAFT)
+            ->setParameter('method', $method)
+            ->setParameter('workspace', $workspace)
             ->setMaxResults(1)
             ->orderBy('cf.createdAt', 'DESC')
             ->getQuery()
             ->getOneOrNullResult();
+    }
+
+    public function findBySubmissionId(string $submissionId): ?ComplianceFolder
+    {
+        return $this->repository->findOneBy(['docuSealSubmissionId' => $submissionId]);
+    }
+
+    /**
+     * @return list<ComplianceFolder>
+     */
+    public function findAllActiveForClient(Client $client): array
+    {
+        // 🚨 RÈGLE MÉTIER KYSURE :
+        // Le portail sert uniquement à la collecte KYC.
+        // On ignore les dossiers en cours de génération ou de signature DocuSeal.
+        // On récupère le dossier le plus récent ayant au moins atteint le statut DER_SIGNED.
+
+        return $this->repository->createQueryBuilder('cf')
+            ->where('cf.client = :client')
+            ->andWhere('cf.status IN (:kycStatuses)')
+            ->setParameter('client', $client)
+            ->setParameter('kycStatuses', ComplianceFolderStatus::getKycPhaseStatuses())
+            ->orderBy('cf.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findActiveForClient(Client $client): ?ComplianceFolder
+    {
+        return $this->repository->createQueryBuilder('cf')
+            ->select('cf') // Sélection explicite
+            ->where('cf.client = :client')
+            ->andWhere('cf.status IN (:kycStatuses)')
+            ->setParameter('client', $client)
+            ->setParameter('kycStatuses', ComplianceFolderStatus::getKycPhaseStatuses())
+            ->orderBy('cf.createdAt', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findOneBySlugIdAndClient(string $folderId, Client $client): ?ComplianceFolder
+    {
+        return $this->repository->findOneBy(['slugId' => $folderId, 'client' => $client]);
+    }
+
+    public function findOneBySlugId(string $slugId): ?ComplianceFolder
+    {
+        return $this->repository->findOneBy(['slugId' => $slugId]);
     }
 }

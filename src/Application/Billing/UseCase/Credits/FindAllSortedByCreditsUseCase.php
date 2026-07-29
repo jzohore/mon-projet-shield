@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Billing\UseCase\Credits;
 
 use App\Domain\Product\Entity\Product;
@@ -9,7 +11,8 @@ final readonly class FindAllSortedByCreditsUseCase
 {
     public function __construct(
         private ProductRepositoryInterface $productRepository,
-    ) {}
+    ) {
+    }
 
     /**
      * @return array<Product>

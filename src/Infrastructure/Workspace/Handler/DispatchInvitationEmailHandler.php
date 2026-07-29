@@ -19,7 +19,8 @@ final readonly class DispatchInvitationEmailHandler
     public function __construct(
         private WorkspaceInvitationRepository $workspaceInvitationRepository,
         private MailerInterface $mailer,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws TransportExceptionInterface

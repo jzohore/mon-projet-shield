@@ -1,27 +1,30 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Support\UseCase;
 
 use App\Domain\Shared\Port\RealTimeNotifierInterface;
 use App\Domain\Support\Entity\SupportMessage;
 use App\Domain\Support\Enum\SupportSenderType;
 use App\Domain\Support\Repository\SupportThreadRepositoryInterface;
-use DateTimeImmutable;
 
 final readonly class AutoResolveInactiveThreadsUseCase
 {
     public function __construct(
         private SupportThreadRepositoryInterface $threadRepository,
         private RealTimeNotifierInterface $notifier,
-    ) {}
+    ) {
+    }
 
     /**
      * @return array{warned: int, resolved: int} Bilan de l'exécution
+     *
      * @throws \DateInvalidOperationException
      */
     public function execute(\DateInterval $warningInactivity, \DateInterval $closureGracePeriod): array
     {
-        $now = new DateTimeImmutable();
+        $now = new \DateTimeImmutable();
         $warnedCount = 0;
         $resolvedCount = 0;
 
@@ -39,7 +42,7 @@ final readonly class AutoResolveInactiveThreadsUseCase
             $thread->resetClosureWarning(); // Nettoyage de l'état au cas où il serait rouvert
 
             $this->threadRepository->save($thread);
-            $resolvedCount++;
+            ++$resolvedCount;
             $this->notifier->notify(
                 topic: 'support_thread_' . $thread->slugId,
                 payload: ['action' => 'new_message', 'sender' => SupportSenderType::ADMIN]
@@ -58,8 +61,7 @@ final readonly class AutoResolveInactiveThreadsUseCase
         foreach ($threadsToWarn as $thread) {
             $lastMessage = $thread->messages->last();
 
-            if ($lastMessage && $lastMessage->senderType === SupportSenderType::ADMIN) {
-
+            if ($lastMessage && SupportSenderType::ADMIN === $lastMessage->senderType) {
                 $warningMessage = "Bonjour, sans retour de votre part d'ici quelques minutes, ce ticket sera automatiquement clôturé. N'hésitez pas à nous répondre si votre problème persiste !";
                 SupportMessage::write($thread, SupportSenderType::ADMIN, $warningMessage);
 
@@ -68,7 +70,7 @@ final readonly class AutoResolveInactiveThreadsUseCase
                 $thread->markClosureWarningAsSent();
 
                 $this->threadRepository->save($thread);
-                $warnedCount++;
+                ++$warnedCount;
                 $this->notifier->notify(
                     topic: 'support_thread_' . $thread->slugId,
                     payload: ['action' => 'new_message', 'sender' => SupportSenderType::ADMIN]

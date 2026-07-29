@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Listener;
 
 use App\Domain\Billing\Event\CreateBillingModeEvent;
@@ -13,7 +15,8 @@ readonly class CreateBillingModeListener
 {
     public function __construct(
         private MessageBusInterface $messageBus,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws ExceptionInterface

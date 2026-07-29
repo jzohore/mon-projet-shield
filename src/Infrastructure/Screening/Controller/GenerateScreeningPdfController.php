@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Screening\Controller;
 
 use App\Application\Screening\UseCase\GenerateScreeningPdfUseCase;
@@ -20,7 +22,8 @@ readonly class GenerateScreeningPdfController
         private GenerateScreeningPdfUseCase $generateScreeningPdfUseCase,
         private GetScreeningInfo $getScreeningInfo,
         private UrlGeneratorInterface $urlGenerator,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws ExceptionInterface
@@ -31,6 +34,7 @@ readonly class GenerateScreeningPdfController
     ): RedirectResponse {
         ($this->generateScreeningPdfUseCase)($audit);
         $screening = ($this->getScreeningInfo)($audit);
+
         return new RedirectResponse(url: $this->urlGenerator->generate('app_screening_show', ['slugId' => $screening->slugId]));
     }
 }

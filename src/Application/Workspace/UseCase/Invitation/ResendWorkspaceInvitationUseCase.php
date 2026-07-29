@@ -17,11 +17,11 @@ final readonly class ResendWorkspaceInvitationUseCase
         private MessageBusInterface $messageBus,
         private UrlGeneratorInterface $router,
         private WorkspaceInvitationRepositoryInterface $repository,
-    ) {}
+    ) {
+    }
 
     public function __invoke(WorkspaceInvitation $workspaceInvitation): void
     {
-
         $workspaceInvitation->clearMagicLinkToken();
         $workspaceInvitation->generateMagicLinkToken();
 

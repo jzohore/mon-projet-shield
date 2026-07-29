@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\User\DTO\Request;
 
 use Symfony\Component\Validator\Constraints as Assert;
@@ -31,5 +33,4 @@ class UpdateNameRequest
         message: 'Le nom contient des caractères non autorisés.'
     )]
     public ?string $lastName = null;
-
 }

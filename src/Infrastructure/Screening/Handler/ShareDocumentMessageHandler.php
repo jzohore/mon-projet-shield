@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Screening\Handler;
 
 use App\Domain\Screening\Repository\ScreeningAuditRepositoryInterface;
@@ -21,7 +23,8 @@ readonly class ShareDocumentMessageHandler
         private ScreeningAuditRepositoryInterface $screeningAuditRepository,
         private UserRepositoryInterface $userRepository,
         private S3UrlExtension $s3UrlExtension,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws TransportExceptionInterface

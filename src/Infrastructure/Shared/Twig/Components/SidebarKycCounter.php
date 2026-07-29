@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Shared\Twig\Components;
 
 use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
@@ -17,12 +19,14 @@ final readonly class SidebarKycCounter
     public function __construct(
         private GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
         private KycFolderRepositoryInterface $kycRepository,
-    ) {}
+    ) {
+    }
 
     public function getCount(Uuid $userId): int
     {
         $workspace = ($this->getCurrentWorkspaceInfo)($userId);
         Assert::notNull($workspace->slugId);
+
         return $this->kycRepository->countDraftsForWorkspace($workspace->slugId);
     }
 }

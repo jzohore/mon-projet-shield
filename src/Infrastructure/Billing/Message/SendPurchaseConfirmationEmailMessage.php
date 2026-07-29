@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Message;
 
 readonly class SendPurchaseConfirmationEmailMessage
@@ -8,6 +10,7 @@ readonly class SendPurchaseConfirmationEmailMessage
         public string $email,
         public string $workspaceName,
         public int $credits,
-        public ?string $invoiceUrl
-    ) {}
+        public ?string $invoiceUrl,
+    ) {
+    }
 }

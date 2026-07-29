@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Controller\App\Settings;
 
 use App\Application\Billing\UseCase\Subscription\CancelPendingSubscriptionUseCase;
@@ -22,26 +24,24 @@ readonly class CancelSubscriptionConfimController
         private GetCurrentSubscriptionUseCase $currentSubscriptionUseCase,
         private UrlGeneratorInterface $urlGenerator,
         private CancelPendingSubscriptionUseCase $cancelSubscriptionUseCase,
-    ) {}
+    ) {
+    }
 
-    /**
-     * @param Request $request
-     * @return Response
-     */
     public function __invoke(Request $request): Response
     {
         $reason = $request->request->get('reason');
         Assert::string($reason);
         $subscription = ($this->currentSubscriptionUseCase)();
-        if ($subscription->status === 'active') {
+        if ('active' === $subscription->status) {
             try {
                 // 3. On lance ton Use Case
                 ($this->cancelSubscriptionUseCase)($reason);
-                //$this->addFlash('success', 'Votre demande de résiliation a bien été prise en compte.');
-            } catch (\Exception $e) {
-                //$this->addFlash('error', 'Une erreur est survenue lors de la résiliation.');
+                // $this->addFlash('success', 'Votre demande de résiliation a bien été prise en compte.');
+            } catch (\Exception) {
+                // $this->addFlash('error', 'Une erreur est survenue lors de la résiliation.');
             }
         }
+
         return new RedirectResponse($this->urlGenerator->generate('app_settings_subscription'));
     }
 }

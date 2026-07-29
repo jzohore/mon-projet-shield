@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Compliance\Controller;
 
 use Symfony\Component\HttpFoundation\Response;
@@ -16,7 +18,8 @@ readonly class NewComplianceController
 {
     public function __construct(
         private Environment $twig,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws RuntimeError

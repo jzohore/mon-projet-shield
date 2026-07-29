@@ -3,7 +3,7 @@
 
 {% block title %}Kysure | Administration Système{% endblock %}
 
-{% block page_title %}Vue d'ensemble Système{% endblock %}
+{% block page_title %}Vue d'ensemble{% endblock %}
 
 {% block breadcrumb_items %}
     <twig:Breadcrumb:Separator />
@@ -13,228 +13,11 @@
 {% endblock %}
 
 {% block content %}
-    <div class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8 space-y-8">
 
-        {# --- 1. EN-TÊTE & ACTIONS --- #}
-        <div class="flex flex-wrap items-center justify-between gap-4">
-            <div class="flex items-center gap-4">
-                <a href="#" class="p-2 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-slate-600 transition-colors shadow-sm">
-                    {{ ux_icon('lucide:arrow-left', { class: 'size-5' }) }}
-                </a>
-                <div>
-                    <div class="flex items-center gap-3">
-                        <h1 class="text-2xl font-black text-slate-900 leading-tight">Cabinet Alpha Partners</h1>
-                        {# Badge Statut #}
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20 uppercase">
-                        <span class="size-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true"></span>
-                        Compte Actif
-                    </span>
-                    </div>
-                    <div class="flex items-center gap-2 mt-1 text-sm text-slate-500">
-                        <span class="font-mono text-slate-400">ID: wksp_01H8X...</span>
-                        <span>&bull;</span>
-                        <span>Client depuis le 12/10/2025</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <button type="button" class="px-4 py-2 text-sm font-bold text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 shadow-sm transition-colors">
-                    Éditer l'espace
-                </button>
-                <button type="button" class="px-4 py-2 text-sm font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 shadow-sm transition-all flex items-center gap-2">
-                    {{ ux_icon('lucide:download', { class: 'size-4' }) }}
-                    Export Audit
-                </button>
-            </div>
-        </div>
-
-        {# --- 2. LES KPIs GLOBAUX --- #}
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {# KPI Dossiers #}
-            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-                <div class="flex items-center gap-3 text-slate-500 mb-2">
-                    {{ ux_icon('lucide:folder-open', { class: 'size-5' }) }}
-                    <h3 class="text-xs font-black uppercase tracking-widest">Dossiers KYC/KYB</h3>
-                </div>
-                <p class="text-2xl font-black text-slate-900">142</p>
-            </div>
-
-            {# KPI Criblages #}
-            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-                <div class="flex items-center gap-3 text-slate-500 mb-2">
-                    {{ ux_icon('lucide:search', { class: 'size-5' }) }}
-                    <h3 class="text-xs font-black uppercase tracking-widest">Criblages LCB-FT</h3>
-                </div>
-                <p class="text-2xl font-black text-slate-900">1,024</p>
-            </div>
-
-            {# KPI Utilisateurs #}
-            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-                <div class="flex items-center gap-3 text-slate-500 mb-2">
-                    {{ ux_icon('lucide:users', { class: 'size-5' }) }}
-                    <h3 class="text-xs font-black uppercase tracking-widest">Utilisateurs</h3>
-                </div>
-                <p class="text-2xl font-black text-slate-900">3</p>
-            </div>
-
-            {# KPI Support #}
-            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-                <div class="flex items-center gap-3 text-amber-500 mb-2">
-                    {{ ux_icon('lucide:life-buoy', { class: 'size-5' }) }}
-                    <h3 class="text-xs font-black uppercase tracking-widest">Tickets ouverts</h3>
-                </div>
-                <p class="text-2xl font-black text-amber-600">1</p>
-            </div>
-        </div>
-
-        {# --- 3. GRILLE PRINCIPALE (Abonnement & Audit) --- #}
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-            {# COLONNE GAUCHE (1/3) #}
-            <aside class="space-y-6">
-
-                {# Carte : Modèle Économique (Abonnement vs Crédits) #}
-                <div class="bg-gradient-to-br from-violet-900 to-slate-900 border border-slate-800 rounded-3xl p-6 shadow-xl text-white">
-                    <div class="flex justify-between items-start mb-6">
-                        <div>
-                            <h2 class="text-[10px] font-black text-violet-300 uppercase tracking-widest mb-1">Modèle Économique</h2>
-
-                            {# Si c'est un Cabinet (Abonnement) #}
-                            <div class="flex items-center gap-2">
-                                {{ ux_icon('lucide:building-2', { class: 'size-5 text-white' }) }}
-                                <span class="text-lg font-bold">Cabinet (Abonnement)</span>
-                            </div>
-
-                            {# Exemple alternatif pour un Indépendant :
-                        <div class="flex items-center gap-2 text-emerald-400">
-                            {{ ux_icon('lucide:coins', { class: 'size-5' }) }}
-                            <span class="text-lg font-bold text-white">Indépendant (Crédits)</span>
-                        </div>
-                            #}
-                        </div>
-                        <span class="px-2.5 py-1 bg-white/10 text-white rounded-lg text-[10px] font-black uppercase tracking-wide">
-                        Premium
-                    </span>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div class="flex items-center justify-between text-sm">
-                            <span class="text-slate-300 font-medium">Crédits mensuels restants</span>
-                            <span class="font-bold text-white">850 / 1000</span>
-                        </div>
-                        <div class="w-full bg-slate-800 rounded-full h-2">
-                            <div class="bg-violet-500 h-2 rounded-full" style="width: 85%"></div>
-                        </div>
-                        <p class="text-[10px] text-slate-400">Renouvellement le 01/06/2026</p>
-                    </div>
-                </div>
-
-                {# Carte : ZONE DE DANGER (Suspension) #}
-                <div class="bg-white border border-rose-200 rounded-3xl p-6 shadow-sm">
-                    <div class="flex items-center gap-2 text-rose-600 mb-4">
-                        {{ ux_icon('lucide:alert-triangle', { class: 'size-5' }) }}
-                        <h2 class="text-sm font-black uppercase tracking-widest">Zone de danger</h2>
-                    </div>
-                    <p class="text-xs text-slate-500 mb-4 leading-relaxed">
-                        Suspendre ce compte bloquera immédiatement l'accès à tous ses utilisateurs et stoppera les requêtes API. Les données seront conservées.
-                    </p>
-                    <button type="button" class="w-full py-2.5 px-4 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-sm font-bold hover:bg-rose-600 hover:text-white transition-colors">
-                        Suspendre le compte
-                    </button>
-                </div>
-            </aside>
-
-            {# COLONNE DROITE : JOURNAL D'AUDIT (2/3) #}
-            <div class="lg:col-span-2">
-                <div class="bg-white border border-slate-200 rounded-3xl shadow-sm overflow-hidden flex flex-col h-[600px]">
-
-                    <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-10">
-                        <h2 class="text-base font-bold text-slate-900">Journal d'Audit</h2>
-                        <p class="text-xs text-slate-500 mt-1">Traçabilité complète des actions effectuées sur ce compte.</p>
-                    </div>
-
-                    {# Conteneur scrollable pour la timeline #}
-                    <div class="flex-1 overflow-y-auto p-6 space-y-8">
-
-                        {# GROUPE 1 : AUJOURD'HUI #}
-                        <div>
-                            <div class="flex items-center gap-4 mb-4">
-                                <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Aujourd'hui</h3>
-                                <div class="h-px bg-slate-200 flex-1"></div>
-                            </div>
-
-                            <div class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-
-                                {# Action 1 #}
-                                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                    <div class="flex items-center justify-center size-10 rounded-full border-4 border-white bg-emerald-100 text-emerald-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                                        {{ ux_icon('lucide:check-circle-2', { class: 'size-4' }) }}
-                                    </div>
-                                    <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
-                                        <div class="flex items-center justify-between mb-1">
-                                            <span class="text-[10px] font-bold text-slate-400">14:32</span>
-                                            <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">Jean D.</span>
-                                        </div>
-                                        <p class="text-sm font-medium text-slate-900">Validation du dossier KYC</p>
-                                        <p class="text-xs text-slate-500 mt-1">Dossier #KYC-8829 approuvé manuellement.</p>
-                                    </div>
-                                </div>
-
-                                {# Action 2 #}
-                                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                    <div class="flex items-center justify-center size-10 rounded-full border-4 border-white bg-violet-100 text-violet-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                                        {{ ux_icon('lucide:search', { class: 'size-4' }) }}
-                                    </div>
-                                    <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
-                                        <div class="flex items-center justify-between mb-1">
-                                            <span class="text-[10px] font-bold text-slate-400">10:15</span>
-                                            <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">API Key</span>
-                                        </div>
-                                        <p class="text-sm font-medium text-slate-900">Nouveau Criblage LCB-FT</p>
-                                        <p class="text-xs text-slate-500 mt-1">Recherche effectuée sur l'entité "TotalEnergies SE". 0 correspondance trouvée.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {# GROUPE 2 : HIER #}
-                        <div>
-                            <div class="flex items-center gap-4 mb-4">
-                                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest">Hier - 02 Mai 2026</h3>
-                                <div class="h-px bg-slate-100 flex-1"></div>
-                            </div>
-
-                            <div class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent">
-
-                                {# Action 3 #}
-                                <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                                    <div class="flex items-center justify-center size-10 rounded-full border-4 border-white bg-slate-100 text-slate-600 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                                        {{ ux_icon('lucide:user-plus', { class: 'size-4' }) }}
-                                    </div>
-                                    <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-2xl bg-white border border-slate-200 shadow-sm opacity-75">
-                                        <div class="flex items-center justify-between mb-1">
-                                            <span class="text-[10px] font-bold text-slate-400">18:45</span>
-                                            <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">Marie L.</span>
-                                        </div>
-                                        <p class="text-sm font-medium text-slate-900">Ajout d'un membre</p>
-                                        <p class="text-xs text-slate-500 mt-1">Invitation envoyée à pierre@external.com (Rôle : Collaborateur).</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-
-        </div>
-    </div>
-    <div class="max-w-7xl mx-auto space-y-6">
 
         <header class="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold tracking-tight text-slate-900">Centre de <span class="text-violet-600">Contrôle</span></h1>
+                <h1 class="text-2xl font-bold tracking-tight text-slate-900">Centre de <span class="text-violet-600">contrôle</span></h1>
                 <p class="text-sm text-slate-500 mt-1">Supervision globale de l'activité, des revenus et de la santé du système.</p>
             </div>
             <div class="flex items-center gap-3">
@@ -424,39 +207,77 @@
                 {# LISTE 2 : ALERTES D'AUDIT / SYSTÈME #}
                 {# ALERTES D'AUDIT / SYSTÈME #}
                 <section class="bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                    {# --- EN-TÊTE DU COMPOSANT --- #}
                     <div class="p-5 border-b border-slate-100 flex items-center justify-between">
                         <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                            {{ ux_icon('lucide:scroll-text', { class: 'size-4 text-slate-400' }) }}
                             Journal d'Audit Récent
                         </h2>
-                        <a href="{{ path('admin_audit_logs_list')|default('#') }}" class="text-xs font-medium text-violet-600 hover:text-violet-700">Voir les logs</a>
+                        <a href="{{ path('admin_audit_logs_list')|default('#') }}" class="text-xs font-bold text-[#6e2f1e] hover:text-[#5a2517] transition-colors">
+                            Voir tous les logs &rarr;
+                        </a>
                     </div>
 
+                    {# --- LISTE COMPACTE DES LOGS --- #}
                     <div class="p-2 space-y-1">
                         {% for log in stats.latestAuditLogs %}
-                            <div class="flex gap-4 p-3 hover:bg-slate-50 rounded-lg transition-colors group cursor-pointer">
-                                <div class="mt-1">
-                                    {# 🛡️ Utilisation de la logique DDD de ton Enum #}
-                                    {{ ux_icon(log.eventName.icon, { class: 'size-5 ' ~ log.eventName.colorClass }) }}
-                                </div>
-                                <div class="flex-1 min-w-0">
-                                    {# Affichage formaté du nom de l'événement (ex: SYSTEM SANCTION LIST UPDATED) #}
-                                    <p class="text-sm font-semibold text-slate-900 truncate uppercase tracking-tight">{{ log.eventName.label }}</p>
+                            <div class="flex items-center justify-between p-3 hover:bg-slate-50/80 rounded-lg transition-colors group cursor-pointer border border-transparent hover:border-slate-200/60">
 
-                                    {# Le payload étant un JSON (array), on affiche une info clé. Exemple : ID de la ressource #}
-                                    <p class="text-xs text-slate-500 mt-0.5 truncate">
-                                        Cible ID: <span class="font-mono text-[10px] text-slate-400">{{ log.resourceId }}</span>
+                                {# Gauche : Acteur & Action #}
+                                <div class="flex items-center gap-3 min-w-0 pr-2">
+
+                                    {# Avatar / Icône Acteur #}
+                                    <div class="size-8 shrink-0 rounded-full bg-slate-100 text-slate-600 border border-slate-200 flex items-center justify-center shadow-sm" aria-hidden="true">
+                                        {% if log.payload.actor_email is defined and 'system' in log.payload.actor_email|lower %}
+                                            <twig:ux:icon name="tabler:cpu" class="size-4 text-slate-500" />
+                                        {% else %}
+                                            <twig:ux:icon name="tabler:user-shield" class="size-4 text-slate-600" />
+                                        {% endif %}
+                                    </div>
+
+                                    {# Informations Acteur & Badge Événement #}
+                                    <div class="flex flex-col min-w-0">
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            {# Badge Événement Dynamique (Utilise le helpergetBadgeColor() de l'enum) #}
+                                            {% if log.eventName %}
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border {{ log.eventName.getBadgeColor() }}">
+                                    {{ log.eventName.getLabel() }}
+                                </span>
+                                            {% else %}
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border bg-slate-100 text-slate-600 border-slate-200">
+                                    Événement inconnu
+                                </span>
+                                            {% endif %}
+                                        </div>
+
+                                        {# Acteur #}
+                                        <div class="flex items-center gap-1.5 mt-1 text-xs text-slate-600">
+                            <span class="font-bold text-slate-900 truncate">
+                                {{ log.payload.actor_name|default('Système Kysure') }}
+                            </span>
+                                            {% if log.payload.actor_email is defined and log.payload.actor_email %}
+                                                <span class="text-slate-400">&bull;</span>
+                                                <span class="text-[11px] text-slate-500 truncate font-mono">
+                                    {{ log.payload.actor_email }}
+                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {# Droite : Horodatage #}
+                                <div class="text-right shrink-0">
+                                    <p class="text-xs font-bold text-slate-900">{{ log.occurredAt|date('d/m/Y') }}</p>
+                                    <p class="text-[11px] text-slate-500 flex items-center justify-end gap-1 font-mono mt-0.5">
+                                        <twig:ux:icon name="tabler:clock" class="size-3 text-slate-400" />
+                                        {{ log.occurredAt|date('H:i:s') }}
                                     </p>
                                 </div>
-                                <div class="text-right shrink-0">
-                                    {# Formatage de l'heure intelligente #}
-                                    <p class="text-xs font-medium text-slate-700">{{ log.occurredAt|date('H:i') }}</p>
-                                    <p class="text-[10px] text-slate-400 mt-0.5">{{ log.occurredAt|date('d/m') }}</p>
-                                </div>
+
                             </div>
                         {% else %}
-                            <div class="text-center p-6 text-sm text-slate-500">
-                                Aucun événement d'audit récent.
+                            <div class="text-center py-8 px-4 text-xs text-slate-500 flex flex-col items-center justify-center gap-2">
+                                <twig:ux:icon name="tabler:scroll-off" class="size-8 text-slate-300" />
+                                <p class="font-medium">Aucun événement d'audit récent enregistre.</p>
                             </div>
                         {% endfor %}
                     </div>
@@ -464,5 +285,5 @@
 
             </div>
         </div>
-    </div>
+
 {% endblock %}

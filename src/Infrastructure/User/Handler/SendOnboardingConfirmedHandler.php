@@ -16,20 +16,14 @@ use Symfony\Component\Uid\Uuid;
 #[AsMessageHandler]
 final readonly class SendOnboardingConfirmedHandler
 {
-    /**
-     * @param UserRepositoryInterface $userRepository
-     * @param WorkspaceRepositoryInterface $workspaceRepository
-     * @param MailerInterface $mailer
-     */
     public function __construct(
         private UserRepositoryInterface $userRepository,
         private WorkspaceRepositoryInterface $workspaceRepository,
         private MailerInterface $mailer,
-    ) {}
+    ) {
+    }
 
     /**
-     * @param SendOnboardingConfirmedMessage $message
-     * @return void
      * @throws TransportExceptionInterface
      */
     public function __invoke(SendOnboardingConfirmedMessage $message): void

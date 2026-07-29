@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>DER - {{ folder.contactFirstName }} {{ folder.contactLastName }}</title>
+    <style>
+        /* Optimisation 1 page A4 avec respiration */
+        @page {
+            margin: 12mm 15mm;
+            size: A4 portrait;
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            font-size: 10px;
+            line-height: 1.4;
+            color: #1e293b;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            font-size: 12px;
+            color: #0f172a;
+            border-bottom: 1px solid #cbd5e1;
+            padding-bottom: 5px;
+            margin-top: 18px;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #0f172a;
+        }
+        .logo {
+            max-height: 55px;
+            max-width: 160px;
+        }
+        .info-grid {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 16px;
+        }
+        .info-box {
+            flex: 1;
+            background-color: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 12px 15px;
+            border-radius: 6px;
+        }
+        .info-box strong {
+            display: block;
+            font-size: 11px;
+            margin-bottom: 6px;
+            color: #334155;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        ul {
+            margin: 8px 0;
+            padding-left: 20px;
+        }
+        li {
+            margin-bottom: 4px;
+        }
+        p {
+            margin: 6px 0;
+            text-align: justify;
+        }
+        .text-sm {
+            font-size: 8px;
+            color: #64748b;
+            line-height: 1.3;
+        }
+        .partner-list {
+            column-count: 2; /* Sépare la liste des partenaires sur 2 colonnes pour gagner de la place */
+            column-gap: 20px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+<body>
+
+{# VARIABLES #}
+{% set workspace = document.folder.workspace %}
+{% set profile = workspace.regulatoryProfile %}
+
+<div class="header">
+    <div>
+        {% if profile.filename %}
+            <img src="{{ profile.logoStoragePath|private_url }}" class="logo" alt="Logo Cabinet">
+        {% else %}
+            <h2 style="margin:0; font-size: 16px;">{{ workspace.name }}</h2>
+        {% endif %}
+    </div>
+    <div style="text-align: right; font-size: 9px; color: #475569; line-height: 1.5;">
+        <strong style="color: #0f172a; font-size: 10px;">DOCUMENT D'ENTRÉE EN RELATION</strong><br>
+        Réf: {{ folder.reference }}<br>
+        Édité le : {{ "now"|date("d/m/Y") }}
+    </div>
+</div>
+
+<div class="info-grid">
+    <div class="info-box">
+        <strong>LE CABINET</strong>
+        {{ workspace.legalName ?: workspace.name }}<br>
+        {{ workspace.address }}<br>
+        SIRET : {{ workspace.siret }}
+    </div>
+    <div class="info-box">
+        <strong>LE CLIENT</strong>
+        {{ folder.contactFirstName }} {{ folder.contactLastName }}<br>
+        {{ folder.address|default('Adresse non renseignée') }}<br>
+        Email : {{ folder.contactEmail }}
+    </div>
+</div>
+
+<h1>1. Informations Réglementaires</h1>
+<p>
+    Le cabinet est immatriculé au registre de l'ORIAS sous le numéro <strong>{{ profile.oriasNumber }}</strong> (www.orias.fr) et est adhérent à <strong>{{ profile.professionalAssociation }}</strong>, association agréée par l'Autorité des Marchés Financiers (AMF).
+</p>
+
+<h1>2. Statuts et Activités</h1>
+<p>Le cabinet est habilité à exercer sous les statuts suivants :</p>
+<ul>
+    <li><strong>Conseiller en Investissements Financiers (CIF)</strong>, enregistré auprès de l'AMF.</li>
+    <li><strong>Courtier en Assurance et Réassurance (COA)</strong>.</li>
+    <li><strong>Démarcheur bancaire et financier</strong>.</li>
+</ul>
+
+<h1>3. Couvertures et Garanties</h1>
+<p>
+    Conformément à la loi, le cabinet dispose d'une Responsabilité Civile Professionnelle (RC Pro) et d'une Garantie Financière souscrites auprès de <strong>{{ profile.rcProInsurer|default('Non renseigné') }}</strong> sous le numéro de police <strong>{{ profile.rcProPolicyNumber }}</strong>.
+</p>
+
+<h1>4. Traitement des Conflits d'intérêts et Rémunération</h1>
+<p>
+    La rémunération du cabinet peut être structurée sous forme d'honoraires de conseil (selon une lettre de mission préalable) et/ou de rétrocessions de commissions versées par les établissements promoteurs des produits conseillés. Le cabinet s'engage à agir de manière honnête, loyale et professionnelle, au mieux des intérêts du client.
+</p>
+
+{# 🪄 NOUVELLE SECTION 5 : LES PARTENAIRES #}
+<h1>5. Établissements Partenaires</h1>
+{% if profile.partners|length > 0 %}
+    <p>Afin de vous proposer les solutions les plus adaptées à votre situation, le cabinet a sélectionné les partenaires (compagnies d'assurance, sociétés de gestion, banques) suivants :</p>
+    <ul class="partner-list">
+        {% for partner in profile.partners %}
+            <li style="margin-bottom: 6px;">
+                <strong>{{ partner.name }}</strong><br>
+                <span style="color: #64748b; font-size: 8px;">
+                    {# Cette ligne Twig filtre les valeurs nulles et lie les autres avec un tiret #}
+                    {{ [partner.address, partner.phone, partner.email]|filter(v => v)|join(' - ') }}
+                </span>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>Le cabinet sélectionne ses fournisseurs en toute indépendance et travaille avec un grand nombre de partenaires sur le marché, sans restriction d'exclusivité ou de lien capitalistique significatif.</p>
+{% endif %}
+
+{# L'ancienne section 5 devient la section 6 #}
+<h1>6. Données Personnelles et Réclamations</h1>
+<p class="text-sm">
+    Conformément au RGPD, les données recueillies sont strictement confidentielles et destinées à la lutte contre le blanchiment et le financement du terrorisme (LCB-FT) et au devoir de conseil. Vous disposez d'un droit d'accès et de rectification. En cas de litige, vous pouvez adresser une réclamation au cabinet. Si la réponse n'est pas satisfaisante, vous pouvez saisir le Médiateur de l'AMF (17 place de la Bourse 75082 Paris cedex 02) ou le Médiateur de l'Assurance.
+</p>
+
+<div class="signature-section" style="margin-top: 50px; width: 100%; display: table;">
+
+    {# BLOC GAUCHE : LE CABINET #}
+    <div style="display: table-cell; width: 50%; padding: 15px; border: 1px solid #cbd5e1; border-radius: 8px; background-color: #f8fafc;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">POUR LE CABINET</div>
+
+        <div style="font-size: 12px; margin-bottom: 5px;">
+            <strong>Conseiller :</strong>
+        </div>
+        <div style="font-size: 12px; margin-bottom: 5px;">
+            <strong>Fait à :</strong> {{ workspace.city|default('....................') }}
+        </div>
+        <div style="font-size: 12px; margin-bottom: 5px;">
+            <strong>Le :</strong> {{ "now"|date("d/m/Y") }}
+        </div>
+
+        {% if profile.signatureBase64 %}
+            <div style="margin-top: 15px; height: 70px;">
+                <img src="{{ profile.signatureBase64 }}"
+                     style="max-height: 70px; max-width: 200px; object-fit: contain;"
+                     alt="Signature Conseiller">
+            </div>
+        {% else %}
+            <div style="margin-top: 30px; font-size: 11px; font-style: italic; color: #94a3b8; height: 55px;">
+                (Document généré et validé numériquement par le système)
+            </div>
+        {% endif %}
+    </div>
+
+    <div style="display: table-cell; width: 5%;"></div>
+
+    {# BLOC DROIT : LE CLIENT #}
+    <div style="display: table-cell; width: 45%; padding: 15px; border: 1px solid #cbd5e1; border-radius: 8px;">
+        <div style="font-weight: bold; font-size: 14px; margin-bottom: 10px;">LE CLIENT</div>
+
+        <div style="font-size: 12px; margin-bottom: 5px;">
+            <strong>Nom et prénom :</strong> {{ folder.contactFirstName }} {{ folder.contactLastName }}
+        </div>
+        <div style="font-size: 12px; margin-bottom: 5px;">
+            <strong>Lu et approuvé, le :</strong> ....................
+        </div>
+
+        {# L'espace vide réservé pour DocuSeal #}
+        <div style="height: 85px;"></div>
+    </div>
+</div>
+
+</body>
+</html>

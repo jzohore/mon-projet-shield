@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Support\Entity;
 
 use App\Domain\Common\Attribute\Encrypted;
@@ -27,28 +29,19 @@ class SupportMessage
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
     public private(set) string $slugId;
 
-    #[ORM\ManyToOne(targetEntity: SupportThread::class, inversedBy: 'messages')]
-    #[ORM\JoinColumn(nullable: false)]
-    public private(set) SupportThread $thread;
-
-    #[ORM\Column(type: 'string', enumType: SupportSenderType::class)]
-    public private(set) SupportSenderType $senderType;
-
-    #[Encrypted]
-    #[ORM\Column(type: Types::TEXT)]
-    public private(set) string $content;
-
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     public private(set) ?\DateTimeImmutable $readAt = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public private(set) \DateTimeImmutable $createdAt;
 
-    private function __construct(SupportThread $thread, SupportSenderType $senderType, string $content)
+    private function __construct(#[ORM\ManyToOne(targetEntity: SupportThread::class, inversedBy: 'messages')]
+        #[ORM\JoinColumn(nullable: false)]
+        public private(set) SupportThread $thread, #[ORM\Column(type: 'string', enumType: SupportSenderType::class)]
+        public private(set) SupportSenderType $senderType, #[Encrypted]
+        #[ORM\Column(type: Types::TEXT)]
+        public private(set) string $content)
     {
-        $this->thread = $thread;
-        $this->senderType = $senderType;
-        $this->content = $content;
         $this->slugId = $this->generate_ulid_prefixed('sup_msg_');
         $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
 
@@ -57,7 +50,7 @@ class SupportMessage
     }
 
     /**
-     * 🪄 Named Constructor : Écrit un nouveau message
+     * 🪄 Named Constructor : Écrit un nouveau message.
      */
     public static function write(SupportThread $thread, SupportSenderType $senderType, string $content): self
     {
@@ -68,7 +61,7 @@ class SupportMessage
 
     public function markAsRead(): void
     {
-        if (null === $this->readAt) {
+        if (!$this->readAt instanceof \DateTimeImmutable) {
             $this->readAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         }
     }

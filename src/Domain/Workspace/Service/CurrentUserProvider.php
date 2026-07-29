@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Workspace\Service;
 
 use App\Domain\User\Entity\User;
@@ -9,8 +11,9 @@ use Webmozart\Assert\Assert;
 readonly class CurrentUserProvider
 {
     public function __construct(
-        private Security $security
-    ) {}
+        private Security $security,
+    ) {
+    }
 
     public function getUser(): User
     {

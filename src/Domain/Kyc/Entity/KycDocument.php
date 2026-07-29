@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Kyc\Entity;
 
-use App\Domain\Kyc\Enum\DocumentType;
+use App\Domain\Compliance\Enum\DocumentType;
 use App\Domain\Kyc\Enum\DocumentStatus;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
 use Doctrine\DBAL\Types\Types;
@@ -27,16 +29,9 @@ class KycDocument
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
     public private(set) string $slugId;
 
-    #[ORM\ManyToOne(targetEntity: KycFolder::class, inversedBy: 'documents')]
-    #[ORM\JoinColumn(nullable: false)]
-    public private(set) KycFolder $folder;
-
     #[ORM\ManyToOne(targetEntity: Stakeholder::class)]
     #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
     public private(set) ?Stakeholder $stakeholder = null;
-
-    #[ORM\Column(type: 'string', enumType: DocumentType::class)]
-    public private(set) DocumentType $type;
 
     #[ORM\Column(type: 'string', enumType: DocumentStatus::class)]
     public private(set) DocumentStatus $status = DocumentStatus::PENDING;
@@ -56,15 +51,16 @@ class KycDocument
     #[ORM\Column(type: Types::JSON, nullable: true)]
     public private(set) ?array $ocrData = null;
 
-    private function __construct(KycFolder $folder, DocumentType $type)
+    private function __construct(#[ORM\ManyToOne(targetEntity: KycFolder::class, inversedBy: 'documents')]
+        #[ORM\JoinColumn(nullable: false)]
+        public private(set) KycFolder $folder, #[ORM\Column(type: 'string', enumType: DocumentType::class)]
+        public private(set) DocumentType $type)
     {
-        $this->folder = $folder;
-        $this->type = $type;
         $this->slugId = $this->generate_ulid_prefixed('kyc_doc_');
     }
 
     /**
-     * 🪄 Named Constructor : Pour un document d'entreprise (ex: KBIS)
+     * 🪄 Named Constructor : Pour un document d'entreprise (ex: KBIS).
      */
     public static function requestForCompany(KycFolder $folder, DocumentType $type): self
     {
@@ -72,12 +68,13 @@ class KycDocument
     }
 
     /**
-     * 🪄 Named Constructor : Pour un document personnel (ex: CNI)
+     * 🪄 Named Constructor : Pour un document personnel (ex: CNI).
      */
     public static function requestForStakeholder(KycFolder $folder, Stakeholder $stakeholder, DocumentType $type): self
     {
         $document = new self($folder, $type);
         $document->stakeholder = $stakeholder;
+
         return $document;
     }
 
@@ -108,7 +105,6 @@ class KycDocument
 
     /**
      * @param array<string, mixed> $data
-     * @return void
      */
     public function setExtractedData(array $data): void
     {

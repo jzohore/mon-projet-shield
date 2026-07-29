@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Listener\Member;
 
 use App\Domain\Workspace\Event\WorkspaceMemberRevokedEvent;
@@ -13,7 +15,8 @@ readonly class DispatchAccessRevokedEmailListener
 {
     public function __construct(
         private MessageBusInterface $messageBus,
-    ) {}
+    ) {
+    }
 
     public function __invoke(WorkspaceMemberRevokedEvent $event): void
     {

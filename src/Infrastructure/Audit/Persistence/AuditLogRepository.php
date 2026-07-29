@@ -7,6 +7,7 @@ namespace App\Infrastructure\Audit\Persistence;
 use App\Domain\AuditLog\Entity\AuditLog;
 use App\Domain\AuditLog\Enum\AuditEventType;
 use App\Domain\AuditLog\Repository\AuditLogRepositoryInterface;
+use App\Domain\Workspace\Entity\Workspace;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
@@ -24,6 +25,7 @@ final readonly class AuditLogRepository implements AuditLogRepositoryInterface
 {
     /** @var EntityRepository<AuditLog> */
     private EntityRepository $repository;
+
     public function __construct(private EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(AuditLog::class);
@@ -58,10 +60,6 @@ final readonly class AuditLogRepository implements AuditLogRepositoryInterface
         );
     }
 
-    /**
-     * @param string $slugId
-     * @return AuditLog|null
-     */
     public function findBySlugId(string $slugId): ?AuditLog
     {
         return $this->repository->findOneBy(['slugId' => $slugId]);
@@ -70,15 +68,35 @@ final readonly class AuditLogRepository implements AuditLogRepositoryInterface
     /**
      * @return Pagerfanta<AuditLog>
      */
-    public function getAuditLogsList(?AuditEventType $type = null): Pagerfanta
+    public function getAuditLogsList(Workspace $workspace, ?AuditEventType $eventType = null, ?string $searchQuery = null): Pagerfanta
     {
-        $qb = $this->repository->createQueryBuilder('auditLog')
-        ->orderBy('auditLog.occurredAt', 'DESC')
+        $qb = $this->repository->createQueryBuilder('a')
+            ->where('a.workspace = :workspace')
+            ->setParameter('workspace', $workspace)
+            ->orderBy('a.occurredAt', 'DESC')
         ;
 
-        if ($type) {
-            $qb->andWhere('a.type = :type')
-                ->setParameter('type', $type);
+        $visibleTypes = array_filter(
+            AuditEventType::cases(),
+            static fn (AuditEventType $type): bool => $type->isVisibleToWorkspace()
+        );
+
+        $qb->andWhere('a.eventName IN (:visibleTypes)')
+            ->setParameter('visibleTypes', $visibleTypes);
+
+        if ($eventType instanceof AuditEventType) {
+            if ($eventType->isVisibleToWorkspace()) {
+                $qb->andWhere('a.eventName = :eventType')
+                    ->setParameter('eventType', $eventType);
+            } else {
+                $qb->andWhere('1 = 0');
+            }
+        }
+
+        // 🔍 3. LA RECHERCHE TEXTUELLE (Magie PostgreSQL)
+        if (!in_array($searchQuery, [null, '', '0'], true)) {
+            $qb->andWhere("LOWER(JSON_GET_TEXT(a.payload, 'actor_name')) LIKE LOWER(:search)")
+                ->setParameter('search', '%' . $searchQuery . '%');
         }
 
         return new Pagerfanta(new QueryAdapter($qb));

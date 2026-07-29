@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\EventSubscriber;
 
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -18,7 +20,8 @@ final readonly class StagingSecuritySubscriber implements EventSubscriberInterfa
         private string $expectedUserEnv,
         #[Autowire(env: 'string:EXPECTED_PASS')]
         private string $expectedPassEnv,
-    ) {}
+    ) {
+    }
 
     public static function getSubscribedEvents(): array
     {

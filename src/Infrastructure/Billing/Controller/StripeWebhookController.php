@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Controller;
 
 use App\Application\Billing\UseCase\Credits\AddCreditsUseCase;
@@ -9,6 +11,7 @@ use App\Application\Billing\UseCase\Subscription\TerminateSubscriptionUseCase;
 use App\Domain\Billing\Enum\CreditAction;
 use Psr\Log\LoggerInterface;
 use Stripe\Checkout\Session;
+use Stripe\Customer;
 use Stripe\StripeClient;
 use Stripe\Subscription;
 use Symfony\Component\HttpFoundation\Request;
@@ -30,13 +33,14 @@ readonly class StripeWebhookController
         private ActivateSubscriptionUseCase $activateSubscriptionUseCase,
         private TerminateSubscriptionUseCase $terminateSubscriptionUseCase,
         private SyncSubscriptionUseCase $syncSubscriptionUseCase,
-    ) {}
+    ) {
+    }
 
     public function __invoke(Request $request): Response
     {
         $payload = $request->getContent();
         $sigHeader = $request->headers->get('Stripe-Signature');
-        Assert::notNull($sigHeader);
+        Assert::notNull($sigHeader, 'Header Stripe-Signature manquant.');
 
         try {
             // 1. Vérification de la signature cryptographique de Stripe
@@ -47,16 +51,18 @@ readonly class StripeWebhookController
             );
         } catch (\UnexpectedValueException $e) {
             $this->logger->error('Stripe Webhook : Payload invalide.');
-            return new Response('Invalid payload', 400);
+
+            return new Response('Invalid payload', Response::HTTP_BAD_REQUEST);
         } catch (\Stripe\Exception\SignatureVerificationException $e) {
             $this->logger->error('Stripe Webhook : Signature invalide (Tentative de fraude ?).');
-            return new Response('Invalid signature', 400);
+
+            return new Response('Invalid signature', Response::HTTP_BAD_REQUEST);
         }
 
         // =========================================================================
         // ÉVÉNEMENT 1 : PAIEMENT RÉUSSI (Achat de crédits ou Début d'abonnement)
         // =========================================================================
-        if ($event->type === 'checkout.session.completed') {
+        if ('checkout.session.completed' === $event->type) {
             /** @var Session $session */
             $session = $event->data->object;
             $mode = $session->mode;
@@ -65,24 +71,37 @@ readonly class StripeWebhookController
             $userEmail = $session->metadata->user_email ?? null;
             $workspaceIdString = $session->metadata->workspace_id ?? null;
 
-            if ($mode === 'setup' && ($session->metadata->purpose ?? null) === 'activate_existing_subscription') {
+            if ('setup' === $mode && ($session->metadata->purpose ?? null) === 'activate_existing_subscription') {
                 $stripeSubscriptionId = $session->metadata->stripe_subscription_id ?? null;
 
                 if ($workspaceIdString && $stripeSubscriptionId && $session->setup_intent) {
                     try {
                         $stripe = new StripeClient($this->stripeSecretKey);
 
-                        $setupIntent = $stripe->setupIntents->retrieve($session->setup_intent);
-                        $paymentMethodId = $setupIntent->payment_method;
+                        // 🛡️ Extraction de l'ID string de manière sécurisée
+                        $setupIntentRaw = $session->setup_intent;
+                        $setupIntentId = is_string($setupIntentRaw) ? $setupIntentRaw : $setupIntentRaw->id;
+                        Assert::stringNotEmpty($setupIntentId, 'ID du SetupIntent invalide.');
 
-                        if (!$paymentMethodId) {
-                            throw new \RuntimeException('Aucun moyen de paiement trouvé sur le SetupIntent.');
-                        }
+                        $setupIntent = $stripe->setupIntents->retrieve($setupIntentId);
+
+                        // 🛡️ Extraction du PaymentMethod ID string
+                        $paymentMethodRaw = $setupIntent->payment_method;
+                        $paymentMethodId = is_string($paymentMethodRaw) ? $paymentMethodRaw : $paymentMethodRaw?->id;
+                        Assert::stringNotEmpty($paymentMethodId, 'Aucun moyen de paiement trouvé sur le SetupIntent.');
 
                         $subscription = $stripe->subscriptions->retrieve($stripeSubscriptionId);
 
-                        // 3. 🛡️ On dit au CUSTOMER : "Ceci est ta carte par défaut pour toutes tes futures factures"
-                        $stripe->customers->update($subscription->customer, [
+                        // 🛡️ Extraction du Customer ID string
+                        $customerRaw = $subscription->customer;
+                        $customerId = match (true) {
+                            is_string($customerRaw) => $customerRaw,
+                            default => null,
+                        };
+                        Assert::stringNotEmpty($customerId, 'ID Client Stripe invalide.');
+
+                        // 3. On dit au CUSTOMER : "Ceci est ta carte par défaut pour toutes tes futures factures"
+                        $stripe->customers->update($customerId, [
                             'invoice_settings' => [
                                 'default_payment_method' => $paymentMethodId,
                             ],
@@ -96,40 +115,38 @@ readonly class StripeWebhookController
                         ]);
 
                         // 🚀 2. LA SÉCURITÉ : On vérifie si le prélèvement a bien fonctionné !
-                        // 'active' = Payé avec succès.
-                        // 'trialing' = Cas rare si Stripe a un délai.
-                        if (in_array($updatedSubscription->status, ['active', 'trialing'])) {
-
+                        if (in_array($updatedSubscription->status, ['active', 'trialing'], true)) {
                             $workspaceUuid = Uuid::fromString($workspaceIdString);
                             $userUuid = Uuid::fromString($userIdString);
                             ($this->activateSubscriptionUseCase)($workspaceUuid, $stripeSubscriptionId, $userEmail, $userUuid);
-
                         } else {
-                            // Le paiement a échoué (fonds insuffisants, etc.)
-                            // Le statut est 'past_due' ou 'incomplete'.
                             $this->logger->warning("Mise à jour abo: Carte refusée pour le workspace {$workspaceIdString}. Statut: {$updatedSubscription->status}");
-
-                            // Optionnel : Tu pourrais avoir un UseCase pour marquer l'abo en INCOMPLETE en base de données
                         }
-
                     } catch (\Exception $e) {
                         $this->logger->critical('Erreur activation abonnement existant : ' . $e->getMessage());
-                        return new Response('Erreur interne', 500);
+
+                        return new Response('Erreur interne', Response::HTTP_INTERNAL_SERVER_ERROR);
                     }
                 }
 
-                return new Response('Webhook handled', 200);
+                return new Response('Webhook handled', Response::HTTP_OK);
             }
 
             // CAS 1 : PAIEMENT PONCTUEL (Achat de Crédits pour les Indés)
-            if ($mode === 'payment') {
+            if ('payment' === $mode) {
                 $creditsToAdd = (int) ($session->metadata->credits_to_add ?? 0);
                 $invoiceUrl = null;
 
                 if (!empty($session->invoice)) {
                     try {
                         $stripe = new StripeClient($this->stripeSecretKey);
-                        $invoice = $stripe->invoices->retrieve($session->invoice);
+
+                        // 🛡️ Extraction sécurisée de l'ID facture
+                        $invoiceRaw = $session->invoice;
+                        $invoiceId = is_string($invoiceRaw) ? $invoiceRaw : $invoiceRaw->id;
+                        Assert::stringNotEmpty($invoiceId, 'ID Facture Stripe invalide.');
+
+                        $invoice = $stripe->invoices->retrieve($invoiceId);
                         $invoiceUrl = $invoice->hosted_invoice_url;
                     } catch (\Exception $e) {
                         $this->logger->error('Impossible de récupérer la facture Stripe : ' . $e->getMessage());
@@ -143,45 +160,42 @@ readonly class StripeWebhookController
                         ($this->addCreditsUseCase)($workspaceUuid, $userUuid, $creditsToAdd, CreditAction::STRIPE_PURCHASE, $invoiceUrl);
                     } catch (\Exception $e) {
                         $this->logger->critical('Erreur crédits : ' . $e->getMessage());
-                        return new Response('Erreur interne', 500);
+
+                        return new Response('Erreur interne', Response::HTTP_INTERNAL_SERVER_ERROR);
                     }
                 }
             }
-            return new Response('Webhook handled', 200);
-        } elseif ($event->type === 'customer.subscription.deleted') {
-            // Pour cet événement, l'objet n'est pas une Session, mais directement la Subscription Stripe
+
+            return new Response('Webhook handled', Response::HTTP_OK);
+        } elseif ('customer.subscription.deleted' === $event->type) {
             /** @var Subscription $stripeSubscription */
             $stripeSubscription = $event->data->object;
-            $stripeSubscriptionId = $stripeSubscription->id; // ex: sub_123456
+            $stripeSubscriptionId = $stripeSubscription->id;
 
             try {
-                // 🚀 C'est ici qu'on coupe vraiment l'accès (Status -> CANCELED)
                 ($this->terminateSubscriptionUseCase)($stripeSubscriptionId);
-
             } catch (\Exception $e) {
                 $this->logger->critical('Erreur lors de la suppression de l\'abonnement (Webhook) : ' . $e->getMessage());
-                return new Response('Erreur interne', 500);
+
+                return new Response('Erreur interne', Response::HTTP_INTERNAL_SERVER_ERROR);
             }
 
-            return new Response('Webhook handled', 200);
-        } elseif ($event->type === 'customer.subscription.updated') {
+            return new Response('Webhook handled', Response::HTTP_OK);
+        } elseif ('customer.subscription.updated' === $event->type) {
             /** @var Subscription $stripeSubscription */
             $stripeSubscription = $event->data->object;
 
             try {
-                // On passe directement l'objet Stripe complet à notre Use Case
-                // pour qu'il mette à jour notre base de données locale
                 ($this->syncSubscriptionUseCase)($stripeSubscription);
-
             } catch (\Exception $e) {
                 $this->logger->critical('Erreur synchronisation abonnement : ' . $e->getMessage());
-                return new Response('Erreur interne', 500);
+
+                return new Response('Erreur interne', Response::HTTP_INTERNAL_SERVER_ERROR);
             }
 
-            return new Response('Webhook handled', 200);
+            return new Response('Webhook handled', Response::HTTP_OK);
         }
 
-        // On répond toujours 200 OK à Stripe rapidement pour les événements qu'on n'écoute pas
-        return new Response('Webhook handled', 200);
+        return new Response('Webhook handled', Response::HTTP_OK);
     }
 }

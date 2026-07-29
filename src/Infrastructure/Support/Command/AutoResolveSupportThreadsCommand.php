@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Support\Command;
 
 use App\Application\Support\UseCase\AutoResolveInactiveThreadsUseCase;
@@ -16,7 +18,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 final class AutoResolveSupportThreadsCommand extends Command
 {
     public function __construct(
-        private readonly AutoResolveInactiveThreadsUseCase $autoResolveUseCase
+        private readonly AutoResolveInactiveThreadsUseCase $autoResolveUseCase,
     ) {
         parent::__construct();
     }
@@ -27,8 +29,8 @@ final class AutoResolveSupportThreadsCommand extends Command
         $io->title('Exécution de la tâche : Clôture automatique des tickets inactifs');
 
         // On définit la durée métier ici : 2 heures (P T 2 H)
-        //$inactivityPeriod = new \DateInterval('PT2H');
-        $inactivityPeriod = new \DateInterval('PT5M');
+        // $inactivityPeriod = new \DateInterval('PT2H');
+        new \DateInterval('PT5M');
 
         try {
             $count = $this->autoResolveUseCase->execute(
@@ -43,9 +45,9 @@ final class AutoResolveSupportThreadsCommand extends Command
             }
 
             return Command::SUCCESS;
-
         } catch (\Exception $e) {
             $io->error('Une erreur est survenue lors du traitement : ' . $e->getMessage());
+
             return Command::FAILURE;
         }
     }

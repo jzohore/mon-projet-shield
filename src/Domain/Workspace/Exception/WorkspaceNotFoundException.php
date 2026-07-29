@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Workspace\Exception;
 
 use App\Domain\Shared\Enum\ErrorCode;
 use App\Domain\Shared\Exception\AbstractDomainException;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Uid\Uuid;
 
 class WorkspaceNotFoundException extends AbstractDomainException
 {
@@ -19,7 +20,7 @@ class WorkspaceNotFoundException extends AbstractDomainException
         );
     }
 
-    public static function withId(Uuid $id): self
+    public static function withId(string $id): self
     {
         return new self(
             message: sprintf('L\'espace de travail "%s" est introuvable.', $id),

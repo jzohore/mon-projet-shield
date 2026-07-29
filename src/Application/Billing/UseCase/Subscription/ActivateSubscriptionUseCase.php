@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Billing\UseCase\Subscription;
 
 use App\Domain\Billing\Event\SubscriptionActivatedEvent;
@@ -17,7 +19,8 @@ readonly class ActivateSubscriptionUseCase
         private SubscriptionRepositoryInterface $subscriptionRepository,
         private EventDispatcherInterface $eventDispatcher,
         private UserRepositoryInterface $userRepository,
-    ) {}
+    ) {
+    }
 
     public function __invoke(Uuid $workspaceId, string $stripeSubscriptionId, string $recipientEmail, Uuid $userUuid): void
     {

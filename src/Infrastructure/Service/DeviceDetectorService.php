@@ -23,18 +23,20 @@ class DeviceDetectorService
     private ?Reader $cityDbReader = null;
 
     public function __construct(
-        private readonly CreateDeviceUseCase   $createDevice,
+        private readonly CreateDeviceUseCase $createDevice,
         private readonly ParameterBagInterface $parameterBag,
-        private readonly RequestStack          $requestStack,
-    ) {}
+        private readonly RequestStack $requestStack,
+    ) {
+    }
 
     /**
      * Initialise le Reader GeoIP de manière lazy (une seule fois).
+     *
      * @throws InvalidDatabaseException
      */
     private function getReader(): Reader
     {
-        if (null === $this->cityDbReader) {
+        if (!$this->cityDbReader instanceof Reader) {
             $path = $this->parameterBag->get('geoip_db_path');
             if (!is_string($path)) {
                 throw new \RuntimeException('Le paramètre GeoIP2_file doit être une chaîne de caractères.');
@@ -77,11 +79,11 @@ class DeviceDetectorService
     public function createDeviceDetector(?string $userSlugId): void
     {
         $request = $this->requestStack->getCurrentRequest();
-        if (null === $request) {
+        if (!$request instanceof Request) {
             return;
         }
 
-        //$ip = $request->getClientIp() ?? '2a01:cb00:8b5:5700:e46b:ac5d:48f3:ad81';
+        // $ip = $request->getClientIp() ?? '2a01:cb00:8b5:5700:e46b:ac5d:48f3:ad81';
         $ip = '2a01:cb00:8b5:5700:e46b:ac5d:48f3:ad81';
         $session = $request->hasSession() ? $request->getSession() : null;
 
@@ -111,7 +113,7 @@ class DeviceDetectorService
         $deviceDTO->clientInfo = $client;
 
         // Données Géo (MaxMind)
-        if ($cityData) {
+        if ($cityData instanceof City) {
             $deviceDTO->countryIsoCode = $cityData->country->isoCode;
             $deviceDTO->postalCode = $cityData->postal->code;
             $deviceDTO->cityName = $cityData->city->name;

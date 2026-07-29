@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Kyc\UseCase;
 
 use App\Domain\Kyc\Event\RemoveStakeholderEvent;
@@ -12,7 +14,8 @@ final readonly class RemoveStakeHolderUseCase
     public function __construct(
         private StakeholderRepositoryInterface $stakeholderRepository,
         private EventDispatcherInterface $eventDispatcher,
-    ) {}
+    ) {
+    }
 
     public function __invoke(string $slugId): void
     {
@@ -23,6 +26,6 @@ final readonly class RemoveStakeHolderUseCase
         $stakeholderName = $currentStakeHolder->firstName . ' ' . $currentStakeHolder->lastName;
         $this->stakeholderRepository->remove($currentStakeHolder);
 
-        $this->eventDispatcher->dispatch(new RemoveStakeHolderEvent($currentKycFolder, $stakeholderName));
+        $this->eventDispatcher->dispatch(new RemoveStakeholderEvent($currentKycFolder, $stakeholderName));
     }
 }

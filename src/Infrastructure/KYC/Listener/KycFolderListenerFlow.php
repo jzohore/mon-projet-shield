@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Listener;
 
 use App\Domain\Kyc\Event\CompanyResetEvent;
@@ -17,7 +19,8 @@ readonly class KycFolderListenerFlow
     public function __construct(
         private MessageBusInterface $messageBus,
         private UrlGeneratorInterface $router,
-    ) {}
+    ) {
+    }
 
     //    #[AsEventListener]
     //    public function auditLog(KycFolderCreatedEvent $event): void
@@ -73,7 +76,6 @@ readonly class KycFolderListenerFlow
         );
         $this->messageBus->dispatch($message);
     }
-
 
     #[AsEventListener]
     public function cleanupStorage(CompanyResetEvent $event): void

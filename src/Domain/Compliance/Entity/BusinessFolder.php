@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Compliance\Entity; // Ajuste selon ton namespace exact
 
 use App\Domain\Kyc\Entity\Stakeholder;
@@ -28,23 +30,19 @@ class BusinessFolder extends ComplianceFolder
      * CONSTRUCTEUR PROTÉGÉ
      * On appelle le parent pour initialiser le statut, l'historique et la date de création.
      */
-    protected function __construct(Workspace $workspace, string $reference)
+    protected function __construct(Workspace $workspace, string $reference, string $email, string $method)
     {
-        parent::__construct($workspace, $reference);
+        parent::__construct($workspace, $reference, $email, $method);
         $this->stakeholders = new ArrayCollection(); // ✅ Obligatoire pour Doctrine
     }
 
-    public static function createDraft(Workspace $workspace, string $reference): self
+    public static function createDraft(Workspace $workspace, string $reference, string $email, string $method): self
     {
-        $folder = new self($workspace, $reference);
-
-        $folder->saveHistory('Dossier initié (Brouillon)');
-
-        return $folder;
+        return new self($workspace, $reference, $email, $method);
     }
 
     /**
-     * Mise à jour de la catégorie juridique (ex: SAS, SARL)
+     * Mise à jour de la catégorie juridique (ex: SAS, SARL).
      */
     public function updateLegalCategory(string $category): void
     {
@@ -53,7 +51,7 @@ class BusinessFolder extends ComplianceFolder
     }
 
     /**
-     * Ajouter un bénéficiaire effectif ou un dirigeant (UBO)
+     * Ajouter un bénéficiaire effectif ou un dirigeant (UBO).
      */
     public function addStakeholder(Stakeholder $stakeholder): void
     {
@@ -63,5 +61,10 @@ class BusinessFolder extends ComplianceFolder
             // $stakeholder->assignToFolder($this);
             $this->saveHistory('Partie prenante ajoutée au dossier');
         }
+    }
+
+    public function isDraftEmpty(): bool
+    {
+        return in_array($this->companyName, [null, '', '0'], true);
     }
 }

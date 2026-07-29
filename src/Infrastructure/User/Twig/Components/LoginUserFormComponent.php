@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Twig\Components;
 
 use App\Application\User\DTO\Request\LoginUserRequest;
@@ -20,8 +22,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 )]
 final class LoginUserFormComponent
 {
-    use DefaultActionTrait;
     use ComponentWithFormTrait;
+    use DefaultActionTrait;
 
     #[LiveProp]
     public bool $isSuccessful = false;
@@ -33,35 +35,37 @@ final class LoginUserFormComponent
         private readonly FormFactoryInterface $formFactory,
         private readonly SendLoginUserUseCase $sendLoginUserUseCase,
         private readonly LoggerInterface $logger,
-    ) {}
+    ) {
+    }
 
     protected function instantiateForm(): FormInterface
     {
-        return $this->formFactory->create(LoginUserType::class, new LoginUserRequest());
+        return $this->formFactory->create(LoginUserType::class);
     }
 
     #[LiveAction]
     public function save(): void
     {
         $this->submitForm();
+        $form = $this->getForm();
+
+        if (!$form->isValid()) {
+            return;
+        }
 
         /** @var LoginUserRequest $userDTO */
-        $userDTO = $this->getForm()->getData();
+        $userDTO = $form->getData();
 
         try {
             ($this->sendLoginUserUseCase)($userDTO);
-
         } catch (\DomainException $e) {
             $this->logger->error('Erreur métier lors de la connexion', [
                 'email' => $userDTO->email,
                 'error' => $e->getMessage(),
             ]);
-            return;
         }
 
         $this->isSuccessful = true;
-
-
         $this->message = 'Si cette adresse est valide, un lien magique vous a été envoyé pour vous connecter de manière sécurisée.';
     }
 }

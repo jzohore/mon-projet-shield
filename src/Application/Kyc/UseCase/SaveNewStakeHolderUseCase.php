@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Kyc\UseCase;
 
 use App\Application\Kyc\DTO\Request\AddStakeholderRequest;
@@ -16,7 +18,8 @@ final readonly class SaveNewStakeHolderUseCase
         private KycFolderRepositoryInterface $kycFolderRepository,
         private StakeholderRepositoryInterface $stakeholderRepository,
         private EventDispatcherInterface $eventDispatcher,
-    ) {}
+    ) {
+    }
 
     public function __invoke(AddStakeholderRequest $request): void
     {

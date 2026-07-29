@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Twig\Components;
 
 use App\Application\Workspace\DTO\Request\CreateWorkspaceRequest;
@@ -8,7 +10,6 @@ use App\Domain\Shared\Exception\AbstractDomainException;
 use App\Domain\Workspace\Enum\Industry;
 use App\Infrastructure\Service\SiretSearchService;
 use App\Infrastructure\Workspace\Form\CreateWorkspaceType;
-use Exception;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
@@ -27,6 +28,7 @@ use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
+use Webmozart\Assert\Assert;
 
 #[AsLiveComponent(
     name: 'CreateWorkspaceFormComponent',
@@ -34,8 +36,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 )]
 class CreateWorkspaceFormComponent
 {
-    use DefaultActionTrait;
     use ComponentWithFormTrait;
+    use DefaultActionTrait;
 
     #[LiveProp(writable: true)]
     public string $searchQuery = '';
@@ -46,6 +48,18 @@ class CreateWorkspaceFormComponent
     #[LiveProp]
     public ?string $workspaceIndustry = null;
 
+    #[LiveProp]
+    public ?string $workspaceSiren = null;
+
+    #[LiveProp]
+    public ?string $workspaceEtatAdministratif = null;
+
+    #[LiveProp]
+    public ?string $message = null;
+
+    #[LiveProp]
+    public bool $showMessage = false;
+
     public function __construct(
         private readonly FormFactoryInterface $formFactory,
         private readonly CreateWorkspaceUseCase $workspaceUseCase,
@@ -53,7 +67,8 @@ class CreateWorkspaceFormComponent
         private readonly UrlGeneratorInterface $router,
         private readonly SiretSearchService $siretSearchService,
         private readonly RequestStack $requestStack,
-    ) {}
+    ) {
+    }
 
     protected function instantiateForm(): FormInterface
     {
@@ -67,13 +82,29 @@ class CreateWorkspaceFormComponent
         #[LiveArg]
         string $siret,
         #[LiveArg]
+        string $siren,
+        #[LiveArg]
         string $address,
+        #[LiveArg]
+        string $etatAdministratif,
         #[LiveArg]
         string $industry,
     ): void {
+        $verify = $this->siretSearchService->verifyStatus($siret, $this->searchQuery);
+
+        if (false === $verify->isActive) {
+            $this->showMessage = true;
+            $this->message = $verify->message;
+            $this->searchQuery = '';
+
+            return;
+        }
         $this->formValues['name'] = $name;
         $this->formValues['siret'] = $siret;
+        $this->formValues['siren'] = $siren;
         $this->formValues['address'] = $address;
+        $this->workspaceEtatAdministratif = $etatAdministratif;
+        $this->workspaceSiren = $siren;
         $this->workspaceIndustry = $industry;
 
         // On vide la recherche pour fermer la liste proprement
@@ -85,7 +116,10 @@ class CreateWorkspaceFormComponent
     {
         $this->formValues['name'] = null;
         $this->formValues['siret'] = null;
+        $this->formValues['siren'] = null;
         $this->formValues['address'] = null;
+        $this->workspaceEtatAdministratif = null;
+        $this->workspaceSiren = null;
         $this->workspaceIndustry = null;
         $this->searchQuery = '';
     }
@@ -99,10 +133,16 @@ class CreateWorkspaceFormComponent
         $dto = $this->getForm()->getData();
 
         try {
+            Assert::notNull($this->workspaceSiren);
+            Assert::notNull($this->workspaceEtatAdministratif);
+
             $dto->legalName = $this->formValues['name'] ?? null;
+            $dto->siren = $this->workspaceSiren;
+            $dto->etatAdministratif = $this->workspaceEtatAdministratif;
             $dto->workspaceIndustry = Industry::fromApeCode($this->workspaceIndustry);
 
             ($this->workspaceUseCase)($dto);
+
             return new RedirectResponse($this->router->generate('app_onboarding_plan'));
         } catch (AbstractDomainException $e) {
             $this->logger->error('Erreur métier lors de la création du workspace', [
@@ -115,8 +155,9 @@ class CreateWorkspaceFormComponent
                 type: 'error',
                 message: $e->getMessage(),
             );
+
             return new RedirectResponse($this->router->generate('app_onboarding_workspace'));
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->logger->critical('Crash système lors de la création du workspace', [
                 'error' => $e->getMessage(),
             ]);
@@ -134,6 +175,7 @@ class CreateWorkspaceFormComponent
 
     /**
      * @return array<int, array{siret: string, name: string, address: string}>
+     *
      * @throws ClientExceptionInterface
      * @throws DecodingExceptionInterface
      * @throws RedirectionExceptionInterface
@@ -143,11 +185,10 @@ class CreateWorkspaceFormComponent
     public function getResults(): array
     {
         // On ne cherche rien si le champ est vide ou s'il y a moins de 3 caractères (pour économiser l'API)
-        if ($this->workspaceSiret !== null || strlen($this->searchQuery) < 3) {
+        if (null !== $this->workspaceSiret || null !== $this->workspaceSiren || strlen($this->searchQuery) < 3) {
             return [];
         }
 
         return $this->siretSearchService->search($this->searchQuery);
     }
-
 }

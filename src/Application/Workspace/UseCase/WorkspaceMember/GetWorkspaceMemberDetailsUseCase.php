@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Workspace\UseCase\WorkspaceMember;
 
 use App\Application\Workspace\DTO\Response\WorkspaceMemberDetailsResponse;
@@ -14,7 +16,8 @@ readonly class GetWorkspaceMemberDetailsUseCase
     public function __construct(
         private WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
         private CurrentWorkspaceProvider $currentWorkspaceProvider,
-    ) {}
+    ) {
+    }
 
     public function __invoke(string $targetUserSlugId, User $currentUser): WorkspaceMemberDetailsResponse
     {
@@ -26,7 +29,7 @@ readonly class GetWorkspaceMemberDetailsUseCase
             workspaceId: $workspace->id->toString(),
         );
 
-        if (!$member) {
+        if (!$member instanceof \App\Domain\Workspace\Entity\WorkspaceMember) {
             throw MemberNotFoundException::withUserSlug($targetUserSlugId);
         }
 

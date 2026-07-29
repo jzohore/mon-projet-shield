@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Screening\Handler;
 
 use App\Domain\Port\DocumentStorageInterface;
@@ -21,8 +23,8 @@ readonly class GenerateScreeningPdfHandler
         private ScreeningAuditRepositoryInterface $auditRepository,
         private PdfGeneratorInterface $pdfGenerator,
         private LoggerInterface $logger,
-    ) {}
-
+    ) {
+    }
 
     public function __invoke(GenerateScreeningPdfMessage $message): void
     {
@@ -41,8 +43,8 @@ readonly class GenerateScreeningPdfHandler
             ]);
 
             // 2. LE BOUCLIER ANTI-TXT
-            if (empty($pdfContent)) {
-                throw new \Exception("Le générateur PDF a renvoyé un contenu vide.");
+            if ('' === $pdfContent || '0' === $pdfContent) {
+                throw new \Exception('Le générateur PDF a renvoyé un contenu vide.');
             }
 
             if (!str_starts_with($pdfContent, '%PDF-')) {
@@ -58,7 +60,6 @@ readonly class GenerateScreeningPdfHandler
                 path: $tempFilePath,
                 originalName: sprintf('certificat_recherche_%s.pdf', str_replace(' ', '_', $audit->query)),
                 mimeType: 'application/pdf',
-                error: null,
                 test: true
             );
 
@@ -68,17 +69,15 @@ readonly class GenerateScreeningPdfHandler
 
             $audit->markAsGenerated($finalStoragePath);
             $this->auditRepository->save($audit);
-
         } catch (\Throwable $e) {
             $audit->markAsFailed();
             $this->auditRepository->save($audit);
             $this->logger->error('Erreur métier', ['error' => $e->getMessage()]);
 
             throw $e; // Déclenche le Retry Messenger
-
         } finally {
             // 6. Nettoyage sécurisé
-            if ($tempFilePath !== null && file_exists($tempFilePath)) {
+            if (null !== $tempFilePath && file_exists($tempFilePath)) {
                 @unlink($tempFilePath);
             }
         }

@@ -23,11 +23,11 @@ final readonly class CreateWorkspaceInvitationUseCase
         private EventDispatcherInterface $eventDispatcher,
         private CurrentUserProvider $currentUserProvider,
         private CurrentWorkspaceProvider $currentWorkspaceProvider,
-    ) {}
+    ) {
+    }
 
     public function __invoke(CreateWorkspaceInvitationRequest $request): void
     {
-
         $user = $this->currentUserProvider->getUser();
         $workspace = $this->currentWorkspaceProvider->getWorkspace();
 

@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
 parameters:
     geoip_db_path: '%env(resolve:GEOIP_DB_PATH)%'
     app.kyc_upload_directory: '%kernel.project_dir%/public/uploads/kyc'
@@ -7,6 +8,7 @@ parameters:
     router.request_context.host: 'kysure.fr'
     router.request_context.scheme: 'https'
     router.request_context.base_url: ''
+    gemini_api_key: '%env(GEMINI_API_KEY)%'
 
 services:
     # ==========================================
@@ -92,7 +94,7 @@ services:
     # 5. INJECTION DES PARAMÈTRES SPÉCIFIQUES
     # ==========================================
 
-    App\Application\Kyc\UseCase\UploadKycDocumentUseCase:
+    App\Application\Compliance\UseCase\ComplianceDocument\UploadDocumentUseCase:
         arguments:
             $tempStorageDir: '%tempStorageDir%'
 
@@ -100,6 +102,11 @@ services:
         arguments:
             $baseUploadDirectory: '%app.kyc_upload_directory%'
 
+    App\Infrastructure\DocuSeal\DocuSealClient:
+        arguments:
+            $docusealApiKey: '%env(DOCUSEAL_API_KEY)%'
+            $docusealBaseUrl: '%env(DOCUSEAL_BASE_URL)%'
+            $derTemplateId: '%env(DOCUSEAL_DER_TEMPLATE_ID)%'
     App\Infrastructure\Billing\Controller\StripeWebhookController:
         arguments:
             $stripeWebhookSecret: '%env(STRIPE_WEBHOOK_SECRET)%'
@@ -112,4 +119,15 @@ services:
     App\Domain\Shared\Port\RealTimeNotifierInterface:
         alias: App\Infrastructure\Shared\Notifier\MercureRealTimeNotifier
     App\Domain\Database\TransactionManagerInterface: '@App\Infrastructure\Database\DoctrineTransactionManager'
+    Aws\Textract\TextractClient:
+        arguments:
+            $args:
+                version: 'latest' # Ou 'latest'
+                region: '%env(AWS_REGION)%'
+                credentials:
+                    key: '%env(AWS_KEY)%'
+                    secret: '%env(AWS_SECRET)%'
+    App\Domain\Compliance\Service\GeminiMeetingAnalyzer:
+        arguments:
+            $geminiApiKey: '%gemini_api_key%'
 

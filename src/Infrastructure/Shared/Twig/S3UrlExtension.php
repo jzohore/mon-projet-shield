@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Shared\Twig;
 
 use App\Domain\Port\DocumentStorageInterface;
@@ -9,9 +11,11 @@ use Twig\TwigFilter;
 class S3UrlExtension extends AbstractExtension
 {
     public function __construct(
-        private readonly DocumentStorageInterface $storage
-    ) {}
+        private readonly DocumentStorageInterface $storage,
+    ) {
+    }
 
+    #[\Override]
     public function getFilters(): array
     {
         return [

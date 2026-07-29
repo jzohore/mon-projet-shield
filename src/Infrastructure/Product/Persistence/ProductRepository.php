@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Product\Persistence;
 
 use App\Domain\Product\Entity\Product;
@@ -18,6 +20,7 @@ final readonly class ProductRepository implements ProductRepositoryInterface
 {
     /** @var EntityRepository<Product> */
     private EntityRepository $repository;
+
     public function __construct(private EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(Product::class);
@@ -44,10 +47,6 @@ final readonly class ProductRepository implements ProductRepositoryInterface
         return $this->repository->findBy(['isRecurring' => false], ['credits' => 'ASC']);
     }
 
-    /**
-     * @param string $reference
-     * @return Product|null
-     */
     public function getByReference(string $reference): ?Product
     {
         $product = $this->repository->findOneBy(['reference' => $reference]);

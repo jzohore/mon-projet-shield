@@ -15,13 +15,14 @@ final readonly class SitemapController
 {
     public function __construct(
         private SitemapGenerator $sitemapGenerator,
-    ) {}
+    ) {
+    }
 
     public function __invoke(): Response
     {
         return new Response(
             $this->sitemapGenerator->generate(),
-            200,
+            Response::HTTP_OK,
             [
                 'Content-Type' => 'application/xml; charset=UTF-8',
             ]

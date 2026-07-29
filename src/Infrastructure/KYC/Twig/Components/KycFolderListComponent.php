@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Twig\Components;
 
 use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
@@ -36,7 +38,8 @@ class KycFolderListComponent
         public readonly KycFolderRepositoryInterface $kycFolderRepository,
         public readonly GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
         public readonly UserRepositoryInterface $userRepository,
-    ) {}
+    ) {
+    }
 
     /**
      * @return Pagerfanta<KycFolder>

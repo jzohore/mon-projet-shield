@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Workspace\UseCase\Invitation;
 
 use App\Domain\Database\TransactionManagerInterface;
@@ -19,13 +21,14 @@ readonly class AcceptInvitationUseCase
         private UserRepositoryInterface $userRepository,
         private WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
         private TransactionManagerInterface $transactionManager,
-    ) {}
+    ) {
+    }
 
     public function __invoke(string $invitationSlugId): User
     {
         $invitation = $this->workspaceInvitationRepository->findBySlugId($invitationSlugId);
 
-        if (!$invitation) {
+        if (!$invitation instanceof \App\Domain\Workspace\Entity\WorkspaceInvitation) {
             throw InvitationNotFoundException::withSlugId($invitationSlugId);
         }
 

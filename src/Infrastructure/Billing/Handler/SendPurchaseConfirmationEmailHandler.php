@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Handler;
 
 use App\Infrastructure\Billing\Message\SendPurchaseConfirmationEmailMessage;
@@ -11,8 +13,9 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 readonly class SendPurchaseConfirmationEmailHandler
 {
     public function __construct(
-        private MailerInterface $mailer
-    ) {}
+        private MailerInterface $mailer,
+    ) {
+    }
 
     public function __invoke(SendPurchaseConfirmationEmailMessage $message): void
     {

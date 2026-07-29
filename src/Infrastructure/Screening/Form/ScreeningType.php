@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Screening\Form;
 
 use App\Application\Screening\DTO\Request\ScreeningRequest;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Kyc\UseCase;
 
 use App\Application\Kyc\DTO\Request\BindCompanyToKycFolderRequest;
@@ -13,7 +15,8 @@ final readonly class BindCompanyToKycFolderUseCase
     public function __construct(
         private KycFolderRepositoryInterface $kycFolderRepository,
         private EventDispatcherInterface $eventDispatcher,
-    ) {}
+    ) {
+    }
 
     public function __invoke(BindCompanyToKycFolderRequest $request): void
     {

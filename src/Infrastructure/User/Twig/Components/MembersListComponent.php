@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Twig\Components;
 
 use App\Domain\User\Entity\User;
@@ -32,19 +34,21 @@ class MembersListComponent
     public function previousPage(): void
     {
         if ($this->page > 1) {
-            $this->page--;
+            --$this->page;
         }
     }
 
     #[LiveAction]
     public function nextPage(): void
     {
-        $this->page++;
+        ++$this->page;
     }
+
     public function __construct(
         private readonly WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
         private readonly CurrentWorkspaceProvider $currentWorkspaceProvider,
-    ) {}
+    ) {
+    }
 
     /**
      * @return Pagerfanta<User>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Support\UseCase;
 
 use App\Application\Support\DTO\Response\SupportNotificationStats;
@@ -16,7 +18,8 @@ readonly class SupportNotificationStatsUseCase
         private CurrentWorkspaceProvider $workspaceProvider,
         private SupportThreadRepositoryInterface $threadRepository,
         private UserRepositoryInterface $userRepository,
-    ) {}
+    ) {
+    }
 
     public function __invoke(): SupportNotificationStats
     {

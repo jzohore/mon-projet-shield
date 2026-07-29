@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Kyc\Event;
 
 use App\Domain\Kyc\Entity\KycDocument;
@@ -14,6 +16,7 @@ class KycDocumentReceivedLocalEvent extends Event
         public readonly string $localTempPath,
         public readonly string $mimeType,
         public readonly string $originalName,
-        public readonly ?string $oldStoragePath = null
-    ) {}
+        public readonly ?string $oldStoragePath = null,
+    ) {
+    }
 }

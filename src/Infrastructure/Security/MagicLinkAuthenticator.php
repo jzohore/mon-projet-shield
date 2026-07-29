@@ -25,7 +25,8 @@ class MagicLinkAuthenticator extends AbstractAuthenticator
     public function __construct(
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly UserRepositoryInterface $userRepository,
-    ) {}
+    ) {
+    }
 
     /**
      * Called on every request to decide if this authenticator should be
@@ -44,7 +45,7 @@ class MagicLinkAuthenticator extends AbstractAuthenticator
     {
         $token = $request->attributes->get('token');
 
-        if (! $token) {
+        if (!$token) {
             throw new AuthenticationException('Jeton de connexion manquant.');
         }
 
@@ -53,11 +54,11 @@ class MagicLinkAuthenticator extends AbstractAuthenticator
         // ou que vous le fassiez manuellement via un service/repository.
 
         // On utilise un CustomUserProvider (similaire au UserBadge mais par Token)
-        $userLoader = function ($token) {
+        $userLoader = function (string $token): User {
             // --- C'est ici que l'utilisateur est chargé par le jeton ---
             $user = $this->userRepository->findByMagicLink($token);
 
-            if (! $user) {
+            if (!$user instanceof User) {
                 throw new AuthenticationException('Jeton de connexion invalide ou déjà utilisé.');
             }
 
@@ -65,7 +66,7 @@ class MagicLinkAuthenticator extends AbstractAuthenticator
         };
 
         $tokenBadge = new CustomCredentials(
-            function ($credentials, UserInterface $user): bool {
+            static function ($credentials, UserInterface $user): bool {
                 /** @var User $user */
                 // 1. Le jeton correspond (double vérification, car il est déjà chargé par le jeton)
                 if ($credentials !== $user->magicLinkToken) {
@@ -73,12 +74,8 @@ class MagicLinkAuthenticator extends AbstractAuthenticator
                 }
 
                 // 2. CORRECTION CRITIQUE de la LOGIQUE D'EXPIRATION
-                if (! $user->isMagicLinkTokenValid()) {
-                    // Le jeton a expiré ou est invalide
-                    return false;
-                }
-
-                return true;
+                // Le jeton a expiré ou est invalide
+                return $user->isMagicLinkTokenValid();
             },
             $token
         );
@@ -92,7 +89,25 @@ class MagicLinkAuthenticator extends AbstractAuthenticator
 
     public function onAuthenticationSuccess(Request $request, TokenInterface $token, string $firewallName): ?RedirectResponse
     {
-        // on success, let the request continue
+        $token->getUser();
+
+        // 1. DÉTRUIRE LE JETON (Vital en sécurité !)
+        // Assure-toi d'avoir une méthode dans ton entité pour nullifier le jeton
+        // $user->clearMagicLinkToken();
+        // $this->userRepository->save($user, true); // (ou via l'EntityManager)
+
+        // 2. FORCER LA DESTINATION POST-2FA
+        if ($request->hasSession()) {
+            // On inscrit en dur dans la session la route finale.
+            // Quand Scheb 2FA aura fini son travail, il lira cette variable !
+            $request->getSession()->set(
+                '_security.' . $firewallName . '.target_path',
+                $this->urlGenerator->generate('app_dashboard')
+            );
+        }
+
+        // Si le 2FA N'EST PAS actif, cette redirection s'exécute normalement.
+        // Si le 2FA EST actif, Scheb intercepte et l'ignore, mais notre session est sauvegardée.
         return new RedirectResponse($this->urlGenerator->generate('app_dashboard'));
     }
 

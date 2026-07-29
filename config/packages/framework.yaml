@@ -1,29 +1,15 @@
-# see https://symfony.com/doc/current/reference/configuration/framework.html
+# config/packages/framework.yaml
 framework:
     secret: '%env(APP_SECRET)%'
     trusted_proxies: '%env(TRUSTED_PROXIES)%'
     trusted_headers: [ 'x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix' ]
-    # Note that the session will be started ONLY if you read or write from it.
     session: true
+
     router:
         utf8: true
-        # Remplace par ton vrai domaine
-        #default_uri: '%env(DEFAULT_URI)%'
-        # Force le HTTPS pour tous les liens générés
+        strict_requirements: ~
+        # On utilise LA SEULE source de vérité pour les liens absolus (CLI & Web)
+        default_uri: 'https://localhost'
         http_port: 80
-        https_port: 44
-    #esi: true
-    #fragments: true
-
-when@test:
-    framework:
-        test: true
-        session:
-            storage_factory_id: session.storage.factory.mock_file
-
-when@prod:
-    framework:
-        router:
-            default_uri: 'https://kysure.fr'
-            http_port: 80
-            https_port: 443
+        # Correction de la coquille : 443 est le port HTTPS standard
+        https_port: 443

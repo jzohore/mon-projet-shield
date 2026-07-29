@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\AuditLog\Entity;
 
 use App\Domain\AuditLog\Enum\AuditEventType;
@@ -7,11 +9,11 @@ use App\Domain\Workspace\Entity\Workspace;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Exception;
 use Symfony\Bridge\Doctrine\Types\UuidType;
-use Symfony\Component\Uid\Uuid;
 
 use function Symfony\Component\Clock\now;
+
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'audit_logs')]
@@ -33,56 +35,37 @@ class AuditLog
         get => $this->eventName;
     }
 
-    #[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'auditLogs')]
-    #[ORM\JoinColumn(nullable: true)]
-    public private(set) ?Workspace $workspace = null;
-
-    #[ORM\Column(type: Types::STRING, length: 255)]
-    public private(set) string $actor;
-
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
     public private(set) string $slugId;
-
-    /**
-     * @var array<string, mixed>
-     */
-    #[ORM\Column(type: Types::JSON)]
-    public private(set) array $payload;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public private(set) \DateTimeImmutable $occurredAt;
 
     /**
-     * @param AuditEventType $eventName
      * @param array<string, mixed> $payload
-     * @param string $actor
-     * @param Workspace|null $workspace
-     * @throws Exception
+     *
+     * @throws \Exception
      */
     protected function __construct(
         AuditEventType $eventName,
-        array $payload,
-        string $actor,
-        ?Workspace $workspace = null,
+        #[ORM\Column(type: Types::JSON)]
+        public private(set) array $payload,
+        #[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'auditLogs')]
+        #[ORM\JoinColumn(nullable: true)]
+        public private(set) ?Workspace $workspace = null,
     ) {
-        $this->workspace = $workspace;
-        $this->actor = $actor;
         $this->eventName = $eventName;
-        $this->payload = $payload;
         $this->slugId = $this->generate_ulid_prefixed('aud_');
         $this->occurredAt = now();
     }
 
     /**
-     * @param AuditEventType $eventName
-     * @param string $actor
-     * @param Workspace|null $workspace
-     * @return AuditLog
-     * @throws Exception
      * @param array<string, mixed> $payload
+     *
+     * @throws \Exception
      */
-    public static function initiate(AuditEventType $eventName, array $payload, string $actor, ?Workspace $workspace = null): self
+    public static function initiate(AuditEventType $eventName, array $payload, ?Workspace $workspace = null): self
     {
-        return new self($eventName, $payload, $actor, $workspace);
+        return new self($eventName, $payload, $workspace);
     }
 }

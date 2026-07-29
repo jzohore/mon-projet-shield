@@ -3,7 +3,8 @@
         message: this.actionMessage|default(null),
         type: this.actionMessageType|default('success')
     } %}
-    <div data-controller="form">
+    <div data-controller="form-dirty"
+         data-action="input->form-dirty#check change->form-dirty#check">
         {{ form_start(form, {
             attr: {
                 novalidate: true,
@@ -58,15 +59,19 @@
 
         {# Footer de la carte #}
         <div class="flex items-center justify-end p-6 bg-slate-50/50 rounded-b-xl border-t border-slate-100">
-            <twig:Button as="button" type="submit" variant="dark" class="w-full sm:w-auto px-8">
+            <twig:Button as="button"
+                         type="submit"
+                         variant="dark"
+                         class="w-full sm:w-auto px-8 transition-all duration-200"
+                         data-form-dirty-target="submitButton">
 
                 {# Texte affiché par défaut #}
                 <span data-loading="action(save)|hide">Mettre à jour le profil</span>
 
-                {# Texte affiché PENDANT la requête AJAX (Magie Symfony UX Live Component) #}
+                {# Texte affiché PENDANT la requête AJAX #}
                 <span data-loading="action(save)|show" class="hidden items-center gap-2">
-                        <i class="fas fa-circle-notch fa-spin opacity-70"></i> Enregistrement...
-                    </span>
+                    <i class="fas fa-circle-notch fa-spin opacity-70"></i> Validation...
+                </span>
 
             </twig:Button>
         </div>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Workspace\UseCase;
 
 use App\Application\Workspace\DTO\Response\WorkspaceInfoResponse;
@@ -10,14 +12,15 @@ use Webmozart\Assert\Assert;
 final class GetCurrentWorkspaceInfo
 {
     /**
-     * @var array<string, WorkspaceInfoResponse> $cache
+     * @var array<string, WorkspaceInfoResponse>
      */
     private array $cache = [];
 
     public function __construct(
         // On garde readonly ici pour protéger le service
-        private readonly WorkspaceMemberRepositoryInterface $workspaceMemberRepository
-    ) {}
+        private readonly WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
+    ) {
+    }
 
     public function __invoke(Uuid $userSlugId): WorkspaceInfoResponse
     {

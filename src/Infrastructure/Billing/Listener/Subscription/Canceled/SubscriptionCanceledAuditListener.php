@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Listener\Subscription\Canceled;
 
 use App\Domain\AuditLog\Entity\AuditLog;
@@ -14,7 +16,8 @@ readonly class SubscriptionCanceledAuditListener
 {
     public function __construct(
         private AuditLogRepositoryInterface $auditLogRepository,
-    ) {}
+    ) {
+    }
 
     public function __invoke(SubscriptionCanceledEvent $event): void
     {
@@ -30,8 +33,9 @@ readonly class SubscriptionCanceledAuditListener
             payload: [
                 'reason' => $subscription->reason,
                 'end_date' => $subscription->currentPeriodEnd->format('d/m/Y'),
+                'actor_name' => $user->getFullName(),
+                'actor_email' => $user->email,
             ],
-            actor: $user->id->toString(),
             workspace: $workspace,
         );
 

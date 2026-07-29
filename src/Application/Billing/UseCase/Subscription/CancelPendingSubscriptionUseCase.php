@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Billing\UseCase\Subscription;
 
 use App\Domain\Billing\Event\SubscriptionCanceledEvent;
@@ -16,7 +18,8 @@ readonly class CancelPendingSubscriptionUseCase
         private CurrentWorkspaceProvider $currentWorkspaceProvider,
         private EventDispatcherInterface $eventDispatcher,
         private CurrentUserProvider $currentUserProvider,
-    ) {}
+    ) {
+    }
 
     public function __invoke(string $reason): void
     {

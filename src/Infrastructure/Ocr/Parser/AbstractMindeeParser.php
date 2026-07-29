@@ -1,15 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Ocr\Parser;
 
-use App\Domain\Kyc\Enum\DocumentType;
+use App\Domain\Compliance\Enum\DocumentType;
 use Mindee\ClientV2;
 
 abstract class AbstractMindeeParser
 {
     public function __construct(
-        protected readonly ClientV2 $client
-    ) {}
+        protected readonly ClientV2 $client,
+    ) {
+    }
 
     abstract public function supports(DocumentType $type): bool;
 

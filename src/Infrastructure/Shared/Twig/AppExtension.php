@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Shared\Twig;
 
 use App\Application\Billing\DTO\Response\SubscriptionInfoResponse;
 use App\Application\Billing\UseCase\Subscription\GetCurrentSubscriptionUseCase;
 use App\Application\Workspace\DTO\Response\WorkspaceInfoResponse;
-use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
+use App\Application\Workspace\UseCase\CurrentWorkspaceInfo;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
@@ -13,9 +15,12 @@ use Twig\TwigFunction;
 class AppExtension extends AbstractExtension
 {
     public function __construct(
-        private readonly CurrentWorkspaceProvider $currentWorkspaceProvider,
         private readonly GetCurrentSubscriptionUseCase $currentSubscriptionUseCase,
-    ) {}
+        private readonly CurrentWorkspaceInfo $currentWorkspaceInfo,
+    ) {
+    }
+
+    #[\Override]
     public function getFilters(): array
     {
         return [
@@ -23,6 +28,7 @@ class AppExtension extends AbstractExtension
         ];
     }
 
+    #[\Override]
     public function getFunctions()
     {
         return [
@@ -35,7 +41,7 @@ class AppExtension extends AbstractExtension
     {
         // On nettoie les espaces éventuels et on formate : 3 3 3 5
         $siret = str_replace(' ', '', $siret);
-        if (strlen($siret) !== 14) {
+        if (14 !== strlen($siret)) {
             return $siret;
         }
 
@@ -50,8 +56,7 @@ class AppExtension extends AbstractExtension
 
     public function workspaceInfo(): WorkspaceInfoResponse
     {
-        $workspace = $this->currentWorkspaceProvider->getWorkspace();
-        return WorkspaceInfoResponse::fromEntity($workspace);
+        return ($this->currentWorkspaceInfo)();
     }
 
     public function subInfo(): SubscriptionInfoResponse

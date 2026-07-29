@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Controller\Admin\Compliance;
 
 use Symfony\Component\HttpFoundation\Response;

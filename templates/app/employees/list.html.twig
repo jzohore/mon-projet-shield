@@ -5,20 +5,13 @@
 
 
 {% block content %}
-
-    <div class="max-w-7xl mx-auto space-y-6">
-        {{ include('@app/settings/_header_settings.html.twig') }}
-        {# 1. HEADER : TITRE ET BOUTON D'ACTION #}
-        <div class="flex flex-col sm:flex-row sm:items-center justify-end gap-4 mb-8">
-            <twig:Button as="a" href="{{ path('app_employees_invitation') }}"
-                         variant="primary" size="sm">
-                <twig:ux:icon name="tabler:user-plus" class="size-4" /> Inviter un membre
-            </twig:Button>
-        </div>
-
-
-
-        <twig:MembersListComponent></twig:MembersListComponent>
-
+    {{ include('@app/settings/_header_settings.html.twig') }}
+    {# 1. HEADER : TITRE ET BOUTON D'ACTION #}
+    <div class="flex flex-col sm:flex-row sm:items-center justify-end gap-4 mb-8">
+        <twig:Button as="a" href="{{ path('app_employees_invitation') }}"
+                     variant="primary" size="sm">
+            <twig:ux:icon name="tabler:user-plus" class="size-4" /> Inviter un membre
+        </twig:Button>
     </div>
+    <twig:MembersListComponent></twig:MembersListComponent>
 {% endblock %}

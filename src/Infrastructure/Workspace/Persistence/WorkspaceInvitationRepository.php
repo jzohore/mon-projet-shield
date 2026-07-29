@@ -23,10 +23,12 @@ final readonly class WorkspaceInvitationRepository implements WorkspaceInvitatio
 {
     /** @var EntityRepository<WorkspaceInvitation> */
     private EntityRepository $repository;
+
     public function __construct(private EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(WorkspaceInvitation::class);
     }
+
     public function save(WorkspaceInvitation $workspaceInvitation, bool $flush = true): void
     {
         $this->entityManager->persist($workspaceInvitation);
@@ -81,7 +83,7 @@ final readonly class WorkspaceInvitationRepository implements WorkspaceInvitatio
         $invitation = $this->repository->find($id);
 
         if (null === $invitation) {
-            throw WorkspaceInvitationNotFoundException::withId($id);
+            throw WorkspaceInvitationNotFoundException::withId((string) $id);
         }
 
         return $invitation;

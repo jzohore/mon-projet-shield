@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Notification\Email\Documents;
 
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -11,7 +13,7 @@ class ShareReportEmail extends TemplatedEmail
         string $recipientEmail,
         string $senderFullName,
         string $subjectName, // Le nom de la personne auditée (ex: "Carlos Ghosn")
-        string $actionUrl
+        string $actionUrl,
     ) {
         parent::__construct();
 
@@ -20,9 +22,9 @@ class ShareReportEmail extends TemplatedEmail
             ->subject(sprintf('Rapport de conformité partagé par %s : %s', $senderFullName, $subjectName))
             ->htmlTemplate('emails/document/share_report.html.twig')
             ->context([
-                'sender_name'  => $senderFullName,
+                'sender_name' => $senderFullName,
                 'subject_name' => $subjectName,
-                'action_url'   => $actionUrl,
+                'action_url' => $actionUrl,
             ]);
     }
 }

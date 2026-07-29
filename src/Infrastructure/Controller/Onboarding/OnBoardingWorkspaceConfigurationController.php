@@ -26,10 +26,8 @@ final class OnBoardingWorkspaceConfigurationController
     public function __invoke(
         Environment $twig,
         #[CurrentUser]
-        User
-        $user,
+        User $user,
     ): Response {
-
         return new Response(
             $twig->render('@app/onboarding/workspace_manual.html.twig', [
                 'page_title' => 'Configuration manuelle',

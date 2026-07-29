@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Support\UseCase;
 
 use App\Domain\Shared\Port\RealTimeNotifierInterface;
@@ -11,7 +13,6 @@ use App\Domain\Support\Enum\SupportTopic;
 use App\Domain\Support\Repository\SupportThreadRepositoryInterface;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
-use DateMalformedStringException;
 use Doctrine\ORM\EntityManagerInterface;
 
 readonly class PostSupportMessageUseCase
@@ -20,12 +21,14 @@ readonly class PostSupportMessageUseCase
         private SupportThreadRepositoryInterface $threadRepository,
         private EntityManagerInterface $entityManager,
         private RealTimeNotifierInterface $notifier,
-    ) {}
+    ) {
+    }
 
     /**
-     * @param string $content Le message tapé par le client
+     * @param string      $content    Le message tapé par le client
      * @param string|null $urlContext L'URL où se trouvait le client (pour le contexte)
-     * @throws DateMalformedStringException
+     *
+     * @throws \DateMalformedStringException
      */
     public function execute(
         Workspace $workspace,
@@ -33,10 +36,10 @@ readonly class PostSupportMessageUseCase
         string $content,
         SupportCategory $category,
         SupportTopic $topic,
-        ?string $urlContext = null
+        ?string $urlContext = null,
     ): void {
         $managedWorkspace = $this->entityManager->find(Workspace::class, (string) $workspace->id);
-        $managedUser      = $this->entityManager->find(User::class, (string) $user->id);
+        $managedUser = $this->entityManager->find(User::class, (string) $user->id);
 
         if (!$managedWorkspace || !$managedUser) {
             throw new \LogicException('Erreur critique : Workspace ou User introuvable lors de la création du ticket.');
@@ -48,7 +51,7 @@ readonly class PostSupportMessageUseCase
         $isNewTicket = false;
 
         // 1. LAZY CREATION
-        if (!$activeThread) {
+        if (!$activeThread instanceof SupportThread) {
             $activeThread = SupportThread::open($managedWorkspace, $managedUser, $category->value, $topic->value, $urlContext);
             $isNewTicket = true; // On flag que c'est un tout nouveau ticket
         }

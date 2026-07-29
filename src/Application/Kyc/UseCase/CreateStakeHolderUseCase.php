@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Kyc\UseCase;
 
 use App\Application\Kyc\DTO\Request\StakeholderRequest;
@@ -17,7 +19,8 @@ final readonly class CreateStakeHolderUseCase
         private KycFolderRepositoryInterface $kycFolderRepository,
         private StakeholderRepositoryInterface $stakeholderRepository,
         private EventDispatcherInterface $eventDispatcher,
-    ) {}
+    ) {
+    }
 
     public function __invoke(StakeholderRequest $request): void
     {
@@ -36,7 +39,7 @@ final readonly class CreateStakeHolderUseCase
             $nom = $apiDirigeant['nom'] ?? $apiDirigeant['denomination'] ?? 'Nom inconnu';
 
             // (Optionnel) Si on n'a vraiment ni nom ni prénom, on passe au suivant pour ne pas polluer la base
-            if (empty(trim($prenoms)) && empty(trim($nom))) {
+            if (in_array(trim($prenoms), ['', '0'], true) && in_array(trim((string) $nom), ['', '0'], true)) {
                 continue;
             }
 

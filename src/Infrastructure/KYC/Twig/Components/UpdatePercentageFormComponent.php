@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Twig\Components;
 
 use App\Application\Kyc\UseCase\UpdatePercentageUseCase;
@@ -18,9 +20,9 @@ use Symfony\UX\LiveComponent\ValidatableComponentTrait;
 )]
 class UpdatePercentageFormComponent
 {
+    use ComponentToolsTrait;
     use DefaultActionTrait;
     use ValidatableComponentTrait;
-    use ComponentToolsTrait;
 
     #[LiveProp]
     public ?string $folderSlugId = null;
@@ -40,7 +42,8 @@ class UpdatePercentageFormComponent
     public function __construct(
         private readonly UpdatePercentageUseCase $updatePercentageUseCase,
         private readonly LoggerInterface $logger,
-    ) {}
+    ) {
+    }
 
     #[LiveAction]
     public function activateEditing(): void

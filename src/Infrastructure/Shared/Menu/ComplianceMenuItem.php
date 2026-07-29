@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Shared\Menu;
 
 enum ComplianceMenuItem: string
@@ -52,6 +54,6 @@ enum ComplianceMenuItem: string
      */
     public function hasBadge(): bool
     {
-        return $this === self::DOSSIERS;
+        return self::DOSSIERS === $this;
     }
 }

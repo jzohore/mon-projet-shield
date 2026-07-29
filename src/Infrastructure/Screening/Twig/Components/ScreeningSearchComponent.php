@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Screening\Twig\Components;
 
 use App\Application\Screening\DTO\Request\ScreeningRequest;
@@ -26,8 +28,8 @@ use Webmozart\Assert\Assert;
 )]
 class ScreeningSearchComponent
 {
-    use DefaultActionTrait;
     use ComponentWithFormTrait;
+    use DefaultActionTrait;
     use LiveFlashTrait;
 
     #[LiveProp]
@@ -47,7 +49,8 @@ class ScreeningSearchComponent
         private readonly PerformScreeningUseCase $performScreeningUseCase,
         private readonly GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
         private readonly UrlGeneratorInterface $router,
-    ) {}
+    ) {
+    }
 
     protected function instantiateForm(): FormInterface
     {
@@ -82,9 +85,7 @@ class ScreeningSearchComponent
             return new RedirectResponse(
                 $this->router->generate('app_screening_show', ['slugId' => $slugId])
             );
-        } catch (\Exception $e) {
-            $this->addLiveFlash('error', 'Le rapport n\'a pas pu être envoyé aux destinataires.');
-        } catch (\Throwable $e) {
+        } catch (\Exception) {
             $this->addLiveFlash('error', 'Le rapport n\'a pas pu être envoyé aux destinataires.');
         } finally {
             $this->isSearching = false;

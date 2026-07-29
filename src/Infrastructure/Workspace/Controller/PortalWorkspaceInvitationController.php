@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Controller;
 
 use App\Application\Workspace\UseCase\Invitation\GetCurrentInvitationUseCase;
@@ -19,7 +21,8 @@ class PortalWorkspaceInvitationController extends AbstractController
     public function __construct(
         private readonly RequestStack $requestStack,
         private readonly GetCurrentInvitationUseCase $getCurrentInvitationUseCase,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws RuntimeError
@@ -32,6 +35,7 @@ class PortalWorkspaceInvitationController extends AbstractController
 
         if (!$id) {
             $this->addFlash('error', 'Le lien d\'invitation est invalide ou expiré.');
+
             return $this->redirectToRoute('portal_user_invitation');
         }
 

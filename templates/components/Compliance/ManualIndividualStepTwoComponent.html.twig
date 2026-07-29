@@ -1,0 +1,156 @@
+{# 1. 🪄 ON REGARDE S'IL Y A AU MOINS UN DOCUMENT EN COURS DE TRAITEMENT #}
+{% set hasProcessing = false %}
+{% for d in folder.documents %}
+    {% if d.status.value == 'processing' %}
+        {% set hasProcessing = true %}
+    {% endif %}
+{% endfor %}
+
+{# 2. 🪄 ON AJOUTE LE POLLING ET L'ÉCOUTEUR SUR LA TOUTE PREMIÈRE BALISE #}
+<div {{ attributes }}
+    {% if hasProcessing %}data-poll="delay(2000)|$render"{% endif %}
+    data-action="live:render->live#$render">
+
+    <section class="bg-white rounded-md border border-slate-200 p-6 sm:p-8 shadow-sm mt-8 relative">
+
+        {# Masque de chargement global pendant qu'une action s'exécute #}
+        <div data-loading class="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 hidden rounded-3xl flex items-center justify-center">
+            <twig:ux:icon name="tabler:loader" class="size-8 text-indigo-600 animate-spin" />
+        </div>
+
+        <div class="flex justify-between items-start mb-6">
+            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-3">
+                <span class="size-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-black">2</span>
+                Pièces justificatives
+            </h3>
+            <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide">
+                Niveau {{ folder.diligenceLevel.label|default('Standard') }}
+            </span>
+        </div>
+
+        <div class="space-y-3">
+            {% for doc in folder.documents %}
+                <div class="flex flex-col space-y-3 p-4 rounded-2xl group transition-all border {{ doc.isMandatory ? 'bg-indigo-50/30 border-indigo-100' : 'bg-white border-slate-200 hover:border-slate-300' }}">
+
+                    <div class="flex items-center">
+                        <div class="flex-1">
+                            <p class="text-sm font-bold text-slate-900">{{ doc.type.label|default('Document') }}</p>
+
+                            {# Petit badge d'état actuel #}
+                            {% if doc.status.value == 'REQUESTED' %}
+                                <p class="text-[10px] text-amber-600 font-semibold mt-0.5 flex items-center gap-1">
+                                    <twig:ux:icon name="tabler:clock" class="size-3" /> Demandé au client
+                                </p>
+                            {% endif %}
+                        </div>
+
+                        {# Badge Requis #}
+                        {% if doc.isMandatory %}
+                            <span class="mr-4 text-[10px] font-bold text-indigo-600 bg-white border border-indigo-100 px-2 py-1 rounded-md uppercase">Requis</span>
+                        {% endif %}
+                    </div>
+
+                    {# La zone d'actions #}
+                    <div class="flex items-center gap-2 mt-2 w-full">
+                        {% if doc.isAskToClient %}
+
+                            {# 💡 Zone "Panier" avec le message d'attente et le bouton annuler #}
+                            <div class="flex items-center justify-between w-full bg-amber-50 border border-amber-100 px-3 py-2 rounded-lg">
+                                <span class="text-xs text-amber-700 font-medium flex items-center gap-1.5">
+                                    <twig:ux:icon name="tabler:clock-hour-4" class="size-4 text-amber-500" />
+                                    Sera demandé au client à la validation du dossier.
+                                </span>
+
+                                <twig:CancelRequestFromClientComponent folder="{{ folder }}" document="{{ doc }}"></twig:CancelRequestFromClientComponent>
+
+                            </div>
+
+                        {% else %}
+
+                            {% set isProcessing = doc.status.value == 'processing' %}
+
+                            {# 3. 🪄 ICI ON A RETIRÉ LE DATA-POLL ET LE DATA-ACTION (car ils sont sur la racine parent maintenant) #}
+                            <div class="flex flex-wrap items-center gap-3">
+
+                                <div {{ stimulus_controller('document-upload', {
+                                    url: path('portal_kyc_document_upload', { documentId: doc.id, folderId: folder.id })
+                                }) }} class="inline-block">
+
+                                    {# L'input caché qui gère le vrai fichier #}
+                                    <input type="file"
+                                           class="hidden"
+                                           accept=".pdf,.jpg,.jpeg,.png"
+                                           data-document-upload-target="input"
+                                           data-action="change->document-upload#upload"
+                                           aria-label="Sélectionner un fichier pour {{ doc.type.value|default('le document') }}">
+
+                                    {# Ton bouton de design #}
+                                    <button type="button"
+                                            data-document-upload-target="button"
+                                            data-action="click->document-upload#browse"
+                                            class="inline-flex items-center gap-1.5 text-xs font-medium bg-slate-900 text-white px-3 py-1.5 rounded-lg hover:bg-slate-800 transition-colors shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 disabled:opacity-50 disabled:cursor-not-allowed">
+
+            <span data-document-upload-target="icon" class="flex items-center" aria-hidden="true">
+                <twig:ux:icon name="tabler:upload" class="size-3.5" />
+            </span>
+                                        <span data-document-upload-target="label">Uploader</span>
+
+                                    </button>
+                                </div>
+
+                                {# 🔄 Affichage conditionnel selon le travail de Messenger #}
+                                {% if doc.storagePath and doc.status.value == 'uploaded' %}
+
+                                    <div class="flex items-center gap-2 bg-slate-100/80 ring-1 ring-slate-900/5 rounded-lg pl-2.5 pr-1.5 py-1 text-xs max-w-xs sm:max-w-sm min-w-0">
+                                        {# 📁 Petite icône de fichier #}
+                                        <twig:ux:icon name="tabler:file-check" class="size-4 text-emerald-600 shrink-0" aria-hidden="true" />
+
+                                        {# 🪄 Découpage magique du nom et de l'extension #}
+                                        {% set fileParts = doc.storagePath|split('.') %}
+                                        {% set extension = fileParts|last|upper %}
+                                        {% set rawName = doc.filename|replace({ ('.' ~ fileParts|last): '' }) %}
+
+                                        {# Affichage du nom tronqué proprement s'il est trop long #}
+                                        <span class="text-slate-700 font-medium truncate" title="{{ doc.storagePath }}">
+                {{ rawName }}
+            </span>
+
+                                        {# Badge de l'extension style dictionnaire/code #}
+                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-white text-slate-600 border border-slate-200 uppercase tracking-wide shrink-0 font-mono">
+                {{ extension }}
+            </span>
+
+                                        {# Bouton de visualisation épuré à droite #}
+                                        <twig:Button target="_blank" title="Visualiser le fichier" variant="link" as="a" href="{{ doc.storagePath|private_url }}" class="!p-1 text-slate-400 hover:text-slate-900 focus-visible:ring-2 focus-visible:ring-indigo-500 rounded">
+                                            <twig:ux:icon name="tabler:external-link" class="size-4" aria-hidden="true" />
+                                            <span class="sr-only">Visualiser</span>
+                                        </twig:Button>
+                                    </div>
+
+                                {% elseif isProcessing %}
+                                    <span class="text-xs text-slate-500 italic flex items-center gap-1.5" role="status">
+            <twig:ux:icon name="tabler:loader" class="size-3.5 animate-spin text-indigo-600" aria-hidden="true" /> Traitement...
+        </span>
+                                {% else %}
+                                    <twig:RequestFromClientComponent folder="{{ folder }}" document="{{ doc }}"></twig:RequestFromClientComponent>
+                                {% endif %}
+
+                            </div>
+                        {% endif %}
+
+                        {# Action 3 : Supprimer (Poussée à droite si non obligatoire et si on n'est pas en train de le demander au client) #}
+                        {% if not doc.isMandatory and not doc.isAskToClient %}
+                            <div class="ml-auto">
+                                <twig:RemoveDocumentComponent folder="{{ folder }}" document="{{ doc }}"></twig:RemoveDocumentComponent>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            {% endfor %}
+
+            <twig:AddDocumentComponent folder="{{ folder }}"></twig:AddDocumentComponent>
+
+        </div>
+    </section>
+</div>

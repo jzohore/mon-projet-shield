@@ -1,0 +1,103 @@
+<div {{ attributes }} class="p-6">
+
+    {# --- ÉTAT 1 : 2FA DÉSACTIVÉ --- #}
+    {% if not this.is2faEnabled and not isSetupMode %}
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center size-10 rounded-full bg-slate-100 text-slate-500">
+                    <twig:ux:icon name="tabler:shield-x" class="size-5" />
+                </div>
+                <div>
+                    <p class="font-medium text-slate-900">Application d'authentification</p>
+                    <p class="text-sm text-slate-500">Non configurée</p>
+                </div>
+            </div>
+            <button type="button"
+                    data-action="live#action"
+                    data-live-action-param="initiateSetup"
+                    class="inline-flex items-center justify-center rounded-md text-sm font-medium border border-slate-200 bg-white hover:bg-slate-50 hover:text-slate-900 h-9 px-4 py-2 transition-colors">
+                <span data-loading="action(initiateSetup)|show" class="hidden mr-2"><i class="fas fa-spinner fa-spin"></i></span>
+                Configurer
+            </button>
+        </div>
+    {% endif %}
+
+
+    {# --- ÉTAT 2 : MODE CONFIGURATION (QR CODE) --- #}
+    {% if isSetupMode %}
+        <div class="space-y-6">
+            <div class="rounded-lg bg-blue-50/50 border border-blue-100 p-4">
+                <h4 class="text-sm font-bold text-blue-900 mb-2">1. Scannez le QR Code</h4>
+                <p class="text-sm text-blue-700 mb-4">Utilisez une application comme Google Authenticator, Authy ou Microsoft Authenticator pour scanner cette image.</p>
+
+                {# 🪄 NOUVEAU : Le message d'avertissement de réinitialisation #}
+                <div class="mb-5 flex items-start gap-2.5 p-3 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                    <twig:ux:icon name="tabler:alert-triangle" class="size-5 shrink-0 mt-0.5 text-amber-600" />
+                    <p>
+                        <strong>Attention :</strong> Si vous aviez déjà configuré la double authentification par le passé, pensez à <strong>supprimer l'ancienne entrée</strong> dans votre application téléphone avant de scanner ce nouveau QR Code.
+                    </p>
+                </div>
+
+                <div class="bg-white p-2 rounded-md border border-slate-200 inline-block shadow-sm">
+                    <img src="{{ path('qr_code_ga') }}" alt="QR Code Google Authenticator" class="size-40" />
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <h4 class="text-sm font-bold text-slate-900">2. Confirmez le code</h4>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="flex-1 max-w-xs">
+                        <input type="text"
+                               data-model="verificationCode"
+                               placeholder="Ex: 123456"
+                               maxlength="6"
+                               class="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 {% if errorMessage %}border-red-500 focus:ring-red-500{% endif %}" />
+                    </div>
+                    <button type="button"
+                            data-action="live#action"
+                            data-live-action-param="confirmSetup"
+                            class="inline-flex items-center justify-center rounded-md text-sm font-medium bg-slate-900 text-white hover:bg-slate-800 h-10 px-4 py-2 transition-colors">
+                        <span data-loading="action(confirmSetup)|show" class="hidden mr-2"><i class="fas fa-spinner fa-spin"></i></span>
+                        Activer
+                    </button>
+                    <button type="button"
+                            data-action="live#action"
+                            data-live-action-param="disable"
+                            class="inline-flex items-center justify-center rounded-md text-sm font-medium text-slate-500 hover:text-slate-900 h-10 px-4 py-2 transition-colors underline">
+                        Annuler
+                    </button>
+                </div>
+                {% if errorMessage %}
+                    <p class="text-sm font-medium text-red-600 flex items-center gap-1.5 mt-1">
+                        <twig:ux:icon name="tabler:alert-circle-filled" class="size-4" />
+                        {{ errorMessage }}
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
+
+
+    {# --- ÉTAT 3 : 2FA ACTIF --- #}
+    {% if this.is2faEnabled %}
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="flex items-center justify-center size-10 rounded-full bg-emerald-100 text-emerald-600">
+                    <twig:ux:icon name="tabler:shield-check" class="size-5" />
+                </div>
+                <div>
+                    <p class="font-medium text-slate-900">Application d'authentification</p>
+                    <p class="text-sm text-emerald-600 font-medium">Activée et sécurisée</p>
+                </div>
+            </div>
+            <button type="button"
+                    data-action="live#action"
+                    data-live-action-param="disable"
+                    class="inline-flex items-center justify-center rounded-md text-sm font-medium border border-rose-200 text-rose-600 bg-white hover:bg-rose-50 h-9 px-4 py-2 transition-colors">
+                <span data-loading="action(disable)|show" class="hidden mr-2"><i class="fas fa-spinner fa-spin"></i></span>
+                Désactiver
+            </button>
+        </div>
+    {% endif %}
+
+</div>

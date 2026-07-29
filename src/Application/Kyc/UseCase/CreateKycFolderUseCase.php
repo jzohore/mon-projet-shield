@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Kyc\UseCase;
 
 use App\Application\Kyc\DTO\Request\CreateKycFolderRequest;
@@ -16,7 +18,8 @@ final readonly class CreateKycFolderUseCase
         private KycFolderRepositoryInterface $kycFolderRepository,
         private WorkspaceRepositoryInterface $workspaceRepository,
         private EventDispatcherInterface $eventDispatcher,
-    ) {}
+    ) {
+    }
 
     public function __invoke(CreateKycFolderRequest $request): void
     {

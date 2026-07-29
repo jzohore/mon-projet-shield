@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Notification\Email\Kyc;
 
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -13,7 +15,7 @@ class WorkspaceKycConfirmationEmail extends TemplatedEmail
         string $workspaceName,
         string $companyName,
         string $folderReference,
-        string $reviewUrl
+        string $reviewUrl,
     ) {
         parent::__construct();
 
@@ -22,11 +24,11 @@ class WorkspaceKycConfirmationEmail extends TemplatedEmail
             ->subject(sprintf('Nouveau dossier à réviser : %s', $companyName))
             ->htmlTemplate('emails/kyc/kyc_submitted_workspace.html.twig')
             ->context([
-                'recipient_name'  => $recipientFullName,
-                'workspace_name'  => $workspaceName,
-                'reference'       => $folderReference,
-                'company_name'    => $companyName,
-                'review_url'   => $reviewUrl,
+                'recipient_name' => $recipientFullName,
+                'workspace_name' => $workspaceName,
+                'reference' => $folderReference,
+                'company_name' => $companyName,
+                'review_url' => $reviewUrl,
             ]);
     }
 }

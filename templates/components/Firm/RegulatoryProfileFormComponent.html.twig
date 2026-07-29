@@ -1,0 +1,129 @@
+<div {{ attributes }}>
+    <div data-controller="form-dirty"
+         data-action="input->form-dirty#check change->form-dirty#check">
+
+        {{ form_start(form, {
+            attr: {
+                novalidate: true,
+                'data-action': 'live#action:prevent',
+                'data-live-action-param': 'save',
+            }
+        }) }}
+        <div class="p-6 space-y-8">
+
+            {# Section Données AMF #}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    {{ form_row(form.oriasNumber) }}
+                </div>
+                <div class="space-y-2">
+                    {{ form_row(form.professionalAssociation) }}
+                </div>
+            </div>
+
+            <div class="h-px bg-slate-100 w-full"></div>
+
+            {# Section Assurance RC Pro #}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    {{ form_row(form.rcProInsurer) }}
+                </div>
+                <div class="space-y-2">
+                    {{ form_row(form.rcProPolicyNumber) }}
+                </div>
+            </div>
+
+            <div class="h-px bg-slate-100 w-full"></div>
+
+            {# Section Indépendance #}
+            <div class="space-y-2">
+                {{ form_row(form.isIndependent) }}
+            </div>
+
+            <div class="h-px bg-slate-100 w-full"></div>
+
+            <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-slate-800">Partenaires Commerciaux</h3>
+                        <p class="text-sm text-slate-500">Banques, assureurs ou promoteurs avec qui vous travaillez.</p>
+                    </div>
+                    <button type="button"
+                            class="text-sm px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors flex items-center gap-2"
+                            data-action="live#action"
+                            data-live-action-param="addPartner">
+                        <i class="fas fa-plus"></i> Ajouter un partenaire
+                    </button>
+                </div>
+
+                <div class="space-y-4 mt-4">
+                    {% for partnerForm in form.partners %}
+
+                        {# 🪄 L'astuce UX : On vérifie si le partenaire a déjà un nom enregistré #}
+                        {% set isExisting = partnerForm.vars.data is not null and partnerForm.vars.data.name is not empty %}
+
+                        <div class="relative bg-white p-5 rounded-xl border border-slate-200 shadow-sm transition-all hover:border-slate-300">
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-2">{{ form_row(partnerForm.name) }}</div>
+                                <div class="space-y-2">{{ form_row(partnerForm.email) }}</div>
+                                <div class="space-y-2 md:col-span-2">{{ form_row(partnerForm.address) }}</div>
+                                <div class="space-y-2">{{ form_row(partnerForm.phone) }}</div>
+                            </div>
+
+                            <div class="mt-4 pt-4 border-t border-slate-100 flex justify-end">
+                                {% if isExisting %}
+                                    {# 🚨 CAS 1 : Partenaire déjà enregistré (Bouton Supprimer Rouge) #}
+                                    <button type="button"
+                                            class="text-sm px-4 py-2 text-red-600 bg-red-50 hover:bg-red-100 font-medium rounded-lg transition-colors flex items-center gap-2"
+                                            data-action="live#action"
+                                            data-live-action-param="removePartner"
+                                            data-live-index-param="{{ loop.index0 }}"
+                                            title="Supprimer définitivement ce partenaire">
+                                        <i class="fas fa-trash-alt"></i> Supprimer
+                                    </button>
+                                {% else %}
+                                    {# ↩️ CAS 2 : Nouvel ajout en cours (Bouton Annuler Gris) #}
+                                    <button type="button"
+                                            class="text-sm px-4 py-2 text-slate-600 bg-slate-100 hover:bg-slate-200 font-medium rounded-lg transition-colors flex items-center gap-2"
+                                            data-action="live#action"
+                                            data-live-action-param="removePartner"
+                                            data-live-index-param="{{ loop.index0 }}"
+                                            title="Annuler l'ajout de ce partenaire">
+                                        <i class="fas fa-undo"></i> Annuler l'ajout
+                                    </button>
+                                {% endif %}
+                            </div>
+
+                        </div>
+                    {% else %}
+                        <div class="p-6 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center">
+                            <p class="text-slate-500">Aucun partenaire n'a été ajouté pour le moment.</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        {# Footer de la carte #}
+        <div class="flex items-center justify-end p-6 bg-slate-50/50 rounded-b-xl border-t border-slate-100">
+            <twig:Button as="button"
+                         type="submit"
+                         variant="dark"
+                         class="w-full sm:w-auto px-8 transition-all duration-200"
+                         data-form-dirty-target="submitButton">
+
+                {# Texte affiché par défaut #}
+                <span data-loading="action(save)|hide">Mettre à jour le profil</span>
+
+                {# Texte affiché PENDANT la requête AJAX #}
+                <span data-loading="action(save)|show" class="hidden items-center gap-2">
+                    <i class="fas fa-circle-notch fa-spin opacity-70"></i> Validation...
+                </span>
+
+            </twig:Button>
+        </div>
+
+        {{ form_end(form) }}
+    </div>
+</div>

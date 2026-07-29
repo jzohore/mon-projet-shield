@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Screening\UseCase;
 
 use App\Domain\Screening\Entity\ScreeningAudit;
@@ -15,7 +17,8 @@ readonly class ShareDocumentUseCase
     public function __construct(
         private MessageBusInterface $messageBus,
         private EventDispatcherInterface $eventDispatcher,
-    ) {}
+    ) {
+    }
 
     /**
      * @param array<int, string> $selectedEmails

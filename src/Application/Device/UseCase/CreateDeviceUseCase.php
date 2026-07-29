@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Device\UseCase;
 
 use App\Application\Device\DTO\Request\CreateDeviceRequest;
@@ -14,7 +16,8 @@ final readonly class CreateDeviceUseCase
     public function __construct(
         private DeviceRepositoryInterface $deviceRepository,
         private UserRepositoryInterface $userRepository,
-    ) {}
+    ) {
+    }
 
     public function __invoke(CreateDeviceRequest $request): void
     {

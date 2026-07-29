@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\User\Repository;
 
 use App\Domain\User\Entity\User;
@@ -17,7 +19,9 @@ interface UserRepositoryInterface
     /**
      * Retrouve un utilisateur via son identifiant unique (UUID).
      */
-    public function getById(Uuid $id): User;
+    public function getById(Uuid|string $id): User;
+
+    public function existsByEmail(string $email): bool;
 
     /**
      * Indispensable pour le système de login (Symfony Security).
@@ -28,10 +32,6 @@ interface UserRepositoryInterface
 
     public function getBySlug(string $slug): User;
 
-    /**
-     * @param string $email
-     * @return User
-     */
     public function getByEmail(string $email): User;
 
     /**
@@ -52,9 +52,5 @@ interface UserRepositoryInterface
      */
     public function findUsersNeedingReminder(\DateTimeInterface $twoHoursAgo): array;
 
-    /**
-     * @param Uuid $id
-     * @return User
-     */
-    public function getReference(Uuid $id): User;
+    public function getReference(Uuid|string $id): User;
 }

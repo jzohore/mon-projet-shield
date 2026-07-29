@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Trait;
 
 use Symfony\Component\Uid\Ulid;

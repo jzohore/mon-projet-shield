@@ -1,0 +1,35 @@
+{# templates/emails/client/der_signed_confirmation.html.twig #}
+{% extends 'emails/base.html.twig' %}
+
+{% block title %}Confirmation de signature de votre DER{% endblock %}
+
+{% block content %}
+    <h1>Document d'Entrée en Relation Signé</h1>
+
+    <p>Bonjour {{ client_name }},</p>
+
+    <p>Nous vous confirmons la bonne réception de votre signature électronique concernant votre Document d'Entrée en Relation (DER).</p>
+
+    <p>Cette étape est essentielle pour garantir la sécurité et la conformité de notre accompagnement. Vous trouverez en pièce jointe de cet email une copie PDF de votre document signé et de son certificat légal.</p>
+
+    {# 🪄 LA NOUVELLE ZONE RASSURANTE KYSURE #}
+    <p style="margin-top: 20px;">
+        <strong>Votre espace personnel :</strong><br>
+        À tout moment, vous pouvez retrouver ce document, ainsi que l'ensemble de votre dossier, sur votre <strong>espace sécurisé Kysure</strong>. Il vous suffit de vous y connecter en utilisant cette adresse email.
+    </p>
+
+    <div class="btn-container">
+        <a href="{{ kysure_login_url }}" class="btn">Accéder à mon espace sécurisé</a>
+    </div>
+
+    {# 🪄 LE RESTE DU WORKFLOW #}
+    <p style="font-size: 13px; color: #64748b; margin-top: 30px; padding: 15px; background-color: #f8fafc; border-radius: 6px; border-left: 4px solid #3b82f6;">
+        <strong>Et maintenant ?</strong><br>
+        Si des pièces justificatives complémentaires sont nécessaires (KYC), vous recevrez très prochainement une nouvelle notification pour les déposer directement sur votre espace.
+    </p>
+
+    <p style="margin-top: 30px;">
+        Cordialement,<br>
+        <strong>L'équipe {{ workspace_name }}</strong>
+    </p>
+{% endblock %}

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Billing\UseCase\Subscription;
 
 use App\Domain\Billing\Enum\SubscriptionStatus;
@@ -9,8 +11,9 @@ use Stripe\Subscription;
 readonly class SyncSubscriptionUseCase
 {
     public function __construct(
-        private SubscriptionRepositoryInterface $subscriptionRepository
-    ) {}
+        private SubscriptionRepositoryInterface $subscriptionRepository,
+    ) {
+    }
 
     public function __invoke(Subscription $stripeSubscription): void
     {
@@ -22,7 +25,7 @@ readonly class SyncSubscriptionUseCase
         $now = new \DateTimeImmutable();
         $updatedAt = $subscription->updateAt ?? $subscription->createdAt;
 
-        if ($updatedAt->diff($now)->s < 10 && $updatedAt->diff($now)->i === 0) {
+        if ($updatedAt->diff($now)->s < 10 && 0 === $updatedAt->diff($now)->i) {
             return;
         }
 
@@ -34,7 +37,7 @@ readonly class SyncSubscriptionUseCase
         if ($timestamp > 0) {
             // Si Stripe nous donne un timestamp valide, on l'utilise
             $parsedDate = \DateTimeImmutable::createFromFormat('U', (string) $timestamp);
-            if ($parsedDate !== false) {
+            if (false !== $parsedDate) {
                 $newPeriodEnd = $parsedDate;
             }
         }

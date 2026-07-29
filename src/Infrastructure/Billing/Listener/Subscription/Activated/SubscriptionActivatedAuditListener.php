@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Listener\Subscription\Activated;
 
 use App\Domain\AuditLog\Entity\AuditLog;
 use App\Domain\AuditLog\Enum\AuditEventType;
 use App\Domain\AuditLog\Repository\AuditLogRepositoryInterface;
 use App\Domain\Billing\Event\SubscriptionActivatedEvent;
-use Exception;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Webmozart\Assert\Assert;
 
@@ -15,10 +16,11 @@ readonly class SubscriptionActivatedAuditListener
 {
     public function __construct(
         private AuditLogRepositoryInterface $auditLogRepository,
-    ) {}
+    ) {
+    }
 
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     public function __invoke(SubscriptionActivatedEvent $event): void
     {
@@ -35,8 +37,9 @@ readonly class SubscriptionActivatedAuditListener
                 'workspace_name' => $workspace->name,
                 'stripe_subscription_id' => $subscription->stripeSubscriptionId,
                 'status' => $subscription->status,
+                'actor_name' => $user->getFullName(),
+                'actor_email' => $user->email,
             ],
-            actor: $user->id->toString(),
             workspace: $workspace,
         );
 

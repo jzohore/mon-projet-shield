@@ -134,6 +134,36 @@
                         </div>
                         <span class="text-sm font-medium text-slate-600 line-through">Compte vérifié</span>
                     </div>
+                    <div class="flex items-start gap-3 p-3 rounded-xl group hover:bg-slate-50 transition-colors">
+                        <div class="mt-0.5 size-5 rounded-full border-2 border-slate-200 group-hover:border-slate-400 flex items-center justify-center transition-colors"></div>
+                        <div class="flex-1">
+                            <a href="{{ path('app_settings_regulatory_profile') }}" class="block">
+                                <p class="text-sm font-medium text-slate-700">Renseigner votre profil réglementaire</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Analysez une structure morale complexe.</p>
+                            </a>
+                        </div>
+                    </div>
+                    {% set is2fa = app.user.googleAuthenticatorEnabled %}
+                    <div class="flex items-start gap-3 p-3 rounded-xl {{ is2fa ? 'opacity-50' : 'bg-indigo-50/50' }}">
+                        <div class="mt-0.5 size-5 rounded-full {{ is2fa ? 'bg-emerald-100' : 'border-2 border-indigo-500' }} flex items-center justify-center">
+                            {% if is2fa %}
+                                {{ ux_icon('lucide:check', { class: 'size-3 text-emerald-600' }) }}
+                            {% else %}
+                                <div class="size-1.5 bg-indigo-500 rounded-full"></div>
+                            {% endif %}
+                        </div>
+                        <div class="flex-1">
+                            {% if not is2fa %}
+                                <a href="{{ path('app_settings_account') }}" class="group">
+                                    <p class="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Activer la double auth.</p>
+                                    <p class="text-xs text-slate-500 mt-0.5">Important pour la sécurité de votre compte.</p>
+                                </a>
+                            {% else %}
+                                <p class="text-sm font-medium text-slate-600 line-through">Double auth activé</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
 
                     {# ÉTAPE 2 : KYC #}
                     {% set kyc_done = count_members|default(0) >= 1 %}

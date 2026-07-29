@@ -167,16 +167,7 @@
             <div class="flex items-center gap-2 sm:gap-3 shrink-0">
 
                 {# 1. Badge Crédits / Essai (Style Pill minimaliste) #}
-                {% if not workspaceInfo().isFirm %}
-                    <a href="{{ path('app_settings_billing') }}"
-                       class="flex items-center gap-1.5 h-8 px-2.5 bg-white hover:bg-slate-50 border border-slate-200 rounded-md shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500 group">
-
-                        <span class="text-[12px] font-medium text-slate-500">
-                        <strong class="font-semibold text-slate-700">{{ workspaceInfo().balance }}</strong>
-                        <span class="hidden sm:inline ml-0.5">crédits</span>
-                    </span>
-                    </a>
-                {% else %}
+                {% if workspaceInfo().isFirm %}
                     {% set isTrial = subInfo().status == 'trialing' %}
                     {% if isTrial and subInfo().trialDaysRemaining <= 10 and subInfo().trialDaysRemaining > 0 %}
                         <a href="{{ path('app_settings_subscription') }}"
@@ -200,27 +191,30 @@
                              class="absolute right-0 mt-1.5 w-56 bg-white rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-200/80 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 focus-within:opacity-100 focus-within:visible focus-within:translate-y-0 transition-all duration-150 z-50">
 
                             <div class="p-1">
-                                <div class="px-2 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                                    Client Physique (KYC)
-                                </div>
-                                <a href="#" role="menuitem" class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-md transition-colors">
-                                    {{ ux_icon('lucide:send', { class: 'size-3.5 text-indigo-500' }) }}
-                                    Inviter le client
-                                </a>
-                                <a href="#" role="menuitem" class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-md transition-colors">
-                                    {{ ux_icon('lucide:folder-up', { class: 'size-3.5 text-slate-400' }) }}
-                                    Saisir manuellement
+
+                                {# ACTION 1 : Le fameux "Zéro Friction" (Déclenche le Modal) #}
+                                <a href="{{ path('app_workspace_qr_display') }}"
+                                   target="_blank"
+                                   role="menuitem"
+                                   class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-md transition-colors text-left cursor-pointer outline-none focus:bg-slate-50">
+                                    {{ ux_icon('lucide:qr-code', { class: 'size-3.5 text-indigo-500' }) }}
+                                    Onboarding Flash
                                 </a>
 
                                 <div class="h-px bg-slate-100 my-1 mx-2"></div>
 
                                 <div class="px-2 py-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
-                                    Client Moral (KYB)
+                                    Création à distance
                                 </div>
-                                <a href="#" role="menuitem" class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-md transition-colors">
-                                    {{ ux_icon('lucide:building-2', { class: 'size-3.5 text-violet-500' }) }}
-                                    Inviter le dirigeant
+
+                                {# ACTION 2 : La saisie manuelle classique #}
+                                <a href="{{ path('app_compliance_new') }}"
+                                   role="menuitem"
+                                   class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-md transition-colors outline-none focus:bg-slate-50">
+                                    {{ ux_icon('lucide:folder-plus', { class: 'size-3.5 text-slate-400' }) }}
+                                    Saisie manuelle du dossier
                                 </a>
+
                             </div>
                         </div>
                     </div>

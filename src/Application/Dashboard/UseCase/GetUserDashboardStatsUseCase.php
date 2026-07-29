@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Dashboard\UseCase;
 
 use App\Application\Dashboard\DTO\UserDashboardStats;
@@ -11,7 +13,8 @@ readonly class GetUserDashboardStatsUseCase
     public function __construct(
         private ComplianceFolderRepositoryInterface $complianceFolderRepository,
         private CurrentWorkspaceProvider $workspaceProvider,
-    ) {}
+    ) {
+    }
 
     public function __invoke(): UserDashboardStats
     {

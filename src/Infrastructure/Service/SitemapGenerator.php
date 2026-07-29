@@ -10,7 +10,8 @@ final readonly class SitemapGenerator
 {
     public function __construct(
         private UrlGeneratorInterface $urlGenerator,
-    ) {}
+    ) {
+    }
 
     /**
      * @return array<string>
@@ -32,7 +33,7 @@ final readonly class SitemapGenerator
     public function generate(): string
     {
         $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"></urlset>');
-        $lastmod = (new \DateTimeImmutable())->format(\DateTimeInterface::ATOM);
+        $lastmod = new \DateTimeImmutable()->format(\DateTimeInterface::ATOM);
 
         foreach ($this->getRouteNames() as $routeName) {
             $url = $xml->addChild('url');

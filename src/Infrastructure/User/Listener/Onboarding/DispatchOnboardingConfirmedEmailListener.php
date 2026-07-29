@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Listener\Onboarding;
 
 use App\Domain\User\Event\UserOnboardingCompletedEvent;
@@ -12,16 +14,12 @@ use Webmozart\Assert\Assert;
 #[AsEventListener(event: UserOnboardingCompletedEvent::class)]
 readonly class DispatchOnboardingConfirmedEmailListener
 {
-    /**
-     * @param MessageBusInterface $messageBus
-     */
     public function __construct(
         private MessageBusInterface $messageBus,
-    ) {}
+    ) {
+    }
 
     /**
-     * @param UserOnboardingCompletedEvent $event
-     * @return void
      * @throws ExceptionInterface
      */
     public function __invoke(UserOnboardingCompletedEvent $event): void

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Notification\Email\Workspace\Member;
 
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;

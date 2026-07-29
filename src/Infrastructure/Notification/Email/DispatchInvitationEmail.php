@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Notification\Email;
 
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -15,7 +17,7 @@ class DispatchInvitationEmail extends TemplatedEmail
         string $workspaceName,
         string $inviterFullName,
         string $roleLabel,
-        string $actionUrl
+        string $actionUrl,
     ) {
         parent::__construct();
 
@@ -25,10 +27,10 @@ class DispatchInvitationEmail extends TemplatedEmail
             ->htmlTemplate('emails/workspace/invitation.html.twig')
             ->context([
                 'workspace_name' => $workspaceName,
-                'inviter_name'   => $inviterFullName,
-                'role_label'     => $roleLabel,
-                'action_url'     => $actionUrl,
-                'expires_in'     => '5 jours',
+                'inviter_name' => $inviterFullName,
+                'role_label' => $roleLabel,
+                'action_url' => $actionUrl,
+                'expires_in' => '5 jours',
             ]);
     }
 }
