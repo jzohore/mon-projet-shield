@@ -66,14 +66,21 @@
 
                         <div class="p-1 space-y-1">
                             {# 1. Re-check SIRET #}
-                            <form action="" method="POST">
+                            <form action="{{ path('admin_workspace_action_verify_siret', {slug: workspace.slugId}) }}"
+                                  method="POST"
+                                  data-controller="submit-emitter"
+                                  data-submit-emitter-event-name-value="kysure:siret-loading"
+                                  data-action="submit->submit-emitter#submit">
+
                                 <input type="hidden" name="_token" value="{{ csrf_token('verify_siret_' ~ workspace.slugId) }}">
-                                <button type="submit" class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition cursor-pointer">
-                                    <twig:ux:icon name="tabler:refresh" class="size-4 text-slate-400" />
+
+                                <button type="submit"
+                                        class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-lg transition cursor-pointer disabled:opacity-50 disabled:cursor-wait"
+                                        data-submit-emitter-target="button">
+                                    <twig:ux:icon name="tabler:certificate" class="size-4 text-slate-400" />
                                     Re-vérifier SIRET (INSEE)
                                 </button>
                             </form>
-
                             {# 2. Re-check ORIAS #}
                             <form action="{{ path('admin_workspace_action_verify_orias', {slug: workspace.slugId}) }}"
                                   method="POST"
@@ -172,17 +179,17 @@
 
                         {# N° ORIAS & Statut de Vérification #}
                         <li class="flex items-center justify-between py-3 border-b border-slate-200/60"
-                            data-controller="inline-orias-loader"
-                            data-action="kysure:orias-loading@window->inline-orias-loader#showLoading">
+                            data-controller="inline-status-loader"
+                            data-action="kysure:orias-loading@window->inline-status-loader#showLoading">
 
                             <div class="flex items-center gap-3">
                                 <div class="p-1.5 bg-blue-100 rounded-lg text-blue-700 relative">
                                     {# Icône par défaut #}
-                                    <span data-inline-orias-loader-target="icon">
+                                    <span data-inline-status-loader-target="icon">
                 <twig:ux:icon name="tabler:certificate" class="size-4" />
             </span>
                                     {# Spinner masqué par défaut #}
-                                    <span data-inline-orias-loader-target="spinner" class="hidden">
+                                    <span data-inline-status-loader-target="spinner" class="hidden">
                 <svg class="animate-spin size-4 text-blue-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -191,9 +198,9 @@
                                 </div>
 
                                 <div>
-                                    <span class="text-sm font-medium text-slate-600 transition-colors duration-300" data-inline-orias-loader-target="title">N° ORIAS</span>
+                                    <span class="text-sm font-medium text-slate-600 transition-colors duration-300" data-inline-status-loader-target="title">N° ORIAS</span>
 
-                                    <div data-inline-orias-loader-target="subtitle">
+                                    <div data-inline-status-loader-target="subtitle">
                                         {% if workspace.lastCheckOrias %}
                                             <p class="text-[10px] text-slate-400">
                                                 Vérifié le {{ workspace.lastCheckOrias|date('d/m/Y à H:i') }}
@@ -206,7 +213,7 @@
                             </div>
 
                             {# La zone de droite qui sera floutée pendant le chargement #}
-                            <div class="text-right transition-all duration-300" data-inline-orias-loader-target="details">
+                            <div class="text-right transition-all duration-300" data-inline-status-loader-target="details">
                                 <div class="flex items-center justify-end gap-1.5">
                                     <span class="text-sm font-bold font-mono text-slate-900">{{ workspace.oriasNumber|default('Non renseigné') }}</span>
 
@@ -289,14 +296,75 @@
                 <div>
                     <h2 class="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-4">Signalétique Légale</h2>
                     <ul class="space-y-1">
-                        <li class="flex items-center justify-between py-2 border-b border-slate-200/60">
-                            <span class="text-xs font-medium text-slate-500">SIRET</span>
-                            <span class="text-xs font-mono font-bold text-slate-900">{{ workspace.siret|default('Non renseigné') }}</span>
+
+                        {# --- Ligne 1 : Le SIRET enrichi (Loader asynchrone & Statut) --- #}
+                        <li class="flex items-center justify-between py-2 border-b border-slate-200/60"
+                            data-controller="inline-status-loader"
+                            data-action="kysure:siret-loading@window->inline-status-loader#showLoading">
+
+                            <div class="flex items-center gap-2">
+                                <div class="p-1 bg-indigo-100 rounded text-indigo-700 relative">
+                                    {# Icône #}
+                                    <span data-inline-status-loader-target="icon">
+                        <twig:ux:icon name="tabler:building-bank" class="size-4" />
+                    </span>
+                                    {# Spinner #}
+                                    <span data-inline-status-loader-target="spinner" class="hidden">
+                        <svg class="animate-spin size-4 text-indigo-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                                </div>
+
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-medium text-slate-500 transition-colors duration-300" data-inline-status-loader-target="title">SIRET</span>
+                                    <div data-inline-status-loader-target="subtitle">
+                                        {% if workspace.verifySiretLastAttemptedAt %}
+                                            <p class="text-[10px] text-slate-400">
+                                                Vérifié le {{ workspace.verifySiretLastAttemptedAt|date('d/m/Y à H:i') }}
+                                            </p>
+                                        {% else %}
+                                            <p class="text-[10px] text-amber-600 font-medium">Jamais vérifié</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-right transition-all duration-300" data-inline-status-loader-target="details">
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <span class="text-xs font-mono font-bold text-slate-900">{{ workspace.siret|default('Non renseigné') }}</span>
+
+                                    {% if workspace.siret %}
+                                        {% if workspace.isSiretValid %}
+                                            <span class="inline-flex items-center gap-1 px-1 py-0.5 rounded text-[9px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Société enregistrée et active">
+                                Valide
+                            </span>
+                                        {% else %}
+                                            <span class="inline-flex items-center gap-1 px-1 py-0.5 rounded text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-200" title="SIRET invalide ou entreprise fermée">
+                                Invalide
+                            </span>
+                                        {% endif %}
+                                    {% endif %}
+                                </div>
+
+                                {% if workspace.siret and workspace.etatAdministratif %}
+                                    <div class="text-[9px] text-slate-400 mt-0.5">
+                                        Statut Insee:
+                                        <span class="font-medium {{ workspace.etatAdministratif == 'A' ? 'text-emerald-600' : 'text-rose-600' }}">
+                            {{ workspace.etatAdministratif == 'A' ? 'Actif' : 'Cessée' }}
+                        </span>
+                                    </div>
+                                {% endif %}
+                            </div>
                         </li>
+
+                        {# --- Ligne 2 : Inscription (inchangée) --- #}
                         <li class="flex items-center justify-between py-2 border-b border-slate-200/60">
-                            <span class="text-xs font-medium text-slate-500">Inscrit le</span>
-                            <span class="text-xs font-bold text-slate-900">{{ workspace.createdAt|date('d/m/Y') }}</span>
+                            <span class="text-sm font-medium text-slate-500">Inscrit le</span>
+                            <span class="text-sm font-bold text-slate-900">{{ workspace.createdAt|date('d/m/Y') }}</span>
                         </li>
+
                     </ul>
                 </div>
 

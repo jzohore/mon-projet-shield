@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b49646571f3b7d2888d5d6d31ef1c791",
+    "content-hash": "bc23f777e30ba2c1f41acd6a317d9c00",
     "packages": [
         {
             "name": "aws/aws-crt-php",
@@ -62,16 +62,16 @@
         },
         {
             "name": "aws/aws-sdk-php",
-            "version": "3.389.2",
+            "version": "3.389.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/aws/aws-sdk-php.git",
-                "reference": "784e0fb95e752e55c4654b5800b900c78f6d3990"
+                "reference": "09bbb4023a14316ff2c5e568301a382f7e3465f5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/784e0fb95e752e55c4654b5800b900c78f6d3990",
-                "reference": "784e0fb95e752e55c4654b5800b900c78f6d3990",
+                "url": "https://api.github.com/repos/aws/aws-sdk-php/zipball/09bbb4023a14316ff2c5e568301a382f7e3465f5",
+                "reference": "09bbb4023a14316ff2c5e568301a382f7e3465f5",
                 "shasum": ""
             },
             "require": {
@@ -153,9 +153,9 @@
             "support": {
                 "forum": "https://github.com/aws/aws-sdk-php/discussions",
                 "issues": "https://github.com/aws/aws-sdk-php/issues",
-                "source": "https://github.com/aws/aws-sdk-php/tree/3.389.2"
+                "source": "https://github.com/aws/aws-sdk-php/tree/3.389.3"
             },
-            "time": "2026-07-28T18:10:25+00:00"
+            "time": "2026-07-29T18:09:38+00:00"
         },
         {
             "name": "babdev/pagerfanta-bundle",
@@ -6890,16 +6890,16 @@
         },
         {
             "name": "symfony/http-client",
-            "version": "v8.0.15",
+            "version": "v8.0.16",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/http-client.git",
-                "reference": "70cb0c39065dfda009eab0cbc818502359412545"
+                "reference": "3cc1f7586323cf514a97c139e3f475de4291c209"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/http-client/zipball/70cb0c39065dfda009eab0cbc818502359412545",
-                "reference": "70cb0c39065dfda009eab0cbc818502359412545",
+                "url": "https://api.github.com/repos/symfony/http-client/zipball/3cc1f7586323cf514a97c139e3f475de4291c209",
+                "reference": "3cc1f7586323cf514a97c139e3f475de4291c209",
                 "shasum": ""
             },
             "require": {
@@ -6962,7 +6962,7 @@
                 "http"
             ],
             "support": {
-                "source": "https://github.com/symfony/http-client/tree/v8.0.15"
+                "source": "https://github.com/symfony/http-client/tree/v8.0.16"
             },
             "funding": [
                 {
@@ -6982,7 +6982,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-07-29T07:16:23+00:00"
+            "time": "2026-07-29T16:27:17+00:00"
         },
         {
             "name": "symfony/http-client-contracts",
@@ -11457,16 +11457,16 @@
         },
         {
             "name": "symfony/var-exporter",
-            "version": "v8.0.14",
+            "version": "v8.0.16",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/var-exporter.git",
-                "reference": "5185b7a7ea87a177be5fb16e8dc7756bea9b6eee"
+                "reference": "ea291a085c804869b333804706b0a58231014671"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/var-exporter/zipball/5185b7a7ea87a177be5fb16e8dc7756bea9b6eee",
-                "reference": "5185b7a7ea87a177be5fb16e8dc7756bea9b6eee",
+                "url": "https://api.github.com/repos/symfony/var-exporter/zipball/ea291a085c804869b333804706b0a58231014671",
+                "reference": "ea291a085c804869b333804706b0a58231014671",
                 "shasum": ""
             },
             "require": {
@@ -11513,7 +11513,7 @@
                 "serialize"
             ],
             "support": {
-                "source": "https://github.com/symfony/var-exporter/tree/v8.0.14"
+                "source": "https://github.com/symfony/var-exporter/tree/v8.0.16"
             },
             "funding": [
                 {
@@ -11533,7 +11533,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-06-27T08:56:37+00:00"
+            "time": "2026-07-29T16:27:17+00:00"
         },
         {
             "name": "symfony/web-link",
@@ -14723,11 +14723,11 @@
         },
         {
             "name": "phpstan/phpstan",
-            "version": "2.2.6",
+            "version": "2.2.7",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/a6e9b5a9420f6109c091e87d82683bd1a80b87ed",
-                "reference": "a6e9b5a9420f6109c091e87d82683bd1a80b87ed",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/692db47b9dddb0487934e5236e77d48594aef921",
+                "reference": "692db47b9dddb0487934e5236e77d48594aef921",
                 "shasum": ""
             },
             "require": {
@@ -14783,7 +14783,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-07-26T21:22:49+00:00"
+            "time": "2026-07-29T17:39:32+00:00"
         },
         {
             "name": "phpunit/php-code-coverage",

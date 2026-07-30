@@ -176,6 +176,9 @@ class Workspace
     #[ORM\ManyToMany(targetEntity: Client::class, mappedBy: 'workspaces')]
     public private(set) Collection $clients;
 
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    public private(set) string $email;
+
     private function __construct(string $name, string $siret, string $siren, string $legalName, string $address, #[ORM\Column(type: Types::STRING, length: 14, nullable: true)]
         public private(set) string $etatAdministratif, Industry $industry)
     {
@@ -327,13 +330,19 @@ class Workspace
     /**
      * Suspend le Workspace suite à une anomalie légale ou de facturation.
      */
-    public function suspend(string $reason, string $etatAdministratif): void
+    public function updateSiretStatus(bool $isSiretValid, string $etatAdministratif): void
     {
-        $this->isActive = false;
-        $this->isSiretValid = false;
-        $this->suspensionReason = $reason;
-        $this->suspendedAt = now();
+        $this->isSiretValid = $isSiretValid;
         $this->etatAdministratif = $etatAdministratif;
+        $this->setVerifySiretLastAttemptedAt();
+    }
+
+    public function markSiretAsInvalid(string $etatAdministratif, string $reason): void
+    {
+        $this->isSiretValid = false;
+        $this->etatAdministratif = $etatAdministratif;
+        $this->suspensionReason = $reason;
+        $this->suspendedAt = now(); // Transition d'état métier explicit
     }
 
     /**

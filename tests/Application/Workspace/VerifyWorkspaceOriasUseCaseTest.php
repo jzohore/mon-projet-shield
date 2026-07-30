@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Application\Workspace;
 
-use App\Application\Workspace\UseCase\VerifyWorkspaceOriasUseCase;
+use App\Application\Workspace\UseCase\VerifyOrias\VerifyWorkspaceOriasUseCase;
 use App\Domain\Firm\Entity\RegulatoryProfile;
 use App\Domain\Firm\Repository\RegulatoryProfileRepositoryInterface;
 use App\Domain\Workspace\Entity\Workspace;
@@ -19,10 +19,9 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
-use RuntimeException;
 
 /**
- * @covers \App\Application\Workspace\UseCase\VerifyWorkspaceOriasUseCase
+ * @covers \App\Application\Workspace\UseCase\VerifyOrias\VerifyWorkspaceOriasUseCase
  */
 final class VerifyWorkspaceOriasUseCaseTest extends TestCase
 {

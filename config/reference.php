@@ -2785,7 +2785,7 @@ use Symfony\Component\Config\Loader\ParamConfigurator as Param;
  *     min_depth?: int|Param, // Minimum tree depth to clone all the items, 1 is default. // Default: 1
  *     max_string_length?: int|Param, // Max length of displayed strings, -1 means no limit. // Default: -1
  *     dump_destination?: scalar|Param|null, // A stream URL where dumps should be written to. // Default: null
- *     theme?: "dark"|"light"|Param, // Changes the color of the output when rendered directly on the templating. "dark" (default) or "light". // Default: "dark"
+ *     theme?: "dark"|"light"|Param, // Changes the color of the dump() output when rendered directly on the templating. "dark" (default) or "light". // Default: "dark"
  * }
  * @psalm-type SchebTwoFactorConfig = array{
  *     persister?: scalar|Param|null, // Default: "scheb_two_factor.persister.doctrine"

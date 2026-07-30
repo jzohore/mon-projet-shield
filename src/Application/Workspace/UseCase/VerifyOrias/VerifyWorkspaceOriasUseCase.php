@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Application\Workspace\UseCase;
+namespace App\Application\Workspace\UseCase\VerifyOrias;
 
 use App\Domain\Firm\Repository\RegulatoryProfileRepositoryInterface;
 use App\Domain\Workspace\Entity\Workspace;

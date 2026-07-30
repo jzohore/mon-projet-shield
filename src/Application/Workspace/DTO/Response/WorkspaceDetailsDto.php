@@ -27,6 +27,7 @@ final readonly class WorkspaceDetailsDto
         public int $auditLogsCount,
         public \DateTimeImmutable $createdAt,
         public ?\DateTimeImmutable $suspendedAt,
+        public ?\DateTimeImmutable $verifySiretLastAttemptedAt,
         public ?string $suspensionReason,
 
         // --- DONNÉES D'ABONNEMENT STRIPE ---
@@ -78,6 +79,7 @@ final readonly class WorkspaceDetailsDto
             auditLogsCount: $workspace->auditLogs->count(),
             createdAt: $workspace->createdAt,
             suspendedAt: $workspace->suspendedAt,
+            verifySiretLastAttemptedAt: $workspace->verifySiretLastAttemptedAt,
             suspensionReason: $workspace->suspensionReason,
 
             // --- Mapping de l'Abonnement ---

@@ -39,6 +39,8 @@ grumphp:
                 - "print_r("
             triggered_by: [php]
             match_word: true
+            whitelist_patterns:
+                - /^src\//
 
         # 7. Tests : On ne commit pas si les tests unitaires échouent
         phpunit:

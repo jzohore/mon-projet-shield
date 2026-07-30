@@ -29,14 +29,11 @@ readonly class DispatchSuspendedMailListener
         $workspace = $event->workspace;
         Assert::notNull($workspace->id);
 
-        $user = $event->user;
-        Assert::notNull($user->id);
-
         $url = $this->urlGenerator->generate('app_settings_organization', [], UrlGeneratorInterface::ABSOLUTE_URL);
 
         $message = new DispatchSuspendedEmailMessage(
             workspaceId: $workspace->id->toString(),
-            userId: $user->id->toString(),
+            userId: $workspace->id->toString(),
             actionUrl: $url,
         );
 
