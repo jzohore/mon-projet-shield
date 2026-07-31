@@ -123,7 +123,8 @@
             "importmap:install": "symfony-cmd"
         },
         "post-install-cmd": [
-            "@auto-scripts"
+            "@auto-scripts",
+            "@env:sanitize"
         ],
         "post-update-cmd": [
             "@auto-scripts"
@@ -139,6 +140,7 @@
         "seed-user": "bin/console app:user:seed",
         "seed-workspace": "bin/console app:workspace:seed",
         "lint": "bin/console lint:twig templates && bin/console lint:yaml config",
+        "env:sanitize": "php bin/sanitize-env.php",
         "format": [
             "@rector",
             "@fix"

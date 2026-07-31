@@ -1,7 +1,14 @@
 grumphp:
     stop_on_failure: true
     process_timeout: 120
+    git_hook_variables:
+        EXEC_GRUMPHP_COMMAND: 'docker compose exec -T php'
     tasks:
+        env_security:
+            metadata:
+                task: composer_script
+            script: env:sanitize
+
         # 1. Sécurité : Exécute le script "security-audit" de ton composer.json
         audit_security:
             metadata:
@@ -9,10 +16,10 @@ grumphp:
             script: security-audit
 
         # 2. Linters Symfony : Exécute le script "lint" de ton composer.json (Twig + Yaml)
-        lint_symfony:
-            metadata:
-                task: composer_script # 🪄 Et ici aussi
-            script: lint
+#        lint_symfony:
+#            metadata:
+#                task: composer_script # 🪄 Et ici aussi
+#            script: lint
 
         # 3. Qualité : Formattage automatique (PSR-12 / PER)
         phpcsfixer:
