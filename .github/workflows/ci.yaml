@@ -8,34 +8,52 @@ on:
 
 jobs:
   quality-assurance:
-    name: Code Quality & Static Analysis (PHP 8.4)
+    name: Code Quality & Static Analysis (PHP 8.5)
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          # 🛡️ Indispensable : GrumPHP (git_blacklist, phpcsfixer, phpstan avec
+          # triggered_by) s'appuie sur `git diff` avec le commit parent.
+          # Un clone superficiel (fetch-depth: 1 par défaut) casse cette détection
+          # silencieusement, sans faire échouer la CI.
+          fetch-depth: 0
 
-      - name: Setup PHP 8.4
+      # 🛡️ Aligné sur le Dockerfile prod (dunglas/frankenphp:1-php8.5) et sur
+      # les extensions réellement installées : pdo_pgsql (pas mysql), amqp,
+      # sockets, gd, imagick, apcu, opcache, zip.
+      - name: Setup PHP 8.5
         uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.4'
-          extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, redis
+          php-version: '8.5'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql, apcu, opcache, zip, amqp, sockets, gd, imagick
           coverage: none
+        env:
+          # certaines extensions (imagick, amqp) nécessitent une compilation PECL,
+          # ça accélère les runs suivants
+          COMPOSER_PROCESS_TIMEOUT: 600
+
+      - name: Validate composer.json / composer.lock
+        run: composer validate --strict
 
       - name: Get Composer Cache Directory
         id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+        run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
       - name: Cache Dependencies
         uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer-
+          key: ${{ runner.os }}-composer-php85-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-php85-
 
       - name: Install Dependencies
         run: composer install --prefer-dist --no-progress --no-interaction
 
       - name: Run KYSURE Quality Pipeline (GrumPHP)
-        # 🛡️ Si ceci échoue, GitHub marque la PR en rouge et le Webhook vers Coolify ne sera pas déclenché (si tu merges pas)
+        # 🛡️ Si ceci échoue, GitHub marque la PR en rouge et le Webhook vers Coolify
+        # ne sera pas déclenché (si tu ne merges pas)
         run: vendor/bin/grumphp run --no-interaction

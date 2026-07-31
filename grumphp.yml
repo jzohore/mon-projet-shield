@@ -4,39 +4,13 @@ grumphp:
     git_hook_variables:
         EXEC_GRUMPHP_COMMAND: 'docker compose exec -T php'
     tasks:
+        # 1. Sécurité locale : rapide, pas d'appel réseau
         env_security:
             metadata:
                 task: composer_script
             script: env:sanitize
 
-        # 1. Sécurité : Exécute le script "security-audit" de ton composer.json
-        audit_security:
-            metadata:
-                task: composer_script # 🪄 C'est ici ! On utilise le bon moteur d'exécution de scripts
-            script: security-audit
-
-        # 2. Linters Symfony : Exécute le script "lint" de ton composer.json (Twig + Yaml)
-        lint_symfony:
-            metadata:
-                task: composer_script # 🪄 Et ici aussi
-            script: lint
-
-        # 3. Qualité : Formattage automatique (PSR-12 / PER)
-        phpcsfixer:
-            config: .php-cs-fixer.php
-            triggered_by: [php]
-
-        # 4. Analyse Statique : Niveau de typage strict (DDD)
-        phpstan:
-            level: 8
-            memory_limit: "2G"
-            triggered_by: [php]
-
-        # 5. Architecture : Le gardien de ton DDD (Hexagonale)
-        deptrac:
-            depfile: deptrac.yaml
-
-        # 6. Hygiène : Interdit les résidus de debug
+        # 2. Hygiène : Interdit les résidus de debug (quasi instantané)
         git_blacklist:
             keywords:
                 - "var_dump("
@@ -48,7 +22,41 @@ grumphp:
             match_word: true
             whitelist_patterns:
                 - /^src\//
+            # ⚠️ Limité à src/ : un dump() oublié dans config/ ou migrations/
+            # ne sera pas détecté. Élargir si besoin :
+            # whitelist_patterns:
+            #     - /^src\//
+            #     - /^config\//
+            #     - /^migrations\//
 
-        # 7. Tests : On ne commit pas si les tests unitaires échouent
+        # 3. Linters Symfony : Twig + Yaml (rapide, pas de réseau)
+        lint_symfony:
+            metadata:
+                task: composer_script
+            script: lint
+
+        # 4. Qualité : Formatage automatique (PSR-12 / PER)
+        phpcsfixer:
+            config: .php-cs-fixer.php
+            triggered_by: [php]
+
+        # 5. Analyse Statique : Niveau de typage strict (DDD)
+        phpstan:
+            level: 8
+            memory_limit: "2G"
+            triggered_by: [php]
+
+        # 6. Architecture : Le gardien du DDD (Hexagonale)
+        deptrac:
+            depfile: deptrac.yaml
+
+        # 7. Sécurité réseau : appel vers la base d'advisories, potentiellement lent/flaky
+        audit_security:
+            metadata:
+                task: composer_script
+            script: security-audit
+
+        # 8. Tests : le plus lourd, en dernier — on ne veut pas attendre
+        # 5 minutes de suite de tests pour découvrir un problème de lint trivial
         phpunit:
             always_execute: true
