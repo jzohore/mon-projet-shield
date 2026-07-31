@@ -16,10 +16,10 @@ grumphp:
             script: security-audit
 
         # 2. Linters Symfony : Exécute le script "lint" de ton composer.json (Twig + Yaml)
-#        lint_symfony:
-#            metadata:
-#                task: composer_script # 🪄 Et ici aussi
-#            script: lint
+        lint_symfony:
+            metadata:
+                task: composer_script # 🪄 Et ici aussi
+            script: lint
 
         # 3. Qualité : Formattage automatique (PSR-12 / PER)
         phpcsfixer:
