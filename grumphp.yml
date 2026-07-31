@@ -37,7 +37,7 @@ grumphp:
 
         # 4. Qualité : Formatage automatique (PSR-12 / PER)
         phpcsfixer:
-            config: .php-cs-fixer.php
+            config: .php-cs-fixer.dist.php
             triggered_by: [php]
 
         # 5. Analyse Statique : Niveau de typage strict (DDD)
