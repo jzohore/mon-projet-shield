@@ -1,0 +1,55 @@
+{# 🚨 CORRECTIF N°1 : On utilise le layout global, et SURTOUT PAS le layout billing #}
+{% extends '@app/client/layout_client.html.twig' %}
+
+{% block title %}Mon Espace Sécurisé | {{ company_name }}{% endblock %}
+
+
+{% block client_main %}
+    {# 1. HEADER PAGE #}
+    <div class="mb-8">
+        <h1 class="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+            Mes dossiers
+        </h1>
+    </div>
+
+    {# 2. LISTE DES DOSSIERS (La partie dynamique) #}
+    <div class="mt-8">
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+            <ul class="divide-y divide-slate-100">
+                {% for folder in folders %}
+                    <li class="group hover:bg-slate-50 transition-colors">
+                        <a href="{{ path('app_portal_folder_detail', {id: folder.id}) }}" class="block p-6">
+                            <div class="flex items-center justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-3">
+                                        <h3 class="text-base font-semibold text-slate-900 truncate">{{ folder.title }}</h3>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 uppercase">
+                                            {{ folder.workspaceName }}
+                                        </span>
+                                    </div>
+                                    <p class="text-sm text-slate-500 mt-1 font-mono">Ouvert le {{ folder.openedAtFormatted }}</p>
+                                </div>
+
+                                <div class="flex items-center gap-4">
+                                    {# Badge de statut dynamique #}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ folder.status.colorTheme }}-50 text-{{ folder.status.colorTheme }}-700 ring-1 ring-inset ring-{{ folder.status.colorTheme }}-600/20">
+                                        {{ folder.status.label }}
+                                    </span>
+                                    <twig:ux:icon name="tabler:chevron-right" class="size-5 text-slate-400 group-hover:text-slate-900 transition-colors" />
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                {% else %}
+                    {# État vide élégant #}
+                    <li class="p-12 text-center">
+                        <twig:ux:icon name="tabler:folder-off" class="size-10 text-slate-300 mx-auto mb-3" />
+                        <p class="text-slate-500 font-medium">Aucun dossier en cours</p>
+                        <p class="text-xs text-slate-400 mt-1">Vos dossiers de conformité apparaîtront ici.</p>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endblock %}

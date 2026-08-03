@@ -1,33 +1,30 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\User\UseCase;
 
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\User\Message\SendOnboardingReminderMessage;
-use Exception;
 use Symfony\Component\Clock\ClockInterface;
+
+use function Symfony\Component\Clock\now;
+
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Webmozart\Assert\Assert;
 
-use function Symfony\Component\Clock\now;
-
 final readonly class SendOnboardingReminderUseCase
 {
-    /**
-     * @param UserRepositoryInterface $userRepository
-     * @param MessageBusInterface $bus
-     * @param ClockInterface $clock
-     */
     public function __construct(
         private UserRepositoryInterface $userRepository,
         private MessageBusInterface $bus,
         private ClockInterface $clock,
-    ) {}
+    ) {
+    }
 
     /**
-     * @return void
-     * @throws ExceptionInterface|Exception
+     * @throws ExceptionInterface|\Exception
      */
     public function __invoke(): void
     {

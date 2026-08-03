@@ -1,0 +1,120 @@
+<div {{ attributes }}>
+    {% if this.isVisible %}
+
+        {# ==== ÉCRAN FINAL (Après clic sur "Signer plus tard") ==== #}
+        {% if this.isFinished %}
+            <div class="animate-fade-in text-center py-8">
+                <div class="flex items-center justify-center mb-6">
+                    <div class="flex items-center justify-center size-16 rounded-full bg-indigo-50 text-indigo-600 ring-8 ring-indigo-50/50">
+                        <twig:ux:icon name="tabler:mail-fast" class="size-8" />
+                    </div>
+                </div>
+
+                <h2 class="text-2xl font-bold text-slate-900 mb-3">Dossier validé !</h2>
+                <p class="text-sm text-slate-500 mb-8 max-w-sm mx-auto">
+                    Vos informations ont été transmises à votre conseiller de manière sécurisée. Vous recevrez d'ici quelques minutes un email contenant le lien pour relire et signer votre document.
+                </p>
+                <twig:Button as="a" href="{{ path('redirect_to_home') }}" variant="primary" size="sm">
+
+                    Retour à l'accueil
+                </twig:Button>
+            </div>
+
+            {# ==== ÉCRAN DE VÉRIFICATION ET DE CHOIX ==== #}
+        {% else %}
+            <div class="animate-fade-in">
+                <div class="flex items-center justify-center mb-6">
+                    <div class="flex items-center justify-center size-14 rounded-full bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/50">
+                        <twig:ux:icon name="tabler:shield-check" class="size-7" />
+                    </div>
+                </div>
+
+                <h2 class="text-center text-xl font-bold text-slate-900 mb-2">Dossier sécurisé</h2>
+                <p class="text-center text-sm text-slate-500 mb-6">Veuillez vérifier vos informations avant de générer le document.</p>
+
+                {# Carte de résumé #}
+                <div class="bg-white rounded-xl ring-1 ring-inset ring-slate-200 shadow-sm p-5 mb-8 relative">
+
+                    {# Bouton pour réveiller le formulaire (Étape 2) #}
+                    <button type="button"
+                            data-action="live#action"
+                            data-live-action-param="activateEditing"
+                            class="absolute top-4 right-4 text-xs font-medium text-slate-400 hover:text-indigo-600 transition-colors flex items-center gap-1">
+                        <twig:ux:icon name="tabler:edit" class="size-3.5" />
+                        Modifier
+                    </button>
+
+                    <div class="space-y-3">
+                        <div>
+                            <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Identité</span>
+                            <span class="text-sm font-medium text-slate-900">
+                                {{ this.complianceDTO.contactName ?? 'Non renseigné' }}
+                            </span>
+                        </div>
+                        <div>
+                            <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Contact</span>
+                            <span class="text-sm font-medium text-slate-900">
+                                {{ this.complianceDTO.contactEmail ?? 'Non renseigné' }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {# Les Actions B2B (Primaire vs Fantôme) #}
+                <div class="space-y-4">
+
+                    {# Action 1 : Signature immédiate #}
+                    <twig:Button type="button"
+                                 variant="primary"
+                                 class="w-full py-3 shadow-md"
+                                 data-action="live#action"
+                                 data-live-action-param="confirmAndSign"
+                                 data-loading="action(confirmAndSign)|addAttribute(disabled)">
+
+                        {# ÉTAT NORMAL #}
+                        <span data-loading="action(confirmAndSign)|hide">
+            <span class="flex items-center justify-center gap-2 w-full">
+                <twig:ux:icon name="tabler:signature" class="size-5 shrink-0" />
+                Valider et Signer maintenant
+            </span>
+        </span>
+
+                        {# ÉTAT CHARGEMENT (Caché en dur au premier chargement) #}
+                        <span data-loading="action(confirmAndSign)|show" style="display: none;">
+            <span class="flex items-center justify-center gap-2 w-full">
+                <twig:ux:icon name="tabler:loader" class="size-5 shrink-0 animate-spin" />
+                Ouverture de DocuSeal...
+            </span>
+        </span>
+                    </twig:Button>
+
+                    {# Action 2 : Envoi par email (Ghost button) #}
+                    <button type="button"
+                            data-action="live#action"
+                            data-live-action-param="confirmAndSendLater"
+                            data-loading="action(confirmAndSendLater)|addAttribute(disabled)"
+                            class="w-full py-2.5 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-200 transition-colors">
+
+                        {# ÉTAT NORMAL #}
+                        <span data-loading="action(confirmAndSendLater)|hide">
+            <span class="flex items-center justify-center gap-2 w-full">
+                <twig:ux:icon name="tabler:mail-forward" class="size-5 shrink-0" />
+                Je préfère signer plus tard par email
+            </span>
+        </span>
+
+                        {# ÉTAT CHARGEMENT #}
+                        <span data-loading="action(confirmAndSendLater)|show" style="display: none;">
+            <span class="flex items-center justify-center gap-2 w-full text-slate-400">
+                <twig:ux:icon name="tabler:loader" class="size-5 shrink-0 animate-spin" />
+                Génération en cours...
+            </span>
+        </span>
+                    </button>
+
+                </div>
+            </div>
+        {% endif %}
+
+    {% endif %}
+</div>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Listener\Invitation;
 
 use App\Domain\Workspace\Event\WorkspaceInvitationCreatedEvent;
@@ -16,7 +18,8 @@ readonly class DispatchInvitationWorkspaceEmail
     public function __construct(
         private UrlGeneratorInterface $router,
         private MessageBusInterface $messageBus,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws ExceptionInterface

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Shared\Menu;
 
 enum SystemAdminMenuItem: string
@@ -44,9 +46,9 @@ enum SystemAdminMenuItem: string
     public function getRoute(): string
     {
         return match ($this) {
-            self::DASHBOARD => 'app_dashboard',
-            self::WORKSPACES => 'admin_compliance_list',
-            self::SUPPORT => 'app_support_list', // 👈 Nouvelle route à créer
+            self::DASHBOARD => 'admin_dashboard',
+            self::WORKSPACES => 'admin_organizations_list',
+            self::SUPPORT => 'admin_support_list', // 👈 Nouvelle route à créer
             self::SUBSCRIPTIONS => 'admin_compliance_list',
             self::COMPLIANCE => 'admin_compliance_list',
             self::ADMINS => 'account_admin_list',

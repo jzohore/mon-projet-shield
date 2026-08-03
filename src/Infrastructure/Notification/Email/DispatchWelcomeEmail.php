@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Notification\Email;
 
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -13,7 +15,7 @@ class DispatchWelcomeEmail extends TemplatedEmail
     public function __construct(
         string $recipientEmail,
         string $firstName,
-        string $actionUrl
+        string $actionUrl,
     ) {
         parent::__construct();
 

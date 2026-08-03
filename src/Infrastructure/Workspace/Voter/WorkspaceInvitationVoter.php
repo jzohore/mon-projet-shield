@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Voter;
 
 use App\Domain\User\Entity\User;
@@ -8,8 +10,8 @@ use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\AccessDecisionManagerInterface;
-use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
+use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 /**
  * @extends Voter<string, WorkspaceInvitation>
@@ -22,7 +24,8 @@ final class WorkspaceInvitationVoter extends Voter
     public function __construct(
         private readonly AccessDecisionManagerInterface $accessDecisionManager,
         private readonly WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
-    ) {}
+    ) {
+    }
 
     protected function supports(string $attribute, mixed $subject): bool
     {
@@ -31,12 +34,6 @@ final class WorkspaceInvitationVoter extends Voter
             && $subject instanceof Workspace;
     }
 
-    /**
-     * @param string $attribute
-     * @param mixed $subject
-     * @param TokenInterface $token
-     * @param Vote|null $vote
-     */
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
     {
         $user = $token->getUser();
@@ -44,6 +41,7 @@ final class WorkspaceInvitationVoter extends Voter
         // 1. L'utilisateur doit être connecté
         if (!$user instanceof User) {
             $vote?->addReason('The user is not logged in.');
+
             return false;
         }
 
@@ -53,14 +51,11 @@ final class WorkspaceInvitationVoter extends Voter
         }
 
         $workspace = $subject->workspace;
-        if (null === $workspace) {
-            return false; // Sécurité : pas de workspace = pas d'action possible
-        }
 
         // 3. Vérification de la permission contextuelle (Multi-tenant B2B)
         // On interroge la base pour savoir si l'utilisateur courant a le droit d'administrer ce Workspace
         return match ($attribute) {
-            self::RESEND, self::REVOKE => $this->canManageInvitation($user, $workspace->getId()),
+            self::RESEND, self::REVOKE => $this->canManageInvitation($user, $workspace),
             default => false,
         };
     }

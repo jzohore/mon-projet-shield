@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Controller;
 
 use App\Application\User\UseCase\Dashboard\DismissOnboardingUseCase;
@@ -12,7 +14,8 @@ final readonly class DismissOnboardingController
 {
     public function __construct(
         private DismissOnboardingUseCase $dismissOnboardingUseCase,
-    ) {}
+    ) {
+    }
 
     public function __invoke(): void
     {

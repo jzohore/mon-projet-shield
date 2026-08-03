@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Command;
 
 use App\Domain\User\Entity\User;
 use App\Domain\User\Enum\OnboardingStatus;
 use App\Domain\User\Repository\UserRepositoryInterface;
-use Exception;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -18,10 +19,11 @@ readonly class SeedUserCommand
 {
     public function __construct(
         private UserRepositoryInterface $userRepository,
-    ) {}
+    ) {
+    }
 
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     public function __invoke(OutputInterface $output): int
     {

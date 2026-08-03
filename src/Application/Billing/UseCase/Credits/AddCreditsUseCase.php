@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Billing\UseCase\Credits;
 
 use App\Domain\Billing\Enum\CreditAction;
@@ -15,7 +17,8 @@ readonly class AddCreditsUseCase
         private WorkspaceRepositoryInterface $workspaceRepository,
         private EventDispatcherInterface $eventDispatcher,
         private UserRepositoryInterface $userRepository,
-    ) {}
+    ) {
+    }
 
     public function __invoke(Uuid $workspaceId, Uuid $userId, int $creditsToAdd, CreditAction $creditAction, ?string $invoiceUrl = null): void
     {

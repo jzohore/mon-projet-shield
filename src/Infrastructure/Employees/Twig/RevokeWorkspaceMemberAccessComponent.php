@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Employees\Twig;
 
 use App\Application\Workspace\DTO\Response\WorkspaceMemberDetailsResponse;
@@ -40,14 +42,17 @@ class RevokeWorkspaceMemberAccessComponent
         private readonly GetWorkspaceMemberDetailsUseCase $getMemberDetailsUseCase,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly RequestStack $requestStack,
-    ) {}
+    ) {
+    }
 
     #[ExposeInTemplate]
     public function getMember(): WorkspaceMemberDetailsResponse
     {
         $user = $this->currentUserProvider->getUser();
+
         return ($this->getMemberDetailsUseCase)($this->targetUserSlugId, $user);
     }
+
     #[LiveAction]
     public function revokeAccess(): ?RedirectResponse
     {
@@ -66,7 +71,6 @@ class RevokeWorkspaceMemberAccessComponent
 
             return new RedirectResponse($this->urlGenerator->generate('app_employees_list'));
         } catch (AbstractDomainException|\DomainException $e) {
-
             $this->logger->warning('Échec de la révocation du collaborateur (Erreur Métier)', [
                 'target_slug' => $this->targetUserSlugId,
                 'error' => $e->getMessage(),
@@ -79,7 +83,6 @@ class RevokeWorkspaceMemberAccessComponent
                 message: $e->getMessage()
             );
         } catch (\Exception $e) {
-
             $this->logger->critical('Crash système lors de la révocation d\'un collaborateur', [
                 'target_slug' => $this->targetUserSlugId,
                 'error' => $e->getMessage(),
@@ -92,6 +95,7 @@ class RevokeWorkspaceMemberAccessComponent
                 message: $e->getMessage(),
             );
         }
+
         return null;
     }
 }

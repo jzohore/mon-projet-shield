@@ -4,38 +4,45 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\User\Handler;
 
-use App\Domain\User\Repository\UserRepositoryInterface;
+use App\Domain\Shared\Service\GenerateLinkToken;
 use App\Infrastructure\Notification\Email\DispatchWelcomeEmail;
 use App\Infrastructure\User\Message\SendWelcomeEmailMessage;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
-use Symfony\Component\Uid\Uuid;
-use Webmozart\Assert\Assert;
 
 #[AsMessageHandler]
 final readonly class SendWelcomeEmailHandler
 {
     public function __construct(
-        private UserRepositoryInterface $userRepository,
-        private MailerInterface $mailer
-    ) {}
+        private MailerInterface $mailer,
+        private LoggerInterface $logger,
+        private GenerateLinkToken $generateLinkToken,
+    ) {
+    }
 
     /**
      * @throws TransportExceptionInterface
      */
     public function __invoke(SendWelcomeEmailMessage $message): void
     {
-        $userUuid = Uuid::fromString($message->userId);
-        $user = $this->userRepository->getById($userUuid);
+        $magicLinkUrl = $this->generateLinkToken->generate(
+            routeName: 'app_verify_magic_link',
+            magicLinkToken: $message->magicLinkToken
+        );
 
-        $userEmail = $user->email;
-        $userFirstName = $user->firstName;
+        $email = new DispatchWelcomeEmail(
+            recipientEmail: $message->email,
+            firstName: $message->fullName,
+            actionUrl: $magicLinkUrl
+        );
 
-        Assert::notNull($userEmail);
-        Assert::notNull($userFirstName);
-
-        $email = new DispatchWelcomeEmail($userEmail, $userFirstName, $message->magicLinkUrl);
         $this->mailer->send($email);
+
+        $this->logger->info('L\'email de bienvenue a bien été envoyé.', [
+            'email' => $message->email,
+            'user_id' => $message->userId,
+        ]);
     }
 }

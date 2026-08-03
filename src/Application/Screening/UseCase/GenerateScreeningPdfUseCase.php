@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Screening\UseCase;
 
 use App\Domain\Screening\Entity\ScreeningAudit;
@@ -13,7 +15,8 @@ readonly class GenerateScreeningPdfUseCase
     public function __construct(
         private MessageBusInterface $messageBus,
         private ScreeningAuditRepositoryInterface $screeningAuditRepository,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws ExceptionInterface

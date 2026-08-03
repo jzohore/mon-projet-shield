@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Screening\Message;
 
 readonly class ShareDocumentMessage
@@ -8,5 +10,6 @@ readonly class ShareDocumentMessage
         public string $recipientEmail,
         public string $auditId,
         public string $senderId,
-    ) {}
+    ) {
+    }
 }

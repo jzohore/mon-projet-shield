@@ -1,0 +1,73 @@
+{% extends '@app/base_app.html.twig' %}
+
+{% block title %}{{ page_title }} | {{ company_name }}{% endblock %}
+{% block page_title %}{{ page_title }}{% endblock %}
+
+
+{% block content %}
+    {{ include('@app/settings/_header_settings.html.twig') }}
+    <div class="max-w-3xl space-y-8 pb-12">
+        <div class="p-6 bg-white rounded-xl border border-slate-200 shadow-sm"
+             data-controller="logo-upload"
+             data-logo-upload-url-value="{{ path('api_workspace_logo_upload') }}"
+             data-logo-upload-s3-base-url-value="{{ s3_base_url }}">
+
+            <h3 class="text-lg font-semibold text-slate-800 mb-1">Identité visuelle</h3>
+            <p class="text-sm text-slate-500 mb-6">Ce logo apparaîtra sur tous vos documents générés.</p>
+
+            <div class="flex items-start gap-6">
+
+                {# Aperçu du Logo #}
+                <div class="relative shrink-0 h-24 w-24 rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 flex items-center justify-center overflow-hidden group">
+
+                    {# Image #}
+                    <img data-logo-upload-target="preview"
+                         src="{{ workspace_info.workspaceInfo.logoFilename ? workspace_info.workspaceInfo.logoStoragePath|private_url : '' }}"
+                         alt="Logo du cabinet"
+                         class="max-h-full max-w-full object-contain p-2 transition-opacity duration-300 {{ workspace_info.workspaceInfo.logoFilename ? '' : 'hidden' }}">
+
+                    {# Icône par défaut #}
+                    <i data-logo-upload-target="placeholderIcon"
+                       class="fas fa-image text-slate-300 text-3xl {{ workspace_info.workspaceInfo.logoFilename ? 'hidden' : '' }}"></i>
+
+                    {# 🪄 Spinner Premium (Superposé avec flou) #}
+                    <div data-logo-upload-target="spinner"
+                         class="absolute inset-0 z-10 bg-white/70 backdrop-blur-[2px] flex items-center justify-center hidden transition-all duration-200">
+                        <i class="fas fa-circle-notch fa-spin text-blue-600 text-2xl drop-shadow-sm"></i>
+                    </div>
+                </div>
+
+                {# Champ d'upload #}
+                <div class="flex-1 space-y-3 pt-2">
+                    <input type="file"
+                           accept="image/png, image/jpeg, image/webp, image/svg+xml"
+                           data-logo-upload-target="input"
+                           data-action="change->logo-upload#upload"
+                           class="block w-full text-sm text-slate-500
+                          file:mr-4 file:py-2.5 file:px-4
+                          file:rounded-lg file:border-0
+                          file:text-sm file:font-medium
+                          file:bg-blue-50 file:text-blue-700
+                          hover:file:bg-blue-100 transition-all
+                          cursor-pointer outline-none">
+
+                    {# Zone d'erreur #}
+                    <div data-logo-upload-target="errorMsg" class="text-sm text-red-600 font-medium bg-red-50 p-3 rounded-lg border border-red-100 hidden"></div>
+
+                    <p class="text-xs text-slate-500 leading-relaxed">
+                        Formats acceptés : PNG, JPG, SVG. Poids max : 2 Mo.<br>
+                        L'enregistrement est automatique dès la sélection du fichier.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6 border-b border-slate-100">
+                <h3 class="font-semibold leading-none tracking-tight text-slate-900">Identité Légale</h3>
+            </div>
+            <twig:RegulatoryProfileFormComponent id="{{ workspace_info.workspaceInfo.regulatoryProfilId }}"></twig:RegulatoryProfileFormComponent>
+        </section>
+        <twig:CounselorSignatureComponent></twig:CounselorSignatureComponent>
+    </div>
+{% endblock %}

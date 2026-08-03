@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Form;
 
 use App\Application\Kyc\DTO\Request\AddStakeholderRequest;
@@ -30,7 +32,7 @@ class AddStakeholderType extends AbstractType
             ])
             ->add('role', EnumType::class, [
                 'class' => StakeholderRole::class,
-                'choice_label' => fn(StakeholderRole $choice) => $choice->getLabel(),
+                'choice_label' => static fn (StakeholderRole $choice): string => $choice->getLabel(),
                 'label' => 'Rôle',
             ])
             ->add('percentage', NumberType::class, [

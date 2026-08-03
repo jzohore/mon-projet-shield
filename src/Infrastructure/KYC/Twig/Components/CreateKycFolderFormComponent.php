@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Twig\Components;
 
 use App\Application\Kyc\DTO\Request\CreateKycFolderRequest;
 use App\Application\Kyc\UseCase\CreateKycFolderUseCase;
 use App\Infrastructure\KYC\Form\CreateKycFolderType;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
-use DomainException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
@@ -22,8 +23,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 )]
 class CreateKycFolderFormComponent
 {
-    use DefaultActionTrait;
     use ComponentWithFormTrait;
+    use DefaultActionTrait;
     use LiveFlashTrait;
 
     #[LiveProp]
@@ -33,7 +34,8 @@ class CreateKycFolderFormComponent
         private readonly FormFactoryInterface $formFactory,
         private readonly LoggerInterface $logger,
         private readonly CreateKycFolderUseCase $createKycFolderUseCase,
-    ) {}
+    ) {
+    }
 
     protected function instantiateForm(): FormInterface
     {
@@ -52,16 +54,16 @@ class CreateKycFolderFormComponent
         /** @var CreateKycFolderRequest $dto */
         $dto = $this->getForm()->getData();
         try {
-
             ($this->createKycFolderUseCase)($dto);
             $this->resetForm();
             $this->addLiveFlash('success', 'La dossier à été initier  et l\'invitation a bien été envoyée.');
-        } catch (DomainException $e) {
+        } catch (\DomainException $e) {
             $this->logger->error('Erreur métier lors de la création du dossier KYC', [
                 'contactEmail' => $dto->contactEmail,
                 'contactFirstName' => $dto->contactFirstName,
                 'error' => $e->getMessage(),
             ]);
+
             return;
         }
     }

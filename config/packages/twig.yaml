@@ -11,6 +11,12 @@ twig:
     globals:
         company_name: '%env(COMPANY_NAME)%'
         workspace_info: '@App\Infrastructure\Shared\Twig\AppExtension'
+        s3_base_url: '%env(S3_BASE_URL)%'
+        kysure_name: '%env(KYSURE_NAME)%'
+        kysure_siret: '%env(KYSURE_SIRET)%'
+        kysure_address: '%env(KYSURE_ADDRESS)%'
+        kysure_contact_email: '%env(KYSURE_CONTACT_EMAIL)%'
+        kysure_cgv_version: '%env(KYSURE_CURRENT_CGV_VERSION)%'
     date:
         timezone: Europe/Paris
 when@test:

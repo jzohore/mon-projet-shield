@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Support\Persistence;
 
 use App\Application\Support\DTO\Response\SupportNotificationStats;
@@ -25,10 +27,12 @@ readonly class SupportThreadRepository implements SupportThreadRepositoryInterfa
 {
     /** @var EntityRepository<SupportThread> */
     private EntityRepository $repository;
+
     public function __construct(private EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(SupportThread::class);
     }
+
     public function findActiveThreadForUser(Workspace $workspace, User $user): ?SupportThread
     {
         return $this->repository->createQueryBuilder('st')
@@ -107,12 +111,12 @@ readonly class SupportThreadRepository implements SupportThreadRepositoryInterfa
             // UX : Les derniers tickets mis à jour (réponses) remontent en premier
             ->orderBy('st.updatedAt', 'DESC');
 
-        if (!empty($search)) {
+        if (!in_array($search, [null, '', '0'], true)) {
             $qb->andWhere('st.topic LIKE :search OR st.category LIKE :search OR user.email LIKE :search OR user.firstName LIKE :search')
                 ->setParameter('search', '%' . trim($search) . '%');
         }
 
-        if ($statusFilter !== null) {
+        if ($statusFilter instanceof SupportThreadStatus) {
             $qb->andWhere('st.status = :status')
                 ->setParameter('status', $statusFilter); // Doctrine transforme automatiquement l'Enum en string grâce à enumType
         }

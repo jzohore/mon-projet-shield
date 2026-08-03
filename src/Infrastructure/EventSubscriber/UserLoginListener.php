@@ -1,19 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\EventSubscriber;
 
 use App\Application\Audit\DTO\Request\CreateAuditLogRequest;
 use App\Application\Audit\UseCase\CreateAuditLogUseCase;
 use App\Domain\AuditLog\Enum\AuditEventType;
+use App\Domain\User\Entity\Client;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\Service\DeviceDetectorService;
-use Exception;
 use GeoIp2\Exception\AddressNotFoundException;
 use MaxMind\Db\Reader\InvalidDatabaseException;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Security\Http\Event\LoginSuccessEvent;
-use Webmozart\Assert\Assert;
 
 final readonly class UserLoginListener implements EventSubscriberInterface
 {
@@ -21,7 +22,8 @@ final readonly class UserLoginListener implements EventSubscriberInterface
         private DeviceDetectorService $deviceDetectorService,
         private UserRepositoryInterface $userRepository,
         private CreateAuditLogUseCase $auditLogUseCase,
-    ) {}
+    ) {
+    }
 
     public static function getSubscribedEvents(): array
     {
@@ -43,42 +45,74 @@ final readonly class UserLoginListener implements EventSubscriberInterface
      */
     public function onRecordDevice(LoginSuccessEvent $event): void
     {
-        $user = $event->getPassport()->getUser();
-        Assert::isInstanceOf($user, User::class);
-        $this->deviceDetectorService->createDeviceDetector($user->slugId);
+        $authenticatable = $event->getPassport()->getUser();
+
+        // On enregistre l'appareil pour TOUT LE MONDE (Sécurité LCB-FT / Anti-fraude)
+        if ($authenticatable instanceof User) {
+            // PHP 8.4 : Accès direct à la propriété readonly ou private(set)
+            $this->deviceDetectorService->createDeviceDetector($authenticatable->slugId);
+        }
     }
 
-    /**
-     * @param LoginSuccessEvent $event
-     * @return void
-     */
     public function onClearMagicLinkToken(LoginSuccessEvent $event): void
     {
         $user = $event->getPassport()->getUser();
-        Assert::isInstanceOf($user, User::class);
-        $user->clearMagicLinkToken();
-        $this->userRepository->save($user);
+
+        // Seuls les CGP (User) utilisent le système "Custom" de lien magique avec un token en DB.
+        // Les clients utilisent le composant natif Symfony : aucune action en base requise !
+        if ($user instanceof User) {
+            $user->clearMagicLinkToken();
+            $this->userRepository->save($user);
+        }
     }
 
     /**
-     * @param LoginSuccessEvent $event
-     * @return void
-     * @throws Exception
+     * @throws \Exception
      */
     public function onAuditLogin(LoginSuccessEvent $event): void
     {
-        $user = $event->getPassport()->getUser();
-        Assert::isInstanceOf($user, User::class);
+        $authenticatable = $event->getPassport()->getUser();
 
+        if ($authenticatable instanceof User) {
+            $this->auditCgpLogin($authenticatable);
+
+            return;
+        }
+
+        if ($authenticatable instanceof Client) {
+            $this->auditClientLogin($authenticatable);
+
+            return;
+        }
+    }
+
+    private function auditCgpLogin(User $user): void
+    {
         $requestAuditLog = new CreateAuditLogRequest(
             eventName: AuditEventType::USER_LOGGED_IN,
             data: [
                 'target_user_id' => $user->slugId,
-                'email'          => $user->email,
-                'full_name'      => $user->getFullName(),
+                'email' => $user->email,
+                'full_name' => $user->getFullName(), // Clone si objet, ou juste appel
+                'account_type' => 'cgp',
             ],
-            actorId: (string) $user->id,
-            workspaceId: null,
+            actorId: (string) $user->id, // Si tu peux récupérer le currentWorkspace, mets-le !
+        );
+
+        ($this->auditLogUseCase)($requestAuditLog);
+    }
+
+    private function auditClientLogin(Client $client): void
+    {
+        $requestAuditLog = new CreateAuditLogRequest(
+            eventName: AuditEventType::USER_LOGGED_IN,
+            data: [
+                'target_client_id' => $client->slugId,
+                'email' => $client->email,
+                'full_name' => trim(sprintf('%s %s', $client->firstName, $client->lastName)),
+                'account_type' => 'client_final',
+            ],
+            actorId: (string) $client->id,
         );
 
         ($this->auditLogUseCase)($requestAuditLog);

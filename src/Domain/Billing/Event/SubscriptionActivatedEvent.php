@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Billing\Event;
 
 use App\Domain\Billing\Entity\Subscription;
@@ -14,5 +16,6 @@ class SubscriptionActivatedEvent extends Event
         public string $recipientEmail,
         public Subscription $subscription,
         public User $user,
-    ) {}
+    ) {
+    }
 }

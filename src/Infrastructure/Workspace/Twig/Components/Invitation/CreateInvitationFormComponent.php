@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Twig\Components\Invitation;
 
 use App\Application\Workspace\DTO\Request\CreateWorkspaceInvitationRequest;
@@ -31,10 +33,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 )]
 class CreateInvitationFormComponent
 {
-    use DefaultActionTrait;
     use ComponentWithFormTrait;
+    use DefaultActionTrait;
     use LiveFlashTrait;
-
 
     #[LiveProp(writable: true)]
     public string $invitedRole = 'ROLE_WORKSPACE_COLLAB';
@@ -47,7 +48,8 @@ class CreateInvitationFormComponent
         private readonly UrlGeneratorInterface $router,
         private readonly CurrentWorkspaceProvider $currentWorkspaceProvider,
         private readonly WorkspaceInvitationRepositoryInterface $workspaceInvitationRepository,
-    ) {}
+    ) {
+    }
 
     protected function instantiateForm(): FormInterface
     {
@@ -82,7 +84,6 @@ class CreateInvitationFormComponent
                 'error' => $e->getMessage(),
             ]);
 
-
             /** @var FlashBagAwareSessionInterface $session */
             $session = $this->requestStack->getSession();
             $session->getFlashBag()->add(
@@ -104,7 +105,6 @@ class CreateInvitationFormComponent
         }
 
         return new RedirectResponse($this->router->generate('app_employees_invitation'));
-
     }
 
     /**
@@ -113,6 +113,7 @@ class CreateInvitationFormComponent
     public function getInvitations(): array
     {
         $workspace = $this->currentWorkspaceProvider->getWorkspace();
+
         return $this->workspaceInvitationRepository->findByWorkspace($workspace);
     }
 

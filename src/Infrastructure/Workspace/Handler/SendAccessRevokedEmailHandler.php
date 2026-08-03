@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Handler;
 
 use App\Domain\User\Repository\UserRepositoryInterface;
@@ -15,8 +17,9 @@ final readonly class SendAccessRevokedEmailHandler
 {
     public function __construct(
         private UserRepositoryInterface $userRepository,
-        private MailerInterface $mailer
-    ) {}
+        private MailerInterface $mailer,
+    ) {
+    }
 
     public function __invoke(SendAccessRevokedEmailMessage $message): void
     {

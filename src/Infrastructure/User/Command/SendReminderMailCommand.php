@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Command;
 
 use App\Application\User\UseCase\SendOnboardingReminderUseCase;
@@ -14,10 +16,13 @@ readonly class SendReminderMailCommand
 {
     public function __construct(
         private SendOnboardingReminderUseCase $sendOnboardingReminderUseCase,
-    ) {}
+    ) {
+    }
+
     public function __invoke(): int
     {
         ($this->sendOnboardingReminderUseCase)();
+
         return Command::SUCCESS;
     }
 }

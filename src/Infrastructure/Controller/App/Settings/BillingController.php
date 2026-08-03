@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Controller\App\Settings;
 
 use App\Application\Workspace\DTO\Response\WorkspaceInfoResponse;
@@ -19,7 +21,8 @@ readonly class BillingController
     public function __construct(
         private Environment $twig,
         private CurrentWorkspaceProvider $workspaceProvider,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws RuntimeError
@@ -30,6 +33,7 @@ readonly class BillingController
     {
         $workspace = $this->workspaceProvider->getWorkspace();
         $dto = WorkspaceInfoResponse::fromEntity($workspace);
+
         return new Response(
             $this->twig->render('@app/settings/billing.html.twig', [
                 'page_title' => 'Paramètres - Usage & Facturation',

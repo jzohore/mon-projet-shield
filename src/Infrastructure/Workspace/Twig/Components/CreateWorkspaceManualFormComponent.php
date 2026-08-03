@@ -1,12 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Twig\Components;
 
 use App\Application\Workspace\DTO\Request\CreateWorkspaceRequest;
 use App\Application\Workspace\UseCase\Onboarding\CreateWorkspaceUseCase;
 use App\Infrastructure\Workspace\Form\CreateWorkspaceType;
-use DomainException;
-use Exception;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
@@ -25,8 +25,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 )]
 class CreateWorkspaceManualFormComponent
 {
-    use DefaultActionTrait;
     use ComponentWithFormTrait;
+    use DefaultActionTrait;
 
     public function __construct(
         private readonly FormFactoryInterface $formFactory,
@@ -34,7 +34,8 @@ class CreateWorkspaceManualFormComponent
         private readonly LoggerInterface $logger,
         private readonly UrlGeneratorInterface $router,
         private readonly RequestStack $requestStack,
-    ) {}
+    ) {
+    }
 
     protected function instantiateForm(): FormInterface
     {
@@ -54,17 +55,19 @@ class CreateWorkspaceManualFormComponent
         try {
             $dto->legalName = $this->formValues['name'] ?? null;
             $dto->siret = mt_rand(3, 900) . '0o000000000';
+            $dto->siren = mt_rand(3, 900) . '0o000000030';
 
             ($this->workspaceUseCase)($dto);
+
             return new RedirectResponse($this->router->generate('app_onboarding_plan'));
-        } catch (DomainException $e) {
+        } catch (\DomainException $e) {
             $this->logger->error('Erreur métier lors de la création du workspace', [
                 'workspace_name' => $dto->name,
                 'error' => $e->getMessage(),
             ]);
-            return null;
 
-        } catch (Exception $e) {
+            return null;
+        } catch (\Exception $e) {
             $this->logger->critical('Crash système lors de la création du workspace', [
                 'error' => $e->getMessage(),
             ]);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Tracking\Repository;
 
 use App\Application\Tracking\DTO\Request\ElementStatDTO;
@@ -25,6 +27,7 @@ interface ClickLogRepositoryInterface
     /**
      * Retourne les statistiques de clics groupées par élément pour une période donnée.
      * Utile pour ton dashboard interne Kysure.
+     *
      * @return array<string, int>
      */
     public function getStatsByElement(\DateTimeImmutable $since): array;
@@ -41,6 +44,7 @@ interface ClickLogRepositoryInterface
 
     /**
      * Retourne le nombre de clics par jour sur les X derniers jours.
+     *
      * @return array<string, int> Format : ['Y-m-d' => count]
      */
     public function getClicksTrend(int $days = 7): array;

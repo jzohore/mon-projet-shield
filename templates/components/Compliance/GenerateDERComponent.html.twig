@@ -1,0 +1,251 @@
+{# components/Compliance/ManualIndividualStepOneComponent.html.twig #}
+
+<div {{ attributes.defaults({
+    'data-controller': 'mercure-sync',
+    'data-mercure-sync-topic-value': mercure('folder_' ~ this.complianceFolder.slugId)
+}) }}>
+    {% set docu_seal_info = this.docuSealInfo %}
+    {% set compliance_folder_status_value = this.complianceDTO.statusValue %}
+
+    {% if this.isStepDerVisible %}
+        <section class="bg-white rounded-xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+
+            {# ========================================== #}
+            {# 1. HEADER DU COMPOSANT                     #}
+            {# ========================================== #}
+            <header class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center justify-center size-8 rounded-lg bg-indigo-50 text-indigo-600 font-bold text-sm ring-1 ring-inset ring-indigo-500/10">
+                        2
+                    </div>
+                    <h3 class="text-lg font-semibold text-slate-900 tracking-tight">
+                        Génération du DER
+                    </h3>
+                </div>
+
+                <div class="relative group inline-block">
+                    <twig:ux:icon name="ph:info-duotone" class="size-5 text-slate-400 hover:text-indigo-600 cursor-help transition-colors" />
+                    <div class="absolute bottom-full right-0 md:left-1/2 md:-translate-x-1/2 mb-2 w-72 p-3 bg-slate-800 text-white text-xs rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none text-left">
+                        <strong class="text-white block mb-1">Obligation légale (AMF/ACPR) :</strong>
+                        Le Document d'Entrée en Relation est obligatoire avant toute collecte de pièces KYC. Il intègre automatiquement les données réglementaires de votre cabinet.
+                    </div>
+                </div>
+            </header>
+
+            {# ========================================== #}
+            {# 2. ÉTAT : PROFIL INCOMPLET (BLOQUANT)      #}
+            {# ========================================== #}
+            {% if not this.profileValid %}
+                <div class="rounded-lg bg-amber-50 ring-1 ring-inset ring-amber-200 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left animate-fade-in">
+                    <div class="flex items-center gap-3 text-amber-800">
+                        <twig:ux:icon name="tabler:alert-triangle-filled" class="size-5 text-amber-500 shrink-0" />
+                        <span class="text-sm font-medium">Les informations réglementaires de votre cabinet (ex: ORIAS) sont incomplètes.</span>
+                    </div>
+
+                    {# Utilisation de ton variant="warning" #}
+                    <twig:Button as="a" href="{{ path('app_settings_regulatory_profile') }}" target="_blank" variant="warning" size="sm">
+                        <twig:ux:icon name="tabler:external-link" class="size-3.5 mr-1" />
+                        Compléter mon profil
+                    </twig:Button>
+                </div>
+
+                {# ========================================== #}
+                {# 3. ÉTAT : DER SIGNÉ (PREUVE LÉGALE)        #}
+                {# ========================================== #}
+            {% elseif compliance_folder_status_value == 'der_signed' %}
+                <div class="animate-fade-in overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm mt-4">
+                    <div class="border-b border-slate-100 bg-slate-50/50 px-4 py-3 sm:px-6 flex items-center gap-2">
+                        <twig:ux:icon name="tabler:shield-check-filled" class="size-5 text-emerald-600" />
+                        <h4 class="text-sm font-semibold text-slate-900">Validation Électronique du DER</h4>
+                    </div>
+
+                    <div class="px-4 py-4 sm:px-6">
+                        <dl class="grid grid-cols-1 gap-x-4 gap-y-4 sm:grid-cols-2">
+                            <div class="sm:col-span-1">
+                                <dt class="text-xs font-medium uppercase tracking-wider text-slate-500">Horodatage certifié</dt>
+                                <dd class="mt-1 text-sm font-semibold text-slate-900">
+                                    {{ docu_seal_info.docuSealSignedAt ? docu_seal_info.docuSealSignedAt|date('d/m/Y à H:i') : 'En attente' }}
+                                </dd>
+                            </div>
+
+                            <div class="sm:col-span-1">
+                                <dt class="text-xs font-medium uppercase tracking-wider text-slate-500">Statut Légal</dt>
+                                <dd class="mt-1 flex items-center gap-1.5 text-sm font-medium text-emerald-700">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                    </span>
+                                    Conforme & Scellé
+                                </dd>
+                            </div>
+
+                            <div class="sm:col-span-2 mt-2 flex flex-wrap gap-3 border-t border-slate-100 pt-4">
+                                {% if docu_seal_info.docuSealDocumentUrl %}
+                                    {# Utilisation de ton variant="outline" #}
+                                    <twig:Button as="a" href="{{ docu_seal_info.docuSealDocumentUrl }}" target="_blank" rel="noopener noreferrer" variant="outline" size="sm">
+                                        <twig:ux:icon name="tabler:file-download" />
+                                        Télécharger le document
+                                    </twig:Button>
+                                {% endif %}
+
+                                {% if docu_seal_info.docuSealAuditLogUrl %}
+                                    {# Utilisation de ton variant="secondary" #}
+                                    <twig:Button as="a" href="{{ docu_seal_info.docuSealAuditLogUrl }}" target="_blank" rel="noopener noreferrer" variant="secondary" size="sm">
+                                        <twig:ux:icon name="tabler:history" class="text-indigo-500" />
+                                        Piste d'audit légale
+                                    </twig:Button>
+                                {% endif %}
+                            </div>
+                        </dl>
+                    </div>
+                </div>
+
+                {# ========================================== #}
+                {# 3.5 ÉTAT : DER REFUSÉ (BLOCAGE LÉGAL)      #}
+                {# ========================================== #}
+            {% elseif compliance_folder_status_value == 'der_rejected' %}
+                <div class="animate-fade-in overflow-hidden rounded-lg border border-red-200 bg-white shadow-sm mt-4">
+                    <div class="border-b border-red-100 bg-red-50/50 px-4 py-3 sm:px-6 flex items-center gap-2">
+                        <twig:ux:icon name="tabler:shield-x" class="size-5 text-red-600" />
+                        <h4 class="text-sm font-semibold text-red-900">Signature refusée par le client</h4>
+                    </div>
+
+                    <div class="px-4 py-4 sm:px-6">
+                        <p class="text-sm text-slate-700 mb-5">
+                            Le client a formellement décliné la signature du document. Le processus d'entrée en relation (LCB-FT) est actuellement suspendu.
+                        </p>
+                        <p class="text-sm text-red-700 mb-5 font-semibold">
+                            Motif : {{ docu_seal_info.docuSealRejectedReason }}
+                        </p>
+                        <div class="flex flex-wrap gap-3 border-t border-slate-100 pt-4">
+                            {# Utilisation de ton variant="outline" #}
+                            <twig:Button type="button"
+                                         variant="outline"
+                                         size="sm"
+                                         data-action="live#action"
+                                         data-live-action-param="generateDer"
+                                         data-loading="action(generateDer)|addAttribute(disabled)">
+                                <twig:ux:icon name="tabler:refresh" data-loading="action(generateDer)|hide" />
+                                <twig:ux:icon name="tabler:loader" data-loading="action(generateDer)|show" class="hidden animate-spin text-indigo-500" />
+                                <span data-loading="action(generateDer)|hide">Générer un nouveau DER</span>
+                                <span data-loading="action(generateDer)|show" class="hidden text-indigo-500">Génération en cours...</span>
+                            </twig:Button>
+                            {% if docu_seal_info.docuSealAuditLogUrl %}
+                                {# Utilisation de ton variant="destructive" #}
+                                <twig:Button as="a" href="{{ docu_seal_info.docuSealAuditLogUrl }}" target="_blank" rel="noopener noreferrer" variant="destructive" size="sm">
+                                    <twig:ux:icon name="tabler:history" />
+                                    Consulter le motif du refus (Audit)
+                                </twig:Button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {# ========================================== #}
+                {# 4. ÉTAT : GÉNÉRATION & ACTIONS             #}
+                {# ========================================== #}
+            {% else %}
+                <div class="max-w-lg mx-auto animate-fade-in mt-2">
+
+                    {# Encart Métadonnées Cabinet #}
+                    <div class="rounded-lg bg-slate-50 ring-1 ring-inset ring-slate-200 p-4 mb-6 flex items-center justify-between group transition-colors hover:ring-indigo-200">
+                        <div class="flex items-center gap-3">
+                            <div class="bg-white border border-slate-200 p-1.5 rounded-md text-slate-400 shadow-sm">
+                                <twig:ux:icon name="tabler:building-bank" class="size-4" />
+                            </div>
+                            <div>
+                                <span class="block text-xs font-semibold text-slate-900 mb-0.5">Données du cabinet</span>
+                                <div class="text-[11px] text-slate-500 flex items-center gap-2">
+                                    <span>ORIAS : {{ workspace_info.workspaceInfo.oriasNumber|default('N/A') }}</span>
+                                    <span class="w-1 h-1 bg-slate-300 rounded-full"></span>
+                                    <span>RC Pro : {{ workspace_info.workspaceInfo.rcProInsurer|default('N/A') }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="{{ path('app_settings_regulatory_profile') }}" target="_blank" class="text-xs font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 py-1.5 px-2.5 rounded-md transition-colors opacity-0 group-hover:opacity-100">
+                            Modifier
+                        </a>
+                    </div>
+
+                    {# Zone d'actions dynamiques #}
+                    <div data-controller="actions-panel" class="space-y-4">
+                        {% if this.derPdfPath %}
+                            <div data-loading="action(generateDer)|hide" class="space-y-3">
+
+                                {% if compliance_folder_status_value == 'der_sent' %}
+                                    <div class="rounded-lg ring-1 ring-inset ring-amber-200 bg-amber-50 p-3 flex items-start gap-2.5">
+                                        <twig:ux:icon name="tabler:clock-hour-4" class="size-4 text-amber-600 mt-0.5 animate-pulse shrink-0" />
+                                        <div>
+                                            <h5 class="text-xs font-semibold text-amber-900">En attente de signature client</h5>
+                                            <p class="text-[11px] text-amber-700 mt-0.5">Le lien a été envoyé. Le statut s'actualisera automatiquement dès la signature.</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                {% if compliance_folder_status_value == 'der_opened' %}
+                                    <div class="rounded-lg ring-1 ring-inset ring-amber-200 bg-amber-50 p-3 flex items-start gap-2.5">
+                                        <twig:ux:icon name="tabler:clock-hour-4" class="size-4 text-amber-600 mt-0.5 animate-pulse shrink-0" />
+                                        <div>
+                                            <h5 class="text-xs font-semibold text-amber-900">Document consulté par le client</h5>
+                                            <p class="text-[11px] text-amber-700 mt-0.5">Le DER a été ouvert. En attente de signature électronique.</p>
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                {# Utilisation de ton variant="outline" pour les actions secondaires #}
+                                <twig:Button as="a" href="{{ this.derPdfPath|private_url }}" target="_blank" variant="outline" class="w-full">
+                                    <twig:ux:icon name="tabler:eye" class="text-slate-400" />
+                                    Aperçu de la version de travail
+                                </twig:Button>
+
+                                <div class="grid grid-cols-2 gap-3">
+                                    <twig:SendDerActionComponent folder="{{ this.complianceFolder }}"></twig:SendDerActionComponent>
+
+                                    {# Remplacé par ton composant Button variant="outline" #}
+                                    <twig:Button type="button" variant="outline" data-action="click->actions-panel#toggleMonitoring" class="w-full">
+                                        <twig:ux:icon name="tabler:help-circle" class="text-slate-400" />
+                                        Besoin d'aide ?
+                                    </twig:Button>
+                                </div>
+
+                                <div data-actions-panel-target="sendForm" class="hidden"></div>
+                                <div data-actions-panel-target="monitoringForm" class="hidden"></div>
+
+                                <div class="pt-3 mt-3 border-t border-slate-100">
+                                    {# Utilisation de ton variant="ghost" pour l'action discrète #}
+                                    <twig:Button type="button" variant="ghost" size="sm" class="w-full" data-action="live#action" data-live-action-param="generateDer" data-loading="action(generateDer)|addAttribute(disabled)">
+                                        <twig:ux:icon name="tabler:refresh" data-loading="action(generateDer)|hide" />
+                                        <twig:ux:icon name="tabler:loader" data-loading="action(generateDer)|show" class="hidden animate-spin text-indigo-500" />
+                                        <span data-loading="action(generateDer)|hide">Regénérer avec les nouvelles données</span>
+                                        <span data-loading="action(generateDer)|show" class="hidden text-indigo-500">Mise à jour du document...</span>
+                                    </twig:Button>
+                                </div>
+                            </div>
+
+                        {% elseif this.isGenerating %}
+                            {# Utilisation de ton variant="secondary" pour l'état d'attente #}
+                            <twig:Button disabled variant="secondary" class="w-full">
+                                <twig:ux:icon name="tabler:loader" class="animate-spin text-indigo-500" />
+                                Génération du DER en cours...
+                            </twig:Button>
+
+                        {% else %}
+                            {# Utilisation de ton variant="dark" pour l'action principale #}
+                            <twig:Button type="button"
+                                         variant="dark"
+                                         class="w-full py-3"
+                                         data-action="live#action"
+                                         data-live-action-param="generateDer"
+                                         data-loading="action(generateDer)|addAttribute(disabled)">
+                                <twig:ux:icon name="tabler:file-invoice" data-loading="action(generateDer)|hide" class="text-slate-300" />
+                                <span data-loading="action(generateDer)|hide">Générer le DER</span>
+                                <twig:ux:icon name="tabler:loader" data-loading="action(generateDer)|show" class="hidden animate-spin text-slate-300" />
+                                <span data-loading="action(generateDer)|show" class="hidden">Lancement du processus...</span>
+                            </twig:Button>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+
+        </section>
+    {% endif %}
+</div>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Persistence;
 
 use App\Domain\Wallet\Entity\WalletTransaction;
@@ -19,7 +21,8 @@ class WalletTransactionsRepository implements WalletTransactionsRepositoryInterf
 {
     /** @var EntityRepository<WalletTransaction> */
     private readonly EntityRepository $repository;
-    public function __construct(private EntityManagerInterface $entityManager)
+
+    public function __construct(private readonly EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(WalletTransaction::class);
     }

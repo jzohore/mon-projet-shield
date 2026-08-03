@@ -1,0 +1,94 @@
+<div {{ attributes.defaults({'class': 'bg-white border border-slate-200 rounded-xl p-6 shadow-sm'}) }}>
+
+    <div class="mb-5">
+        <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+            <twig:ux:icon name="tabler:signature" class="size-5 text-indigo-600" />
+            Signature Numérique
+        </h3>
+        <p class="text-sm text-slate-500 mt-1">
+            Cette signature sera automatiquement apposée sur vos documents réglementaires (DER).
+        </p>
+    </div>
+
+    {% if not this.isEditing %}
+        {# ========================================================= #}
+        {# 🪄 ÉTAT 1 : LECTURE (Une signature existe)                #}
+        {# ========================================================= #}
+        <div class="bg-slate-50 border border-slate-200 rounded-lg p-6 text-center animate-fade-in">
+            <div class="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <twig:ux:icon name="tabler:check" class="size-5" />
+            </div>
+
+            <h4 class="font-bold text-slate-800 mb-1">Signature active</h4>
+            <p class="text-xs text-slate-500 mb-4">Votre signature est configurée et prête à être utilisée.</p>
+
+            {# Affichage de la signature actuelle #}
+            <div class="bg-white border border-slate-200 rounded-md p-2 mb-5 inline-block shadow-sm">
+                <img src="{{ this.signatureBase64 }}" class="h-16 mx-auto" alt="Signature enregistrée" />
+            </div>
+
+            <div>
+                {# 🪄 Ce bouton passe isEditing à TRUE sans recharger la page #}
+                <button type="button"
+                        data-action="live#action"
+                        data-live-action-param="activateEditing"
+                        class="text-sm text-indigo-600 font-medium hover:text-indigo-800 flex items-center justify-center mx-auto gap-1.5 transition-colors">
+                    <twig:ux:icon name="tabler:pencil" class="size-4" />
+                    Modifier ma signature
+                </button>
+            </div>
+        </div>
+
+    {% else %}
+        {# ========================================================= #}
+        {# 🪄 ÉTAT 2 : ÉDITION (Canvas Stimulus)                     #}
+        {# ========================================================= #}
+        <div data-controller="signature-pad" class="space-y-4 animate-fade-in">
+
+            <div class="relative border-2 border-dashed border-slate-300 bg-slate-50 rounded-xl overflow-hidden group">
+                <canvas data-signature-pad-target="canvas"
+                        class="w-full h-48 cursor-crosshair touch-none"
+                        style="touch-action: none;">
+                </canvas>
+
+                <button type="button"
+                        data-action="click->signature-pad#clear"
+                        class="absolute bottom-3 right-3 text-xs font-medium bg-white text-slate-600 border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm hover:bg-slate-100 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100">
+                    <twig:ux:icon name="tabler:eraser" class="size-4 inline mr-1" />
+                    Effacer
+                </button>
+            </div>
+
+            <input type="hidden"
+                   data-signature-pad-target="input"
+                   data-model="signatureBase64">
+
+            <div class="flex justify-end items-center gap-3 pt-2">
+
+                {# Bouton Annuler (Uniquement si une signature existe déjà) #}
+                {% if this.signature %}
+                    <button type="button"
+                            data-action="live#$update"
+                            data-live-is-editing-param="false"
+                            class="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-800 transition-colors">
+                        Annuler
+                    </button>
+                {% endif %}
+
+                {# Bouton Sauvegarder #}
+                <button type="button"
+                        data-action="live#action"
+                        data-live-action-param="saveSignature"
+                        data-loading="action(saveSignature)|addAttribute(disabled)"
+                        class="flex items-center px-4 py-2 bg-[#0A2540] text-white text-sm font-medium rounded-lg hover:bg-slate-900 transition-colors shadow-sm disabled:opacity-50">
+
+                    <twig:ux:icon name="tabler:device-floppy" data-loading="action(saveSignature)|hide" class="size-4 mr-2" />
+                    <twig:ux:icon name="tabler:loader" data-loading="action(saveSignature)|show" class="hidden size-4 mr-2 animate-spin" />
+
+                    <span data-loading="action(saveSignature)|hide">Enregistrer</span>
+                    <span data-loading="action(saveSignature)|show" class="hidden">Enregistrement...</span>
+                </button>
+            </div>
+        </div>
+    {% endif %}
+</div>

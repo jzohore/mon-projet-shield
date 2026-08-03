@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Kyc\DTO\Response;
 
 use App\Domain\Kyc\Entity\KycDocument;
@@ -9,24 +11,9 @@ use App\Domain\Kyc\Enum\KycFolderStatus;
 final readonly class KycFolderResponse
 {
     /**
-     * @param string $reference
-     * @param string $contactEmail
-     * @param string $contactFirstName
-     * @param string $contactLastName
-     * @param string $slugId
-     * @param KycFolderStatus $status
-     * @param array<int, array<string, mixed>> $stakeholders
-     * @param array<int, array<string, mixed>> $documents
-     * @param string|null $companyName
-     * @param string|null $siret
-     * @param string|null $siren
-     * @param \DateTimeImmutable|null $createdAt
+     * @param array<int, array<string, mixed>>                                                  $stakeholders
+     * @param array<int, array<string, mixed>>                                                  $documents
      * @param array<int, array{title: string, description: string, saveAt: \DateTimeImmutable}> $history
-     * @param string|null $shareToken
-     * @param bool $isShareTokenValid
-     * @param string|null $workspaceName
-     * @param string|null $legalCategory
-     * @param bool|null $isCertified
      */
     public function __construct(
         public string $reference,
@@ -47,7 +34,8 @@ final readonly class KycFolderResponse
         public ?string $workspaceName = null,
         public ?string $legalCategory = null,
         public ?bool $isCertified = false,
-    ) {}
+    ) {
+    }
 
     public static function fromEntity(KycFolder $kycFolder, ?string $workspaceName = null): self
     {
@@ -58,22 +46,22 @@ final readonly class KycFolderResponse
             contactLastName: $kycFolder->contactLastName,
             slugId: $kycFolder->slugId,
             status: $kycFolder->status,
-            stakeholders: $kycFolder->stakeholders->map(fn($s) => [
+            stakeholders: $kycFolder->stakeholders->map(static fn ($s): array => [
                 'fullName' => $s->firstName . ' ' . $s->lastName,
                 'roleLabel' => $s->role->getLabel(),
                 'isUbo' => $s->isUbo,
                 'percentage' => $s->ownershipPercentage,
                 'slugId' => $s->slugId,
             ])->toArray(),
-            documents: $kycFolder->documents->map(fn(KycDocument $doc) => [
-                'slugId'          => $doc->slugId,
-                'typeLabel'       => $doc->type->getLabel(), // ex: "KBIS"
-                'status'          => $doc->status->value, // ex: "PENDING"
-                'storagePath'     => $doc->storagePath,
+            documents: $kycFolder->documents->map(static fn (KycDocument $doc): array => [
+                'slugId' => $doc->slugId,
+                'typeLabel' => $doc->type->getLabel(), // ex: "KBIS"
+                'status' => $doc->status->value, // ex: "PENDING"
+                'storagePath' => $doc->storagePath,
                 'rejectionReason' => $doc->rejectionReason,
-                'expiresAt'       => $doc->expiresAt?->format('d/m/Y'),
+                'expiresAt' => $doc->expiresAt?->format('d/m/Y'),
                 'stakeholderSlug' => $doc->stakeholder?->slugId,
-                'ocrData'         => $doc->ocrData,
+                'ocrData' => $doc->ocrData,
             ])->toArray(),
             companyName: $kycFolder->companyName,
             siret: $kycFolder->siret,

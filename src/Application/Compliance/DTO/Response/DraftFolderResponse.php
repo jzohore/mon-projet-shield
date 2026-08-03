@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Compliance\DTO\Response;
 
 use App\Domain\Compliance\Entity\ComplianceFolder;
@@ -10,9 +12,10 @@ readonly class DraftFolderResponse
         public string $folderSLugId,
         public string $reference,
         public string $slugId,
-    ) {}
+    ) {
+    }
 
-    public static function fromEntity(ComplianceFolder $complianceFolder): DraftFolderResponse
+    public static function fromEntity(ComplianceFolder $complianceFolder): self
     {
         return new self(
             folderSLugId: $complianceFolder->slugId,

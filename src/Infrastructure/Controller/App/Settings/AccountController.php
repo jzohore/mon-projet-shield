@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Controller\App\Settings;
 
 use App\Domain\User\Entity\User;
@@ -30,6 +32,7 @@ class AccountController
             $twig->render('@app/settings/account.html.twig', [
                 'page_title' => 'Paramètres - Mon compte',
                 'sub_title' => 'Gérez les paramètres et les préférences de votre compte.',
+                'displayQrCodeGa' => $user->isGoogleAuthenticatorEnabled(),
             ])
         );
     }

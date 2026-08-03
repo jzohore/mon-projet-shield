@@ -1,0 +1,11 @@
+<div {{ attributes }}>
+    <button type="button"
+            data-action="live#action"
+            data-live-action-param="removeDocument"
+            data-live-document-id-param="{{ document.id }}"
+            class="ml-auto inline-flex items-center justify-center p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-rose-500"
+            title="Retirer ce document">
+        <twig:ux:icon name="tabler:trash" class="size-4" />
+        <span class="sr-only">Supprimer</span>
+    </button>
+</div>

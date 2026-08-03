@@ -14,7 +14,8 @@ readonly class UpdateUserInformationUseCase
     public function __construct(
         private UserRepositoryInterface $userRepository,
         private CurrentUserProvider $currentUserProvider,
-    ) {}
+    ) {
+    }
 
     public function __invoke(UserProfilRequest $request): void
     {

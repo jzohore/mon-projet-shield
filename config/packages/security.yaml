@@ -2,20 +2,32 @@ security:
     password_hashers:
         Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface: 'auto'
 
+    # 1. DEUX POPULATIONS DISTINCTES
     providers:
         app_user_provider:
             entity:
                 class: App\Domain\User\Entity\User
                 property: email
+        app_client_provider:
+            entity:
+                class: App\Domain\User\Entity\Client
+                property: email
+        app_admin_provider:
+            entity:
+                class: App\Domain\User\Entity\Admin
+                property: email
 
-    # 1. LA PYRAMIDE PARFAITE (Chaque rôle hérite du précédent)
+
+    # LA PYRAMIDE DES RÔLES (Préservée)
     role_hierarchy:
-        ROLE_CLIENT:           [ ROLE_USER ]
+        # --- L'arbre métier ---
+        ROLE_CLIENT: [ ROLE_USER ]
         ROLE_WORKSPACE_COLLAB: [ ROLE_USER ]
-        ROLE_WORKSPACE_ADMIN:  [ ROLE_WORKSPACE_COLLAB ]
-        # L'admin a les droits du Workspace Admin + le droit d'usurper une identité pour le support
-        ROLE_ADMIN:            [ ROLE_WORKSPACE_ADMIN, ROLE_ALLOWED_TO_SWITCH ]
-        ROLE_SUPER_ADMIN:      [ ROLE_ADMIN ]
+        ROLE_WORKSPACE_ADMIN: [ ROLE_WORKSPACE_COLLAB ]
+
+        # --- L'arbre système ---
+        ROLE_ADMIN: [ ROLE_USER, ROLE_ALLOWED_TO_SWITCH ]
+        ROLE_SUPER_ADMIN: [ ROLE_ADMIN ]
 
     firewalls:
         image_resolver:
@@ -25,7 +37,54 @@ security:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
 
+        # 🟦 FIREWALL 1 : LE PORTAIL CLIENT FINAL (Magic Link Dédié)
+        admin:
+            pattern: ^/admin
+            provider: app_admin_provider
+            lazy: true
+            custom_authenticator:
+                - App\Infrastructure\Security\MagicAdminLinkAuthenticator
+            form_login:
+                login_path: app_login
+                check_path: app_admin_verify
+                enable_csrf: true
+                default_target_path: admin_dashboard
+                always_use_default_target_path: true
+            logout:
+                path: app_admin_logout
+                target: app_login
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+
+        # 🟦 FIREWALL 1 : LE PORTAIL CLIENT FINAL (Magic Link Dédié)
+        portal:
+            pattern: ^/portal
+            provider: app_client_provider
+            lazy: true
+            custom_authenticator:
+                - App\Infrastructure\Security\MagicClientLinkAuthenticator
+            form_login:
+                login_path: app_login
+                check_path: app_portal_verify
+                enable_csrf: true
+                default_target_path: app_portal_dashboard
+                always_use_default_target_path: true
+            logout:
+                path: app_portal_logout
+                target: app_login
+            login_throttling:
+                max_attempts: 5
+                interval: '15 minutes'
+
+            two_factor:
+                auth_form_path: 2fa_login
+                check_path: 2fa_login_check
+                trusted_parameter_name: _trusted
+
+        # 🟪 FIREWALL 2 : L'APPLICATION DES CGP & ADMINS (Ton firewall principal existant)
         main:
+            pattern: ^/
             lazy: true
             provider: app_user_provider
 
@@ -46,22 +105,32 @@ security:
                 max_attempts: 3
                 interval: '15 minutes'
 
-            # 2. ACTIVATION DU SWITCH USER (Pour le support technique Kysure)
+            two_factor:
+                auth_form_path: 2fa_login
+                check_path: 2fa_login_check
+                trusted_parameter_name: _trusted
+
             switch_user: true
 
-            # NOTE POUR PLUS TARD : Activer la 2FA ici (Vital pour une RegTech)
-
+    # 2. VERROUILLAGE CHIRURGICAL DES ROUTES
     access_control:
-        # Les routes publiques (Accessibles sans être connecté)
-        - { path: ^/portal/, roles: PUBLIC_ACCESS }
+        # Routes publiques absolues
+        - { path: ^/portal/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/stripe/webhook, roles: PUBLIC_ACCESS }
-        - { path: ^/api/track, roles: PUBLIC_ACCESS } # 3. La route de tracking Stimulus !
+        - { path: ^/api/track, roles: PUBLIC_ACCESS }
         - { path: ^/login, roles: PUBLIC_ACCESS }
 
-        # Les routes protégées (Grâce à la hiérarchie propre, ROLE_USER suffit)
-        - { path: ^/2fa/, roles: IS_AUTHENTICATED_2FA_IN_PROGRESS }
-        - { path: ^/mon-compte/, roles: ROLE_CLIENT } # L'admin y aura accès grâce à la hiérarchie !
+        # Double authentification en cours
+        - { path: ^/2fa, roles: IS_AUTHENTICATED_2FA_IN_PROGRESS }
+
+        # Protection étanche du Portail Client
+        - { path: ^/portal, roles: ROLE_CLIENT }
+
+        # Protection de l'espace utilisateur et de l'application CGP
         - { path: ^/app/, roles: ROLE_USER }
+
+        # Protection de l'espace administrateur'
+        - { path: ^/admin, roles: ROLE_SUPER_ADMIN }
 
 when@test:
     security:

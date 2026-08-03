@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Ocr\Parser;
 
-use App\Domain\Kyc\Enum\DocumentType;
+use App\Domain\Compliance\Enum\DocumentType;
 use Mindee\Input\InferenceParameters;
 use Mindee\Input\PathInput;
 use Mindee\Parsing\V2\InferenceResponse;
@@ -13,7 +15,7 @@ class IdCardParser extends AbstractMindeeParser
 {
     public function supports(DocumentType $type): bool
     {
-        return $type === DocumentType::ID_CARD;
+        return DocumentType::ID_CARD === $type;
     }
 
     protected function callApi(string $absolutePath): object

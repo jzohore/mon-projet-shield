@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Twig\Components\Invitation;
 
 use App\Application\Workspace\UseCase\Invitation\RevokeWorkspaceInvitationUseCase;
 use App\Domain\Shared\Exception\AbstractDomainException;
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
-use Exception;
 use Psr\Log\LoggerInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -25,10 +26,12 @@ class RevokeWorkspaceInvitationComponent
 
     #[LiveProp]
     public WorkspaceInvitation $workspaceInvitation;
+
     public function __construct(
         private readonly RevokeWorkspaceInvitationUseCase $revokeWorkspaceInvitationUseCase,
         private readonly LoggerInterface $logger,
-    ) {}
+    ) {
+    }
 
     #[LiveAction]
     public function revokeInvitation(LiveResponder $liveResponder): void
@@ -47,7 +50,7 @@ class RevokeWorkspaceInvitationComponent
             ]);
 
             $this->addLiveFlash('error', $e->getMessage());
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             $this->logger->critical('Crash système lors de la création d\'une invitation', [
                 'email' => $this->workspaceInvitation->email,
                 'error' => $e->getMessage(),

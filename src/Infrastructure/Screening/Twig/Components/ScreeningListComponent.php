@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Screening\Twig\Components;
 
 use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
@@ -31,14 +33,14 @@ class ScreeningListComponent
     public function previousPage(): void
     {
         if ($this->page > 1) {
-            $this->page--;
+            --$this->page;
         }
     }
 
     #[LiveAction]
     public function nextPage(): void
     {
-        $this->page++;
+        ++$this->page;
     }
 
     #[LiveProp]
@@ -47,7 +49,8 @@ class ScreeningListComponent
     public function __construct(
         private readonly GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
         private readonly ScreeningAuditRepositoryInterface $screeningAuditRepository,
-    ) {}
+    ) {
+    }
 
     /**
      * @return Pagerfanta<ScreeningAudit>

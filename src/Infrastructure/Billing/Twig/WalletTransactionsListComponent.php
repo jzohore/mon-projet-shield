@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Twig;
 
 use App\Domain\User\Repository\UserRepositoryInterface;
@@ -34,21 +36,22 @@ class WalletTransactionsListComponent
     public function previousPage(): void
     {
         if ($this->page > 1) {
-            $this->page--;
+            --$this->page;
         }
     }
 
     #[LiveAction]
     public function nextPage(): void
     {
-        $this->page++;
+        ++$this->page;
     }
 
     public function __construct(
         public readonly WalletTransactionsRepositoryInterface $walletTransactionsRepository,
         public readonly UserRepositoryInterface $userRepository,
         private readonly CurrentWorkspaceProvider $workspaceProvider,
-    ) {}
+    ) {
+    }
 
     /**
      * @return Pagerfanta<WalletTransaction>

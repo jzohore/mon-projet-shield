@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Screening\Event;
 
 use App\Domain\Screening\Entity\ScreeningAudit;
@@ -13,5 +15,6 @@ readonly class ScreeningCompletedEvent
         public User $user,
         public ScreeningAudit $screeningAudit,
         public int $cost,
-    ) {}
+    ) {
+    }
 }

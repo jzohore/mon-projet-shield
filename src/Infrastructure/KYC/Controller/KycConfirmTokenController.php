@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Controller;
 
 use App\Application\Kyc\UseCase\GetKycFolderByTokenUseCase;
@@ -15,7 +17,8 @@ final readonly class KycConfirmTokenController
 {
     public function __construct(
         private GetKycFolderByTokenUseCase $getKycFolderByTokenUseCase,
-    ) {}
+    ) {
+    }
 
     public function __invoke(
         string $token,
@@ -24,7 +27,6 @@ final readonly class KycConfirmTokenController
     ): RedirectResponse {
         $kycFolder = ($this->getKycFolderByTokenUseCase)($token);
         if (!$kycFolder->isShareTokenValid) {
-
             return new RedirectResponse($urlGenerator->generate('app_login'));
         }
         $requestStack->getSession()->set('kyc_slug_id', $kycFolder->slugId);

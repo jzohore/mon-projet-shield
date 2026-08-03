@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Screening\Twig\Components;
 
 use App\Application\Screening\UseCase\GenerateScreeningPdfUseCase;
@@ -21,8 +23,8 @@ use Webmozart\Assert\Assert;
 )]
 class ScreeningPdfActionComponent
 {
-    use DefaultActionTrait;
     use ComponentToolsTrait;
+    use DefaultActionTrait;
 
     #[LiveProp]
     public ?ScreeningAudit $audit = null;
@@ -41,7 +43,8 @@ class ScreeningPdfActionComponent
         private readonly WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
         private readonly ShareDocumentUseCase $shareDocumentUseCase,
         private readonly LoggerInterface $logger,
-    ) {}
+    ) {
+    }
 
     /**
      * @return array<int, mixed>
@@ -76,7 +79,7 @@ class ScreeningPdfActionComponent
 
             $this->isDocumentSent = true;
             $this->selectedEmails = [];
-        } catch (\DomainException $e) {
+        } catch (\DomainException) {
             // Gérer l'erreur si besoin
         } catch (ExceptionInterface $e) {
             $this->logger->error('Erreur métier', ['error' => $e->getMessage()]);

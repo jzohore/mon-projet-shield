@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 // dev.decrypt.private on Mon, 04 May 2026 14:48:00 +0000
 
 // SYMFONY_DECRYPTION_SECRET=FDXHgBEvxiefoMKWfKg7f5eAR2S2YSk8g9fiyGq5iUEIBTj/mYOBI1hz40c4yt9xb7sn9ruQCtLkQoQfFSCAOA==

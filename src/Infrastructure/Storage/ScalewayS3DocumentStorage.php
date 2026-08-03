@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Storage;
 
 use App\Domain\Port\DocumentStorageInterface;
@@ -17,26 +19,28 @@ readonly class ScalewayS3DocumentStorage implements DocumentStorageInterface
         private FilesystemOperator $kycStorage,
         private SluggerInterface $slugger,
         private LoggerInterface $logger,
-    ) {}
+    ) {
+    }
 
-    public function store(UploadedFile $file, string $directory): string
+    public function store(UploadedFile $file, string $directory, ?string $filename = null): string
     {
-        // 1. Génération du nom sécurisé (Identique à ta version locale)
-        $originalFilename = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $safeFilename = $this->slugger->slug($originalFilename);
-        $fileName = $safeFilename . '-' . uniqid() . '.' . $file->guessExtension();
+        // 🛡️ Si un nom de fichier est explicitement fourni (ex: chunks audio
+        // "000012.chunk"), on l'utilise tel quel pour garder un ordre déterministe.
+        // Sinon on garde le comportement existant (slug + uniqid).
+        if (null !== $filename) {
+            $fileName = $filename;
+        } else {
+            $originalFilename = pathinfo($file->getClientOriginalName(), \PATHINFO_FILENAME);
+            $safeFilename = $this->slugger->slug($originalFilename);
+            $fileName = $safeFilename . '-' . uniqid() . '.' . $file->guessExtension();
+        }
 
         $targetPath = $directory . '/' . $fileName;
 
         try {
-            // 2. On ouvre le fichier en mode "stream" (lecture continue)
-            // C'est VITAL pour S3 : ça évite de charger un gros PDF entièrement dans la RAM de ton serveur Hetzner
             $stream = fopen($file->getPathname(), 'r');
-
-            // 3. Flysystem envoie le flux directement sur Scaleway S3
             $this->kycStorage->writeStream($targetPath, $stream);
 
-            // On ferme proprement le flux
             if (is_resource($stream)) {
                 fclose($stream);
             }
@@ -46,7 +50,7 @@ readonly class ScalewayS3DocumentStorage implements DocumentStorageInterface
                 'error' => $e->getMessage(),
             ]);
 
-            throw new \RuntimeException("Erreur lors de la sauvegarde du document KYC sur le cloud sécurisé.");
+            throw new \RuntimeException('Erreur lors de la sauvegarde du document sur le cloud sécurisé.', $e->getCode(), $e);
         }
 
         return $targetPath;
@@ -55,16 +59,12 @@ readonly class ScalewayS3DocumentStorage implements DocumentStorageInterface
     public function delete(string $path): void
     {
         try {
-            // 1. Flysystem vérifie si le fichier existe sur S3
             if ($this->kycStorage->fileExists($path)) {
-
-                // 2. Suppression via l'API S3
                 $this->kycStorage->delete($path);
-
-                $this->logger->info("Ancien document KYC supprimé physiquement de Scaleway S3 : " . $path);
+                $this->logger->info('Document supprimé physiquement de Scaleway S3 : ' . $path);
             }
         } catch (FilesystemException $e) {
-            $this->logger->error("Impossible de supprimer l'ancien document KYC sur S3 : " . $path, [
+            $this->logger->error('Impossible de supprimer le document sur S3 : ' . $path, [
                 'error' => $e->getMessage(),
             ]);
         }
@@ -72,8 +72,36 @@ readonly class ScalewayS3DocumentStorage implements DocumentStorageInterface
 
     public function getTemporaryUrl(string $path): string
     {
-        // On demande à Flysystem (via le client S3) de générer un lien public temporaire
-        // Valable 20 minutes ici
         return $this->kycStorage->temporaryUrl($path, new \DateTime('+20 minutes'));
+    }
+
+    public function listFiles(string $directory): array
+    {
+        try {
+            return $this->kycStorage
+                ->listContents($directory, false) // false = non récursif
+                ->filter(static fn ($item) => $item->isFile())
+                ->map(static fn ($item) => $item->path())
+                ->toArray();
+        } catch (FilesystemException $e) {
+            $this->logger->error('Impossible de lister le dossier sur S3 : ' . $directory, [
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new \RuntimeException('Erreur lors de la lecture du dossier sur le cloud sécurisé.', $e->getCode(), $e);
+        }
+    }
+
+    public function getContents(string $path): string
+    {
+        try {
+            return $this->kycStorage->read($path);
+        } catch (FilesystemException $e) {
+            $this->logger->error('Impossible de lire le fichier sur S3 : ' . $path, [
+                'error' => $e->getMessage(),
+            ]);
+
+            throw new \RuntimeException('Erreur lors de la lecture du document sur le cloud sécurisé.', $e->getCode(), $e);
+        }
     }
 }

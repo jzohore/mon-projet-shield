@@ -1,5 +1,4 @@
 <div {{ attributes }}>
-
     {# CARTE PRINCIPALE : RECHERCHE OU VÉRIFICATION #}
     <div class="bg-white rounded-md border border-slate-200 shadow-sm p-6 sm:p-8 mb-8">
 
@@ -44,7 +43,9 @@
                                         data-live-action-param="company"
                                         data-live-name-param="{{ company.nom_complet }}"
                                         data-live-siret-param="{{ company.siege.siret }}"
+                                        data-live-siren-param="{{ company.siren }}"
                                         data-live-address-param="{{ company.siege.adresse|default('') }}"
+                                        data-live-etat-administratif-param="{{ company.etat_administratif|default('') }}"
                                         data-live-industry-param="{{ company.siege.activite_principale }}"
                                         class="p-4 hover:bg-slate-50 cursor-pointer transition-colors duration-150 group border-l-2 border-transparent hover:border-blue-600"
                                     >
@@ -69,10 +70,16 @@
                     </div>
                 {% endif %}
             </div>
+            {% if this.showMessage %}
+                <twig:Alert class="bg-red-50 text-red-900 border-red-20 mt-3">
+                    <twig:ux:icon name="lucide:circle-alert" />
+                    <twig:Alert:Title>Problème</twig:Alert:Title>
+                    <twig:Alert:Description>
+                        {{ message }}
+                    </twig:Alert:Description>
+                </twig:Alert>
 
-            {# ============================================================== #}
-            {# ÉTAT 2 : MODE FORMULAIRE (ENTREPRISE SÉLECTIONNÉE)             #}
-            {# ============================================================== #}
+            {% endif %}
         {% else %}
 
             <div class="mb-6">
@@ -83,7 +90,6 @@
                         Changer
                     </button>
                 </div>
-
                 <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-3 flex items-start gap-3 mb-6">
                     <div class="mt-0.5 w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
                         <twig:ux:icon name="lucide:check" class="w-3.5 h-3.5 text-emerald-600" />

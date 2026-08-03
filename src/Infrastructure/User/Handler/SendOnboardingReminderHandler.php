@@ -16,16 +16,12 @@ use Webmozart\Assert\Assert;
 #[AsMessageHandler]
 final readonly class SendOnboardingReminderHandler
 {
-    /**
-     * @param UserRepositoryInterface $userRepository
-     * @param UrlGeneratorInterface $router
-     * @param MailerInterface $mailer
-     */
     public function __construct(
         private UserRepositoryInterface $userRepository,
         private UrlGeneratorInterface $router,
-        private MailerInterface $mailer
-    ) {}
+        private MailerInterface $mailer,
+    ) {
+    }
 
     /**
      * @throws TransportExceptionInterface

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Listener\Subscription\Canceled;
 
 use App\Domain\Billing\Event\SubscriptionCanceledEvent;
@@ -12,7 +14,8 @@ readonly class SubscriptionCanceledStripeListener
 {
     public function __construct(
         private StripeService $stripeService,
-    ) {}
+    ) {
+    }
 
     public function __invoke(SubscriptionCanceledEvent $event): void
     {

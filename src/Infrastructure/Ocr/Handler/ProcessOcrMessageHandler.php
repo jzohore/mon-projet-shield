@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Ocr\Handler;
 
+use App\Domain\Compliance\Repository\ComplianceDocumentRepositoryInterface;
 use App\Domain\Kyc\Validator\DocumentValidator;
 use App\Domain\Port\DocumentStorageInterface;
 use App\Domain\Port\OcrProviderInterface;
-use App\Infrastructure\KYC\Persistence\KycDocumentRepository;
 use App\Infrastructure\Ocr\Message\ProcessOcrMessage;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Webmozart\Assert\Assert;
@@ -14,16 +16,17 @@ use Webmozart\Assert\Assert;
 final readonly class ProcessOcrMessageHandler
 {
     public function __construct(
-        private KycDocumentRepository $repository,
+        private ComplianceDocumentRepositoryInterface $repository,
         private OcrProviderInterface $ocrProvider,
         private DocumentStorageInterface $storage,
         private DocumentValidator $validator,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ProcessOcrMessage $message): void
     {
         // 1. Récupération & Assertion
-        $doc = $this->repository->findBySlugId($message->documentSlugId);
+        $doc = $this->repository->findById($message->documentSlugId);
         Assert::notNull($doc, sprintf('Document introuvable pour le slug: %s', $message->documentSlugId));
 
         // 2. Chemin du fichier & Assertion
@@ -39,8 +42,8 @@ final readonly class ProcessOcrMessageHandler
 
         // 4. Vérification métier : L'OCR a-t-il vraiment lu quelque chose ?
         // array_filter enlève les valeurs nulles. S'il ne reste rien, l'extraction a échoué.
-        if (empty(array_filter($extractedData, fn($value) => !empty($value)))) {
-            $doc->reject("Le document est illisible ou ne correspond pas au type attendu.");
+        if ([] === array_filter($extractedData, static fn ($value): bool => !empty($value))) {
+            $doc->reject('Le document est illisible ou ne correspond pas au type attendu.');
         } else {
             // 1. On sauvegarde temporairement les datas extraites dans l'entité
             $doc->setExtractedData($extractedData);

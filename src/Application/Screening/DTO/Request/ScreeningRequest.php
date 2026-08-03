@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Screening\DTO\Request;
 
 use Symfony\Component\Validator\Constraints as Assert;

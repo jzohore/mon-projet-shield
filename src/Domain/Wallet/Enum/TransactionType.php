@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Wallet\Enum;
 
 enum TransactionType: string
@@ -35,7 +37,7 @@ enum TransactionType: string
     /**
      * Permet de vérifier s'il s'agit d'une entrée ou d'une sortie.
      * Très pratique pour valider que le montant ($amount) a le bon signe,
-     * ou pour l'UI (ex: if transaction.type.isCredit ? 'text-green-600' : 'text-slate-900')
+     * ou pour l'UI (ex: if transaction.type.isCredit ? 'text-green-600' : 'text-slate-900').
      */
     public function isCredit(): bool
     {

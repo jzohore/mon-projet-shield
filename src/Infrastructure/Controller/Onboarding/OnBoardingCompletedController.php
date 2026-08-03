@@ -20,11 +20,13 @@ readonly class OnBoardingCompletedController
     public function __construct(
         private UpdateOnboardingStatusUseCase $updateOnboardingStatusUseCase,
         private UrlGeneratorInterface $urlGenerator,
-    ) {}
+    ) {
+    }
 
     public function __invoke(): RedirectResponse
     {
         ($this->updateOnboardingStatusUseCase)(OnboardingStatus::COMPLETED);
+
         return new RedirectResponse($this->urlGenerator->generate('app_dashboard'));
     }
 }

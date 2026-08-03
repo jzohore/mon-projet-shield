@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Tracking\DTO\Request;
 
 use Symfony\Component\Validator\Constraints as Assert;
@@ -19,7 +21,7 @@ class ClickTrackingDto
 
     #[Assert\Regex(
         pattern: '/^\d+x\d+$/',
-        message: "La résolution doit être au format LargeurxHauteur (ex: 1920x1080)."
+        message: 'La résolution doit être au format LargeurxHauteur (ex: 1920x1080).'
     )]
     public ?string $screenResolution = null;
 
@@ -35,7 +37,7 @@ class ClickTrackingDto
     /**
      * @var array<string, string>|null
      */
-    #[Assert\Type(type: 'array', message: "Les données UTM doivent être un tableau.")]
+    #[Assert\Type(type: 'array', message: 'Les données UTM doivent être un tableau.')]
     public ?array $utmData = null;
 
     #[Assert\Length(max: 255)]

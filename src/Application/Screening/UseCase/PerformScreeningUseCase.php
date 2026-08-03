@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Screening\UseCase;
 
 use App\Application\Screening\DTO\Request\ScreeningRequest;
@@ -13,9 +15,7 @@ use App\Domain\Screening\Repository\ScreeningAuditRepositoryInterface;
 use App\Domain\Wallet\Enum\TransactionType;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
-use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
-use Throwable;
 
 readonly class PerformScreeningUseCase
 {
@@ -23,10 +23,10 @@ readonly class PerformScreeningUseCase
         private ScreeningAuditRepositoryInterface $auditRepository,
         private OpenSanctionsClientInterface $openSanctionsClient,
         private EventDispatcherInterface $eventDispatcher,
-        private LoggerInterface $logger,
         private CurrentUserProvider $currentUserProvider,
         private CurrentWorkspaceProvider $currentWorkspaceProvider,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ScreeningRequest $request): ScreeningResponse
     {
@@ -36,7 +36,7 @@ readonly class PerformScreeningUseCase
 
         $recentAudit = $this->auditRepository->findRecentIdenticalSearch($workspace, $request->nameToSearch, 24);
 
-        if (null !== $recentAudit) {
+        if ($recentAudit instanceof ScreeningAudit) {
             return ScreeningResponse::fromEntity($recentAudit, isCached: true);
         }
 
@@ -45,27 +45,22 @@ readonly class PerformScreeningUseCase
         }
 
         $apiResult = $this->openSanctionsClient->search($request->nameToSearch, $request->schemaToSearch);
-        try {
-            if ($request->chargeCredit) {
-                $workspace->debit(
-                    action: CreditAction::SCREENING_SEARCH,
-                    type: TransactionType::SCREENING_SEARCH->value,
-                );
-            }
-
-            $audit = ScreeningAudit::create(
-                workspace: $workspace,
-                ower: $user,
-                query: $request->nameToSearch,
-                results: $apiResult['alerts'],
-                totalMatches: $apiResult['total_matches'],
+        if ($request->chargeCredit) {
+            $workspace->debit(
+                action: CreditAction::SCREENING_SEARCH,
+                type: TransactionType::SCREENING_SEARCH->value,
             );
-
-            $this->auditRepository->save($audit);
-        } catch (Throwable $e) {
-            $this->logger->error('Error during screening: ' . $e->getMessage());
-            throw $e;
         }
+
+        $audit = ScreeningAudit::create(
+            workspace: $workspace,
+            ower: $user,
+            query: $request->nameToSearch,
+            results: $apiResult['alerts'],
+            totalMatches: $apiResult['total_matches'],
+        );
+
+        $this->auditRepository->save($audit);
 
         $this->eventDispatcher->dispatch(new ScreeningCompletedEvent(
             workspace: $workspace,

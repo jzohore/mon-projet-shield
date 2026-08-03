@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Kernel;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -9,10 +11,11 @@ if ($trustedProxies = $_SERVER['TRUSTED_PROXIES'] ?? $_ENV['TRUSTED_PROXIES'] ??
 }
 
 // Cette partie est CRUCIALE pour les liens magiques / emails
-if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && 'https' === $_SERVER['HTTP_X_FORWARDED_PROTO']) {
     $_SERVER['HTTPS'] = 'on';
     $_SERVER['SERVER_PORT'] = 443;
 }
-return function (array $context) {
+
+return static function (array $context) {
     return new Kernel($context['APP_ENV'], (bool) $context['APP_DEBUG']);
 };

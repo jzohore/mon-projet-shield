@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 /**
  * Returns the importmap for this application.
  *
@@ -16,22 +18,25 @@ return [
         'path' => './assets/app.js',
         'entrypoint' => true,
     ],
-    '@hotwired/stimulus' => [
-        'version' => '3.2.2',
-    ],
     '@symfony/stimulus-bundle' => [
         'path' => './vendor/symfony/stimulus-bundle/assets/dist/loader.js',
     ],
-    '@hotwired/turbo' => [
-        'version' => '7.3.0',
-    ],
     '@symfony/ux-live-component' => [
         'path' => './vendor/symfony/ux-live-component/assets/dist/live_controller.js',
+    ],
+    '@hotwired/stimulus' => [
+        'version' => '3.2.2',
+    ],
+    '@hotwired/turbo' => [
+        'version' => '8.0.23',
     ],
     'chart.js' => [
         'version' => '4.5.1',
     ],
     '@kurkle/color' => [
-        'version' => '0.3.4',
+        'version' => '0.4.0',
+    ],
+    'signature_pad' => [
+        'version' => '5.1.3',
     ],
 ];

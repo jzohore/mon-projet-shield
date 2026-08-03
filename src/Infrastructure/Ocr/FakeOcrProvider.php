@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Ocr;
 
-use App\Domain\Kyc\Enum\DocumentType;
+use App\Domain\Compliance\Enum\DocumentType;
 use App\Domain\Port\OcrProviderInterface;
 
 class FakeOcrProvider implements OcrProviderInterface

@@ -26,10 +26,8 @@ final class OnBoardingProfileController
     public function __invoke(
         Environment $twig,
         #[CurrentUser]
-        User
-        $user,
+        User $user,
     ): Response {
-
         return new Response(
             $twig->render('@app/onboarding/profile.html.twig', [
                 'user_slug_id' => $user->slugId,

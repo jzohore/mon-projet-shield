@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Kyc\Validator;
 
 use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
@@ -20,7 +22,8 @@ final class UniqueKycAwaitingClientValidator extends ConstraintValidator
         private readonly GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
         private readonly UserRepositoryInterface $userRepository,
         private readonly Security $security,
-    ) {}
+    ) {
+    }
 
     public function validate(mixed $value, Constraint $constraint): void
     {
@@ -46,8 +49,8 @@ final class UniqueKycAwaitingClientValidator extends ConstraintValidator
             KycFolderStatus::getActiveStatuses(),
             $workspace->slugId
         );
-        if ($existingFolder !== null) {
-            if ($constraint->ignoreSlugId !== null && $existingFolder->slugId === $constraint->ignoreSlugId) {
+        if ($existingFolder instanceof \App\Domain\Kyc\Entity\KycFolder) {
+            if (null !== $constraint->ignoreSlugId && $existingFolder->slugId === $constraint->ignoreSlugId) {
                 return;
             }
 
@@ -55,6 +58,5 @@ final class UniqueKycAwaitingClientValidator extends ConstraintValidator
                 ->setParameter('{{ value }}', (string) $value)
                 ->addViolation();
         }
-
     }
 }

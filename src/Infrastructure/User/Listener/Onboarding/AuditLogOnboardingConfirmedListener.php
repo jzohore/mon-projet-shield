@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Listener\Onboarding;
 
 use App\Domain\AuditLog\Entity\AuditLog;
 use App\Domain\AuditLog\Enum\AuditEventType;
 use App\Domain\AuditLog\Repository\AuditLogRepositoryInterface;
 use App\Domain\User\Event\UserOnboardingCompletedEvent;
-use Exception;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Webmozart\Assert\Assert;
 
@@ -15,10 +16,11 @@ readonly class AuditLogOnboardingConfirmedListener
 {
     public function __construct(
         private AuditLogRepositoryInterface $auditLogRepository,
-    ) {}
+    ) {
+    }
 
     /**
-     * @throws Exception
+     * @throws \Exception
      */
     public function __invoke(UserOnboardingCompletedEvent $event): void
     {
@@ -31,11 +33,10 @@ readonly class AuditLogOnboardingConfirmedListener
         $audit = AuditLog::initiate(
             eventName: AuditEventType::ONBOARDING_COMPLETED,
             payload: [
-                'email' => $user->email,
-                'first_name' => $user->firstName,
+                'actor_name' => $user->getFullName(),
+                'actor_email' => $user->email,
                 'workspace_name' => $workspace->name,
             ],
-            actor: $user->id->toString(),
             workspace: $workspace,
         );
 

@@ -1,0 +1,28 @@
+<div {{ attributes }}>
+    {% include 'components/partials/_live_alerts.html.twig' with {
+        message: this.actionMessage|default(null),
+        type: this.actionMessageType|default('success')
+    } %}
+    <div class="flex justify-end">
+        <div class="relative w-full sm:w-48">
+            <select data-model="type"
+                    data-action="live#action"
+                    data-live-action-param="addDocument"
+                    aria-label="Filtrer par statut"
+                    class="block w-full pl-4 pr-8 py-2 border border-slate-200 rounded-lg leading-5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-violet-500 sm:text-sm transition-colors shadow-sm appearance-none cursor-pointer">
+                <option value="">Ajouter un document</option>
+
+                {# Boucle sur ton Enum exposée par le composant PHP #}
+                {% for status in this.documentType %}
+                    <option value="{{ status.value }}">
+                        {{ status.label }}
+                    </option>
+                {% endfor %}
+            </select>
+            {# Petite flèche custom pour remplacer celle par défaut du select #}
+            <div class="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none text-slate-400">
+                <twig:ux:icon name="tabler:chevron-down" class="size-4" />
+            </div>
+        </div>
+    </div>
+</div>

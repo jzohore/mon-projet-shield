@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Billing\DTO\Response;
 
 use App\Domain\Product\Entity\Product;
@@ -15,8 +17,9 @@ readonly class ProductResponse
         public string $stripePriceId,
         public bool $isRecommended,
         public \DateTimeImmutable $createdAt,
-        public ?\DateTimeImmutable $updatedAt
-    ) {}
+        public ?\DateTimeImmutable $updatedAt,
+    ) {
+    }
 
     /**
      * Transforme l'Entité du domaine en un objet de réponse simplifié.
@@ -37,7 +40,7 @@ readonly class ProductResponse
     }
 
     /**
-     * Helper optionnel très pratique pour afficher le prix en euros dans Twig (ex: 180.00 €)
+     * Helper optionnel très pratique pour afficher le prix en euros dans Twig (ex: 180.00 €).
      */
     public function getPriceInEuros(): float
     {

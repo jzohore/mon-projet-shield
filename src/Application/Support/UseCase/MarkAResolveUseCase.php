@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Support\UseCase;
 
 use App\Domain\Support\Entity\SupportThread;
@@ -8,8 +10,9 @@ use App\Domain\Support\Repository\SupportThreadRepositoryInterface;
 final readonly class MarkAResolveUseCase
 {
     public function __construct(
-        private SupportThreadRepositoryInterface $threadRepository
-    ) {}
+        private SupportThreadRepositoryInterface $threadRepository,
+    ) {
+    }
 
     public function execute(SupportThread $thread): void
     {

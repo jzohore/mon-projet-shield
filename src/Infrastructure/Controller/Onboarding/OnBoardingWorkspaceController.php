@@ -26,10 +26,8 @@ final class OnBoardingWorkspaceController
     public function __invoke(
         Environment $twig,
         #[CurrentUser]
-        User
-        $user,
+        User $user,
     ): Response {
-
         return new Response(
             $twig->render('@app/onboarding/workspace.html.twig', [
                 'page_title' => 'Trouvons votre entreprise',

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Billing\DTO\Response;
 
 readonly class InvoiceHistoryItem
@@ -8,6 +10,7 @@ readonly class InvoiceHistoryItem
         public \DateTimeImmutable $date,
         public float $amount,
         public ?string $status,
-        public ?string $pdfUrl
-    ) {}
+        public ?string $pdfUrl,
+    ) {
+    }
 }

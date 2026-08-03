@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Billing\Event;
 
 use App\Domain\User\Entity\User;
@@ -13,6 +15,7 @@ class CreditPurchasedEvent extends Event
         public User $user,
         public Workspace $workspace,
         public WalletTransaction $transaction,
-        public ?string $invoiceUrl = null
-    ) {}
+        public ?string $invoiceUrl = null,
+    ) {
+    }
 }

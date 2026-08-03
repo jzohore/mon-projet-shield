@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr" class="antialiased">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}Espace Sécurisé | KYSURE{% endblock %}</title>
+    <meta name="theme-color" content="#f8fafc">
+    <meta name="robots" content="noindex, nofollow">
+
+    {% block stylesheets %}
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    {% endblock %}
+
+    {% block javascripts %}
+        {% block importmap %}{{ importmap('app') }}{% endblock %}
+    {% endblock %}
+</head>
+
+<body class="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col relative selection:bg-emerald-100 selection:text-emerald-900 z-0">
+
+{# Grille d'arrière-plan #}
+<div class="absolute inset-0 z-[-1] h-full w-full bg-slate-50
+        bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)]
+        bg-[size:24px_24px]
+        [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]">
+</div>
+
+{# Lien d'évitement A11Y #}
+<a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:z-[100] focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-[#0B261C] focus:text-white focus:font-medium focus:rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#0B261C]">
+    Aller au contenu principal
+</a>
+
+{% block flash_messages %}
+    {# ... Ton bloc flash messages actuel ... #}
+{% endblock %}
+
+{# On injecte ici le layout intermédiaire #}
+{% block layout %}{% endblock %}
+
+{% block footer %}
+    <footer class="mt-auto py-6 border-t border-slate-200/60 bg-transparent">
+        {# ... Ton footer ... #}
+    </footer>
+{% endblock %}
+{% include '@app/partials/_flashes.html.twig' %}
+
+</body>
+</html>

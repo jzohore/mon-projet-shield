@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Pdf;
 
 use Symfony\Component\Mime\Part\DataPart;
@@ -17,12 +19,12 @@ readonly class GotenbergPdfGenerator implements PdfGeneratorInterface
         private Environment $twig,
         private HttpClientInterface $httpClient,
         private string $gotenbergUrl,
-    ) {}
+    ) {
+    }
 
     /**
-     * @param string $template
      * @param array<string, mixed> $context
-     * @return string
+     *
      * @throws ClientExceptionInterface
      * @throws RedirectionExceptionInterface
      * @throws ServerExceptionInterface
@@ -63,13 +65,12 @@ readonly class GotenbergPdfGenerator implements PdfGeneratorInterface
             $pdfContent = $response->getContent();
 
             return $pdfContent;
-
         } catch (TransportExceptionInterface $e) {
             // S'il y a un problème réseau (timeout, gotenberg éteint...)
-            throw new \Exception("Erreur réseau vers Gotenberg : " . $e->getMessage());
+            throw new \Exception('Erreur réseau vers Gotenberg : ' . $e->getMessage(), $e->getCode(), $e);
         } catch (\Symfony\Contracts\HttpClient\Exception\HttpExceptionInterface $e) {
             // Si Gotenberg plante en essayant de rendre le PDF (ex: HTML invalide)
-            throw new \Exception("Gotenberg a planté (Erreur " . $e->getResponse()->getStatusCode() . ") : " . $e->getResponse()->getContent(false));
+            throw new \Exception('Gotenberg a planté (Erreur ' . $e->getResponse()->getStatusCode() . ') : ' . $e->getResponse()->getContent(false), $e->getCode(), $e);
         }
     }
 }

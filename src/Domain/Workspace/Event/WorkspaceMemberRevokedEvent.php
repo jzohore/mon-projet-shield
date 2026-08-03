@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Workspace\Event;
 
 use App\Domain\User\Entity\User;
@@ -11,5 +13,6 @@ readonly class WorkspaceMemberRevokedEvent
         public User $revokedUser,
         public Workspace $workspace,
         public User $actor,
-    ) {}
+    ) {
+    }
 }

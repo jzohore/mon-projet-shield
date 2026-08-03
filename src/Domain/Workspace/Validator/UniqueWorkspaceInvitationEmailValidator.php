@@ -17,7 +17,8 @@ final class UniqueWorkspaceInvitationEmailValidator extends ConstraintValidator
         private readonly WorkspaceInvitationRepositoryInterface $invitationRepository,
         private readonly WorkspaceMemberRepositoryInterface $memberRepository,
         private readonly CurrentWorkspaceProvider $currentWorkspaceProvider, // 🪄 L'ingrédient secret !
-    ) {}
+    ) {
+    }
 
     public function validate(mixed $value, Constraint $constraint): void
     {

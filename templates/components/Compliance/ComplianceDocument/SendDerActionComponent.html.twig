@@ -1,0 +1,26 @@
+{# components/Compliance/SendDerActionComponent.html.twig #}
+
+<div {{ attributes }}>
+    {% include 'components/partials/_live_alerts.html.twig' with {
+        message: this.actionMessage|default(null),
+        type: this.actionMessageType|default('success')
+    } %}
+
+    <twig:Button type="button"
+                 variant="dark"
+                 class="w-full"
+                 data-action="live#action"
+                 data-live-action-param="sendToClient"
+                 data-loading="action(sendToClient)|addAttribute(disabled)">
+
+        {# L'icône normale (disparaît au chargement) #}
+        <twig:ux:icon name="tabler:mail-forward" data-loading="action(sendToClient)|hide" class="text-slate-400" />
+
+        {# L'icône de chargement (apparaît au clic) #}
+        <twig:ux:icon name="tabler:loader" data-loading="action(sendToClient)|show" class="hidden text-slate-400 animate-spin" />
+
+        <span data-loading="action(sendToClient)|hide">Envoyer au client</span>
+        <span data-loading="action(sendToClient)|show" class="hidden">Envoi en cours...</span>
+
+    </twig:Button>
+</div>

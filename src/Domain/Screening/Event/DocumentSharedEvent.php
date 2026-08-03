@@ -17,5 +17,6 @@ class DocumentSharedEvent extends Event
         public readonly Workspace $workspace,
         public readonly User $user,
         public array $recipients,
-    ) {}
+    ) {
+    }
 }

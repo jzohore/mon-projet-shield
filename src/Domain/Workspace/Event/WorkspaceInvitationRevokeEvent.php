@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Workspace\Event;
 
 use App\Domain\User\Entity\User;
@@ -13,5 +15,6 @@ class WorkspaceInvitationRevokeEvent extends Event
         public readonly WorkspaceInvitation $workspaceInvitation,
         public readonly User $user,
         public readonly Workspace $workspace,
-    ) {}
+    ) {
+    }
 }

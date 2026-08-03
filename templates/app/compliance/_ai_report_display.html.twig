@@ -1,0 +1,79 @@
+{# templates/pages/agent/folder/_ai_report_display.html.twig #}
+{% if dto.postMeetingReport is not null %}
+    <div class="bg-white rounded-xl shadow-sm ring-1 ring-slate-900/5 overflow-hidden transition-all duration-300">
+        <!-- Header -->
+        <div class="p-5 border-b border-slate-100 bg-slate-50/70 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-indigo-50 rounded-lg text-indigo-600 ring-1 ring-indigo-500/10">
+                    <twig:ux:icon name="tabler:file-analytics" class="size-5" aria-hidden="true" />
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-slate-900">Rapport de conformité d'entretien</h4>
+                    <p class="text-[11px] text-slate-500 mt-0.5">Analysé automatiquement le {{ dto.postMeetingReport.analyzedAt | format_datetime(locale: "fr") }}</p>
+                </div>
+            </div>
+
+            <!-- Badge Profil de Risque -->
+            <div>
+                {% set rProfile = dto.postMeetingReport.riskProfile %}
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold ring-1 ring-inset
+                    {% if rProfile == 'Dynamique' %}
+                        bg-amber-50 text-amber-700 ring-amber-600/20
+                    {% elseif rProfile in ['Équilibré', 'Equilibré'] %}
+                        bg-indigo-50 text-indigo-700 ring-indigo-600/20
+                    {% else %}
+                        bg-emerald-50 text-emerald-700 ring-emerald-600/20
+                    {% endif %}">
+                    <span class="h-1.5 w-1.5 rounded-full {% if rProfile == 'Dynamique' %}bg-amber-500{% elseif rProfile in ['Équilibré', 'Equilibré'] %}bg-indigo-500{% else %}bg-emerald-500{% endif %}" aria-hidden="true"></span>
+                    Profil Détecté : {{ rProfile }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="p-5 space-y-6">
+            <!-- Synthèse Devoir de Conseil -->
+            <div>
+                <h5 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Synthèse de l'entretien (Devoir de conseil)</h5>
+                <p class="text-xs text-slate-700 leading-relaxed bg-slate-50 border border-slate-100 p-4 rounded-xl">
+                    {{ dto.postMeetingReport.summary }}
+                </p>
+            </div>
+            <div class="p-4 rounded-xl ring-1 ring-slate-900/5 bg-white">
+                <h5 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <twig:ux:icon name="tabler:user-search" class="size-4 text-slate-400" aria-hidden="true" />
+                    Faits KYC Identifiés
+                </h5>
+                {% if dto.postMeetingReport.kycUpdates is not empty %}
+                    <ul class="space-y-2">
+                        {% for update in dto.postMeetingReport.kycUpdates %}
+                            <li class="text-xs text-slate-600 flex items-start gap-2">
+                                <span class="text-indigo-500 font-bold select-none mt-0.5">•</span>
+                                <span class="flex-1">{{ update }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-xs text-slate-400 italic">Aucune modification ou fait marquant relevé.</p>
+                {% endif %}
+            </div>
+            <div class="p-4 rounded-xl ring-1 ring-slate-900/5 bg-white">
+                <h5 class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <twig:ux:icon name="tabler:checkbox" class="size-4 text-emerald-500" aria-hidden="true" />
+                    Plan d'action réglementaire
+                </h5>
+                {% if dto.postMeetingReport.actionPlan is not empty %}
+                    <ul class="space-y-2">
+                        {% for action in dto.postMeetingReport.actionPlan %}
+                            <li class="flex items-center justify-between gap-3 p-2 bg-slate-50/50 hover:bg-slate-50 rounded-lg border border-slate-100 transition-colors">
+                                <span class="text-xs font-medium text-slate-700 max-w-[200px] sm:max-w-xl">{{ action }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-xs text-slate-400 italic">Aucune action requise identifiée.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endif %}

@@ -1,28 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Billing\DTO\Response;
 
 use App\Domain\Billing\Entity\Subscription;
 use DateTimeImmutable;
 
 /**
- * On définit un alias de type (optionnel mais recommandé pour la lisibilité)
+ * On définit un alias de type (optionnel mais recommandé pour la lisibilité).
+ *
  * @phpstan-type InvoiceArray array{date: DateTimeImmutable, amount: float|int, status: string|null, pdf_url: string|null}
  */
 readonly class SubscriptionInfoResponse
 {
     /**
-     * @param string|null $stripeSubscriptionId
-     * @param string $status
-     * @param bool $hasActiveAccess
-     * @param int $trialDaysRemaining
-     * @param string|null $currentPeriodEnd
-     * @param bool $cancelAtPeriodEnd
-     * @param int|null $searchesUsedThisMonth
-     * @param int|null $maxSearches
-     * @param int|null $maxUsers
-     * @param int|null $maxMonitoring
-     * @param float|null $basePrice
      * @param array<int, InvoiceArray> $invoices
      */
     public function __construct(
@@ -38,14 +30,11 @@ readonly class SubscriptionInfoResponse
         public ?int $maxUsers = null,                // Added default null
         public ?int $maxMonitoring = null,           // Added default null
         public ?float $basePrice = null,             // Added default null
-    ) {}
+    ) {
+    }
 
     /**
-     * @param Subscription|null $subscription
-     * @param int|null $searchesUsedThisMonth
-     * @param float|null $basePrice
      * @param array<int, InvoiceArray> $invoices
-     * @return SubscriptionInfoResponse
      */
     public static function fromEntity(
         ?Subscription $subscription,
@@ -54,7 +43,7 @@ readonly class SubscriptionInfoResponse
         array $invoices = [], // Removed nullable type to match constructor
     ): self {
         // FIX: Guard clause for when $subscription is null
-        if (!$subscription) {
+        if (!$subscription instanceof Subscription) {
             return new self(
                 status: 'inactive',
                 hasActiveAccess: false,

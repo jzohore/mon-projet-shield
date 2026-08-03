@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Service\Payment\Stripe;
 
 use App\Application\Billing\Provider\MrrProviderInterface;
@@ -10,7 +12,8 @@ final readonly class StripeMrrProvider implements MrrProviderInterface
 {
     public function __construct(
         private string $stripeSecretKey,
-    ) {}
+    ) {
+    }
 
     public function getCurrentMrr(): float
     {

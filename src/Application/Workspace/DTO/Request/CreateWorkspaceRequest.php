@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Workspace\DTO\Request;
 
 use App\Domain\Workspace\Enum\Industry;
-use App\Domain\Workspace\Validator\UniqueWorkspaceName;
 use Symfony\Component\Validator\Constraints as Assert;
 
 class CreateWorkspaceRequest
@@ -19,11 +20,10 @@ class CreateWorkspaceRequest
         pattern: '/^[\p{L}0-9\s\-\'\.,&]+$/u',
         message: 'Ce champ contient des caractères non autorisés (les symboles spéciaux comme <, >, = sont interdits).'
     )]
-    #[UniqueWorkspaceName]
     public string $name = '';
 
     #[Assert\Regex(
-        pattern: '/^[0-9]{14}$/',
+        pattern: '/^\d{14}$/',
         message: 'Le SIRET doit contenir exactement 14 chiffres, sans espaces.'
     )]
     public string $siret = '';
@@ -36,6 +36,9 @@ class CreateWorkspaceRequest
     )]
     public string $address = '';
 
+    public string $etatAdministratif = '';
+
+    public string $siren = '';
     public string $legalName = '';
 
     public Industry $workspaceIndustry = Industry::OTHER;

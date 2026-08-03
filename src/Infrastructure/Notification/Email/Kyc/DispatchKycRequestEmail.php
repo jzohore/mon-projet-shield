@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Notification\Email\Kyc;
 
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -12,7 +14,7 @@ class DispatchKycRequestEmail extends TemplatedEmail
         string $recipientFullName,
         string $workspaceName,
         string $folderReference,
-        string $actionUrl
+        string $actionUrl,
     ) {
         parent::__construct();
 
@@ -21,11 +23,11 @@ class DispatchKycRequestEmail extends TemplatedEmail
             ->subject(sprintf('Action requise : Votre dossier de conformité - %s', $workspaceName))
             ->htmlTemplate('emails/kyc/request.html.twig')
             ->context([
-                'recipient_name'  => $recipientFullName,
-                'workspace_name'  => $workspaceName,
-                'reference'       => $folderReference,
-                'action_url'      => $actionUrl,
-                'expires_in'      => '7 jours',
+                'recipient_name' => $recipientFullName,
+                'workspace_name' => $workspaceName,
+                'reference' => $folderReference,
+                'action_url' => $actionUrl,
+                'expires_in' => '7 jours',
             ]);
     }
 }

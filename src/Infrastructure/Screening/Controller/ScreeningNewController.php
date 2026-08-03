@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Screening\Controller;
 
 use Symfony\Component\HttpFoundation\Response;
@@ -22,7 +24,6 @@ readonly class ScreeningNewController
     public function __invoke(
         Environment $twig,
     ): Response {
-
         return new Response(
             $twig->render('@app/screening/screening_new.html.twig', [
                 'page_title' => 'Nouvelle recherche',

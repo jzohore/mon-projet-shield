@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Workspace\DTO\Response;
 
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
@@ -19,7 +21,8 @@ readonly class WorkspaceInvitationInfoResponse
         public ?string $role = null,
         public ?string $workspaceName = null,
         public ?string $ownerFullName = null,
-    ) {}
+    ) {
+    }
 
     public static function fromEntity(WorkspaceInvitation $invitation): self
     {

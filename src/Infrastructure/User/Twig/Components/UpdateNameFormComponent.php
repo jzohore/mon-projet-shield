@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Twig\Components;
 
 use App\Application\User\DTO\Request\UserProfilRequest;
@@ -25,18 +27,19 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 )]
 class UpdateNameFormComponent
 {
-    use DefaultActionTrait;
     use ComponentWithFormTrait;
+    use DefaultActionTrait;
     use LiveFlashTrait;
 
     public function __construct(
-        private readonly FormFactoryInterface         $formFactory,
+        private readonly FormFactoryInterface $formFactory,
         private readonly UpdateUserInformationUseCase $updateNameUseCase,
-        private readonly LoggerInterface              $logger,
-        private readonly RequestStack                 $requestStack,
-        private readonly UrlGeneratorInterface        $urlGenerator,
-        private readonly CurrentUserProvider          $currentUserProvider,
-    ) {}
+        private readonly LoggerInterface $logger,
+        private readonly RequestStack $requestStack,
+        private readonly UrlGeneratorInterface $urlGenerator,
+        private readonly CurrentUserProvider $currentUserProvider,
+    ) {
+    }
 
     protected function instantiateForm(): FormInterface
     {
@@ -47,6 +50,7 @@ class UpdateNameFormComponent
         $dto->lastName = $user->lastName;
         $dto->jobTitle = $user->profile->jobTitle;
         $dto->phoneNumber = $user->profile->phoneNumber;
+
         return $this->formFactory->create(UpdateProfilType::class, $dto);
     }
 

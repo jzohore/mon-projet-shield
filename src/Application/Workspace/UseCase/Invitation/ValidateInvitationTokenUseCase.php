@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Workspace\UseCase\Invitation;
 
 use App\Application\Workspace\DTO\Response\WorkspaceInvitationInfoResponse;
@@ -10,13 +12,14 @@ readonly class ValidateInvitationTokenUseCase
 {
     public function __construct(
         private WorkspaceInvitationRepositoryInterface $workspaceInvitationRepository,
-    ) {}
+    ) {
+    }
 
     public function __invoke(string $shareToken): WorkspaceInvitationInfoResponse
     {
         $invitation = $this->workspaceInvitationRepository->findByToken($shareToken);
 
-        if ($invitation === null || !$invitation->isMagicLinkTokenValid()) {
+        if (!$invitation instanceof \App\Domain\Workspace\Entity\WorkspaceInvitation || !$invitation->isMagicLinkTokenValid()) {
             throw InvitationTokenNotFoundException::withToken($shareToken);
         }
 

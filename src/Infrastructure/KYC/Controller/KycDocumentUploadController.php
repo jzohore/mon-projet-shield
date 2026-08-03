@@ -1,32 +1,34 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Controller;
 
-use App\Application\Kyc\DTO\Request\UploadKycDocumentRequest;
-use App\Application\Kyc\UseCase\UploadKycDocumentUseCase;
+use App\Application\Compliance\DTO\Request\UploadDocumentRequest;
+use App\Application\Compliance\UseCase\ComplianceDocument\UploadDocumentUseCase;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 #[AsController]
 final class KycDocumentUploadController extends AbstractController
 {
     public function __construct(
-        private readonly UploadKycDocumentUseCase $uploadKycDocumentUseCase,
-    ) {}
+        private readonly UploadDocumentUseCase $uploadDocumentUseCase,
+    ) {
+    }
 
     #[Route(
-        path: '/portal/kyc/document/{id}/upload',
+        path: '/portal/kyc/document/{documentId}/{folderId}/upload',
         name: 'portal_kyc_document_upload',
         methods: ['POST']
     )]
-    public function __invoke(string $id, Request $request): Response
+    public function __invoke(string $documentId, string $folderId, Request $request): JsonResponse
     {
-        $folderSlugId = (string) $request->request->get('folderSlugId', '');
         $file = $request->files->get('document');
 
         if (!$file instanceof UploadedFile) {
@@ -36,13 +38,13 @@ final class KycDocumentUploadController extends AbstractController
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $dto = new UploadKycDocumentRequest();
-        $dto->folderSlugId = $folderSlugId;
-        $dto->slotId = $id;
+        $dto = new UploadDocumentRequest();
+        $dto->folderId = $folderId;
+        $dto->documentId = $documentId;
         $dto->file = $file;
 
         try {
-            ($this->uploadKycDocumentUseCase)($dto);
+            ($this->uploadDocumentUseCase)($dto);
 
             return new JsonResponse([
                 'ok' => true,
@@ -54,8 +56,9 @@ final class KycDocumentUploadController extends AbstractController
                 'ok' => false,
                 'message' => $e->getMessage(),
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        } catch (\Throwable) {
+            $this->addFlash('error', 'Une erreur est survenue lors de l\'enregistrement du document.');
 
-        } catch (\Throwable $e) {
             return new JsonResponse([
                 'ok' => false,
                 'message' => 'Une erreur système est survenue lors de l\'enregistrement.',

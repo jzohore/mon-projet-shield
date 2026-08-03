@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Kyc\Enum;
 
 enum CompanyLegalCategory: string
@@ -25,9 +27,8 @@ enum CompanyLegalCategory: string
     // --- CAS SPÉCIFIQUES (Notre logique interne) ---
     case IN_FORMATION = 'IN_FORMATION'; // Société en cours de création
 
-
     /**
-     * Obtenir un libellé humain pour l'interface (si besoin)
+     * Obtenir un libellé humain pour l'interface (si besoin).
      */
     public function getLabel(): string
     {
@@ -48,7 +49,7 @@ enum CompanyLegalCategory: string
 
     /**
      * 🧠 RÈGLE MÉTIER 1 : Est-ce une société avec des actionnaires/associés ?
-     * (Détermine si on doit afficher l'Étape 2 pour ajouter les Bénéficiaires)
+     * (Détermine si on doit afficher l'Étape 2 pour ajouter les Bénéficiaires).
      */
     public function requiresUboDeclaration(): bool
     {

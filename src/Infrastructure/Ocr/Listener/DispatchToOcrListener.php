@@ -15,7 +15,8 @@ readonly class DispatchToOcrListener
 {
     public function __construct(
         private MessageBusInterface $messageBus,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws ExceptionInterface

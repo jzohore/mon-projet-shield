@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Tracking\Persistence;
 
 use App\Application\Tracking\DTO\Request\ElementStatDTO;
@@ -18,8 +20,9 @@ use Doctrine\ORM\EntityRepository;
 class ClickLogRepository implements ClickLogRepositoryInterface
 {
     /** @var EntityRepository<ClickLog> */
-    private EntityRepository $repository;
-    public function __construct(private EntityManagerInterface $entityManager)
+    private readonly EntityRepository $repository;
+
+    public function __construct(private readonly EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(ClickLog::class);
     }
@@ -93,8 +96,8 @@ class ClickLogRepository implements ClickLogRepositoryInterface
     }
 
     /**
-     * @param int $days
      * @return array<string, int>
+     *
      * @throws \DateMalformedStringException
      * @throws Exception
      */
@@ -104,7 +107,7 @@ class ClickLogRepository implements ClickLogRepositoryInterface
 
         // 🛡️ FIX 1 : PHP calcule la date de manière déterministe (Clean Code)
         // On recule de X jours et on fixe l'heure à 00:00:00
-        $thresholdDate = (new \DateTimeImmutable(sprintf('-%d days', $days)))
+        $thresholdDate = new \DateTimeImmutable(sprintf('-%d days', $days))
             ->setTime(0, 0, 0)
             ->format('Y-m-d H:i:s');
 

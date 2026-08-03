@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Message;
 
-use Symfony\Component\Messenger\Attribute\AsMessage;
-
-#[AsMessage]
 final readonly class SendWelcomeEmailMessage
 {
     public function __construct(
         public string $userId,
-        public string $magicLinkUrl
-    ) {}
+        public string $email,
+        public string $fullName,
+        public string $magicLinkToken,
+    ) {
+    }
 }

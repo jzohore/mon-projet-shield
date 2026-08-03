@@ -1,0 +1,169 @@
+{# templates/components/PublicFlashOnboardingComponent.html.twig #}
+
+<div {{ attributes }} class="w-full max-w-md mx-auto relative min-h-[400px]">
+
+    {# ======================================================= #}
+    {# ÉTAPE 1 : CHOIX DU TYPE                                 #}
+    {# ======================================================= #}
+    {% if this.folderType is null %}
+        <div class="animate-fade-in space-y-6">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Bonjour,</h2>
+                <p class="text-sm text-slate-500 mt-2">Pour commencer votre dossier, veuillez préciser votre statut.</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-4">
+                {# Carte Personne Physique #}
+                <button type="button"
+                        data-action="live#action"
+                        data-live-action-param="selectType"
+                        data-live-type-param="individual"
+                        class="relative block w-full rounded-xl border border-slate-200 bg-white p-6 text-left shadow-sm hover:border-indigo-500 hover:ring-1 hover:ring-indigo-500 focus:outline-none transition-all group">
+                    <div class="flex items-center gap-4">
+                        <div class="flex size-12 items-center justify-center rounded-full bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 transition-colors">
+                            <twig:ux:icon name="tabler:user" class="size-6" />
+                        </div>
+                        <div>
+                            <span class="block text-base font-semibold text-slate-900">Particulier</span>
+                            <span class="block text-xs text-slate-500 mt-0.5">Personne physique (Individuel ou compte joint)</span>
+                        </div>
+                    </div>
+                </button>
+
+                {# Carte Personne Morale #}
+                <button type="button"
+                        data-action="live#action"
+                        data-live-action-param="selectType"
+                        data-live-type-param="company"
+                        class="relative block w-full rounded-xl border border-slate-200 bg-white p-6 text-left shadow-sm hover:border-indigo-500 hover:ring-1 hover:ring-indigo-500 focus:outline-none transition-all group">
+                    <div class="flex items-center gap-4">
+                        <div class="flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-600 group-hover:bg-slate-200 transition-colors">
+                            <twig:ux:icon name="tabler:building" class="size-6" />
+                        </div>
+                        <div>
+                            <span class="block text-base font-semibold text-slate-900">Société</span>
+                            <span class="block text-xs text-slate-500 mt-0.5">Personne morale (SCI, SAS, Holding...)</span>
+                        </div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        {# ======================================================= #}
+        {# ÉTAPE 2 : FORMULAIRE DE SAISIE                          #}
+        {# ======================================================= #}
+    {% elseif this.isEditing %}
+        <div class="animate-fade-in">
+
+            <button type="button"
+                    data-action="live#action"
+                    data-live-action-param="resetType"
+                    class="text-xs font-medium text-slate-400 hover:text-slate-900 mb-4 flex items-center gap-1 transition-colors">
+                <twig:ux:icon name="tabler:arrow-left" class="size-3.5" />
+                Retour au choix
+            </button>
+            <div class="bg-white rounded-md border border-slate-200 p-3 sm:p-5 shadow-sm">
+
+            <h2 class="text-xl font-bold text-slate-900 mb-2">Vos informations</h2>
+            <p class="text-sm text-slate-500 mb-6">Ces données permettront de pré-remplir vos documents légaux.</p>
+
+            {{ form_start(form, {
+                'attr': {
+                    'data-action': 'live#action',
+                    'data-live-action-param': 'prevent|saveDraft'
+                }
+            }) }}
+
+            <div class="space-y-4">
+                {% if this.folderType == 'individual' %}
+
+                    <div class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>{{ form_row(form.firstName) }}</div>
+                            <div>{{ form_row(form.lastName) }}</div>
+                        </div>
+                        <div>{{ form_row(form.email) }}</div>
+                    </div>
+
+
+                {% else %}
+                    {# Insère ici les champs pour Personne Morale #}
+                    <div class="p-4 bg-slate-50 text-sm text-slate-500 rounded-lg">Formulaire société à venir...</div>
+                {% endif %}
+            </div>
+
+            <div class="mt-8">
+                <twig:Button type="submit" variant="dark" class="w-full py-3" data-loading="action(saveDraft)|addAttribute(disabled)">
+                    <span data-loading="action(saveDraft)|hide">Enregistrer et continuer</span>
+                    <span data-loading="action(saveDraft)|show" class="hidden flex items-center gap-2">
+                            <twig:ux:icon name="tabler:loader" class="animate-spin" />
+                            Traitement en cours...
+                        </span>
+                </twig:Button>
+            </div>
+
+            {{ form_end(form) }}
+            </div>
+        </div>
+
+        {# ======================================================= #}
+        {# ÉTAPE 3 : VALIDATION DÉFINITIVE & REDIRECTION           #}
+        {# ======================================================= #}
+    {% else %}
+        <div class="animate-fade-in">
+            <div class="flex items-center justify-center mb-6">
+                <div class="flex items-center justify-center size-14 rounded-full bg-emerald-50 text-emerald-600 ring-8 ring-emerald-50/50">
+                    <twig:ux:icon name="tabler:shield-check" class="size-7" />
+                </div>
+            </div>
+
+            <h2 class="text-center text-xl font-bold text-slate-900 mb-2">Dossier sécurisé</h2>
+            <p class="text-center text-sm text-slate-500 mb-6">Veuillez vérifier vos informations avant de signer votre Document d'Entrée en Relation (DER).</p>
+
+            <div class="bg-white rounded-xl ring-1 ring-inset ring-slate-200 shadow-sm p-5 mb-8 relative">
+                <button type="button"
+                        data-action="live#action"
+                        data-live-action-param="activateEditing"
+                        class="absolute top-4 right-4 text-xs font-medium text-slate-400 hover:text-indigo-600 transition-colors flex items-center gap-1">
+                    <twig:ux:icon name="tabler:edit" class="size-3.5" />
+                    Modifier
+                </button>
+                <div class="space-y-3">
+                    {% if this.folderType == 'individual' %}
+                        <div>
+                            <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Identité</span>
+                            <span class="text-sm font-medium text-slate-900">{{ this.complianceDTO.contactFirstName }} {{ this.complianceDTO.contactLastName }}</span>
+                        </div>
+                        <div>
+                            <span class="block text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Contact</span>
+                            <span class="text-sm font-medium text-slate-900">{{  this.complianceDTO.contactEmail }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="space-y-3">
+                <twig:Button type="button"
+                             variant="primary"
+                             class="w-full py-3 shadow-md"
+                             data-action="live#action"
+                             data-live-action-param="confirmAndSign"
+                             data-loading="action(confirmAndSign)|addAttribute(disabled)">
+                    <span data-loading="action(confirmAndSign)|hide" class="flex items-center gap-2">
+                        <twig:ux:icon name="tabler:signature" />
+                        Valider définitivement et Signer
+                    </span>
+                    <span data-loading="action(confirmAndSign)|show" class="hidden flex items-center gap-2">
+                        <twig:ux:icon name="tabler:loader" class="animate-spin" />
+                        Préparation du document légal...
+                    </span>
+                </twig:Button>
+
+                <p class="text-center text-[10px] text-slate-400 mt-4">
+                    En validant, vous serez redirigé vers notre partenaire de confiance (DocuSeal) pour la signature électronique conforme eIDAS.
+                </p>
+            </div>
+        </div>
+    {% endif %}
+
+</div>

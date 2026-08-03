@@ -1,0 +1,187 @@
+<div {{ attributes }}>
+    {# CARTE PRINCIPALE : RECHERCHE OU VÉRIFICATION #}
+    <div class="bg-white rounded-md border border-slate-200 shadow-sm p-6 sm:p-8 mb-8">
+
+        {# ============================================================== #}
+        {# ÉTAT 1 : MODE RECHERCHE (SIRET VIDE)                           #}
+        {# ============================================================== #}
+        {% if this.formValues.siret is not defined or this.formValues.siret is empty %}
+
+            <div class="relative w-full">
+                <div class="space-y-2">
+                    <label for="company-search" class="flex items-center gap-2 text-sm leading-none font-medium select-none mb-3">
+                        Recherchez votre structure
+                    </label>
+                    <div class="relative">
+                        <input
+                            id="company-search"
+                            type="search"
+                            data-model="debounce(300)|searchQuery"
+                            placeholder="Ex: Cabinet Dupont & Associés (ou SIREN)"
+                            class="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                        <div data-loading="addClass(opacity-100)" class="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 transition-opacity pointer-events-none">
+                            <twig:ux:icon name="lucide:loader-2" class="w-4 h-4 text-muted-foreground animate-spin" />
+                        </div>
+                    </div>
+                </div>
+
+                {# Résultats de recherche #}
+                {% if this.searchQuery|length >= 3 %}
+                    <div class="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+
+                        {% if this.results is empty %}
+                            <div class="p-6 text-sm text-center text-slate-500 flex flex-col items-center gap-3 bg-slate-50/50">
+                                <twig:ux:icon name="lucide:search-x" class="w-8 h-8 text-slate-300" />
+                                <p>Aucun cabinet trouvé pour "<span class="font-bold text-slate-900">{{ this.searchQuery }}</span>"</p>
+                            </div>
+                        {% else %}
+                            <ul class="max-h-[300px] overflow-y-auto divide-y divide-slate-100">
+                                {% for company in this.results %}
+
+                                    {# 1. DÉTECTION DU STATUT (La fameuse règle de conformité) #}
+                                    {% set isClosed = company.etat_administratif == 'C' or company.nombre_etablissements_ouverts == 0 or company.siege.etat_administratif == 'F' %}
+
+                                    <li
+                                        data-action="click->live#action"
+                                        data-live-action-param="company"
+                                        data-live-name-param="{{ company.nom_complet }}"
+                                        data-live-siret-param="{{ company.siege.siret }}"
+                                        data-live-siren-param="{{ company.siren }}"
+                                        data-live-address-param="{{ company.siege.adresse|default('') }}"
+                                        data-live-etat-administratif-param="{{ company.etat_administratif|default('') }}"
+                                        data-live-industry-param="{{ company.siege.activite_principale }}"
+                                        {# 🚨 N'oublie pas de passer ce paramètre pour que ton PHP puisse faire la validation ! #}
+                                        data-live-etablissements-ouverts-param="{{ company.nombre_etablissements_ouverts }}"
+
+                                        {# 2. STYLES CONDITIONNELS DU CONTENEUR #}
+                                        class="p-4 cursor-pointer transition-colors duration-150 group border-l-2
+                   {{ isClosed ? 'border-red-200 bg-red-50/30 hover:bg-red-50 hover:border-red-500' : 'border-transparent hover:bg-slate-50 hover:border-blue-600' }}"
+                                    >
+                                        <div class="flex flex-col min-w-0 pointer-events-none">
+
+                                            <div class="flex items-center justify-between gap-2.5">
+                                                <div class="flex items-center gap-2.5 min-w-0">
+                                                    {# Icône rouge si fermée, sinon classique #}
+                                                    <twig:ux:icon name="lucide:building-2" class="w-4 h-4 transition-colors shrink-0 {{ isClosed ? 'text-red-400 group-hover:text-red-600' : 'text-slate-400 group-hover:text-blue-600' }}" />
+
+                                                    {# Nom de l'entreprise (Barré et rouge transparent si fermée) #}
+                                                    <span class="text-[13px] font-bold transition-colors truncate block {{ isClosed ? 'text-red-800/60 line-through' : 'text-slate-900 group-hover:text-blue-700' }}">
+                            {{ company.nom_complet }}
+                        </span>
+                                                </div>
+
+                                                {# 3. BADGE VISUEL (Pour être 100% explicite) #}
+                                                {% if isClosed %}
+                                                    <span class="inline-flex items-center rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700 shrink-0 border border-red-200">
+                            Fermée
+                        </span>
+                                                {% endif %}
+                                            </div>
+
+                                            <div class="flex items-center gap-2 mt-2 pl-6.5 text-[11px] min-w-0 {{ isClosed ? 'text-red-500/70' : 'text-slate-500' }}">
+                                                {# Badge SIREN #}
+                                                <span class="px-1.5 py-0.5 rounded border shrink-0 font-semibold tracking-wide font-mono
+                                 {{ isClosed ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-700 border-blue-100' }}">
+                        SIREN: {{ company.siren }}
+                    </span>
+
+                                                {# Adresse #}
+                                                <span class="truncate {{ isClosed ? 'line-through' : '' }}">
+                        {{ company.siege.adresse|default('Adresse inconnue') }}
+                    </span>
+                                            </div>
+
+                                        </div>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+            {% if this.showMessage %}
+                <twig:Alert class="bg-red-50 text-red-900 border-red-20 mt-3">
+                    <twig:ux:icon name="lucide:circle-alert" />
+                    <twig:Alert:Title>Problème</twig:Alert:Title>
+                    <twig:Alert:Description>
+                        {{ message }}
+                    </twig:Alert:Description>
+                </twig:Alert>
+
+            {% endif %}
+        {% else %}
+
+            <div class="mb-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-bold text-slate-900">Vérification</h2>
+                    <button type="button" data-action="live#action" data-live-action-param="resetSelection" class="cursor-pointer text-[11px] font-semibold text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-1">
+                        <twig:ux:icon name="lucide:refresh-cw" class="w-3 h-3" />
+                        Changer
+                    </button>
+                </div>
+                <div class="bg-emerald-50 border border-emerald-100 rounded-lg p-3 flex items-start gap-3 mb-6">
+                    <div class="mt-0.5 w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                        <twig:ux:icon name="lucide:check" class="w-3.5 h-3.5 text-emerald-600" />
+                    </div>
+                    <div>
+                        <p class="text-xs font-bold text-emerald-900">Données légales récupérées</p>
+                        <p class="text-[11px] text-emerald-700 mt-0.5">Vous pouvez personnaliser le nom d'affichage de votre espace ci-dessous.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                {{ form_start(form, {
+                    attr: {
+                        novalidate: true,
+                        'data-action': 'live#action:prevent',
+                        'data-live-action-param': 'save',
+                    }
+                }) }}
+
+                <div class="space-y-4">
+                    {{ form_row(form.name, {
+                        label: 'Nom de la structure',
+                        attr: {
+                            placeholder: 'Ex: Kysure Patrimoine',
+                            class: 'font-medium'
+                        }
+                    }) }}
+
+                    {{ form_row(form.siret, {
+                        label: 'Numéro SIRET',
+                        attr: {
+                            placeholder: 'Sera rempli automatiquement',
+                            readonly: true,
+                            class: 'bg-slate-50 text-slate-500 cursor-not-allowed font-mono'
+                        }
+                    }) }}
+
+                    {{ form_row(form.address, {
+                        label: 'Adresse légale',
+                        attr: {
+                            placeholder: 'Ex: 123 avenue des Champs-Élysées, 75008 Paris',
+                        }
+                    }) }}
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-100 flex justify-end">
+                    <twig:Button as="button" type="submit" variant="dark" class="w-full md:w-auto px-8 py-2.5 shadow-sm">
+                        <span data-loading="action(save)|hide" class="flex items-center gap-2">
+                            Confirmer la transition légale
+                            <twig:ux:icon name="lucide:arrow-right" class="w-4 h-4" />
+                        </span>
+
+                        <span data-loading="action(save)|show" class="hidden items-center gap-2">
+                            <twig:ux:icon name="lucide:loader-2" class="w-4 h-4 animate-spin" />
+                            Modification...
+                        </span>
+                    </twig:Button>
+                </div>
+
+                {{ form_end(form) }}
+            </div>
+        {% endif %}
+    </div>
+</div>

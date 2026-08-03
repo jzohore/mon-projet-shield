@@ -15,5 +15,6 @@ class WorkspaceInvitationCreatedEvent extends Event
         public readonly WorkspaceInvitation $workspaceInvitation,
         public readonly Workspace $workspace,
         public readonly User $user,
-    ) {}
+    ) {
+    }
 }

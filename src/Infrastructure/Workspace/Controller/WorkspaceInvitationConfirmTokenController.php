@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Controller;
 
 use App\Application\Workspace\UseCase\Invitation\ValidateInvitationTokenUseCase;
 use App\Domain\Shared\Exception\AbstractDomainException;
-use Exception;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -22,8 +23,8 @@ class WorkspaceInvitationConfirmTokenController extends AbstractController
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly RequestStack $requestStack,
         private readonly LoggerInterface $logger,
-    ) {}
-
+    ) {
+    }
 
     public function __invoke(string $token): RedirectResponse
     {
@@ -40,17 +41,13 @@ class WorkspaceInvitationConfirmTokenController extends AbstractController
             ]);
 
             return $response;
-
         } catch (AbstractDomainException $exception) {
-
             $this->addFlash('error', $exception->getMessage());
 
             $this->logger->warning('Tentative de récupération d\'invitation introuvable', [
                 'token' => $token, // Toujours utile de logguer LE token qui a posé problème
             ]);
-
-        } catch (Exception $exception) {
-
+        } catch (\Exception $exception) {
             $this->addFlash('error', 'Le lien d\'invitation est invalide ou expiré.');
 
             $this->logger->critical('Crash système lors de la validation du token d\'invitation', [

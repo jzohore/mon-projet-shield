@@ -1,10 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Kyc\Validator;
 
-use App\Domain\Kyc\Entity\KycDocument;
-use App\Domain\Kyc\Enum\DocumentType;
-use DateTimeImmutable;
+use App\Domain\Compliance\Entity\ComplianceDocument;
+use App\Domain\Compliance\Enum\DocumentType;
 use Webmozart\Assert\Assert;
 
 class DocumentValidator
@@ -12,19 +13,18 @@ class DocumentValidator
     /**
      * @return array<string> Liste des raisons de rejet. Si vide, le document est valide.
      */
-    public function validate(KycDocument $document): array
+    public function validate(ComplianceDocument $document): array
     {
         $errors = [];
         $data = $document->ocrData; // On accède au JSON stocké
         $stakeholder = $document->stakeholder;
 
-        if (empty($data)) {
+        if (null === $data || [] === $data) {
             return ["Aucune donnée n'a pu être extraite du document."];
         }
 
         // --- RÈGLES SPÉCIFIQUES POUR LA CNI ---
-        if ($document->type === DocumentType::ID_CARD && $stakeholder) {
-
+        if (DocumentType::ID_CARD === $document->type && $stakeholder) {
             // 1. CROISEMENT D'IDENTITÉ (Stakeholder VS OCR Zone Visuelle)
             $ocrLastName = $this->normalizeString($data['last_name'] ?? '');
             $userLastName = $this->normalizeString($stakeholder->lastName); // Assure-toi d'avoir cette méthode
@@ -51,24 +51,24 @@ class DocumentValidator
 
                 // Le nom de famille doit être encodé dans la ligne 1 de la MRZ
                 // Ex: IDFRAALOIS<<<<< (ALOIS est bien dedans)
-                if ($ocrLastName !== '' && !str_contains($mrzLine1, $ocrLastName)) {
-                    $errors[] = "Anomalie de sécurité : Le nom de famille ne correspond pas à la bande optique (MRZ). Falsification suspectée.";
+                if ('' !== $ocrLastName && !str_contains($mrzLine1, $ocrLastName)) {
+                    $errors[] = 'Anomalie de sécurité : Le nom de famille ne correspond pas à la bande optique (MRZ). Falsification suspectée.';
                 }
 
                 // La date de naissance (format YYMMDD) doit être encodée dans la ligne 2
                 // Ex: 1980-01-21 devient 800121.
                 if (!empty($data['birth_date'])) {
-                    $birthDate = DateTimeImmutable::createFromFormat('Y-m-d', $data['birth_date']);
+                    $birthDate = \DateTimeImmutable::createFromFormat('Y-m-d', $data['birth_date']);
                     if ($birthDate) {
                         $mrzDate = $birthDate->format('ymd');
                         if (!str_contains($mrzLine2, $mrzDate)) {
-                            $errors[] = "Anomalie de sécurité : La date de naissance visuelle ne correspond pas à celle de la bande optique (MRZ).";
+                            $errors[] = 'Anomalie de sécurité : La date de naissance visuelle ne correspond pas à celle de la bande optique (MRZ).';
                         }
                     }
                 }
             } else {
                 // Si Mindee ne trouve pas de MRZ sur une CNI, c'est très louche (ou la photo est coupée)
-                $errors[] = "Bande de lecture optique (MRZ) illisible ou absente. Veuillez fournir une photo complète de la pièce.";
+                $errors[] = 'Bande de lecture optique (MRZ) illisible ou absente. Veuillez fournir une photo complète de la pièce.';
             }
         }
 
@@ -85,7 +85,7 @@ class DocumentValidator
             $today = new \DateTimeImmutable('today'); // Heure à 00:00:00
 
             if ($expiryDate && $expiryDate < $today) {
-                $errors[] = "Document expiré : La pièce d'identité n'est plus valide depuis le " . $expiryDate->format('d/m/Y') . ".";
+                $errors[] = "Document expiré : La pièce d'identité n'est plus valide depuis le " . $expiryDate->format('d/m/Y') . '.';
 
                 // Note de Lead Dev : En France, les anciennes cartes (bleues) majeures ont eu +5 ans de validité automatique.
                 // Si ton business le permet légalement, tu pourrais rajouter +5 ans à $expiryDate ici avant de faire la comparaison.
@@ -97,11 +97,11 @@ class DocumentValidator
 
     /**
      * Nettoie une chaîne pour la comparaison : Majuscules, sans accents, sans espaces, sans tirets.
-     * Ex : "Jean-François" → "JEANFRANCOIS"
+     * Ex : "Jean-François" → "JEANFRANCOIS".
      */
     private function normalizeString(string $string): string
     {
-        if (empty($string)) {
+        if ('' === $string || '0' === $string) {
             return '';
         }
 
@@ -118,6 +118,7 @@ class DocumentValidator
         // Ne garde que les lettres et chiffres
         $str = preg_replace('/[^a-zA-Z0-9]/', '', $str);
         Assert::notNull($str);
+
         return strtoupper($str);
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Listener\Member;
 
 use App\Domain\AuditLog\Entity\AuditLog;
@@ -14,7 +16,8 @@ readonly class AuditLogWorkspaceMemberRevokedListener
 {
     public function __construct(
         private AuditLogRepositoryInterface $auditLogRepository,
-    ) {}
+    ) {
+    }
 
     public function __invoke(WorkspaceMemberRevokedEvent $event): void
     {
@@ -29,10 +32,11 @@ readonly class AuditLogWorkspaceMemberRevokedListener
             eventName: AuditEventType::WORKSPACE_MEMBER_REVOKED,
             payload: [
                 'target_user_id' => $revokedUser->slugId,
-                'target_email'   => $revokedUser->email,
+                'target_email' => $revokedUser->email,
                 'workspace_name' => $workspace->name,
+                'actor_name' => $actor->getFullName(),
+                'actor_email' => $actor->email,
             ],
-            actor: $actor->id->toString(),
         );
 
         $this->auditLogRepository->save($audit);

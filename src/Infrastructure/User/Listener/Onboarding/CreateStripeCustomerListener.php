@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Listener\Onboarding;
 
 use App\Application\User\UseCase\UpdateProfilUseCase;
@@ -13,7 +15,8 @@ readonly class CreateStripeCustomerListener
     public function __construct(
         private StripeService $stripeService,
         private UpdateProfilUseCase $updateProfilUseCase,
-    ) {}
+    ) {
+    }
 
     public function __invoke(UserOnboardingCompletedEvent $event): void
     {

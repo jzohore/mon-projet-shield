@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Controller\Admin\Organization;
 
 use Symfony\Component\HttpFoundation\Response;
@@ -11,7 +13,7 @@ use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 
 #[AsController]
-#[Route(path: '/admin/administrators/organizations/list', name: 'admin_organizations_list', methods: ['GET'])]
+#[Route(path: '/admin/organizations/list', name: 'admin_organizations_list', methods: ['GET'])]
 final class OrganizationListController
 {
     /**
@@ -24,7 +26,7 @@ final class OrganizationListController
     ): Response {
         return new Response(
             $twig->render('@admin/organization/list.html.twig', [
-                'page_title' => 'Cabinets',
+                'page_title' => 'Workspaces & clients',
             ])
         );
     }

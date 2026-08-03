@@ -1,11 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\User\Exception;
 
 use App\Domain\Shared\Enum\ErrorCode;
 use App\Domain\Shared\Exception\AbstractDomainException;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Uid\Uuid;
 
 class UserNotFoundException extends AbstractDomainException
 {
@@ -19,7 +20,7 @@ class UserNotFoundException extends AbstractDomainException
         );
     }
 
-    public static function withId(Uuid $id): self
+    public static function withId(string $id): self
     {
         return new self(
             message: sprintf('L\'utilisateur "%s" est introuvable.', $id),

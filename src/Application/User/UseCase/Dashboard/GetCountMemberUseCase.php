@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\User\UseCase\Dashboard;
 
 use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
@@ -12,7 +14,8 @@ final readonly class GetCountMemberUseCase
     public function __construct(
         private WorkspaceInvitationRepositoryInterface $workspaceInvitationRepository,
         private GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
-    ) {}
+    ) {
+    }
 
     public function __invoke(User $user): bool|float|int|string|null
     {

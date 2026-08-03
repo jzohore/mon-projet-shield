@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Compliance\Entity;
 
 use App\Domain\Common\Attribute\Encrypted;
@@ -22,29 +24,27 @@ class IndividualFolder extends ComplianceFolder
     public private(set) ?string $email = null;
 
     /**
-     * CONSTRUCTEUR PROTÉGÉ
+     * CONSTRUCTEUR PROTÉGÉ.
      */
     protected function __construct(
         Workspace $workspace,
         string $reference,
+        string $email,
+        string $method,
     ) {
-        parent::__construct($workspace, $reference);
+        parent::__construct($workspace, $reference, $email, $method);
     }
 
     /**
-     * STATIC FACTORY METHOD pour la création de brouillon
+     * STATIC FACTORY METHOD pour la création de brouillon.
      */
-    public static function createDraft(Workspace $workspace, string $reference): self
+    public static function createDraft(Workspace $workspace, string $reference, string $email, string $method): self
     {
-        $folder = new self($workspace, $reference);
-
-        $folder->saveHistory('Dossier initié (Brouillon)');
-
-        return $folder;
+        return new self($workspace, $reference, $email, $method);
     }
 
     /**
-     * Exemple de méthode métier : Changement d'email avec traçabilité
+     * Exemple de méthode métier : Changement d'email avec traçabilité.
      */
     public function updateEmail(string $newEmail): void
     {
@@ -54,7 +54,7 @@ class IndividualFolder extends ComplianceFolder
 
         $oldEmail = $this->email;
         $this->email = $newEmail;
-        $this->saveHistory('Email mis à jour', "De {$oldEmail} vers {$newEmail}");
+        $this->saveHistory('Email mis à jour', "De $oldEmail vers $newEmail");
     }
 
     public function setClientInfo(string $firstName, string $lastName, string $email): void
@@ -63,5 +63,15 @@ class IndividualFolder extends ComplianceFolder
         $this->lastName = $lastName;
         $this->email = $email;
         $this->saveHistory('Les informations clients ont été mis à jour');
+    }
+
+    public function getFullName(): string
+    {
+        return $this->firstName . ' ' . $this->lastName;
+    }
+
+    public function isDraftEmpty(): bool
+    {
+        return in_array($this->firstName, [null, '', '0'], true);
     }
 }

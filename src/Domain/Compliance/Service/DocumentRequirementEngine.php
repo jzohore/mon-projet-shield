@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Compliance\Service;
 
 use App\Domain\Compliance\Entity\BusinessFolder;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Entity\IndividualFolder;
-use App\Domain\Kyc\Enum\DocumentType;
+use App\Domain\Compliance\Enum\DocumentType;
 
 class DocumentRequirementEngine
 {

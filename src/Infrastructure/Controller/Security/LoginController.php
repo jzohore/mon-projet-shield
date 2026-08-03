@@ -1,14 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Controller\Security;
 
+use App\Domain\User\Entity\Client;
+use App\Domain\User\Entity\User;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
-use Symfony\Component\Security\Core\User\UserInterface;
 use Twig\Environment;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
@@ -28,9 +31,19 @@ class LoginController
         Security $security,
         UrlGeneratorInterface $urlGenerator,
     ): Response {
-        if ($security->getUser() instanceof UserInterface) {
+        $currentUser = $security->getUser();
+
+        // 1. Si c'est un professionnel (CGP) déjà connecté
+        if ($currentUser instanceof User) {
             return new RedirectResponse($urlGenerator->generate('app_dashboard'));
         }
+
+        // 2. Si c'est un client final déjà connecté
+        if ($currentUser instanceof Client) {
+            // 🚨 Assure-toi que cette route correspond bien au dashboard du portail
+            return new RedirectResponse($urlGenerator->generate('client_dashboard'));
+        }
+
         return new Response(
             $twig->render('@security/login.html.twig', [
                 'page_title' => 'Votre tableau de bord',

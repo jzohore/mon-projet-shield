@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Workspace\Service;
 
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use Symfony\Bundle\SecurityBundle\Security;
-use Webmozart\Assert\Assert;
 use Symfony\Contracts\Service\ResetInterface;
+use Webmozart\Assert\Assert;
 
 class CurrentWorkspaceProvider implements ResetInterface
 {
@@ -18,7 +20,8 @@ class CurrentWorkspaceProvider implements ResetInterface
     public function __construct(
         private readonly WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
         private readonly Security $security,
-    ) {}
+    ) {
+    }
 
     /**
      * Appelé automatiquement par Symfony à la fin de chaque requête
@@ -40,7 +43,7 @@ class CurrentWorkspaceProvider implements ResetInterface
         $currentUserId = (string) $user->id;
 
         // 2. 🛡️ SÉCURITÉ MAXIMALE : Vérification du cache
-        if ($this->cachedWorkspace !== null) {
+        if ($this->cachedWorkspace instanceof Workspace) {
             // On s'assure que le cache appartient BIEN à l'utilisateur qui fait la requête
             // (Protège contre les fuites mémoire de Swoole/FrankenPHP ou le "Switch User" (Impersonation) de Symfony)
             if ($this->cachedUserId === $currentUserId) {
@@ -55,7 +58,7 @@ class CurrentWorkspaceProvider implements ResetInterface
 
         // 3. Sinon, on va chercher l'info en base
         $workspaceMember = $this->workspaceMemberRepository->findOneByUser($user->id);
-        Assert::notNull($workspaceMember, "Aucun espace de travail trouvé pour cet utilisateur.");
+        Assert::notNull($workspaceMember, 'Aucun espace de travail trouvé pour cet utilisateur.');
 
         $workspace = $workspaceMember->workspace;
 

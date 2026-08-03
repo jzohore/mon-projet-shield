@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Workspace\UseCase\WorkspaceMember;
 
 use App\Domain\Workspace\Event\WorkspaceMemberRevokedEvent;
@@ -17,8 +19,9 @@ readonly class RevokeWorkspaceMemberAccessUseCase
         private WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
         private CurrentWorkspaceProvider $currentWorkspaceProvider,
         private CurrentUserProvider $currentUserProvider,
-        private EventDispatcherInterface  $eventDispatcher
-    ) {}
+        private EventDispatcherInterface $eventDispatcher,
+    ) {
+    }
 
     public function __invoke(string $targetUserSlugId): void
     {
@@ -33,7 +36,7 @@ readonly class RevokeWorkspaceMemberAccessUseCase
             workspaceId: $workspace->id->toString(),
         );
 
-        if (!$member) {
+        if (!$member instanceof \App\Domain\Workspace\Entity\WorkspaceMember) {
             throw MemberNotFoundException::withUserSlug($targetUserSlugId);
         }
 

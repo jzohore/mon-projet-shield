@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Support\Twig\Components;
 
 use App\Application\Support\DTO\Response\SupportNotificationStats;
@@ -26,8 +28,8 @@ use Symfony\UX\LiveComponent\LiveResponder;
 )]
 final class SupportChatComponent
 {
-    use DefaultActionTrait;
     use ComponentToolsTrait;
+    use DefaultActionTrait;
 
     /**
      * Le contenu tapé par l'utilisateur.
@@ -60,7 +62,8 @@ final class SupportChatComponent
         private readonly CurrentWorkspaceProvider $workspaceProvider,
         private readonly UserRepositoryInterface $userRepository,
         private readonly SupportNotificationStatsUseCase $notificationStatsUseCase,
-    ) {}
+    ) {
+    }
 
     /**
      * Getter calculé : Récupère la conversation en cours à chaque rendu du composant.
@@ -90,7 +93,7 @@ final class SupportChatComponent
      */
     public function getTopics(): array
     {
-        if (!$this->category) {
+        if (!$this->category instanceof SupportCategory) {
             return [];
         }
 
@@ -147,7 +150,7 @@ final class SupportChatComponent
     public function sendMessage(LiveResponder $responder): void
     {
         // Sécurité de base
-        if (empty(trim($this->message))) {
+        if (in_array(trim($this->message), ['', '0'], true)) {
             return;
         }
         $user = $this->userRepository->getById($this->userUuid);

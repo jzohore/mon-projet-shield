@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Screening\Persistence;
 
 use App\Domain\Screening\Entity\ScreeningAudit;
 use App\Domain\Screening\Exception\AuditNotFoundException;
 use App\Domain\Screening\Repository\ScreeningAuditRepositoryInterface;
 use App\Domain\Workspace\Entity\Workspace;
-use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
@@ -23,6 +24,7 @@ readonly class DoctrineScreeningAuditRepository implements ScreeningAuditReposit
 {
     /** @var EntityRepository<ScreeningAudit> */
     private EntityRepository $repository;
+
     public function __construct(private EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(ScreeningAudit::class);
@@ -36,7 +38,7 @@ readonly class DoctrineScreeningAuditRepository implements ScreeningAuditReposit
 
     public function findRecentIdenticalSearch(Workspace $workspace, string $query, int $hoursLimit): ?ScreeningAudit
     {
-        $limitDate = (new DateTimeImmutable())->modify("-{$hoursLimit} hours");
+        $limitDate = new \DateTimeImmutable()->modify("-{$hoursLimit} hours");
 
         return $this->repository->createQueryBuilder('s')
             ->where('s.workspace = :workspace')
@@ -74,12 +76,10 @@ readonly class DoctrineScreeningAuditRepository implements ScreeningAuditReposit
     }
 
     /**
-     * @param Workspace $workspace
-     * @param DateTimeImmutable $since
      * @return int
-     * Compte le nombre de recherches d'un Workspace depuis une date donnée.
+     *             Compte le nombre de recherches d'un Workspace depuis une date donnée
      */
-    public function countSearchesSince(Workspace $workspace, DateTimeImmutable $since): int
+    public function countSearchesSince(Workspace $workspace, \DateTimeImmutable $since): int
     {
         return (int) $this->repository->createQueryBuilder('sa')
             ->select('COUNT(sa.id)')
@@ -99,12 +99,12 @@ readonly class DoctrineScreeningAuditRepository implements ScreeningAuditReposit
             ->getSingleScalarResult();
     }
 
-    public function getById(Uuid $id): ScreeningAudit
+    public function getById(Uuid|string $id): ScreeningAudit
     {
         $audit = $this->repository->find($id);
 
         if (null === $audit) {
-            throw AuditNotFoundException::withId($id);
+            throw AuditNotFoundException::withId((string) $id);
         }
 
         return $audit;

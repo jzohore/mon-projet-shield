@@ -20,7 +20,8 @@ class EmployeesShowController extends AbstractController
 {
     public function __construct(
         private readonly GetWorkspaceMemberDetailsUseCase $getMemberDetailsUseCase,
-    ) {}
+    ) {
+    }
 
     public function __invoke(string $slugId, #[CurrentUser] User $user): Response
     {
@@ -34,7 +35,6 @@ class EmployeesShowController extends AbstractController
                 'sub_title' => 'Gérez les accès, les rôles et la sécurité de vos collaborateurs.',
                 'member' => $memberDto,
             ]);
-
         } catch (MemberNotFoundException $e) {
             $this->addFlash('error', $e->getMessage());
 

@@ -1,14 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Security;
 
 final readonly class MessageCipher
 {
-    private const ALGO = 'aes-256-gcm';
+    private const string ALGO = 'aes-256-gcm';
+    private const int MIN_PAYLOAD_LENGTH = 28;
 
     public function __construct(
-        private string $encryptionKey
-    ) {}
+        private string $encryptionKey,
+    ) {
+    }
 
     public function encrypt(string $plainText): string
     {
@@ -19,7 +23,7 @@ final readonly class MessageCipher
             $plainText,
             self::ALGO,
             $this->encryptionKey,
-            OPENSSL_RAW_DATA,
+            \OPENSSL_RAW_DATA,
             $iv,
             $tag
         );
@@ -30,22 +34,30 @@ final readonly class MessageCipher
 
     public function decrypt(string $encodedData): string
     {
-        $decoded = base64_decode($encodedData);
+        $decoded = base64_decode($encodedData, true);
+
+        // 1. Validation de l'encodage et de la taille minimale du buffer
+        if (false === $decoded || strlen($decoded) < self::MIN_PAYLOAD_LENGTH) {
+            throw new \RuntimeException('Payload chiffré invalide : encodage corrompu ou structure incomplète.');
+        }
+
+        // 2. Extraction sécurisée des composants cryptographiques
         $iv = substr($decoded, 0, 12);
         $tag = substr($decoded, 12, 16);
         $cipherText = substr($decoded, 28);
 
+        // 3. Déchiffrement AES-GCM avec vérification d'authenticité (AEAD)
         $plainText = openssl_decrypt(
             $cipherText,
             self::ALGO,
             $this->encryptionKey,
-            OPENSSL_RAW_DATA,
+            \OPENSSL_RAW_DATA,
             $iv,
             $tag
         );
 
         if (false === $plainText) {
-            throw new \RuntimeException("Déchiffrement impossible : clé invalide ou données altérées.");
+            throw new \RuntimeException('Déchiffrement impossible : clé invalide ou données altérées.');
         }
 
         return $plainText;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Screening\DTO\Response;
 
 use App\Domain\Screening\Entity\ScreeningAudit;
@@ -25,7 +27,8 @@ readonly class ScreeningResponse
         public array $results = [],
         public ?string $pdfPath = null,
         public \DateTimeImmutable $createdAt = new \DateTimeImmutable(),
-    ) {}
+    ) {
+    }
 
     public static function fromEntity(ScreeningAudit $audit, bool $isCached = false): self
     {

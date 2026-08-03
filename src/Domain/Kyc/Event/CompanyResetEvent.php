@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Kyc\Event;
 
 use App\Domain\Kyc\Entity\KycDocument;
@@ -13,6 +15,7 @@ final class CompanyResetEvent extends Event
      */
     public function __construct(
         public readonly KycFolder $folder,
-        public array     $oldDocuments
-    ) {}
+        public array $oldDocuments,
+    ) {
+    }
 }

@@ -1,19 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Screening\Entity;
 
 use App\Domain\Screening\Enum\ScreeningStatus;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
-use DateTimeImmutable;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Exception;
 use Symfony\Bridge\Doctrine\Types\UuidType;
-use Symfony\Component\Uid\Uuid;
 
 use function Symfony\Component\Clock\now;
+
+use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'screening_audits')]
@@ -32,59 +33,42 @@ class ScreeningAudit
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
     public private(set) string $slugId;
 
-    #[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'screeningAudits')]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    public private(set) Workspace $workspace;
-
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'screeningAudits')]
-    #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
-    public private(set) User $owner;
-
-    #[ORM\Column(type: Types::STRING, length: 255)]
-    public private(set) string $query;
-
-    /**
-     * @var array<int, array<string, mixed>>
-     */
-    #[ORM\Column(type: Types::JSON)]
-    public private(set) array $results;
-
-    #[ORM\Column(type: Types::INTEGER)]
-    public private(set) int $totalMatches;
-
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    public private(set) DateTimeImmutable $createdAt;
+    public private(set) \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: Types::STRING, enumType: ScreeningStatus::class)]
-    public private(set) ScreeningStatus $status;
+    public private(set) ScreeningStatus $status = ScreeningStatus::WAIT;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     public private(set) ?string $pdfPath = null;
 
     /**
      * @param array<int, array<string, mixed>> $results
-     * @throws Exception
+     *
+     * @throws \Exception
      */
     private function __construct(
-        Workspace $workspace,
-        User $owner,
-        string $query,
-        array $results,
-        int $totalMatches
+        #[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'screeningAudits')]
+        #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+        public private(set) Workspace $workspace,
+        #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'screeningAudits')]
+        #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+        public private(set) User $owner,
+        #[ORM\Column(type: Types::STRING, length: 255)]
+        public private(set) string $query,
+        #[ORM\Column(type: Types::JSON)]
+        public private(set) array $results,
+        #[ORM\Column(type: Types::INTEGER)]
+        public private(set) int $totalMatches,
     ) {
-        $this->workspace = $workspace;
-        $this->owner = $owner;
-        $this->query = $query;
-        $this->results = $results;
-        $this->totalMatches = $totalMatches;
         $this->createdAt = now();
-        $this->status = ScreeningStatus::WAIT;
         $this->slugId = $this->generate_ulid_prefixed('scr_aud_');
     }
 
     /**
      * @param array<int, array<string, mixed>> $results
-     * @throws Exception
+     *
+     * @throws \Exception
      */
     public static function create(Workspace $workspace, User $ower, string $query, array $results, int $totalMatches): self
     {

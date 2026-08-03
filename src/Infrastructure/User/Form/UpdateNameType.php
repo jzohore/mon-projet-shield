@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Form;
 
 use App\Application\User\DTO\Request\UpdateNameRequest;

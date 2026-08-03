@@ -14,7 +14,8 @@ readonly class RevokeWorkspaceInvitationUseCase
     public function __construct(
         private WorkspaceInvitationRepositoryInterface $workspaceInvitationRepository,
         private EventDispatcherInterface $eventDispatcher,
-    ) {}
+    ) {
+    }
 
     public function __invoke(WorkspaceInvitation $workspaceInvitation): void
     {
@@ -22,6 +23,5 @@ readonly class RevokeWorkspaceInvitationUseCase
         $workspace = $workspaceInvitation->workspace;
         $this->workspaceInvitationRepository->delete($workspaceInvitation);
         $this->eventDispatcher->dispatch(new WorkspaceInvitationRevokeEvent($workspaceInvitation, $user, $workspace));
-
     }
 }

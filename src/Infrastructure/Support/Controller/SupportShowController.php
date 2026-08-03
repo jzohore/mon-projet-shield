@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Support\Controller;
 
 use App\Domain\Support\Entity\SupportThread;
@@ -16,12 +18,13 @@ use Twig\Error\SyntaxError;
 
 #[AsController]
 #[Route(path: '/app/billing/support/{slugId}', name: 'app_support_show', methods: ['GET', 'POST'])]
-#[IsGranted("ROLE_SUPER_ADMIN")]
+#[IsGranted('ROLE_SUPER_ADMIN')]
 readonly class SupportShowController
 {
     public function __construct(
         private Environment $twig,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws RuntimeError
@@ -31,7 +34,7 @@ readonly class SupportShowController
     public function __invoke(
         #[MapEntity(mapping: ['slugId' => 'slugId'])]
         SupportThread $thread,
-        Request $request
+        Request $request,
     ): Response {
         return new Response(
             $this->twig->render('@admin/support/show.html.twig', [

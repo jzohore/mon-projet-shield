@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\User\Entity;
 
+use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Screening\Entity\ScreeningAudit;
 use App\Domain\Support\Entity\SupportThread;
 use App\Domain\User\Enum\JobRole;
@@ -13,28 +14,25 @@ use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Domain\Workspace\Entity\WorkspaceMember;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
-use DateInterval;
-use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use Exception;
-use LogicException;
 use Random\RandomException;
+use Scheb\TwoFactorBundle\Model\Google\TwoFactorInterface;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+
+use function Symfony\Component\Clock\now;
+
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
 
-use function Symfony\Component\Clock\now;
-
 #[ORM\Entity]
 #[ORM\Table(name: '`users`')]
 #[UniqueEntity(fields: ['email'], message: 'Un compte existe déjà avec cet email')]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+class User implements UserInterface, TwoFactorInterface, \Stringable
 {
     use GenerateSlugPrefixedTrait;
 
@@ -44,23 +42,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
     public ?Uuid $id = null {
         get {
-            if (null === $this->id) {
-                throw new LogicException('L\'ID de l\'entité n\'a pas encore été généré.');
+            if (!$this->id instanceof Uuid) {
+                throw new \LogicException('L\'ID de l\'entité n\'a pas encore été généré.');
             }
+
             return $this->id;
         }
     }
 
-    #[ORM\Column(type: Types::STRING, length: 180, unique: true)]
-    public private(set) string $email;
-
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
     public private(set) string $slugId;
-
-    public ?string $password = null {
-        get => $this->password;
-        set => $this->password = $value;
-    }
 
     /**
      * @var list<string> The user roles
@@ -72,23 +63,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
-    public private(set) bool $isVerified = false;
-
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
     public private(set) bool $isOwner = false;
-
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
-    public private(set) bool $isActif = false;
-
-    // ==================== PROFIL ====================
-
-    #[ORM\Column(type: Types::STRING, length: 100)]
-    #[Assert\Length(max: 100)]
-    public private(set) string $firstName;
-
-    #[ORM\Column(type: Types::STRING, length: 100)]
-    #[Assert\Length(max: 100)]
-    public private(set) string $lastName;
 
     // ==================== OAUTH ====================
 
@@ -96,20 +71,26 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public private(set) ?string $magicLinkToken = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    public private(set) ?DateTimeImmutable $magicLinkTokenExpiresAt = null;
+    public private(set) ?\DateTimeImmutable $magicLinkTokenExpiresAt = null;
 
     // ==================== TIMESTAMPS ====================
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    public private(set) DateTimeImmutable $createdAt;
+    public private(set) \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    public private(set) DateTimeImmutable $updatedAt;
+    public private(set) \DateTimeImmutable $updatedAt;
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    public private(set) ?DateTimeImmutable $onboardingReminderSentAt = null;
+    public private(set) ?\DateTimeImmutable $onboardingReminderSentAt = null;
 
-    #[ORM\Column(type: Types::STRING, length: 50, nullable: true, enumType: OnboardingStatus::class)]
-    public private(set) OnboardingStatus $onboardingStatus = OnboardingStatus::PENDING;
+    #[ORM\Column(type: Types::STRING, length: 150, nullable: true)]
+    public private(set) ?string $googleAuthenticatorSecret = null;
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    public private(set) bool $isTotpVerified = false;
+
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    public private(set) int $trustedVersion = 0;
 
     #[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'members')]
     #[ORM\JoinColumn(nullable: true)]
@@ -142,25 +123,34 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public private(set) Collection $members;
 
     /**
+     * @var Collection<int, ComplianceFolder>
+     */
+    #[ORM\OneToMany(targetEntity: ComplianceFolder::class, mappedBy: 'assignedReviewer', cascade: ['persist', 'remove'])]
+    public private(set) Collection $folders;
+
+    /**
      * @param list<string> $roles
-     * @throws Exception
+     *
+     * @throws \Exception
      */
     private function __construct(
-        string $email,
-        string $firstName,
-        string $lastName,
-        bool $isVerified,
+        #[ORM\Column(type: Types::STRING, length: 180, unique: true)]
+        public private(set) string $email,
+        #[ORM\Column(type: Types::STRING, length: 100)]
+        #[Assert\Length(max: 100)]
+        public private(set) string $firstName,
+        #[ORM\Column(type: Types::STRING, length: 100)]
+        #[Assert\Length(max: 100)]
+        public private(set) string $lastName,
+        #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+        public private(set) bool $isVerified,
         array $roles = ['ROLE_USER'],
-        OnboardingStatus $onboardingStatus = OnboardingStatus::PENDING,
-        bool $isActif = false,
+        #[ORM\Column(type: Types::STRING, length: 50, nullable: true, enumType: OnboardingStatus::class)]
+        public private(set) OnboardingStatus $onboardingStatus = OnboardingStatus::PENDING,
+        #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+        public private(set) bool $isActif = false,
     ) {
-        $this->email = $email;
-        $this->firstName = $firstName;
-        $this->lastName = $lastName;
         $this->roles = array_values(array_unique($roles));
-        $this->isVerified = $isVerified;
-        $this->onboardingStatus = $onboardingStatus;
-        $this->isActif = $isActif;
         $this->slugId = $this->generate_ulid_prefixed('usr_');
         $this->profile = new UserProfil();
         $this->createdAt = now();
@@ -173,7 +163,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     /**
      * @param list<string> $roles
-     * @throws Exception
+     *
+     * @throws \Exception
      */
     public static function create(
         string $email,
@@ -192,16 +183,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getUserIdentifier(): string
     {
-        if (empty($this->email)) {
-            throw new LogicException('Un utilisateur doit avoir un email.');
+        if ('' === $this->email || '0' === $this->email) {
+            throw new \LogicException('Un utilisateur doit avoir un email.');
         }
 
         return $this->email;
-    }
-
-    public function getPassword(): ?string
-    {
-        return $this->password;
     }
 
     public function getRoles(): array
@@ -218,21 +204,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getNormalizedEmail(): string
     {
-        return strtolower(trim($this->email));
-    }
-
-    public function getNormalizedFirstName(): string
-    {
-        return ucfirst(strtoupper(trim($this->firstName)));
-    }
-
-    public function getNormalizedLastName(): string
-    {
-        return ucfirst(strtoupper(trim($this->lastName)));
+        return $this->email;
     }
 
     /**
-     * Nom complet.
+     * Formatage pour affichage : Prénom avec première lettre en majuscule (ex: "Jean-Pierre").
+     */
+    public function getNormalizedFirstName(): string
+    {
+        return mb_convert_case($this->firstName, \MB_CASE_TITLE, 'UTF-8');
+    }
+
+    /**
+     * Formatage réglementaire : Nom entièrement en majuscules (ex: "DUPONT").
+     */
+    public function getNormalizedLastName(): string
+    {
+        return mb_strtoupper($this->lastName, 'UTF-8');
+    }
+
+    /**
+     * Nom complet au format légal pour rapports LCB-FT et DER : "Jean-Pierre DUPONT".
      */
     public function getFullName(): string
     {
@@ -245,40 +237,33 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getInitials(): string
     {
-        $firstName = $this->getNormalizedFirstName();
-        $lastName =  $this->getNormalizedLastName();
+        $firstLetter = mb_substr($this->firstName, 0, 1, 'UTF-8');
+        $lastLetter = mb_substr($this->lastName, 0, 1, 'UTF-8');
 
-        $firstLetter = mb_substr($firstName, 0, 1);
-        $lastLetter = mb_substr($lastName, 0, 1);
-
-        if ($firstLetter === '' && $lastLetter === '') {
-            return '??'; // Valeur de repli (fallback)
+        if ('' === $firstLetter && '' === $lastLetter) {
+            return 'K';
         }
 
-        return sprintf(
-            '%s%s',
-            mb_strtoupper($firstLetter),
-            mb_strtoupper($lastLetter)
-        );
+        return mb_strtoupper($firstLetter . $lastLetter, 'UTF-8');
     }
 
-    public function isTokenValid(?string $token, ?DateTimeImmutable $expiresAt): bool
+    public function isTokenValid(?string $token, ?\DateTimeImmutable $expiresAt): bool
     {
-        if (null === $token || null === $expiresAt) {
+        if (null === $token || !$expiresAt instanceof \DateTimeImmutable) {
             return false;
         }
 
-        return $expiresAt > new DateTimeImmutable();
+        return $expiresAt > new \DateTimeImmutable();
     }
 
     /**
-     * @throws Exception
+     * @throws \Exception
      * @throws RandomException
      */
     public function generateMagicLinkToken(): void
     {
         $this->magicLinkToken = bin2hex(random_bytes(64));
-        $this->magicLinkTokenExpiresAt = now()->add(new DateInterval('PT10M'));
+        $this->magicLinkTokenExpiresAt = now()->add(new \DateInterval('PT10M'));
     }
 
     public function isMagicLinkTokenValid(): bool
@@ -333,5 +318,33 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->isVerified = true;
         $this->isOwner = true;
         $this->isActif = true;
+    }
+
+    public function setIsTotpVerified(bool $isTotpVerified): void
+    {
+        $this->isTotpVerified = $isTotpVerified;
+    }
+
+    // 2. 🚨 LE POINT CLÉ : On modifie l'interface de Scheb
+    public function isGoogleAuthenticatorEnabled(): bool
+    {
+        // Scheb n'imposera le 2FA à la connexion QUE si cette méthode renvoie true.
+        // Donc on exige le secret ET la vérification !
+        return null !== $this->getGoogleAuthenticatorSecret() && $this->isTotpVerified;
+    }
+
+    public function getGoogleAuthenticatorUsername(): ?string
+    {
+        return $this->email;
+    }
+
+    public function getGoogleAuthenticatorSecret(): ?string
+    {
+        return $this->googleAuthenticatorSecret;
+    }
+
+    public function setGoogleAuthenticatorSecret(?string $googleAuthenticatorSecret): void
+    {
+        $this->googleAuthenticatorSecret = $googleAuthenticatorSecret;
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\UI\Analytics;
 
 use App\Domain\Tracking\Repository\ClickLogRepositoryInterface;
@@ -10,8 +12,9 @@ final readonly class ClickAnalyticsChartBuilder
 {
     public function __construct(
         private ClickLogRepositoryInterface $analyticsRepository,
-        private ChartBuilderInterface $chartBuilder
-    ) {}
+        private ChartBuilderInterface $chartBuilder,
+    ) {
+    }
 
     public function buildTopElementsChart(int $limit = 5): Chart
     {
@@ -19,12 +22,12 @@ final readonly class ClickAnalyticsChartBuilder
         $chart = $this->chartBuilder->createChart(Chart::TYPE_DOUGHNUT);
 
         $chart->setData([
-            'labels' => array_map(fn($dto) => $dto->elementName, $topElements),
+            'labels' => array_map(static fn (\App\Application\Tracking\DTO\Request\ElementStatDTO $dto): string => $dto->elementName, $topElements),
             'datasets' => [
                 [
                     'label' => 'Clics',
                     'backgroundColor' => ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'],
-                    'data' => array_map(fn($dto) => $dto->clickCount, $topElements),
+                    'data' => array_map(static fn (\App\Application\Tracking\DTO\Request\ElementStatDTO $dto): int => $dto->clickCount, $topElements),
                 ],
             ],
         ]);

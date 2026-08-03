@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Compliance\Controller;
 
-use App\Application\Compliance\UseCase\DeleteComplianceFolderUseCase;
+use App\Application\Compliance\UseCase\ComplianceFolder\DeleteComplianceFolderUseCase;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Exception\CannotDeleteActiveFolderException;
+use App\Infrastructure\Compliance\Voter\ComplianceFolderVoter;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -13,17 +16,20 @@ use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[AsController]
 #[Route(path: '/app/compliance/folder/{slugId}/delete', name: 'app_compliance_delete_folder', methods: ['POST'])]
 #[IsCsrfTokenValid('remove-compliance')]
+#[IsGranted(ComplianceFolderVoter::DELETE, subject: 'complianceFolder', message: 'Vous n\'avez pas les droits pour supprimer ce dossier.')]
 class DeleteComplianceController extends AbstractController
 {
     public function __construct(
         private readonly DeleteComplianceFolderUseCase $deleteComplianceFolderUseCase,
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly LoggerInterface $logger,
-    ) {}
+    ) {
+    }
 
     public function __invoke(
         #[MapEntity(mapping: ['slugId' => 'slugId'])]
@@ -36,12 +42,10 @@ class DeleteComplianceController extends AbstractController
 
             // 3. Feedback positif pour l'UX
             $this->addFlash('success', sprintf('Le dossier %s a été supprimé avec succès.', $reference));
-
         } catch (CannotDeleteActiveFolderException $exception) {
             // 4. On gère NOTRE exception métier (l'utilisateur a fait une bêtise)
             $this->addFlash('error', $exception->getMessage());
             $this->logger->warning('Tentative de suppression d\'un dossier actif', ['id' => $complianceFolder->id]);
-
         } catch (\Exception $exception) {
             // 5. On gère les vraies erreurs serveur (ex: BDD down)
             $this->addFlash('error', 'Une erreur technique est survenue lors de la suppression.');

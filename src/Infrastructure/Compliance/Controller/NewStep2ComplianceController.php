@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Compliance\Controller;
 
+use App\Application\Compliance\UseCase\ComplianceFolder\ComplianceFolderShowAssembler;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,7 +21,9 @@ readonly class NewStep2ComplianceController
 {
     public function __construct(
         private Environment $twig,
-    ) {}
+        private ComplianceFolderShowAssembler $complianceFolderShowAssembler,
+    ) {
+    }
 
     /**
      * @throws RuntimeError
@@ -31,16 +36,17 @@ readonly class NewStep2ComplianceController
         #[MapEntity(mapping: ['slugId' => 'slugId'])]
         ComplianceFolder $folder,
     ): Response {
-
         // 💡 Sécurité bonus : Vérifier que le folder appartient bien au Workspace de l'utilisateur
         // (Généralement géré via un Voter Symfony)
+        $dto = $this->complianceFolderShowAssembler->assemble($folder);
 
         return new Response(
             $this->twig->render('@app/compliance/compliance_new_step_2.html.twig', [
                 'page_title' => 'Compléter le dossier',
-                'folder'     => $folder,
-                'method'     => $method,
-                'type'       => $type,
+                'dto' => $dto,
+                'folder' => $folder,
+                'method' => $method,
+                'type' => $type,
             ])
         );
     }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Kyc\UseCase;
 
 use App\Domain\Kyc\Event\CompanyResetEvent;
@@ -11,8 +13,9 @@ final readonly class ResetCompanyToKycFolderUseCase
 {
     public function __construct(
         private KycFolderRepositoryInterface $kycFolderRepository,
-        private EventDispatcherInterface $eventDispatcher
-    ) {}
+        private EventDispatcherInterface $eventDispatcher,
+    ) {
+    }
 
     public function __invoke(string $folderSlugId): void
     {

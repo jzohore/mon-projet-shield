@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Notification\Email\Billing;
 
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -11,7 +13,7 @@ class DispatchPurchaseConfirmationEmail extends TemplatedEmail
         string $recipientEmail,
         string $workspaceName,
         int $credits,
-        ?string $invoiceUrl
+        ?string $invoiceUrl,
     ) {
         parent::__construct();
 

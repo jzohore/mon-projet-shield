@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Service;
 
 use Intervention\Image\Drivers\Gd\Driver as GdDriver;
 use Intervention\Image\Format;
-use Intervention\Image\Interfaces\ImageManagerInterface;
 use Intervention\Image\ImageManager;
+use Intervention\Image\Interfaces\ImageManagerInterface;
 
 readonly class ImageOptimizer
 {
