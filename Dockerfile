@@ -75,6 +75,8 @@ RUN set -eux; \
     composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
 
 COPY --link --exclude=frankenphp/ . ./
+ARG APP_SECRET="kysure_ci_dummy_secret_for_build_only"
+ARG DATABASE_URL="postgresql://dummy:dummy@127.0.0.1:5432/dummy"
 
 RUN set -eux; \
     mkdir -p var/cache var/log var/share; \
