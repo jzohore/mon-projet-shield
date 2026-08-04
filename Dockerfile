@@ -50,6 +50,7 @@ COPY --link --chmod=755 frankenphp/docker-entrypoint.sh /usr/local/bin/docker-en
 COPY --link frankenphp/Caddyfile /etc/frankenphp/Caddyfile
 
 ENTRYPOINT ["docker-entrypoint"]
+# Ce Healthcheck de base est pour le Dev/Général. Il sera écrasé en Prod.
 HEALTHCHECK --start-period=60s CMD curl http://localhost:2019/metrics --silent --show-error --fail --output /dev/null || exit 1
 CMD [ "frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile" ]
 
@@ -91,3 +92,8 @@ RUN set -eux; \
         php bin/console asset-map:compile; \
     fi; \
     chmod +x bin/console; sync;
+
+# 🛡️ KYSURE OPS : Healthcheck intelligent (Auto-détection Web vs Worker)
+# Écrase le Healthcheck natif pour protéger les Workers d'un rollback Coolify.
+HEALTHCHECK --start-period=60s --interval=15s --timeout=3s --retries=3 \
+    CMD sh -c 'if [ "$KYSURE_ROLE" = "worker" ]; then exit 0; else curl -f http://localhost:2019/metrics || exit 1; fi'

@@ -7,15 +7,13 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
     echo "🚀 [KYSURE OPS] Initialisation du conteneur..."
 
     # ---------------------------------------------------------
-    # 1. 🔐 DÉCHIFFREMENT DES SECRETS (SOPS + Age) - OBLIGATOIRE EN PREMIER
+    # 1. 🔐 DÉCHIFFREMENT DES SECRETS (SOPS + Age)
     # ---------------------------------------------------------
     if [ "$APP_ENV" = 'prod' ] || [ "$APP_ENV" = 'staging' ]; then
-        # On cible le fichier avec le suffixe .enc pour éviter que Symfony ne le lise nativement
         TARGET_ENV_FILE=".env.${APP_ENV}.enc"
 
         if [ -f "$TARGET_ENV_FILE" ] && [ -n "$SOPS_AGE_KEY" ]; then
             echo "🔑 [KYSURE SEC] Déchiffrement de $TARGET_ENV_FILE via SOPS..."
-            # On écrase le .env.local avec les secrets en clair
             sops -d "$TARGET_ENV_FILE" > .env.local
         else
             echo "⚠️ [KYSURE OPS] Fichier $TARGET_ENV_FILE ou clé SOPS manquante. Impossible de déchiffrer."
@@ -23,7 +21,7 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
     fi
 
     # ---------------------------------------------------------
-    # 2. 📦 INSTALLATION DES DÉPENDANCES (Seulement en Dev)
+    # 2. 📦 INSTALLATION DES DÉPENDANCES (Dev uniquement)
     # ---------------------------------------------------------
     if [ -z "$(ls -A 'vendor/' 2>/dev/null)" ]; then
        echo "📦 [KYSURE DEV] Installation des vendors manquants..."
@@ -31,7 +29,7 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
     fi
 
     # ---------------------------------------------------------
-    # 3. 🗄️ VÉRIFICATION ET MIGRATION DE LA BASE DE DONNÉES
+    # 3. 🗄️ VÉRIFICATION ET MIGRATION DE LA BDD
     # ---------------------------------------------------------
     if grep -q ^DATABASE_URL= .env* 2>/dev/null; then
        echo '⏳ [KYSURE BDD] En attente de la connexion PostgreSQL...'
@@ -54,7 +52,6 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
           echo '✅ [KYSURE BDD] Connexion établie.'
        fi
 
-       # Exécution des migrations (Idempotent)
        if [ "$(find ./migrations -iname '*.php' -print -quit)" ]; then
           echo "📦 [KYSURE BDD] Application des migrations Doctrine..."
           php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing
@@ -62,7 +59,7 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
     fi
 
     # ---------------------------------------------------------
-    # 4. 🧹 OPTIMISATION DU CACHE & WORKERS (Seulement en Prod)
+    # 4. 🧹 OPTIMISATION DU CACHE & WORKERS (Prod/Staging)
     # ---------------------------------------------------------
     if [ "$APP_ENV" = 'prod' ] || [ "$APP_ENV" = 'staging' ]; then
         echo "⚡ [KYSURE CACHE] Vidage et préchauffage du cache..."
@@ -73,20 +70,19 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
         php bin/console messenger:stop-workers || true
     fi
 
-	# ---------------------------------------------------------
-	# 5. 🔀 ROUTAGE DU PROCESSUS (WEB vs WORKER)
-	# ---------------------------------------------------------
-	if [ "$KYSURE_ROLE" = 'worker' ]; then
-		echo "⚙️ [KYSURE OPS] Démarrage en mode WORKER Messenger asynchrone..."
-		# On écrase le processus avec la boucle infinie de Messenger
-		exec php bin/console messenger:consume --all --memory-limit=128M --time-limit=3600
-	else
-		echo "🌐 [KYSURE OPS] Démarrage en mode WEB (FrankenPHP)..."
-		# Lancement du processus principal natif de l'image de base
-		exec docker-php-entrypoint "$@"
-	fi
-    echo '🟢 [KYSURE OPS] Application PHP prête à servir le trafic !'
+    echo '🟢 [KYSURE OPS] Initialisation terminée !'
+
+    # ---------------------------------------------------------
+    # 5. 🔀 ROUTAGE DU PROCESSUS (WEB vs WORKER)
+    # ---------------------------------------------------------
+    if [ "$KYSURE_ROLE" = 'worker' ]; then
+       echo "⚙️ [KYSURE OPS] Démarrage en mode WORKER Messenger asynchrone..."
+       # On passe les queues standards explicites pour la production (modifie selon tes besoins)
+       exec php bin/console messenger:consume --all --memory-limit=128M --time-limit=3600
+    fi
+
+    echo "🌐 [KYSURE OPS] Démarrage en mode WEB (FrankenPHP)..."
 fi
 
-# Lancement du processus principal (FrankenPHP) natif de l'image de base
+# Si le rôle n'est pas "worker", on lance le processus Web par défaut de l'image
 exec docker-php-entrypoint "$@"
