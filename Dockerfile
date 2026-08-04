@@ -35,8 +35,9 @@ RUN set -eux; \
        pdo_pgsql \
     ;
 
-# 🔐 KYSURE SEC : Installation de SOPS pour le déchiffrement Age au démarrage
-RUN curl -L -o /usr/local/bin/sops https://github.com/getsops/sops/releases/download/v3.8.1/sops-v3.8.1.linux.amd64 \
+# 🔐 KYSURE SEC : Installation dynamique de SOPS selon l'architecture du CPU (AMD64 ou ARM64)
+ARG TARGETARCH
+RUN curl -L -o /usr/local/bin/sops https://github.com/getsops/sops/releases/download/v3.8.1/sops-v3.8.1.linux.${TARGETARCH:-amd64} \
     && chmod +x /usr/local/bin/sops
 
 RUN echo "memory_limit = 512M" > /usr/local/etc/php/conf.d/symfony.ini
@@ -78,6 +79,7 @@ COPY --link --exclude=frankenphp/ . ./
 ARG APP_SECRET="kysure_ci_dummy_secret_for_build_only"
 ARG DATABASE_URL="postgresql://dummy:dummy@127.0.0.1:5432/dummy"
 ARG SENTRY_DSN="https://dummy_public_key@dummy.ingest.sentry.io/1234567"
+
 RUN set -eux; \
     mkdir -p var/cache var/log var/share; \
     composer dump-autoload --classmap-authoritative --no-dev; \
