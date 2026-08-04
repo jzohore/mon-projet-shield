@@ -77,7 +77,7 @@ RUN set -eux; \
 COPY --link --exclude=frankenphp/ . ./
 ARG APP_SECRET="kysure_ci_dummy_secret_for_build_only"
 ARG DATABASE_URL="postgresql://dummy:dummy@127.0.0.1:5432/dummy"
-
+ARG SENTRY_DSN="https://dummy_public_key@dummy.ingest.sentry.io/1234567"
 RUN set -eux; \
     mkdir -p var/cache var/log var/share; \
     composer dump-autoload --classmap-authoritative --no-dev; \
