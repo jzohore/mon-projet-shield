@@ -73,6 +73,18 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
         php bin/console messenger:stop-workers || true
     fi
 
+	# ---------------------------------------------------------
+	# 5. 🔀 ROUTAGE DU PROCESSUS (WEB vs WORKER)
+	# ---------------------------------------------------------
+	if [ "$KYSURE_ROLE" = 'worker' ]; then
+		echo "⚙️ [KYSURE OPS] Démarrage en mode WORKER Messenger asynchrone..."
+		# On écrase le processus avec la boucle infinie de Messenger
+		exec php bin/console messenger:consume async async_priority failed --memory-limit=128M --time-limit=3600
+	else
+		echo "🌐 [KYSURE OPS] Démarrage en mode WEB (FrankenPHP)..."
+		# Lancement du processus principal natif de l'image de base
+		exec docker-php-entrypoint "$@"
+	fi
     echo '🟢 [KYSURE OPS] Application PHP prête à servir le trafic !'
 fi
 
