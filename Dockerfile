@@ -73,14 +73,21 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 COPY --link frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
 
 COPY --link composer.* symfony.* ./
+# 🛡️ FIX : à ce stade, config/ (donc config/preload.php référencé par
+# opcache.preload dans 20-app.prod.ini) n'est pas encore copié dans l'image.
+# PHP_INI_SCAN_DIR=/dev/null empêche PHP de charger app.conf.d/*.ini pour
+# cette seule invocation CLI de Composer, sans toucher au comportement
+# runtime normal du conteneur (qui garde sa vraie valeur ensuite).
 RUN set -eux; \
-    composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
+    PHP_INI_SCAN_DIR=/dev/null composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
 
 COPY --link --exclude=frankenphp/ . ./
 ARG APP_SECRET="kysure_ci_dummy_secret_for_build_only"
 ARG DATABASE_URL="postgresql://dummy:dummy@127.0.0.1:5432/dummy"
 ARG SENTRY_DSN="https://dummy_public_key@dummy.ingest.sentry.io/1234567"
 
+# 🛡️ À partir d'ici, config/ (et donc config/preload.php) existe bien sur le
+# disque : pas besoin de neutraliser PHP_INI_SCAN_DIR pour ce bloc.
 RUN set -eux; \
     mkdir -p var/cache var/log var/share; \
     composer dump-autoload --classmap-authoritative --no-dev; \
