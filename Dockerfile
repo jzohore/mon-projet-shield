@@ -33,6 +33,7 @@ RUN set -eux; \
        sockets \
        gd \
        pdo_pgsql \
+       sodium \
     ;
 
 # 🔐 KYSURE SEC : Installation dynamique de SOPS selon l'architecture du CPU (AMD64 ou ARM64)
@@ -75,11 +76,14 @@ COPY --link frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
 COPY --link composer.* symfony.* ./
 # 🛡️ FIX : à ce stade, config/ (donc config/preload.php référencé par
 # opcache.preload dans 20-app.prod.ini) n'est pas encore copié dans l'image.
-# PHP_INI_SCAN_DIR=/dev/null empêche PHP de charger app.conf.d/*.ini pour
-# cette seule invocation CLI de Composer, sans toucher au comportement
-# runtime normal du conteneur (qui garde sa vraie valeur ensuite).
+# On invoque composer.phar directement via `php -d opcache.preload=` pour
+# neutraliser UNIQUEMENT cette directive sur cette invocation précise.
+# ⚠️ Contrairement à PHP_INI_SCAN_DIR=/dev/null (testé avant, cassait tout),
+# ceci laisse intact le scan de conf.d/ et app.conf.d/ : toutes les extensions
+# (amqp, imagick, sodium, gd...) restent bien chargées pour la résolution
+# des dépendances Composer, seul opcache.preload est court-circuité.
 RUN set -eux; \
-    PHP_INI_SCAN_DIR=/dev/null composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
+    php -d opcache.preload= "$(command -v composer)" install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
 
 COPY --link --exclude=frankenphp/ . ./
 ARG APP_SECRET="kysure_ci_dummy_secret_for_build_only"
