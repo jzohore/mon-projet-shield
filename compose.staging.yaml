@@ -87,16 +87,13 @@ services:
     image: 'docuseal/docuseal:latest'
     container_name: kysure_docuseal_staging
     restart: unless-stopped
-    environment:
-      # 🛡️ FIX : Coolify injecte les variables globales du projet (dont
-      # DATABASE_URL) dans TOUS les conteneurs du stack, même ceux qui ne les
-      # déclarent pas explicitement. Sans cette ligne, DocuSeal (Rails) héritait
-      # du DATABASE_URL de Symfony et migrait son propre schéma ActiveRecord
-      # (tables "accounts", "users"...) dans la base Postgres de l'application,
-      # provoquant des conflits avec les migrations Doctrine.
-      # Une valeur vide force DocuSeal à retomber sur SQLite dans /data (volume
-      # docuseal_staging_data déjà monté à cet effet).
-      DATABASE_URL: ""
+    # 🛡️ FIX : Coolify réinjecte DATABASE_URL au niveau du conteneur même
+    # quand le compose déclare explicitement une valeur vide pour ce service
+    # (comportement confirmé empiriquement, contraire à la doc "compose =
+    # source de vérité"). On neutralise donc la variable directement dans
+    # l'environnement du process au démarrage, quelle que soit son origine,
+    # pour forcer DocuSeal à retomber sur SQLite dans /data.
+    entrypoint: ["sh", "-c", "unset DATABASE_URL; exec /app/bin/bundle exec puma -C /app/config/puma.rb --dir /app"]
     volumes:
       - 'docuseal_staging_data:/data'
 
