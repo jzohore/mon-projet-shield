@@ -81,8 +81,16 @@ services:
     image: 'axllent/mailpit:latest'
     container_name: kysure_mailpit_staging
     restart: unless-stopped
-    ports:
-      - '8025:8025'
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_DATABASE_PATH: /data/mailpit.db
+      MP_SMTP_BIND_ADDR: '0.0.0.0:1025'
+      MP_UI_BIND_ADDR: '0.0.0.0:8025'
+    volumes:
+      - 'mailpit_staging_data:/data'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.mailpit-staging.loadbalancer.server.port=8025"
 
   docuseal-staging:
     image: 'docuseal/docuseal:latest'
@@ -107,3 +115,4 @@ volumes:
   postgres_staging_data: null
   rabbitmq_staging_data: null
   docuseal_staging_data: null
+  mailpit_staging_data: null
