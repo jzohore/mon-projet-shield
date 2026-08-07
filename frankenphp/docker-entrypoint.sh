@@ -54,6 +54,7 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 
        if [ "$(find ./migrations -iname '*.php' -print -quit)" ]; then
           echo "📦 [KYSURE BDD] Application des migrations Doctrine..."
+          php bin/console doctrine:scheme:update --force
           php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing
        fi
     fi
