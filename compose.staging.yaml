@@ -7,7 +7,8 @@ services:
     container_name: kysure_web_staging
     restart: unless-stopped
     environment:
-      SERVER_NAME: staging.kysure.fr
+      SERVER_NAME: '${SERVER_NAME:-:80}'
+      TRUSTED_PROXIES: '${TRUSTED_PROXIES}'
       APP_ENV: staging
       KYSURE_ROLE: web
       SOPS_AGE_KEY: '${SOPS_AGE_KEY}'
