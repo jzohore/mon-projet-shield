@@ -2,79 +2,85 @@ name: 🚀 KYSURE CI/CD Pipeline
 
 on:
     push:
-        branches:
-            - main  # Remplace par ta branche de travail quotidienne (ex: develop)
+        branches-ignore:
+            - staging   # 🛡️ Évite la boucle infinie : le job merge-to-staging pousse
+            # sur staging, ce qui redéclencherait le workflow sans cette exclusion.
+
+permissions:
+    contents: write   # 🛡️ Nécessaire pour que git push origin staging fonctionne avec GITHUB_TOKEN
 
 jobs:
     # 🛡️ ÉTAPE 1 : CONTRÔLE QUALITÉ & SÉCURITÉ
     quality-assurance:
         name: Code Quality & Static Analysis (PHP 8.4)
         runs-on: ubuntu-latest
+        timeout-minutes: 20
 
         steps:
             -   name: Checkout Code
                 uses: actions/checkout@v4
+                with:
+                    fetch-depth: 0   # nécessaire pour les tâches GrumPHP basées sur git diff
 
             -   name: Setup PHP 8.4
                 uses: shivammathur/setup-php@v2
                 with:
                     php-version: '8.4'
-                    extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, redis
+                    extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql, apcu, opcache, zip, amqp, sockets, gd, imagick, sodium
                     coverage: none
+
+            -   name: Validate composer.json / composer.lock
+                run: composer validate --strict
 
             -   name: Get Composer Cache Directory
                 id: composer-cache
-                run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+                run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
             -   name: Cache Dependencies
                 uses: actions/cache@v4
                 with:
                     path: ${{ steps.composer-cache.outputs.dir }}
-                    key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-                    restore-keys: ${{ runner.os }}-composer-
+                    key: ${{ runner.os }}-composer-php84-${{ hashFiles('**/composer.lock') }}
+                    restore-keys: ${{ runner.os }}-composer-php84-
 
             -   name: Install Dependencies
                 run: composer install --prefer-dist --no-progress --no-interaction
 
             -   name: Run KYSURE Quality Pipeline (GrumPHP)
-                # 🛡️ Si ceci échoue, GitHub marque la PR en rouge et le Webhook vers Coolify ne sera pas déclenché (si tu merges pas)
                 run: vendor/bin/grumphp run --no-interaction
 
     # 🔀 ÉTAPE 2 : FUSION AUTOMATIQUE VERS STAGING
     merge-to-staging:
         name: 🔀 Auto-Merge to Staging
-        needs: quality-assurance # Ne s'exécute QUE si le QA réussit
-        if: github.ref == 'refs/heads/staging'
+        needs: quality-assurance
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Code
               uses: actions/checkout@v4
               with:
-                  fetch-depth: 0 # Nécessaire pour l'historique Git
+                  fetch-depth: 0
                   token: ${{ secrets.GITHUB_TOKEN }}
 
             - name: Merge branch to staging
               run: |
                   git config user.name "github-actions[bot]"
                   git config user.email "github-actions[bot]@users.noreply.github.com"
-                  
-                  # Bascule sur staging (ou le crée s'il n'existe pas localement)
+
+                  git fetch origin staging || true
                   git checkout staging || git checkout -b staging
-                  
-                  # Fusionne la branche courante (main) vers staging
-                  git merge ${{ github.ref_name }} --no-edit
-                  
-                  # Pousse la mise à jour sur le dépôt distant
+
+                  # Fusionne la branche de ticket courante vers staging
+                  git merge "${{ github.sha }}" --no-edit
+
                   git push origin staging
 
     # 🚀 ÉTAPE 3 : DÉPLOIEMENT SUR LE SERVEUR
     deploy-coolify:
         name: 🚀 Deploy Staging to Coolify
-        needs: merge-to-staging # Ne s'exécute QUE si le merge réussit
+        needs: merge-to-staging
         runs-on: ubuntu-latest
         steps:
-            - name: Trigger Coolify Webhook
+            - name: Trigger Coolify Deploy Webhook
               run: |
-                  echo "Déclenchement du déploiement via Webhook Coolify..."
-                  # Appel sécurisé au Webhook (Fail fast en cas d'erreur réseau)
-                  curl -f -s -X GET "${{ secrets.COOLIFY_WEBHOOK_URL }}"
+                  curl --fail --request GET "${{ secrets.COOLIFY_WEBHOOK_URL }}" \
+                    --header "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}"
