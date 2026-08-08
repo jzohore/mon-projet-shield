@@ -146,6 +146,7 @@
             "@fix"
         ],
         "check": [
+            "@env:sanitize",
             "@rector-check",
             "@cs-check",
             "@lint",

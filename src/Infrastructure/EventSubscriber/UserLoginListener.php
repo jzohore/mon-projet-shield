@@ -50,7 +50,7 @@ final readonly class UserLoginListener implements EventSubscriberInterface
         // On enregistre l'appareil pour TOUT LE MONDE (Sécurité LCB-FT / Anti-fraude)
         if ($authenticatable instanceof User) {
             // PHP 8.4 : Accès direct à la propriété readonly ou private(set)
-            $this->deviceDetectorService->createDeviceDetector($authenticatable->slugId);
+            $this->deviceDetectorService->trackCurrentDevice($authenticatable->slugId);
         }
     }
 

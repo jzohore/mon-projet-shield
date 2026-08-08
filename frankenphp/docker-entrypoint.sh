@@ -53,9 +53,19 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
        fi
 
        if [ "$(find ./migrations -iname '*.php' -print -quit)" ]; then
-          echo "📦 [KYSURE BDD] Application des migrations Doctrine..."
-          #php bin/console doctrine:schema:update --force
-          #php bin/console doctrine:migrations:migrate --no-interaction --all-or-nothing
+          echo "📦 [KYSURE BDD] Préparation de l'environnement de base de données..."
+
+          # 1. IDEMPOTENCE : S'assure que la table d'historique des migrations existe
+          php bin/console doctrine:migrations:sync-metadata-storage --no-interaction
+
+          echo "🚀 [KYSURE BDD] Exécution transactionnelle des nouvelles migrations..."
+
+          # 2. SECOPS : Exécute uniquement les nouvelles migrations.
+          # --allow-no-migration : Ne crashe pas s'il n'y a pas de nouvelle migration.
+          # --all-or-nothing : Si une requête SQL plante, toute la migration fait un ROLLBACK (zéro corruption).
+          php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --all-or-nothing
+       else
+          echo "ℹ️ [KYSURE BDD] Aucun fichier de migration trouvé, étape ignorée."
        fi
     fi
 

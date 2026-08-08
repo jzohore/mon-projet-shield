@@ -4,123 +4,67 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Service;
 
-use App\Application\Device\DTO\Request\CreateDeviceRequest;
-use App\Application\Device\UseCase\CreateDeviceUseCase;
+use App\Application\Security\DTO\CreateDeviceRequest;
+use App\Application\Security\UseCase\CreateDeviceUseCase;
 use DeviceDetector\ClientHints;
 use DeviceDetector\DeviceDetector;
 use DeviceDetector\Parser\AbstractBotParser;
 use DeviceDetector\Parser\AbstractParser;
-use GeoIp2\Database\Reader;
-use GeoIp2\Exception\AddressNotFoundException;
-use GeoIp2\Model\City;
-use MaxMind\Db\Reader\InvalidDatabaseException;
-use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RequestStack;
 
-class DeviceDetectorService
+final readonly class DeviceDetectorService
 {
-    private ?Reader $cityDbReader = null;
-
     public function __construct(
-        private readonly CreateDeviceUseCase $createDevice,
-        private readonly ParameterBagInterface $parameterBag,
-        private readonly RequestStack $requestStack,
+        private CreateDeviceUseCase $createDevice,
+        private RequestStack $requestStack,
+        private IpGeocoder $ipGeocoder,
     ) {
     }
 
-    /**
-     * Initialise le Reader GeoIP de manière lazy (une seule fois).
-     *
-     * @throws InvalidDatabaseException
-     */
-    private function getReader(): Reader
-    {
-        if (!$this->cityDbReader instanceof Reader) {
-            $path = $this->parameterBag->get('geoip_db_path');
-            if (!is_string($path)) {
-                throw new \RuntimeException('Le paramètre GeoIP2_file doit être une chaîne de caractères.');
-            }
-            $this->cityDbReader = new Reader($path);
-        }
-
-        return $this->cityDbReader;
-    }
-
-    /**
-     * @throws \Exception
-     */
-    public function getDeviceDetector(Request $request): DeviceDetector
-    {
-        AbstractBotParser::setVersionTruncation(AbstractParser::VERSION_TRUNCATION_NONE);
-
-        /** @var string $userAgent */
-        $userAgent = $request->headers->get('User-Agent', '');
-        $clientHints = ClientHints::factory($request->server->all());
-
-        return new DeviceDetector($userAgent, $clientHints);
-    }
-
-    /**
-     * @throws InvalidDatabaseException
-     */
-    public function getCityData(string $ip): ?City
-    {
-        try {
-            return $this->getReader()->city($ip);
-        } catch (AddressNotFoundException) {
-            return null;
-        }
-    }
-
-    /**
-     * @throws InvalidDatabaseException
-     */
-    public function createDeviceDetector(?string $userSlugId): void
+    public function trackCurrentDevice(string $userSlugId): void
     {
         $request = $this->requestStack->getCurrentRequest();
         if (!$request instanceof Request) {
             return;
         }
 
-        // $ip = $request->getClientIp() ?? '2a01:cb00:8b5:5700:e46b:ac5d:48f3:ad81';
-        $ip = '2a01:cb00:8b5:5700:e46b:ac5d:48f3:ad81';
+        $ip = $request->getClientIp() ?? '127.0.0.1';
         $session = $request->hasSession() ? $request->getSession() : null;
+        $sessionId = $session?->getId() ?? md5($ip . ($request->headers->get('User-Agent') ?? ''));
 
-        $device = $this->getDeviceDetector($request);
-        $device->parse();
+        // 1. Analyse User-Agent / ClientHints
+        AbstractBotParser::setVersionTruncation(AbstractParser::VERSION_TRUNCATION_NONE);
+        $userAgent = (string) $request->headers->get('User-Agent', '');
+        $clientHints = ClientHints::factory($request->server->all());
 
-        $cityData = $this->getCityData($ip);
+        $dd = new DeviceDetector($userAgent, $clientHints);
+        $dd->parse();
 
-        $deviceDTO = new CreateDeviceRequest();
-        $deviceDTO->userSlugId = $userSlugId;
-        $deviceDTO->addressIp = $ip;
-        $deviceDTO->sessionId = $session?->getId();
-
-        // Données Device
-        $deviceDTO->clientDeviceName = $device->getDeviceName();
-        $deviceDTO->clientBrandName = $device->getBrandName();
-        $deviceDTO->clientIsBrowser = $device->isBrowser();
-        $deviceDTO->clientIsSmartphone = $device->isSmartphone();
+        // 2. Géolocalisation via le service hybride KYSURE
+        $geoResult = $this->ipGeocoder->geolocate($ip);
 
         /** @var array<string, mixed> $os */
-        $os = $device->getOs();
+        $os = $dd->getOs() ?: [];
         /** @var array<string, mixed> $client */
-        $client = $device->getClient();
+        $client = $dd->getClient() ?: [];
 
-        // Correction PHPStan : Conversion des tableaux associatifs en listes de valeurs
-        $deviceDTO->clientOs = $os;
-        $deviceDTO->clientInfo = $client;
+        // 3. Assemblage du DTO Immutable
+        $deviceDTO = new CreateDeviceRequest(
+            userSlugId: $userSlugId,
+            addressIp: $ip,
+            sessionId: $sessionId,
+            clientOs: $os,
+            clientInfo: $client,
+            clientDeviceName: $dd->getDeviceName() ?: 'Desktop',
+            clientBrandName: $dd->getBrandName() ?: 'Generic',
+            clientIsBrowser: $dd->isBrowser(),
+            clientIsSmartphone: $dd->isSmartphone(),
+            countryIsoCode: $geoResult->countryCode,
+            cityName: $geoResult->city,
+        );
 
-        // Données Géo (MaxMind)
-        if ($cityData instanceof City) {
-            $deviceDTO->countryIsoCode = $cityData->country->isoCode;
-            $deviceDTO->postalCode = $cityData->postal->code;
-            $deviceDTO->cityName = $cityData->city->name;
-            $deviceDTO->longitude = $cityData->location->longitude;
-            $deviceDTO->latitude = $cityData->location->latitude;
-        }
-
+        // 4. Exécution du UseCase
         ($this->createDevice)($deviceDTO);
     }
 }

@@ -1,6 +1,5 @@
 # yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
 parameters:
-    geoip_db_path: '%env(resolve:GEOIP_DB_PATH)%'
     app.kyc_upload_directory: '%kernel.project_dir%/public/uploads/kyc'
     tempStorageDir: '%kernel.project_dir%/var/uploads/kyc_temp'
 
