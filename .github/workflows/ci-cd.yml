@@ -1,0 +1,66 @@
+name: 🚀 KYSURE CI/CD Pipeline
+
+on:
+    push:
+        branches:
+            - main  # Remplace par ta branche de travail quotidienne (ex: develop)
+
+jobs:
+    # 🛡️ ÉTAPE 1 : CONTRÔLE QUALITÉ & SÉCURITÉ
+    quality-assurance:
+        name: 🛡️ QA & Security (PHP 8.4)
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
+
+            - name: Setup PHP 8.4
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.4'
+                  extensions: mbstring, intl, pdo_mysql, zip
+                  coverage: none
+
+            - name: Install Dependencies (Composer)
+              run: composer install --prefer-dist --no-progress --no-scripts
+
+            # - name: Run PHPStan (Optionnel mais recommandé pour le DDD)
+            #   run: vendor/bin/phpstan analyse src --memory-limit=256M
+
+    # 🔀 ÉTAPE 2 : FUSION AUTOMATIQUE VERS STAGING
+    merge-to-staging:
+        name: 🔀 Auto-Merge to Staging
+        needs: quality-assurance # Ne s'exécute QUE si le QA réussit
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0 # Nécessaire pour l'historique Git
+                  token: ${{ secrets.GITHUB_TOKEN }}
+
+            - name: Merge branch to staging
+              run: |
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
+                  
+                  # Bascule sur staging (ou le crée s'il n'existe pas localement)
+                  git checkout staging || git checkout -b staging
+                  
+                  # Fusionne la branche courante (main) vers staging
+                  git merge ${{ github.ref_name }} --no-edit
+                  
+                  # Pousse la mise à jour sur le dépôt distant
+                  git push origin staging
+
+    # 🚀 ÉTAPE 3 : DÉPLOIEMENT SUR LE SERVEUR
+    deploy-coolify:
+        name: 🚀 Deploy Staging to Coolify
+        needs: merge-to-staging # Ne s'exécute QUE si le merge réussit
+        runs-on: ubuntu-latest
+        steps:
+            - name: Trigger Coolify Webhook
+              run: |
+                  echo "Déclenchement du déploiement via Webhook Coolify..."
+                  # Appel sécurisé au Webhook (Fail fast en cas d'erreur réseau)
+                  curl -f -s -X GET "${{ secrets.COOLIFY_WEBHOOK_URL }}"
