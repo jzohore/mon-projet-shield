@@ -8,24 +8,37 @@ on:
 jobs:
     # 🛡️ ÉTAPE 1 : CONTRÔLE QUALITÉ & SÉCURITÉ
     quality-assurance:
-        name: 🛡️ QA & Security (PHP 8.4)
+        name: Code Quality & Static Analysis (PHP 8.4)
         runs-on: ubuntu-latest
+
         steps:
-            - name: Checkout Code
-              uses: actions/checkout@v4
+            -   name: Checkout Code
+                uses: actions/checkout@v4
 
-            - name: Setup PHP 8.4
-              uses: shivammathur/setup-php@v2
-              with:
-                  php-version: '8.4'
-                  extensions: mbstring, intl, pdo_mysql, zip
-                  coverage: none
+            -   name: Setup PHP 8.4
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: '8.4'
+                    extensions: mbstring, xml, ctype, iconv, intl, pdo_mysql, redis
+                    coverage: none
 
-            - name: Install Dependencies (Composer)
-              run: composer install --prefer-dist --no-progress --no-scripts
+            -   name: Get Composer Cache Directory
+                id: composer-cache
+                run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
-            # - name: Run PHPStan (Optionnel mais recommandé pour le DDD)
-            #   run: vendor/bin/phpstan analyse src --memory-limit=256M
+            -   name: Cache Dependencies
+                uses: actions/cache@v4
+                with:
+                    path: ${{ steps.composer-cache.outputs.dir }}
+                    key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+                    restore-keys: ${{ runner.os }}-composer-
+
+            -   name: Install Dependencies
+                run: composer install --prefer-dist --no-progress --no-interaction
+
+            -   name: Run KYSURE Quality Pipeline (GrumPHP)
+                # 🛡️ Si ceci échoue, GitHub marque la PR en rouge et le Webhook vers Coolify ne sera pas déclenché (si tu merges pas)
+                run: vendor/bin/grumphp run --no-interaction
 
     # 🔀 ÉTAPE 2 : FUSION AUTOMATIQUE VERS STAGING
     merge-to-staging:
