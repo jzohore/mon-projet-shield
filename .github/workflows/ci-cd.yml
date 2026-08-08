@@ -44,6 +44,7 @@ jobs:
     merge-to-staging:
         name: 🔀 Auto-Merge to Staging
         needs: quality-assurance # Ne s'exécute QUE si le QA réussit
+        if: github.ref == 'refs/heads/staging'
         runs-on: ubuntu-latest
         steps:
             - name: Checkout Code
