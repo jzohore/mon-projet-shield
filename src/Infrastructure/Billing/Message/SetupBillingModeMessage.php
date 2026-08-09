@@ -1,13 +1,14 @@
 <?php
 
-namespace App\Infrastructure\Billing\Message;
+declare(strict_types=1);
 
-use Symfony\Component\Uid\Uuid;
+namespace App\Infrastructure\Billing\Message;
 
 readonly class SetupBillingModeMessage
 {
     public function __construct(
-        public Uuid $workspaceId,
+        public string $workspaceId,
         public string $userId,
-    ) {}
+    ) {
+    }
 }

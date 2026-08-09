@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Billing\UseCase\Products;
 
 use App\Application\Billing\DTO\Request\CreateProductRequest;
@@ -14,13 +16,14 @@ final readonly class CreateProductUseCase
     public function __construct(
         private ProductRepositoryInterface $productRepository,
         private StripeService $stripeService,
-    ) {}
+    ) {
+    }
 
     public function __invoke(CreateProductRequest $request): CreateProductResponse
     {
         $existingProduct = $this->productRepository->getByReference($request->reference);
 
-        if ($existingProduct) {
+        if ($existingProduct instanceof Product) {
             // Le produit existe déjà, on évite de le dupliquer !
             // (Si tu as une méthode update dans ton entité, tu pourrais mettre à jour le nom ici)
             return CreateProductResponse::fromEntity($existingProduct);
@@ -44,12 +47,11 @@ final readonly class CreateProductUseCase
             name: $request->name,
             credits: $request->credits,
             priceInCents: $request->priceInCents,
-            stripePriceId: $generatedStripePriceId,
+            stripePriceId: (string) $generatedStripePriceId,
             description: $request->description,
             isRecommended: $request->isRecommended,
             isRecurring: $request->isRecurring
         );
-
 
         $this->productRepository->save($product);
 

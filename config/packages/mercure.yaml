@@ -1,0 +1,16 @@
+parameters:
+    # 🛡️ SÉCURITÉ CI/CD : Fallbacks absolus pour GitHub Actions et les nouveaux devs
+    # Si le .env ou le système ne fournit pas ces variables, Symfony utilisera celles-ci
+    # pour compiler le cache sans crasher (TypeError null).
+    env(MERCURE_URL): 'http://php/.well-known/mercure'
+    env(MERCURE_PUBLIC_URL): 'https://localhost/.well-known/mercure'
+    env(MERCURE_JWT_SECRET): 'ci_dummy_secret_do_not_use_in_prod'
+
+mercure:
+    hubs:
+        default:
+            url: '%env(default::MERCURE_URL)%'
+            public_url: '%env(default::MERCURE_PUBLIC_URL)%'
+            jwt:
+                secret: '%env(MERCURE_JWT_SECRET)%'
+                publish: '*'

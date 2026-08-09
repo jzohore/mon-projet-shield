@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Persistence;
 
 use App\Domain\Kyc\Entity\Stakeholder;
@@ -16,8 +18,9 @@ use Doctrine\ORM\EntityRepository;
 class StakeholderRepository implements StakeholderRepositoryInterface
 {
     /** @var EntityRepository<Stakeholder> */
-    private EntityRepository $repository;
-    public function __construct(private EntityManagerInterface $entityManager)
+    private readonly EntityRepository $repository;
+
+    public function __construct(private readonly EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(Stakeholder::class);
     }

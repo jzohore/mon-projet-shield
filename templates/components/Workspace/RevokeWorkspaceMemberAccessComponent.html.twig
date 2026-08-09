@@ -1,0 +1,120 @@
+<div {{ attributes }}>
+    {% include 'components/partials/_live_alerts.html.twig' with {
+        message: this.actionMessage|default(null),
+        type: this.actionMessageType|default('success')
+    } %}
+    <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+
+        {# 2A. Le Header de la carte (Avatar + Nom) #}
+        <div class="p-6 border-b border-slate-100 sm:flex sm:items-center sm:justify-between">
+            <div class="sm:flex sm:space-x-5 items-center">
+                <div class="flex-shrink-0 mb-4 sm:mb-0">
+                    <div class="mx-auto h-16 w-16 rounded-full bg-indigo-100 flex items-center justify-center border-4 border-white shadow-sm">
+                        <span class="text-2xl font-bold text-indigo-700">{{ member.fullName|slice(0, 1)|upper }}</span>
+                    </div>
+                </div>
+                <div class="text-center sm:text-left">
+                    <p class="text-xl font-bold text-slate-900 sm:text-2xl">{{ member.fullName }}</p>
+                    <p class="text-sm font-medium text-slate-500">{{ member.role }}</p>
+                </div>
+            </div>
+
+            <div class="mt-4 sm:mt-0 flex justify-center">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
+                        <twig:ux:icon name="lucide:shield-check" class="w-4 h-4 mr-1.5" />
+                        Accès actif
+                    </span>
+            </div>
+        </div>
+
+        {# 2B. Les Informations détaillées #}
+        <div class="px-4 py-5 sm:p-0">
+            <dl class="sm:divide-y sm:divide-slate-200">
+                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 hover:bg-slate-50 transition-colors">
+                    <dt class="text-sm font-medium text-slate-500 flex items-center">
+                        <twig:ux:icon name="lucide:mail" class="w-4 h-4 mr-2 text-slate-400" />
+                        Adresse email
+                    </dt>
+                    <dd class="mt-1 text-sm text-slate-900 font-medium sm:mt-0 sm:col-span-2">
+                        {{ member.email }}
+                    </dd>
+                </div>
+
+                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 hover:bg-slate-50 transition-colors">
+                    <dt class="text-sm font-medium text-slate-500 flex items-center">
+                        <twig:ux:icon name="lucide:key" class="w-4 h-4 mr-2 text-slate-400" />
+                        Niveau d'accès (Rôle)
+                    </dt>
+                    <dd class="mt-1 text-sm text-slate-900 sm:mt-0 sm:col-span-2">
+                        <span class="font-medium">{{ member.role }}</span>
+                        <p class="text-xs text-slate-500 mt-1">Ce rôle détermine les permissions et actions possibles sur la plateforme.</p>
+                    </dd>
+                </div>
+
+                <div class="py-4 sm:py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 hover:bg-slate-50 transition-colors">
+                    <dt class="text-sm font-medium text-slate-500 flex items-center">
+                        <twig:ux:icon name="lucide:calendar" class="w-4 h-4 mr-2 text-slate-400" />
+                        Membre depuis le
+                    </dt>
+                    <dd class="mt-1 text-sm text-slate-900 sm:mt-0 sm:col-span-2">
+                        {{ member.joinedAt }}
+                    </dd>
+                </div>
+            </dl>
+        </div>
+
+        {# 3. La "Danger Zone" #}
+        {% if member.userSlugId != app.user.slugId %}
+            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4">
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="text-sm text-slate-600">
+                        Besoin de retirer cet utilisateur de l'espace ?
+                    </div>
+
+                    <div data-controller="inline-confirm"
+                         data-action="click@window->inline-confirm#clickOutside"
+                         class="inline-block">
+                        <twig:Button
+                            variant="secondary"
+                            data-action="inline-confirm#toggle"
+                            title="Révoquer"
+                        >
+                            <twig:ux:icon name="lucide:user-x" class="w-4 h-4 mr-2" />
+                            Révoquer l'accès
+                        </twig:Button>
+
+                        <div data-inline-confirm-target="popover"
+                             class="hidden z-[100] w-64 bg-white border border-slate-200 rounded-md shadow-xl p-3 animate-in fade-in zoom-in-95 duration-200">
+
+                            <p class="text-sm text-slate-700 font-medium mb-3 text-center">
+                                Êtes-vous sûr de vouloir renvoyer l'invitation de <span class="font-bold text-slate-900">{{ member.email }}</span> ?
+                            </p>
+
+                            <div class="flex gap-2">
+                                <twig:Button variant="secondary"
+                                             data-action="live#action inline-confirm#close"
+                                             size="sm"
+                                >
+                                    Annuler
+                                </twig:Button>
+                                <div>
+                                    <twig:Button
+                                        type="button"
+                                        variant="destructive"
+                                        data-action="live#action"
+                                        data-live-action-param="revokeAccess"
+                                    >
+                                        <twig:ux:icon name="lucide:user-x" class="w-4 h-4 mr-2" />
+                                        Révoquer l'accès
+                                    </twig:Button>
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    {# <-- J'ai fermé la balise form ici ! #}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>

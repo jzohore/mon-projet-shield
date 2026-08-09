@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Twig\Components;
 
 use App\Application\Kyc\DTO\Request\AddStakeholderRequest;
@@ -26,8 +28,8 @@ use Webmozart\Assert\Assert;
 )]
 class ManageStakeholdersComponent
 {
-    use DefaultActionTrait;
     use ComponentWithFormTrait;
+    use DefaultActionTrait;
 
     #[LiveProp]
     public ?string $folderSlugId = null;
@@ -49,7 +51,8 @@ class ManageStakeholdersComponent
         private readonly SaveNewStakeHolderUseCase $saveNewStakeHolderUseCase,
         private readonly LoggerInterface $logger,
         private readonly RemoveStakeHolderUseCase $removeStakeHolderUseCase,
-    ) {}
+    ) {
+    }
 
     protected function instantiateForm(): FormInterface
     {

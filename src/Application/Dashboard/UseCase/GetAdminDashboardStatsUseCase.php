@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Dashboard\UseCase;
 
 use App\Application\Billing\Provider\MrrProviderInterface;
@@ -24,7 +26,8 @@ final readonly class GetAdminDashboardStatsUseCase
         private MrrProviderInterface $mrrProvider,
         private SubscriptionRepositoryInterface $subscriptionRepository,
         private AuditLogRepositoryInterface $auditLogRepository,
-    ) {}
+    ) {
+    }
 
     public function __invoke(): AdminDashboardStats
     {
@@ -38,19 +41,19 @@ final readonly class GetAdminDashboardStatsUseCase
         $activeWorkspaces = $this->subscriptionRepository->countByStatuses($activeStatuses);
 
         $totalWorkspaces = $this->workspaceRepository->countAll();
-        //$activeWorkspaces = $this->workspaceRepository->countActive();
+        // $activeWorkspaces = $this->workspaceRepository->countActive();
 
         // On récupère les tickets globaux en attente d'une réponse de l'équipe
         $openTickets = $this->threadRepository->countAllOpenTickets();
 
         $apiSuccessRate = 99.9;
-        $totalKyc        = $this->kycRepository->countAll();
+        $totalKyc = $this->kycRepository->countAll();
         $totalScreenings = $this->screeningRepository->countAll();
         $linkedinClicks = $this->clickLogRepository->countBySource('linkedin');
 
         // On récupère les stats des 30 derniers jours par exemple
         $thirtyDaysAgo = new \DateTimeImmutable('-30 days');
-        $clickStats    = $this->clickLogRepository->getStatsByElement($thirtyDaysAgo);
+        $clickStats = $this->clickLogRepository->getStatsByElement($thirtyDaysAgo);
         $latestWorkspaces = $this->workspaceRepository->findLatest();
         $latestAuditLogs = $this->auditLogRepository->findLatestLogs();
 

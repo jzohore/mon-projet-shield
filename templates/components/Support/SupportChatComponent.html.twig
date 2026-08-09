@@ -6,15 +6,13 @@
 <div {{ attributes.defaults({
     'data-controller': 'chat-widget mercure-sync',
     'data-mercure-sync-topic-value': topic
-}) }} class="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
-
+}) }} class="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans pointer-events-none"> {# 🪄 L'ingrédient magique est ici #}
     {# ========================================================= #}
     {# 1. LA FENÊTRE DE CHAT (WIDGET) #}
     {# ========================================================= #}
     <div data-chat-widget-target="container"
 
-         class="kysure-chat-container mb-4 w-96 max-w-[calc(100vw-2rem)] h-[600px] bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-200 flex flex-col overflow-hidden transition-all duration-500 ease-in-out">
-        {# HEADER #}
+         class="kysure-chat-container pointer-events-auto mb-4 w-96 max-w-[calc(100vw-2rem)] h-[600px] bg-white rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-200 flex flex-col overflow-hidden transition-all duration-500 ease-in-out">        {# HEADER #}
         <div class="px-5 py-4 bg-slate-900 text-white flex justify-between items-center shrink-0">
             <div class="flex items-center gap-3">
                 <div class="relative flex h-2 w-2">
@@ -142,8 +140,7 @@
     {# ========================================================= #}
     <button type="button"
             data-action="click->chat-widget#toggle"
-            class="relative size-14 bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all active:scale-95 group border-2 border-white/10">
-
+            class="relative size-14 pointer-events-auto bg-slate-900 text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all active:scale-95 group border-2 border-white/10">
         <div data-chat-widget-target="iconOpen" class="transition-all duration-300">
             {{ ux_icon('lucide:message-circle', { class: 'size-6 group-hover:rotate-12' }) }}
         </div>

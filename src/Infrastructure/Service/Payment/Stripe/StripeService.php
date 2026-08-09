@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Service\Payment\Stripe;
 
 use App\Application\User\UseCase\UpdateStripeCustomerIdUseCase;
 use App\Domain\Product\Repository\ProductRepositoryInterface;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
-use DateTimeImmutable;
 use Stripe\Customer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Invoice;
@@ -22,7 +23,8 @@ readonly class StripeService
         private string $stripeSecretKey,
         private UpdateStripeCustomerIdUseCase $stripeCustomerIdUseCase,
         private ProductRepositoryInterface $productRepository,
-    ) {}
+    ) {
+    }
 
     /**
      * Enregistre un utilisateur en tant que "Customer" sur Stripe.
@@ -35,20 +37,19 @@ readonly class StripeService
             Stripe::setApiKey($this->stripeSecretKey);
             $customer = Customer::create([
                 'email' => $user->email,
-                'name'  => $user->getFullName(), // Ou le nom du Workspace selon ton architecture
+                'name' => $user->getFullName(), // Ou le nom du Workspace selon ton architecture
                 'metadata' => [
                     'user_id' => (string) $user->id, // Indispensable pour retrouver tes petits
                 ],
             ]);
 
-
             Assert::notNull($customer->id);
             ($this->stripeCustomerIdUseCase)($user, $customer->id);
-            return $customer->id;
 
+            return $customer->id;
         } catch (ApiErrorException $e) {
             // Gérer l'erreur proprement pour ne pas faire planter ton app
-            throw new \RuntimeException('Impossible d\'enregistrer le client sur Stripe : ' . $e->getMessage());
+            throw new \RuntimeException('Impossible d\'enregistrer le client sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
@@ -56,12 +57,19 @@ readonly class StripeService
     {
         try {
             Stripe::setApiKey($this->stripeSecretKey);
-            $stripeProductPrideId = $this->productRepository->getByReference('plan_cabinet');
-            Assert::notNull($stripeProductPrideId);
+
+            $product = $this->productRepository->getByReference('plan_cabinet');
+            Assert::notNull($product, 'Le produit "plan_cabinet" est introuvable.');
+
+            // 🛡️ Type Narrowing : On extrait l'ID strict pour PHPStan
+            $priceRaw = $product->stripePriceId;
+            $priceId = $priceRaw;
+            Assert::stringNotEmpty($priceId, 'L\'ID du prix Stripe est invalide ou manquant.');
+
             $stripeSubscription = Subscription::create([
                 'customer' => $stripeCustomerId,
                 'items' => [
-                    ['price' => $stripeProductPrideId->stripePriceId],
+                    ['price' => $priceId], // 🪄 On passe la chaîne stricte validée
                 ],
                 'trial_period_days' => 30, // 🪄 Les fameux 30 jours
                 'trial_settings' => [
@@ -72,30 +80,30 @@ readonly class StripeService
                     ],
                 ],
             ]);
+
+            // 🛡️ On s'assure que Stripe a bien renvoyé un ID
+            Assert::stringNotEmpty($stripeSubscription->id, 'Stripe n\'a pas retourné d\'ID d\'abonnement valide.');
+
             return $stripeSubscription->id;
         } catch (ApiErrorException $e) {
             // Gérer l'erreur proprement pour ne pas faire planter ton app
-            throw new \RuntimeException('Impossible d\'enregistrer le nouvelle abo sur Stripe : ' . $e->getMessage());
+            throw new \RuntimeException('Impossible d\'enregistrer le nouvel abo sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
-    /**
-     * @param string $subscriptionId
-     * @return Subscription
-     */
     public function getSubscription(string $subscriptionId): Subscription
     {
         try {
             Stripe::setApiKey($this->stripeSecretKey);
+
             return Subscription::retrieve($subscriptionId);
         } catch (ApiErrorException $e) {
             // Gérer l'erreur proprement pour ne pas faire planter ton app
-            throw new \RuntimeException('Impossible de recupérer l\'abonnement sur Stripe : ' . $e->getMessage());
+            throw new \RuntimeException('Impossible de recupérer l\'abonnement sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
     /**
-     * @param string $subscriptionId
      * @return array<int, array{date: \DateTimeImmutable, amount: float|int, status: string|null, pdf_url: string|null}>
      */
     public function getInvoicesBySub(string $subscriptionId): array
@@ -111,12 +119,12 @@ readonly class StripeService
 
             foreach ($invoices->data as $invoice) {
                 // On ignore les factures à 0€ (comme celles des périodes d'essai gratuites)
-                if ($invoice->amount_paid === 0) {
+                if (0 === $invoice->amount_paid) {
                     continue;
                 }
 
                 $invoiceHistory[] = [
-                    'date' => (new DateTimeImmutable())->setTimestamp($invoice->created),
+                    'date' => new \DateTimeImmutable()->setTimestamp($invoice->created),
                     'amount' => $invoice->amount_paid / 100, // Le montant RÉEL payé ce mois-là
                     'status' => $invoice->status, // ex: 'paid', 'open', 'void'
                     'pdf_url' => $invoice->invoice_pdf, // Le lien direct vers le PDF hébergé par Stripe !
@@ -126,26 +134,22 @@ readonly class StripeService
             return $invoiceHistory;
         } catch (ApiErrorException $e) {
             // Gérer l'erreur proprement pour ne pas faire planter ton app
-            throw new \RuntimeException('Impossible de recupérer l\'abonnement sur Stripe : ' . $e->getMessage());
+            throw new \RuntimeException('Impossible de recupérer l\'abonnement sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
-    /**
-     * @param string $subscriptionId
-     * @param string $reason
-     * @return Subscription
-     */
     public function cancelSubscription(string $subscriptionId, string $reason): Subscription
     {
         try {
             Stripe::setApiKey($this->stripeSecretKey);
+
             return Subscription::update($subscriptionId, [
                 'cancel_at_period_end' => true,
                 'metadata' => ['cancel_reason' => $reason],
             ]);
         } catch (ApiErrorException $e) {
             // Gérer l'erreur proprement pour ne pas faire planter ton app
-            throw new \RuntimeException('Impossible de cancel l\'abonnement sur Stripe : ' . $e->getMessage());
+            throw new \RuntimeException('Impossible de cancel l\'abonnement sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
@@ -179,7 +183,7 @@ readonly class StripeService
             return $stripeProduct->default_price;
         } catch (ApiErrorException $e) {
             // Gérer l'erreur proprement pour ne pas faire planter ton app
-            throw new \RuntimeException('Impossible de cancel l\'abonnement sur Stripe : ' . $e->getMessage());
+            throw new \RuntimeException('Impossible de cancel l\'abonnement sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 }

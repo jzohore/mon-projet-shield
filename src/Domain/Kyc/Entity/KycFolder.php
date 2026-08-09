@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Kyc\Entity;
 
-use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Kyc\Enum\KycFolderStatus;
+use App\Domain\Workspace\Entity\Workspace;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -33,19 +35,6 @@ class KycFolder
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
     public private(set) string $slugId;
 
-    #[ORM\ManyToOne(targetEntity: Workspace::class)]
-    #[ORM\JoinColumn(nullable: false)]
-    public private(set) Workspace $workspace;
-
-    #[ORM\Column(length: 100)]
-    public private(set) string $contactFirstName;
-
-    #[ORM\Column(length: 100)]
-    public private(set) string $contactLastName;
-
-    #[ORM\Column(length: 255)]
-    public private(set) string $contactEmail;
-
     #[ORM\Column(length: 255, nullable: true)]
     public private(set) ?string $companyName = null;
 
@@ -60,9 +49,6 @@ class KycFolder
 
     #[ORM\Column(length: 255, nullable: true)]
     public private(set) ?string $address = null;
-
-    #[ORM\Column(type: 'string', enumType: KycFolderStatus::class)]
-    public private(set) KycFolderStatus $status = KycFolderStatus::DRAFT;
 
     #[ORM\Column(type: 'string', nullable: true)]
     public private(set) ?string $legalCategory = null;
@@ -80,7 +66,7 @@ class KycFolder
     public private(set) ?\DateTimeImmutable $shareTokenExpiresAt = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    public private(set) ?\DateTimeImmutable $createdAt = null;
+    public private(set) ?\DateTimeImmutable $createdAt;
 
     /**
      * @var Collection<int, Stakeholder>
@@ -102,15 +88,17 @@ class KycFolder
 
     /**
      * Le constructeur reste privé pour forcer l'utilisation du Named Constructor.
+     *
      * @throws RandomException|\DateMalformedStringException
      */
-    private function __construct(Workspace $workspace, string $contactFirstName, string $contactLastName, string $contactEmail, KycFolderStatus $status)
+    private function __construct(#[ORM\ManyToOne(targetEntity: Workspace::class)]
+        #[ORM\JoinColumn(nullable: false)]
+        public private(set) Workspace $workspace, #[ORM\Column(length: 100)]
+        public private(set) string $contactFirstName, #[ORM\Column(length: 100)]
+        public private(set) string $contactLastName, #[ORM\Column(length: 255)]
+        public private(set) string $contactEmail, #[ORM\Column(type: 'string', enumType: KycFolderStatus::class)]
+        public private(set) KycFolderStatus $status)
     {
-        $this->workspace = $workspace;
-        $this->contactFirstName = $contactFirstName;
-        $this->contactLastName = $contactLastName;
-        $this->contactEmail = $contactEmail;
-        $this->status = $status;
         $this->stakeholders = new ArrayCollection();
         $this->documents = new ArrayCollection();
         $this->slugId = $this->generate_ulid_prefixed('kyc_fol_');
@@ -120,7 +108,7 @@ class KycFolder
     }
 
     /**
-     * 🪄 Named Constructor : La seule façon d'initialiser un dossier KYC
+     * 🪄 Named Constructor : La seule façon d'initialiser un dossier KYC.
      */
     public static function initiate(Workspace $workspace, string $firstName, string $lastName, string $email, KycFolderStatus $status): self
     {
@@ -168,7 +156,7 @@ class KycFolder
 
     public function isTokenValid(?string $token, ?\DateTimeImmutable $expiresAt): bool
     {
-        if (null === $token || null === $expiresAt) {
+        if (null === $token || !$expiresAt instanceof \DateTimeImmutable) {
             return false;
         }
 
@@ -215,12 +203,12 @@ class KycFolder
     public function submitForReview(bool $isCertified): void
     {
         if (!$isCertified) {
-            throw new \DomainException("Le dossier doit être certifié pour être soumis.");
+            throw new \DomainException('Le dossier doit être certifié pour être soumis.');
         }
 
         $this->isCertified = true;
         $this->status = KycFolderStatus::IN_REVIEW;
         $this->submittedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-        //$this->clearShareToken();
+        // $this->clearShareToken();
     }
 }

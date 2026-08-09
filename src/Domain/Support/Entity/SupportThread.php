@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Support\Entity;
 
 use App\Domain\Support\Enum\SupportCategory;
@@ -9,7 +11,6 @@ use App\Domain\Support\Enum\SupportTopic;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
-use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -34,19 +35,8 @@ class SupportThread
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
     public private(set) string $slugId;
 
-    #[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'supportThread')]
-    #[ORM\JoinColumn(nullable: false)]
-    public private(set) Workspace $workspace;
-
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'supportThread')]
-    #[ORM\JoinColumn(nullable: false)]
-    public private(set) User $user;
-
     #[ORM\Column(type: 'string', enumType: SupportThreadStatus::class)]
-    public private(set) SupportThreadStatus $status;
-
-    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
-    public private(set) ?string $urlContext = null;
+    public private(set) SupportThreadStatus $status = SupportThreadStatus::OPEN;
 
     /**
      * @var Collection<int, SupportMessage>
@@ -56,40 +46,37 @@ class SupportThread
     public private(set) Collection $messages;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    public private(set) DateTimeImmutable $createdAt;
+    public private(set) \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    public private(set) DateTimeImmutable $updatedAt;
-
-    #[ORM\Column(type: Types::STRING, length: 100)]
-    public private(set) string $category;
-
-    #[ORM\Column(type: Types::STRING, length: 100)]
-    public private(set) string $topic;
+    public private(set) \DateTimeImmutable $updatedAt;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     public private(set) bool $closureWarningSent = false;
 
     /**
      * Constructeur privé pour forcer l'utilisation de la factory method.
+     *
      * @throws \DateMalformedStringException
      */
-    private function __construct(Workspace $workspace, User $user, string $category, string $topic, ?string $urlContext = null)
+    private function __construct(#[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'supportThread')]
+        #[ORM\JoinColumn(nullable: false)]
+        public private(set) Workspace $workspace, #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'supportThread')]
+        #[ORM\JoinColumn(nullable: false)]
+        public private(set) User $user, #[ORM\Column(type: Types::STRING, length: 100)]
+        public private(set) string $category, #[ORM\Column(type: Types::STRING, length: 100)]
+        public private(set) string $topic, #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+        public private(set) ?string $urlContext = null)
     {
-        $this->workspace = $workspace;
-        $this->user = $user;
-        $this->urlContext = $urlContext;
-        $this->status = SupportThreadStatus::OPEN;
         $this->messages = new ArrayCollection();
-        $this->category = $category;
-        $this->topic = $topic;
         $this->slugId = $this->generate_ulid_prefixed('sup_thr_');
-        $this->createdAt = new DateTimeImmutable('now', new \DateTimeZone('UTC'));
-        $this->updatedAt = new DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $this->updatedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
 
     /**
-     * 🪄 Named Constructor : Initialise un nouveau ticket
+     * 🪄 Named Constructor : Initialise un nouveau ticket.
+     *
      * @throws \DateMalformedStringException
      */
     public static function open(Workspace $workspace, User $user, string $category, string $topic, ?string $urlContext = null): self
@@ -124,14 +111,14 @@ class SupportThread
 
     private function updateTimestamp(): void
     {
-        $this->updatedAt = new DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $this->updatedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
 
     public function markAsReadByClient(): void
     {
         foreach ($this->messages as $message) {
             // Si le message vient du support ET qu'il n'est pas encore lu
-            if ($message->senderType === SupportSenderType::ADMIN && $message->readAt === null) {
+            if (SupportSenderType::ADMIN === $message->senderType && null === $message->readAt) {
                 $message->markAsRead();
             }
         }

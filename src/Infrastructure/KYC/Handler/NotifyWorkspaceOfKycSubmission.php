@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Handler;
 
 use App\Domain\Kyc\Repository\KycFolderRepositoryInterface;
@@ -17,7 +19,8 @@ final readonly class NotifyWorkspaceOfKycSubmission
         private KycFolderRepositoryInterface $kycFolderRepository,
         private LoggerInterface $logger,
         private MailerInterface $mailer,
-    ) {}
+    ) {
+    }
 
     public function __invoke(SendSubmittedKycFolderMessage $message): void
     {
@@ -25,10 +28,11 @@ final readonly class NotifyWorkspaceOfKycSubmission
         Assert::notNull($slugId);
         $kycFolder = $this->kycFolderRepository->findBySlugId($message->slugId);
 
-        if (!$kycFolder) {
+        if (!$kycFolder instanceof \App\Domain\Kyc\Entity\KycFolder) {
             $this->logger->info('Envoi annulé : l\'kyc folder est introuvable.', [
                 'workspaceSlugId' => $kycFolder,
             ]);
+
             return;
         }
 

@@ -1,23 +1,25 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\User\UseCase;
 
-use App\Domain\User\Entity\User;
 use App\Domain\User\Enum\OnboardingStatus;
 use App\Domain\User\Repository\UserRepositoryInterface;
-use Webmozart\Assert\Assert;
+use App\Domain\Workspace\Service\CurrentUserProvider;
 
-final readonly class UpdateOnboardingStatusUseCase
+readonly class UpdateOnboardingStatusUseCase
 {
     public function __construct(
+        private CurrentUserProvider $currentUserProvider,
         private UserRepositoryInterface $userRepository,
-    ) {}
+    ) {
+    }
 
-    public function __invoke(string $userId, OnboardingStatus $status): void
+    public function __invoke(OnboardingStatus $status): void
     {
-        $user = $this->userRepository->findBySlug($userId);
-        Assert::isInstanceOf($user, User::class);
-        $user->onboardingStatus = $status;
+        $user = $this->currentUserProvider->getUser();
+        $user->updateOnboardStatus($status);
         $this->userRepository->save($user);
     }
 }

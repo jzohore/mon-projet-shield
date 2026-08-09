@@ -1,0 +1,69 @@
+{# templates/components/KycCreationWizard.html.twig #}
+<div {{ attributes }} class="min-h-[80vh] bg-slate-50/50 pt-20 pb-24 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto">
+
+        <div class="mb-12">
+            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Nouvelle analyse de conformité</h1>
+            <p class="mt-4 text-base text-slate-500">Sélectionnez le type de profil pour démarrer.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+
+            {# ========================================== #}
+            {# CARTE 1 : KYC (Personne Physique)          #}
+            {# ========================================== #}
+            <div class="group relative bg-white border-2 border-slate-200 rounded-xl p-8 transition-all duration-300 text-left hover:border-indigo-300 hover:shadow-md hover:-translate-y-1">
+
+                {# Le bouton fantôme qui capte le clic sur toute la carte #}
+                <button type="button"
+                        data-action="live#action"
+                        data-live-action-param="selectMethod"
+                        data-live-method-param="request"
+                        data-live-type-param="individual"
+                        class="absolute inset-0 w-full h-full z-10 cursor-pointer rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-100"
+                        aria-label="Sélectionner Personne Physique"></button>
+
+                <span class="flex justify-between items-start mb-6">
+                    <span class="size-14 rounded-2xl flex items-center justify-center transition-all bg-indigo-50 text-indigo-600 group-hover:bg-indigo-100 group-hover:scale-110">
+                        {{ ux_icon('lucide:user', { class: 'size-7' }) }}
+                    </span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
+                        Dossier KYC
+                    </span>
+                </span>
+
+                <span class="block text-xl font-bold text-slate-900 mb-2">Personne Physique</span>
+                <span class="block text-sm text-slate-500">Individu, auto-entrepreneur, profession libérale.</span>
+            </div>
+
+
+            {# ========================================== #}
+            {# CARTE 2 : KYB (Personne Morale)            #}
+            {# ========================================== #}
+            <div class="group relative bg-white border-2 border-slate-200 rounded-xl p-8 transition-all duration-300 text-left hover:border-violet-300 hover:shadow-md hover:-translate-y-1">
+
+                {# Le bouton fantôme qui capte le clic sur toute la carte #}
+                <button type="button"
+                        data-action="live#action"
+                        data-live-action-param="selectMethod"
+                        data-live-method-param="request"
+                        data-live-type-param="business"
+                        class="absolute inset-0 w-full h-full z-10 cursor-pointer rounded-xl focus:outline-none focus:ring-4 focus:ring-violet-100"
+                        aria-label="Sélectionner Personne Morale"></button>
+
+                <span class="flex justify-between items-start mb-6">
+                    <span class="size-14 rounded-xl flex items-center justify-center transition-all bg-violet-50 text-violet-600 group-hover:bg-violet-100 group-hover:scale-110">
+                        {{ ux_icon('lucide:building-2', { class: 'size-7' }) }}
+                    </span>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600">
+                        Dossier KYB
+                    </span>
+                </span>
+
+                <span class="block text-xl font-bold text-slate-900 mb-2">Personne Morale</span>
+                <span class="block text-sm text-slate-500">Société (SAS, SARL), SCI, Association.</span>
+            </div>
+
+        </div>
+    </div>
+</div>

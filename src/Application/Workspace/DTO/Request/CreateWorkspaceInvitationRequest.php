@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Workspace\DTO\Request;
 
 use App\Domain\Workspace\Enum\InvitedRole;
@@ -18,7 +20,7 @@ class CreateWorkspaceInvitationRequest
         maxMessage: 'L\'email ne peut pas dépasser {{ limit }} caractères.'
     )]
     #[UniqueWorkspaceInvitationEmail]
-    public ?string $email = null;
+    public string $email = '';
 
     #[Assert\NotBlank(message: 'Le prénom est obligatoire.')]
     #[Assert\Length(
@@ -31,7 +33,7 @@ class CreateWorkspaceInvitationRequest
         pattern: '/^[\p{L}\s\-\']+$/u',
         message: 'Le prénom contient des caractères non autorisés.'
     )]
-    public ?string $firstName = null;
+    public string $firstName = '';
 
     #[Assert\NotBlank(message: 'Le nom est obligatoire.')]
     #[Assert\Length(
@@ -44,10 +46,8 @@ class CreateWorkspaceInvitationRequest
         pattern: '/^[\p{L}\s\-\']+$/u',
         message: 'Le nom contient des caractères non autorisés.'
     )]
-    public ?string $lastName = null;
+    public string $lastName = '';
 
     #[Assert\NotBlank(message: 'Veuillez sélectionner le rôle.')]
     public InvitedRole $invitedRole = InvitedRole::ROLE_WORKSPACE_COLLAB;
-
-    public ?string $userSlugId = null;
 }

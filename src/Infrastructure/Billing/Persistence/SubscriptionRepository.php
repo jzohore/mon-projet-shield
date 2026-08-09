@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Persistence;
 
 use App\Domain\Billing\Entity\Subscription;
@@ -19,7 +21,8 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
 {
     /** @var EntityRepository<Subscription> */
     private readonly EntityRepository $repository;
-    public function __construct(private EntityManagerInterface $entityManager)
+
+    public function __construct(private readonly EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(Subscription::class);
     }
@@ -31,6 +34,7 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
         if (null === $sub) {
             throw SubscriptionNotFoundException::withSubscriptionId($stripeSubscriptionId);
         }
+
         return $sub;
     }
 
@@ -45,7 +49,7 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
      */
     public function countByStatuses(array $statuses): int
     {
-        if (empty($statuses)) {
+        if ([] === $statuses) {
             return 0;
         }
 

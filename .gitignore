@@ -4,11 +4,11 @@
 /.env.*.local
 /config/secrets/prod/prod.decrypt.private.php
 /config/secrets/dec/dev.decrypt.private.php
+/config/reference.php
 /public/bundles/
 /var/
 /vendor/
 /public/ressources/GeoLite2-City.mmdb
-/config
 ###< symfony/framework-bundle ###
 
 ###> symfony/asset-mapper ###
@@ -33,3 +33,4 @@ phpstan.neon
 ###> deptrac/deptrac ###
 /.deptrac.cache
 ###< deptrac/deptrac ###
+/.php-cs-fixer.php

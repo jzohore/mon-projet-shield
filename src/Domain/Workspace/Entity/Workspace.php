@@ -1,11 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Workspace\Entity;
 
+use App\Domain\AuditLog\Entity\AuditLog;
 use App\Domain\Billing\Entity\Subscription;
 use App\Domain\Billing\Enum\CreditAction;
+use App\Domain\Compliance\Entity\ComplianceFolder;
+use App\Domain\Firm\Entity\RegulatoryProfile;
 use App\Domain\Screening\Entity\ScreeningAudit;
 use App\Domain\Support\Entity\SupportThread;
+use App\Domain\User\Entity\Client;
 use App\Domain\Wallet\Entity\WalletTransaction;
 use App\Domain\Wallet\Exception\InsufficientCreditsException;
 use App\Domain\Workspace\Enum\Industry;
@@ -16,6 +22,9 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
+
+use function Symfony\Component\Clock\now;
+
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity]
@@ -35,24 +44,19 @@ class Workspace
     // --- INFORMATIONS DE BASE ---
 
     // Le nom usuel/commercial du cabinet
-    #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
-    public ?string $name = null {
-        get => $this->name;
-        set => $this->name = trim($value ?? '');
-    }
+    #[ORM\Column(type: Types::STRING, length: 255)]
+    public private(set) string $name;
 
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
-    public ?string $slugId = null {
-        get => $this->slugId;
-    }
+    public private(set) string $slugId;
 
     // --- DONNÉES REGTECH & FACTURATION ---
 
     #[ORM\Column(type: Types::STRING, length: 14, unique: true, nullable: true)]
-    public ?string $siret = null {
-        get => $this->siret;
-        set => $this->siret = $value ? trim($value) : null;
-    }
+    public private(set) string $siret;
+
+    #[ORM\Column(type: Types::STRING, length: 14, unique: true, nullable: true)]
+    public private(set) string $siren;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     public ?string $legalName = null {
@@ -92,6 +96,12 @@ class Workspace
     }
 
     /**
+     * @var Collection<int, LegalUpdateDemand>
+     */
+    #[ORM\OneToMany(targetEntity: LegalUpdateDemand::class, mappedBy: 'workspace', cascade: ['persist', 'remove'])]
+    public private(set) Collection $legalUpdateDemands;
+
+    /**
      * @var Collection<int, ScreeningAudit>
      */
     #[ORM\OneToMany(targetEntity: ScreeningAudit::class, mappedBy: 'workspace', cascade: ['persist', 'remove'])]
@@ -116,9 +126,23 @@ class Workspace
     #[ORM\Column(type: Types::BOOLEAN, nullable: true, options: ['default' => false])]
     public private(set) bool $isActive = false;
 
+    #[ORM\Column(type: Types::BOOLEAN, nullable: true, options: ['default' => true])]
+    public private(set) bool $isSiretValid = true;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $verifySiretLastAttemptedAt = null;
+
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    public private(set) ?string $suspensionReason = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $suspendedAt = null;
+
     #[ORM\Column(type: 'string', nullable: true, enumType: WorkspaceType::class)]
     public private(set) WorkspaceType $type = WorkspaceType::INDIVIDUAL;
 
+    #[ORM\Column(type: Types::STRING, length: 64, unique: true, nullable: true)]
+    public private(set) string $publicToken;
 
     /**
      * @var Collection<int, WalletTransaction>
@@ -135,25 +159,60 @@ class Workspace
     #[ORM\OneToMany(targetEntity: SupportThread::class, mappedBy: 'workspace', cascade: ['persist', 'remove'], orphanRemoval: true)]
     public private(set) Collection $supportThread;
 
-    private function __construct(string $name, string $siret, string $legalName, string $address, Industry $industry)
+    /** @var Collection<int, ComplianceFolder> */
+    #[ORM\OneToMany(targetEntity: ComplianceFolder::class, mappedBy: 'workspace', cascade: ['persist', 'remove'])]
+    public private(set) Collection $folders;
+
+    /** @var Collection<int, ComplianceFolder> */
+    #[ORM\OneToMany(targetEntity: AuditLog::class, mappedBy: 'workspace', cascade: ['persist', 'remove'])]
+    public private(set) Collection $auditLogs;
+
+    #[ORM\OneToOne(targetEntity: RegulatoryProfile::class, mappedBy: 'workspace', cascade: ['persist', 'remove'])]
+    public private(set) ?RegulatoryProfile $regulatoryProfile = null;
+
+    /**
+     * @var Collection<int, Client>
+     */
+    #[ORM\ManyToMany(targetEntity: Client::class, mappedBy: 'workspaces')]
+    public private(set) Collection $clients;
+
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    public private(set) string $email;
+
+    private function __construct(string $name, string $siret, string $siren, string $legalName, string $address, #[ORM\Column(type: Types::STRING, length: 14, nullable: true)]
+        public private(set) string $etatAdministratif, Industry $industry)
     {
         $this->name = trim($name);
         $this->siret = trim($siret);
+        $this->siren = trim($siren);
         $this->legalName = trim($legalName);
         $this->address = trim($address);
         $this->slugId = $this->generate_ulid_prefixed('wrk_');
         $this->industry = $industry;
+        $this->publicToken = bin2hex(random_bytes(32));
 
         $this->members = new ArrayCollection();
         $this->invitations = new ArrayCollection();
         $this->walletTransactions = new ArrayCollection();
         $this->supportThread = new ArrayCollection();
-        $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $this->folders = new ArrayCollection();
+        $this->auditLogs = new ArrayCollection();
+        $this->createdAt = now();
     }
 
-    public static function create(string $name, string $siret, string $legalName, string $address, Industry $industry): self
+    public static function create(string $name, string $siret, string $siren, string $legalName, string $address, string $etatAdministratif, Industry $industry): self
     {
-        return new self($name, $siret, $legalName, $address, $industry);
+        return new self($name, $siret, $siren, $legalName, $address, $etatAdministratif, $industry);
+    }
+
+    public function update(string $name, string $siret, string $siren, string $address, Industry $industry): void
+    {
+        $this->name = $name;
+        $this->siret = $siret;
+        $this->siren = $siren;
+        $this->address = $address;
+        $this->industry = $industry;
+        $this->legalName = $name;
     }
 
     /**
@@ -172,12 +231,12 @@ class Workspace
         $cost = $action->getAmount();
 
         // Si l'action est gratuite, on ne fait rien
-        if ($cost === 0) {
+        if (0 === $cost) {
             return;
         }
 
         if ($action->getAmount() <= 0) {
-            throw new \DomainException("Le montant à débiter doit être strictement positif.");
+            throw new \DomainException('Le montant à débiter doit être strictement positif.');
         }
 
         if ($this->balance < $cost) {
@@ -199,7 +258,7 @@ class Workspace
     public function credit(int $amount, string $type, ?string $invoiceUrl = null): WalletTransaction
     {
         if ($amount <= 0) {
-            throw new \DomainException("Le montant à créditer doit être strictement positif.");
+            throw new \DomainException('Le montant à créditer doit être strictement positif.');
         }
 
         $this->balance += $amount;
@@ -218,10 +277,6 @@ class Workspace
         return $transaction;
     }
 
-    /**
-     * @param WorkspaceType $type
-     * @return void
-     */
     public function addWorkspaceType(WorkspaceType $type): void
     {
         $this->type = $type;
@@ -240,10 +295,97 @@ class Workspace
     public function isFirm(): bool
     {
         $isFirm = false;
-        if ($this->type === WorkspaceType::FIRM) {
+        if (WorkspaceType::FIRM === $this->type) {
             $isFirm = true;
         }
 
         return $isFirm;
+    }
+
+    public function setVerifySiretLastAttemptedAt(): void
+    {
+        $this->verifySiretLastAttemptedAt = now();
+    }
+
+    public function setIsSiretValid(bool $value): void
+    {
+        $this->isSiretValid = $value;
+    }
+
+    public function updateEtatAdministratif(string $etatAdministratif): void
+    {
+        $this->etatAdministratif = $etatAdministratif;
+    }
+
+    public function updateSiret(string $siret): void
+    {
+        $this->siret = $siret;
+    }
+
+    public function updateSiren(string $siren): void
+    {
+        $this->siren = $siren;
+    }
+
+    /**
+     * Suspend le Workspace suite à une anomalie légale ou de facturation.
+     */
+    public function updateSiretStatus(bool $isSiretValid, string $etatAdministratif): void
+    {
+        $this->isSiretValid = $isSiretValid;
+        $this->etatAdministratif = $etatAdministratif;
+        $this->setVerifySiretLastAttemptedAt();
+    }
+
+    public function markSiretAsInvalid(string $etatAdministratif, string $reason): void
+    {
+        $this->isSiretValid = false;
+        $this->etatAdministratif = $etatAdministratif;
+        $this->suspensionReason = $reason;
+        $this->suspendedAt = now(); // Transition d'état métier explicit
+    }
+
+    /**
+     * Permet à un administrateur de débloquer le compte en cas de résolution du problème.
+     */
+    public function reactivate(): void
+    {
+        $this->isActive = true;
+        $this->suspensionReason = null;
+        $this->suspendedAt = null;
+
+        // $this->addAuditLog('Réactivation manuelle du compte.');
+    }
+
+    public function changeLegalEntity(
+        string $newSiret,
+        string $newSiren,
+        string $newName,
+        string $newAddress,
+        string $etatAdministratif,
+    ): void {
+        $this->siret = $newSiret;
+        $this->siren = $newSiren;
+        $this->name = $newName;           // Le nom usuel du Workspace change
+        $this->legalName = $newName;      // Le nom juridique change
+        $this->address = $newAddress;     // La nouvelle adresse du siège
+
+        $this->isSiretValid = true;
+        $this->etatAdministratif = $etatAdministratif;
+        $this->suspensionReason = null;
+        $this->suspendedAt = null;
+        $this->isActive = true;
+    }
+
+    public function regeneratePublicToken(): void
+    {
+        $this->publicToken = bin2hex(random_bytes(32));
+    }
+
+    public function addClient(Client $client): void
+    {
+        if (!$this->clients->contains($client)) {
+            $this->clients->add($client);
+        }
     }
 }

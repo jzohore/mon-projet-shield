@@ -30,6 +30,7 @@ final class EmployeesInvitationController
         ?User $user,
     ): Response {
         Assert::notNull($user);
+
         return new Response(
             $twig->render('@app/employees/invitation.html.twig', [
                 'page_title' => 'Inviter des collaborateurs',

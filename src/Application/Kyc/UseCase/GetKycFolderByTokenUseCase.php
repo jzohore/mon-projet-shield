@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Kyc\UseCase;
 
 use App\Application\Kyc\DTO\Response\KycFolderResponse;
@@ -9,8 +11,9 @@ use Webmozart\Assert\Assert;
 final readonly class GetKycFolderByTokenUseCase
 {
     public function __construct(
-        private KycFolderRepositoryInterface $kycFolderRepository
-    ) {}
+        private KycFolderRepositoryInterface $kycFolderRepository,
+    ) {
+    }
 
     public function __invoke(string $shareToken): KycFolderResponse
     {

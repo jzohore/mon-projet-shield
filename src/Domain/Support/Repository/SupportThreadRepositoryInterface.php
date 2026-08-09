@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Support\Repository;
 
 use App\Application\Support\DTO\Response\SupportNotificationStats;
@@ -34,21 +36,11 @@ interface SupportThreadRepositoryInterface
      */
     public function delete(SupportThread $thread): void;
 
-    /**
-     * @param Workspace $workspace
-     * @param User $user
-     * @return SupportNotificationStats
-     */
     public function getNotificationStats(Workspace $workspace, User $user): SupportNotificationStats;
 
-    /**
-     * @return int
-     */
     public function countAllOpenTickets(): int;
 
     /**
-     * @param string|null $search
-     * @param SupportThreadStatus|null $statusFilter
      * @return Pagerfanta<SupportThread>
      */
     public function getPaginatedSupport(?string $search = null, ?SupportThreadStatus $statusFilter = null): Pagerfanta;
@@ -58,7 +50,6 @@ interface SupportThreadRepositoryInterface
     /**
      * Récupère les tickets ouverts, sans avertissement, inactifs depuis X temps.
      *
-     * @param \DateTimeInterface $threshold
      * @return SupportThread[]
      */
     public function findInactiveThreadsForWarning(\DateTimeInterface $threshold): array;
@@ -66,7 +57,6 @@ interface SupportThreadRepositoryInterface
     /**
      * Récupère les tickets ouverts, DEJA avertis, inactifs depuis X temps après l'avertissement.
      *
-     * @param \DateTimeInterface $threshold
      * @return SupportThread[]
      */
     public function findThreadsPendingClosure(\DateTimeInterface $threshold): array;

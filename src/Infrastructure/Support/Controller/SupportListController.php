@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Support\Controller;
 
 use Symfony\Bundle\SecurityBundle\Security;
@@ -18,7 +20,8 @@ readonly class SupportListController
     public function __construct(
         private Environment $twig,
         private Security $security,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws RuntimeError
@@ -34,6 +37,7 @@ readonly class SupportListController
                 ])
             );
         }
+
         return new Response(
             $this->twig->render('@app/support/support_list.html.twig', [
                 'page_title' => 'Support & Aide',

@@ -4,7 +4,7 @@
 {# On passe les variables au layout parent pour qu'il mette à jour la sidebar #}
 {% set step = 1 %}
 {% set workspace_name = folder.workspaceName ?? 'Cabinet Dupont' %}
-
+{% block title %} {{ page_title }} : {{ workspace_name}} | {{ company_name}} {% endblock %}
 {% block portal_content %}
     <div class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1 sm:px-0">
         <div>
@@ -14,7 +14,7 @@
     </div>
     <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 mb-8">
         <div class="size-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg">
-            {{ "ANTONIE HENRY"|first }}
+            {{ invitation.firstName|first }}
         </div>
         <div>
             <p class="text-sm font-medium text-slate-900">
@@ -67,10 +67,6 @@
                 </twig:Button>
                 <input type="hidden" name="_token" value="{{ csrf_token('accept-invitation') }}">
             </form>
-
-            <button type="button" class="w-full mt-3 text-center text-xs text-slate-400 hover:text-rose-600 transition-colors">
-                Refuser l'invitation
-            </button>
         </div>
     </div>
 {% endblock %}

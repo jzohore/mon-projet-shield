@@ -107,7 +107,7 @@
                                 <twig:Breadcrumb:Link href="{{ path('app_dashboard') }}" class="flex items-center gap-1">
                                     <twig:ux:icon name="material-symbols:home-rounded" />
                                     <span class="text-xs font-semibold">
-                                        {{ workspaceInfo().name | lower | capitalize }}
+                                        {{ kysure_name }}
                                     </span>
                                 </twig:Breadcrumb:Link>
                             </twig:Breadcrumb:Item>
@@ -154,10 +154,6 @@
                                     <twig:ux:icon name="material-symbols:account-circle-outline" class="w-4 h-4" />
                                     Paramètres
                                 </a>
-                                <a href="{{ path('app_support_list') }}" class="flex items-center gap-2 px-3 py-2 text-xs text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-lg transition-colors">
-                                    {{ ux_icon('lucide:life-buoy', { class: 'size-4 group-hover/support:text-violet-600 transition-colors' }) }}
-                                    Support & Aide
-                                </a>
 
                                 <a href="{{ path('app_logout') }}" class="flex items-center gap-2 px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-lg transition-colors">
                                     <twig:ux:icon name="material-symbols:logout-rounded" class="w-4 h-4" />
@@ -171,8 +167,8 @@
         </header>
 
         {# 4. LA MAGIE EST ICI : Marges ajustées pour le mobile (p-4 vs p-8) #}
-        <div class="flex-1 overflow-y-auto p-4 sm:p-4 md:p-8">
-            <div class="max-w-8xl mx-auto space-y-8 pb-20">
+        <div class="flex-1 overflow-y-auto">
+            <div class="max-w-8xl mx-auto p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8 pb-24">
                 {% block content %}{% endblock %}
             </div>
         </div>

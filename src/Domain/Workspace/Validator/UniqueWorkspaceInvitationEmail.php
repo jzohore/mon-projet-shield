@@ -13,15 +13,15 @@ final class UniqueWorkspaceInvitationEmail extends Constraint
     public ?string $ignoreSlugId = null;
 
     /**
-     * @param array<string, mixed> $options  // Ajout du type pour PHPStan
-     * @param string[]|null $groups
+     * @param array<string, mixed> $options // Ajout du type pour PHPStan
+     * @param string[]|null        $groups
      */
     public function __construct(
         ?string $ignoreSlugId = null,
         ?string $message = null,
         ?array $groups = null,
         mixed $payload = null,
-        array $options = []
+        array $options = [],
     ) {
         parent::__construct($options, $groups, $payload);
 

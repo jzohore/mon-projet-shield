@@ -144,28 +144,8 @@
                                 </div>
                                 {% if invitation.invitationStatus.value != 'accepted' %}
                                     <div class="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                                        <button
-                                            type="button"
-                                            data-action="live#action"
-                                            data-live-action-param="resendInvitation"
-                                            data-live-id-param="{{ invitation.slugId }}"
-                                            onclick="return confirm('Êtes-vous sûr de vouloir renvoyer l\'invitation de {{ invitation.email }} ?');"
-                                            class="p-1.5 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors cursor-pointer" title="Renvoyer">
-                                            <twig:ux:icon name="lucide:send" class="w-3.5 h-3.5" />
-                                        </button>
-                                        <button
-                                            type="button"
-                                            data-action="live#action"
-                                            data-live-action-param="revokeInvitation"
-                                            data-live-id-param="{{ invitation.slugId }}"
-                                            onclick="return confirm('Êtes-vous sûr de vouloir révoquer l\'invitation de {{ invitation.email }} ?');"
-                                            class="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors cursor-pointer"
-                                            title="Révoquer">
-
-                                            <twig:ux:icon name="lucide:trash" class="w-3.5 h-3.5" />
-                                        </button>
-
-                                    </div>
+                                        <twig:ResendWorkspaceInvitationComponent workspaceInvitation="{{ invitation }}"></twig:ResendWorkspaceInvitationComponent>
+                                        <twig:RevokeWorkspaceInvitationComponent workspaceInvitation="{{ invitation }}"></twig:RevokeWorkspaceInvitationComponent>
                                 {% endif %}
                             </div>
                         </li>

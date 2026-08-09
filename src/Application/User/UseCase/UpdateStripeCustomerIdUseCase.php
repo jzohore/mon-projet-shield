@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\User\UseCase;
 
 use App\Domain\User\Entity\User;
@@ -9,11 +11,12 @@ readonly class UpdateStripeCustomerIdUseCase
 {
     public function __construct(
         private UserRepositoryInterface $userRepository,
-    ) {}
+    ) {
+    }
 
     public function __invoke(User $user, string $customerId): void
     {
-        $user->stripeCustomerId = $customerId;
+        $user->profile->updateStripeCustomerId($customerId);
         $this->userRepository->save($user);
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Controller;
 
 use App\Application\Billing\UseCase\Products\GetProductUseCase;
@@ -23,13 +25,13 @@ readonly class BuyProductController
         private UrlGeneratorInterface $urlGenerator,
         private GetProductUseCase $getProductUseCase,
         private CurrentWorkspaceProvider $workspaceProvider,
-    ) {}
+    ) {
+    }
 
     public function __invoke(
         string $id,
         #[CurrentUser]
-        User
-        $user,
+        User $user,
     ): Response {
         $product = ($this->getProductUseCase)($id);
         Assert::notNull($product);
@@ -49,9 +51,8 @@ readonly class BuyProductController
             UrlGeneratorInterface::ABSOLUTE_URL
         );
 
-        $workspace = $this->workspaceProvider->getWorkspace();
         // 2. Création de la session Stripe
-        if ($isFirm && $workspace->subscription !== null && $workspace->subscription->stripeSubscriptionId !== null) {
+        if ($isFirm && $workspace->subscription instanceof \App\Domain\Billing\Entity\Subscription && null !== $workspace->subscription->stripeSubscriptionId) {
             $checkoutUrl = $this->stripeCheckoutService->createSetupSessionUrl(
                 $user,
                 $workspace,
@@ -69,6 +70,6 @@ readonly class BuyProductController
         }
 
         // 3. Redirection 303 (See Other) recommandée par Stripe
-        return new RedirectResponse($checkoutUrl, 303);
+        return new RedirectResponse($checkoutUrl, Response::HTTP_SEE_OTHER);
     }
 }

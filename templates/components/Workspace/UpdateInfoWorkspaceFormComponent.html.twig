@@ -1,0 +1,66 @@
+<div {{ attributes }}>
+    {# 1. Ajout du contrôleur form-dirty #}
+    {# 2. On écoute 'input' (pour le texte) et 'change' (pour les select/checkbox) #}
+    <div data-controller="form-dirty"
+         data-action="input->form-dirty#check change->form-dirty#check">
+
+        {{ form_start(form, {
+            attr: {
+                novalidate: true,
+                'data-action': 'live#action:prevent',
+                'data-live-action-param': 'save',
+            }
+        }) }}
+        <div class="p-6 space-y-8">
+
+            {# Section Identité (Modifiable) #}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    {{ form_row(form.name) }}
+                </div>
+                <div class="space-y-2">
+                    {{ form_row(form.workspaceIndustry) }}
+                </div>
+            </div>
+
+            <div class="h-px bg-slate-100 w-full"></div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    {{ form_row(form.siret) }}
+                </div>
+                <div class="space-y-2">
+                    {{ form_row(form.siren) }}
+                </div>
+            </div>
+
+            <div class="h-px bg-slate-100 w-full"></div>
+
+            <div class="space-y-2">
+                {{ form_row(form.address) }}
+            </div>
+
+        </div>
+
+        {# Footer de la carte #}
+        <div class="flex items-center justify-end p-6 bg-slate-50/50 rounded-b-xl border-t border-slate-100">
+            <twig:Button as="button"
+                         type="submit"
+                         variant="dark"
+                         class="w-full sm:w-auto px-8 transition-all duration-200"
+                         data-form-dirty-target="submitButton">
+
+                {# Texte affiché par défaut #}
+                <span data-loading="action(save)|hide">Mettre à jour</span>
+
+                {# Texte affiché PENDANT la requête AJAX #}
+                <span data-loading="action(save)|show" class="hidden items-center gap-2">
+                    <i class="fas fa-circle-notch fa-spin opacity-70"></i> Enregistrement...
+                </span>
+
+            </twig:Button>
+        </div>
+
+        {{ form_end(form) }}
+    </div>
+</div>

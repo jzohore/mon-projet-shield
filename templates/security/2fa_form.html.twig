@@ -1,0 +1,96 @@
+{% extends '@app/billing/base_billing.html.twig' %}
+
+{% block title %}Vérification de sécurité | Kysure{% endblock %}
+
+{% block portal_content %}
+    <div class="max-w-md w-full space-y-8">
+
+        {# --- 1. EN-TÊTE (Logo & Titre) --- #}
+        <div class="text-center">
+            <div class="mx-auto flex items-center justify-center size-16 rounded-full bg-blue-50 border border-blue-100 mb-6 shadow-sm">
+                <twig:ux:icon name="tabler:shield-lock" class="size-8 text-blue-600" />
+            </div>
+            <h2 class="mt-2 text-3xl font-extrabold text-slate-900 tracking-tight">
+                Vérification requise
+            </h2>
+            <p class="mt-2 text-sm text-slate-600">
+                Ouvrez votre application d'authentification (Google Authenticator, Authy...) et saisissez le code à 6 chiffres.
+            </p>
+        </div>
+
+        {# --- 2. LA CARTE DU FORMULAIRE --- #}
+        <div class="bg-white py-8 px-6 shadow-sm rounded-2xl border border-slate-200 sm:px-10">
+
+            {# Gestion des erreurs (Code incorrect) #}
+            {% if authenticationError|default(false) %}
+                <div class="mb-6 flex items-start gap-3 p-4 rounded-lg bg-red-50 border border-red-200 text-red-800">
+                    <twig:ux:icon name="tabler:alert-circle-filled" class="size-5 shrink-0 mt-0.5 text-red-600" />
+                    <div class="text-sm">
+                        <p class="font-medium">Code d'authentification invalide.</p>
+                        <p class="mt-1 text-red-700">Vérifiez que le code n'a pas expiré sur votre application et réessayez.</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            {# Le formulaire Scheb 2FA #}
+            <form action="{{ checkPathUrl ? checkPathUrl : path('2fa_login_check') }}" method="post" class="space-y-6">
+
+                <div>
+                    <label for="_auth_code" class="block text-sm font-medium text-slate-700">
+                        Code de sécurité
+                    </label>
+                    <div class="mt-2 relative">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
+                            <twig:ux:icon name="tabler:dialpad" class="size-5 text-slate-400" />
+                        </div>
+                        <input
+                            id="_auth_code"
+                            type="text"
+                            name="{{ authCodeParameterName }}"
+                            required="required"
+                            autofocus="autofocus"
+                            autocomplete="one-time-code"
+                            inputmode="numeric"
+                            pattern="[0-9]*"
+                            maxlength="6"
+                            placeholder="123456"
+                            class="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-lg text-lg font-bold tracking-[0.25em] text-slate-900 placeholder-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors shadow-sm text-center"
+                        />
+                    </div>
+                </div>
+
+                {# Protection CSRF (Activée par défaut par le bundle) #}
+                {% if isCsrfProtectionEnabled %}
+                    <input type="hidden" name="{{ csrfParameterName }}" value="{{ csrfTokenValue }}">
+                {% endif %}
+
+                {# Option "Faire confiance à cet appareil" (Si tu as activé la fonctionnalité TrustedDevice) #}
+                {% if displayTrustedOption is defined and displayTrustedOption %}
+                    <div class="flex items-center">
+                        <input id="_trusted" type="checkbox" name="{{ trustedParameterName }}" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded">
+                        <label for="_trusted" class="ml-2 block text-sm text-slate-700">
+                            Faire confiance à cet appareil pendant 30 jours
+                        </label>
+                    </div>
+                {% endif %}
+
+                <div>
+                    <button type="submit" class="w-full flex justify-center items-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-900 transition-colors">
+                        Vérifier mon identité
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        {# --- 3. LIEN DE SECOURS --- #}
+        <div class="text-center">
+            <p class="text-sm text-slate-500">
+                Vous n'avez plus accès à votre téléphone ? <br>
+                <a href="{{ path('app_logout') }}" class="font-medium text-blue-600 hover:text-blue-500 transition-colors">
+                    Annuler et se déconnecter
+                </a>
+            </p>
+        </div>
+
+    </div>
+{% endblock %}

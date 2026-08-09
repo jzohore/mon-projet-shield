@@ -26,10 +26,8 @@ final class OnBoardingChoosePlanController
     public function __invoke(
         Environment $twig,
         #[CurrentUser]
-        User
-        $user,
+        User $user,
     ): Response {
-
         return new Response(
             $twig->render('@app/onboarding/choose_plan.html.twig', [
                 'page_title' => 'Comment travaillez-vous ?',

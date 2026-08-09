@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Wallet\Entity;
 
 use App\Domain\Workspace\Entity\Workspace;
@@ -23,36 +25,21 @@ class WalletTransaction
         get => $this->id;
     }
 
-    #[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'walletTransactions')]
-    #[ORM\JoinColumn(nullable: false)]
-    public private(set) Workspace $workspace;
-
-    #[ORM\Column(type: Types::INTEGER)]
-    public private(set) int $amount = 0;
-
     #[ORM\Column(type: Types::STRING, nullable: true)]
-    public private(set) ?string $type = null;
-
-    #[ORM\Column(type: Types::STRING, nullable: true)]
-    public private(set) ?string $referenceId = null;
-
-    #[ORM\Column(type: Types::STRING, nullable: true)]
-    public private(set) ?string $invoiceUrl = null;
-
-    #[ORM\Column(type: Types::STRING, nullable: true)]
-    public private(set) ?string $action = null;
+    public private(set) ?string $referenceId;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    public private(set) ?\DateTimeImmutable $createdAt = null;
+    public private(set) ?\DateTimeImmutable $createdAt;
 
-    public function __construct(Workspace $workspace, int $amount, string $type, ?string $action = null, ?string $invoiceUrl = null)
+    public function __construct(#[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'walletTransactions')]
+        #[ORM\JoinColumn(nullable: false)]
+        public private(set) Workspace $workspace, #[ORM\Column(type: Types::INTEGER)]
+        public private(set) int $amount, #[ORM\Column(type: Types::STRING, nullable: true)]
+        public private(set) ?string $type, #[ORM\Column(type: Types::STRING, nullable: true)]
+        public private(set) ?string $action = null, #[ORM\Column(type: Types::STRING, nullable: true)]
+        public private(set) ?string $invoiceUrl = null)
     {
-        $this->workspace = $workspace;
-        $this->amount = $amount;
-        $this->type = $type;
         $this->referenceId = 'WT' . mt_rand(100000, 999999);
-        $this->action = $action;
-        $this->invoiceUrl = $invoiceUrl;
         $this->createdAt = new \DateTimeImmutable();
     }
 }

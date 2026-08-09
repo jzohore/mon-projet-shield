@@ -5,7 +5,6 @@
 {% block title %}{{ page_title }} | {{ company_name }}{% endblock %}
 
 {% block form_content %}
-
     <div class="mb-8 text-left">
         <h1 class="text-3xl font-bold tracking-tight text-slate-900 mb-3">
             {{ page_title }}
@@ -14,9 +13,5 @@
             {{ sub_title }}
         </p>
     </div>
-
-    <twig:CreateWorkspaceFormComponent userSlugId="{{ user_slug_id }}"></twig:CreateWorkspaceFormComponent>
-
-
-
+    <twig:CreateWorkspaceFormComponent></twig:CreateWorkspaceFormComponent>
 {% endblock %}

@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Persistence;
 
 use App\Domain\Kyc\Entity\KycFolder;
 use App\Domain\Kyc\Enum\KycFolderStatus;
 use App\Domain\Kyc\Repository\KycFolderRepositoryInterface;
 use App\Domain\Workspace\Entity\Workspace;
-use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
@@ -21,8 +22,9 @@ use Pagerfanta\Pagerfanta;
 class KycFolderRepository implements KycFolderRepositoryInterface
 {
     /** @var EntityRepository<KycFolder> */
-    private EntityRepository $repository;
-    public function __construct(private EntityManagerInterface $entityManager)
+    private readonly EntityRepository $repository;
+
+    public function __construct(private readonly EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(KycFolder::class);
     }
@@ -98,12 +100,10 @@ class KycFolderRepository implements KycFolderRepositoryInterface
     }
 
     /**
-     * @param Workspace $workspace
-     * @param DateTimeImmutable $since
      * @return int
-     * Compte le nombre de recherches d'un Workspace depuis une date donnée.
+     *             Compte le nombre de recherches d'un Workspace depuis une date donnée
      */
-    public function countSearchesSince(Workspace $workspace, DateTimeImmutable $since): int
+    public function countSearchesSince(Workspace $workspace, \DateTimeImmutable $since): int
     {
         return (int) $this->repository->createQueryBuilder('kf')
             ->select('COUNT(kf.id)')

@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Ocr;
 
-use App\Domain\Kyc\Enum\DocumentType;
+use App\Domain\Compliance\Enum\DocumentType;
 use App\Domain\Port\OcrProviderInterface;
 use App\Infrastructure\Ocr\Parser\AbstractMindeeParser;
 use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
@@ -14,8 +16,9 @@ readonly class MindeeProvider implements OcrProviderInterface
      */
     public function __construct(
         #[AutowireIterator('app.mindee_parser')]
-        private iterable $parsers
-    ) {}
+        private iterable $parsers,
+    ) {
+    }
 
     public function extractData(DocumentType $type, string $filePath): array
     {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Tracking\UseCase;
 
 use App\Application\Tracking\DTO\Request\ClickTrackingDto;
@@ -10,8 +12,9 @@ use Webmozart\Assert\Assert;
 readonly class TrackClickUseCase
 {
     public function __construct(
-        private ClickLogRepositoryInterface $clickLogRepository
-    ) {}
+        private ClickLogRepositoryInterface $clickLogRepository,
+    ) {
+    }
 
     public function execute(ClickTrackingDto $dto): void
     {
@@ -19,7 +22,7 @@ readonly class TrackClickUseCase
         // On remplace le dernier bloc de l'IPv4 par un 0 (ex: 192.168.1.45 -> 192.168.1.0)
         $anonymizedIp = $dto->ipAddress;
 
-        if ($anonymizedIp !== null) {
+        if (null !== $anonymizedIp) {
             // On remplace le dernier bloc de l'IPv4 par un 0
             $anonymizedIp = preg_replace('/(\d+)\.(\d+)\.(\d+)\.(\d+)/', '$1.$2.$3.0', $anonymizedIp);
         }

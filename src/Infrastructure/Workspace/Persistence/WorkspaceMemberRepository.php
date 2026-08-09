@@ -1,10 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Persistence;
 
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Entity\WorkspaceMember;
+use App\Domain\Workspace\Enum\InvitedRole;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
@@ -22,15 +25,18 @@ final readonly class WorkspaceMemberRepository implements WorkspaceMemberReposit
 {
     /** @var EntityRepository<WorkspaceMember> */
     private EntityRepository $repository;
+
     public function __construct(private EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(WorkspaceMember::class);
     }
 
-    public function save(WorkspaceMember $workspaceMember): void
+    public function save(WorkspaceMember $workspaceMember, bool $flush = true): void
     {
         $this->entityManager->persist($workspaceMember);
-        $this->entityManager->flush();
+        if ($flush) {
+            $this->entityManager->flush();
+        }
     }
 
     public function findByWorkspaceAndUser(Workspace $workspace, User $user): ?WorkspaceMember
@@ -39,7 +45,6 @@ final readonly class WorkspaceMemberRepository implements WorkspaceMemberReposit
     }
 
     /**
-     * @param string $workspaceId
      * @return array<int, WorkspaceMember>
      */
     public function findByWorkspace(string $workspaceId): array
@@ -54,7 +59,6 @@ final readonly class WorkspaceMemberRepository implements WorkspaceMemberReposit
     }
 
     /**
-     * @param User $user
      * @return array<int, WorkspaceMember>
      */
     public function findByUser(User $user): array
@@ -73,14 +77,14 @@ final readonly class WorkspaceMemberRepository implements WorkspaceMemberReposit
             ->getOneOrNullResult();
     }
 
-    public function getMembersList(string $workspaceSlugId, ?string $search = null): Pagerfanta
+    public function getMembersList(Workspace $workspace, ?string $search = null): Pagerfanta
     {
         $qb = $this->repository->createQueryBuilder('wm')
             ->select('wm', 'user')
             ->leftJoin('wm.workspace', 'workspace')
             ->leftJoin('wm.user', 'user')
-            ->andWhere('workspace.slugId = :workspaceSlugid')
-            ->setParameter('workspaceSlugid', $workspaceSlugId)
+            ->andWhere('wm.workspace = :workspace')
+            ->setParameter('workspace', $workspace)
             ->orderBy('user.createdAt', 'DESC');
 
         if ($search) {
@@ -89,7 +93,6 @@ final readonly class WorkspaceMemberRepository implements WorkspaceMemberReposit
         }
 
         return new Pagerfanta(new QueryAdapter($qb));
-
     }
 
     public function isUserAdminOfWorkspace(User $user, Workspace $workspace): bool
@@ -107,6 +110,25 @@ final readonly class WorkspaceMemberRepository implements WorkspaceMemberReposit
         return $member->isAdmin();
     }
 
+    /**
+     * @return list<User>
+     */
+    public function findMembersAdmin(Workspace $workspace): array
+    {
+        /** @var list<User> $users */
+        $users = $this->repository->createQueryBuilder('wm')
+            ->select('u')
+            ->join('wm.user', 'u')
+            ->where('wm.workspace = :workspace')
+            ->andWhere('wm.role = :role')
+            ->setParameter('workspace', $workspace)
+            ->setParameter('role', InvitedRole::ROLE_WORKSPACE_ADMIN->value)
+            ->getQuery()
+            ->getResult();
+
+        return $users;
+    }
+
     public function getMembersActive(string $workspaceSlugId): array
     {
         return $this->repository->createQueryBuilder('wm')
@@ -119,5 +141,58 @@ final readonly class WorkspaceMemberRepository implements WorkspaceMemberReposit
             ->orderBy('user.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
+    }
+
+    public function isAlreadyMember(Workspace $workspace, string $email): bool
+    {
+        $count = $this->repository->createQueryBuilder('wm')
+            ->select('COUNT(wm.id)')
+            ->join('wm.user', 'u')
+            ->where('wm.workspace = :workspace')
+            ->andWhere('u.email = :email')
+            ->setParameter('workspace', $workspace)
+            ->setParameter('email', $email)
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return $count > 0;
+    }
+
+    public function findOneByUserSlugAndWorkspace(string $userSlugId, string $workspaceId): ?WorkspaceMember
+    {
+        return $this->repository->createQueryBuilder('wm')
+            ->innerJoin('wm.user', 'u')
+            ->andWhere('u.slugId = :userSlug')
+            ->andWhere('wm.workspace = :workspaceId')
+            ->setParameter('userSlug', $userSlugId)
+            ->setParameter('workspaceId', $workspaceId)
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findOneByWorkspace(Uuid $workspaceId): ?WorkspaceMember
+    {
+        return $this->repository->createQueryBuilder('wm')
+            ->innerJoin('wm.user', 'u')
+            ->where('wm.workspace = :workspace_id')
+            ->andWhere('u.isOwner = :is_owner')
+            ->setParameter('workspace_id', $workspaceId->toBinary())
+            ->setParameter('is_owner', true)
+            // On retire le setMaxResults(1) : on assume l'unicité stricte du modèle.
+            ->getQuery()
+            ->getOneOrNullResult();
+    }
+
+    public function findOwnerByWorkspace(Uuid $workspaceId): ?WorkspaceMember
+    {
+        return $this->repository->createQueryBuilder('wm')
+            ->innerJoin('wm.user', 'u')
+            ->where('wm.workspace = :workspace_id')
+            ->andWhere('u.isOwner = :is_owner')
+            ->setParameter('workspace_id', $workspaceId->toBinary())
+            ->setParameter('is_owner', true)
+            // On retire le setMaxResults(1) : on assume l'unicité stricte du modèle.
+            ->getQuery()
+            ->getOneOrNullResult();
     }
 }

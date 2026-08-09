@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Screening\UseCase;
 
 use App\Application\Screening\DTO\Response\ScreeningResponse;
@@ -11,6 +13,7 @@ readonly class GetScreeningInfo
     public function __invoke(ScreeningAudit $audit): ScreeningResponse
     {
         Assert::notNull($audit);
+
         return ScreeningResponse::fromEntity($audit);
     }
 }

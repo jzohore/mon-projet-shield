@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Persistence;
 
+use App\Domain\Compliance\Enum\DocumentType;
 use App\Domain\Kyc\Entity\KycDocument;
 use App\Domain\Kyc\Entity\KycFolder;
 use App\Domain\Kyc\Entity\Stakeholder;
-use App\Domain\Kyc\Enum\DocumentType;
 use App\Domain\Kyc\Repository\KycDocumentRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
@@ -19,8 +21,9 @@ use Doctrine\ORM\EntityRepository;
 class KycDocumentRepository implements KycDocumentRepositoryInterface
 {
     /** @var EntityRepository<KycDocument> */
-    private EntityRepository $repository;
-    public function __construct(private EntityManagerInterface $entityManager)
+    private readonly EntityRepository $repository;
+
+    public function __construct(private readonly EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(KycDocument::class);
     }
@@ -51,10 +54,11 @@ class KycDocumentRepository implements KycDocumentRepositoryInterface
             ->andWhere('kycDocument.type = :type')
             ->setParameter('folder', $folder)
             ->setParameter('type', $type);
-        if ($stakeholder) {
+        if ($stakeholder instanceof Stakeholder) {
             $qb->andWhere('kycDocument.stakeholder = :stakeholder')
                 ->setParameter('stakeholder', $stakeholder);
         }
+
         return $qb->getQuery()->getOneOrNullResult();
     }
 }

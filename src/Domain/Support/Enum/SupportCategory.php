@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Support\Enum;
 
 enum SupportCategory: string
@@ -50,7 +52,7 @@ enum SupportCategory: string
 
     /**
      * Libellé utilisé par le robot système dans l'auto-réponse.
-     * Ex: "Nous avons bien reçu votre demande concernant [votre dossier KYC]."
+     * Ex: "Nous avons bien reçu votre demande concernant [votre dossier KYC].".
      */
     public function getContextLabel(): string
     {

@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Twig\Components;
 
 use App\Application\Kyc\UseCase\GetCurrentKycFolderUseCase;
 use App\Application\Kyc\UseCase\SubmitKycFolderUseCase;
+use App\Domain\Compliance\Enum\DocumentType;
 use App\Domain\Kyc\Enum\CompanyLegalCategory;
-use App\Domain\Kyc\Enum\DocumentType;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -24,14 +26,15 @@ use Webmozart\Assert\Assert;
 class KycDocumentUploaderComponent
 {
     use DefaultActionTrait;
-    use ValidatableComponentTrait;
     use LiveFlashTrait;
+    use ValidatableComponentTrait;
 
     public function __construct(
         private readonly GetCurrentKycFolderUseCase $getCurrentKycFolderUseCase,
         private readonly SubmitKycFolderUseCase $submitKycFolderUseCase,
         private readonly UrlGeneratorInterface $router,
-    ) {}
+    ) {
+    }
 
     #[LiveProp]
     public string $folderSlugId;
@@ -76,7 +79,7 @@ class KycDocumentUploaderComponent
         $existingDocuments = $folder->documents;
 
         // Closure de vérification inchangée et robuste
-        $getDocInfo = function (DocumentType $type, ?string $stakeholderSlug = null) use ($existingDocuments): array {
+        $getDocInfo = static function (DocumentType $type, ?string $stakeholderSlug = null) use ($existingDocuments): array {
             foreach ($existingDocuments as $doc) {
                 $docType = $doc['type'] ?? $doc['documentType'] ?? null;
                 $docLabel = $doc['typeLabel'] ?? null;
@@ -183,6 +186,7 @@ class KycDocumentUploaderComponent
 
         return $slots;
     }
+
     #[LiveAction]
     public function uploaded(#[LiveArg] string $id, #[LiveArg] string $fileName): void
     {

@@ -25,25 +25,28 @@ final readonly class UserRepository implements UserRepositoryInterface
 {
     /** @var EntityRepository<User> */
     private EntityRepository $repository;
+
     public function __construct(private EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(User::class);
     }
 
-    public function save(User $user): void
+    public function save(User $user, bool $flush = true): void
     {
-        $em = $this->entityManager;
-        $em->persist($user);
-        $em->flush();
+        $this->entityManager->persist($user);
+        if ($flush) {
+            $this->entityManager->flush();
+        }
     }
 
-    public function getById(Uuid $id): User
+    public function getById(Uuid|string $id): User
     {
-        $user =  $this->repository->find($id);
+        $user = $this->repository->find($id);
 
         if (null === $user) {
-            throw UserNotFoundException::withId($id);
+            throw UserNotFoundException::withId((string) $id);
         }
+
         return $user;
     }
 
@@ -52,24 +55,17 @@ final readonly class UserRepository implements UserRepositoryInterface
         return $this->repository->findOneBy(['email' => $email]);
     }
 
-    /**
-     * @param string $email
-     * @return User
-     */
     public function getByEmail(string $email): User
     {
-        $user =  $this->repository->findOneBy(['email' => $email]);
+        $user = $this->repository->findOneBy(['email' => $email]);
 
         if (null === $user) {
             throw UserNotFoundException::withEmail($email);
         }
+
         return $user;
     }
 
-    /**
-     * @param string|null $slug
-     * @return User|null
-     */
     public function findBySlug(?string $slug): ?User
     {
         return $this->repository->findOneBy(['slugId' => $slug]);
@@ -77,11 +73,12 @@ final readonly class UserRepository implements UserRepositoryInterface
 
     public function getBySlug(string $slug): User
     {
-        $user =  $this->repository->findOneBy(['slugId' => $slug]);
+        $user = $this->repository->findOneBy(['slugId' => $slug]);
 
         if (null === $user) {
             throw UserNotFoundException::withSlug($slug);
         }
+
         return $user;
     }
 
@@ -131,12 +128,30 @@ final readonly class UserRepository implements UserRepositoryInterface
                 ->setParameter('search', '%' . $search . '%');
         }
 
-        if ($queryEnabled === true || $queryEnabled === false) {
+        if (true === $queryEnabled || false === $queryEnabled) {
             $qb = $qb
                 ->andWhere('u.isActif = :is_actif')
                 ->setParameter('is_actif', $queryEnabled);
         }
 
         return new Pagerfanta(new QueryAdapter($qb));
+    }
+
+    public function getReference(Uuid|string $id): User
+    {
+        $user = $this->entityManager->getReference(User::class, $id);
+
+        if (null === $user) {
+            throw UserNotFoundException::withId((string) $id);
+        }
+
+        return $user;
+    }
+
+    public function existsByEmail(string $email): bool
+    {
+        $user = $this->repository->findOneBy(['email' => $email]);
+
+        return null !== $user;
     }
 }

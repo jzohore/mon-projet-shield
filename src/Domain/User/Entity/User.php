@@ -4,20 +4,27 @@ declare(strict_types=1);
 
 namespace App\Domain\User\Entity;
 
+use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Screening\Entity\ScreeningAudit;
 use App\Domain\Support\Entity\SupportThread;
+use App\Domain\User\Enum\JobRole;
 use App\Domain\User\Enum\OnboardingStatus;
 use App\Domain\User\ValueObject\UserProfil;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
+use App\Domain\Workspace\Entity\WorkspaceMember;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Random\RandomException;
+use Scheb\TwoFactorBundle\Model\Google\TwoFactorInterface;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
+
+use function Symfony\Component\Clock\now;
+
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -25,7 +32,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity]
 #[ORM\Table(name: '`users`')]
 #[UniqueEntity(fields: ['email'], message: 'Un compte existe déjà avec cet email')]
-class User implements UserInterface, PasswordAuthenticatedUserInterface
+class User implements UserInterface, TwoFactorInterface, \Stringable
 {
     use GenerateSlugPrefixedTrait;
 
@@ -35,35 +42,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
     public ?Uuid $id = null {
         get {
-            if (null === $this->id) {
+            if (!$this->id instanceof Uuid) {
                 throw new \LogicException('L\'ID de l\'entité n\'a pas encore été généré.');
             }
+
             return $this->id;
         }
     }
 
-    #[ORM\Column(type: Types::STRING, length: 180, unique: true)]
-    public ?string $email = null {
-        get {
-            if (null === $this->email) {
-                throw new \LogicException('L\'email de cet utilisateur n\'a pas encore été défini.');
-            }
-
-            return $this->email;
-        }
-        set => $this->email = strtolower(trim($value ?? ''));
-    }
-
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
-    public ?string $slugId = null {
-        get => $this->slugId;
-        set => $this->slugId = $value;
-    }
-
-    public ?string $password = null {
-        get => $this->password;
-        set => $this->password = $value;
-    }
+    public private(set) string $slugId;
 
     /**
      * @var list<string> The user roles
@@ -75,120 +63,52 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
-    public bool $isVerified = false {
-        get => $this->isVerified;
-        set => $this->isVerified = $value;
-    }
-
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
-    public bool $isOwner = false {
-        get => $this->isOwner;
-        set => $this->isOwner = $value;
-    }
-
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
-    public bool $isActif = false {
-        get => $this->isActif;
-        set => $this->isActif = $value;
-    }
-
-    // ==================== PROFIL ====================
-
-    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
-    #[Assert\Length(max: 100)]
-    public ?string $firstName = null {
-        get => $this->firstName;
-        set => $this->firstName = $value ? ucfirst(trim($value)) : null;
-    }
-
-    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
-    #[Assert\Length(max: 100)]
-    public ?string $lastName = null {
-        get => $this->lastName;
-        set => $this->lastName = $value ? ucfirst(trim($value)) : null;
-    }
+    public private(set) bool $isOwner = false;
 
     // ==================== OAUTH ====================
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
-    public ?string $magicLinkToken = null {
-        get => $this->magicLinkToken;
-        set => $this->magicLinkToken = $value;
-    }
+    public private(set) ?string $magicLinkToken = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    public ?\DateTimeImmutable $magicLinkTokenExpiresAt = null {
-        get => $this->magicLinkTokenExpiresAt;
-        set => $this->magicLinkTokenExpiresAt = $value;
-    }
-
-    #[ORM\Column(type: Types::STRING, length: 5, nullable: true)]
-    public ?string $lang = null {
-        get => $this->lang;
-        set => $this->lang = $value;
-    }
-
-    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
-    public ?string $stripeCustomerId = null {
-        get => $this->stripeCustomerId;
-        set => $this->stripeCustomerId = $value;
-    }
+    public private(set) ?\DateTimeImmutable $magicLinkTokenExpiresAt = null;
 
     // ==================== TIMESTAMPS ====================
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    public \DateTimeImmutable $createdAt {
-        get => $this->createdAt;
-    }
+    public private(set) \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    public \DateTimeImmutable $updatedAt {
-        get => $this->updatedAt;
-    }
-
+    public private(set) \DateTimeImmutable $updatedAt;
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
-    public ?\DateTimeImmutable $onboardingReminderSentAt = null {
-        get => $this->onboardingReminderSentAt;
-        set => $this->onboardingReminderSentAt = $value;
-    }
+    public private(set) ?\DateTimeImmutable $onboardingReminderSentAt = null;
 
-    #[ORM\Column(type: Types::STRING, length: 50, nullable: true, enumType: OnboardingStatus::class)]
-    public OnboardingStatus $onboardingStatus = OnboardingStatus::PENDING {
-        get => $this->onboardingStatus;
-        set => $this->onboardingStatus = $value;
-    }
+    #[ORM\Column(type: Types::STRING, length: 150, nullable: true)]
+    public private(set) ?string $googleAuthenticatorSecret = null;
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    public private(set) bool $isTotpVerified = false;
+
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    public private(set) int $trustedVersion = 0;
 
     #[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'members')]
     #[ORM\JoinColumn(nullable: true)]
-    public ?Workspace $workspace = null {
-        get => $this->workspace;
-        set => $this->workspace = $value;
-    }
+    public private(set) ?Workspace $workspace = null;
 
     /**
      * @var Collection<int, WorkspaceInvitation>
      */
     #[ORM\OneToMany(targetEntity: WorkspaceInvitation::class, mappedBy: 'owner', cascade: ['persist', 'remove'], orphanRemoval: true)]
-    public Collection $invitations {
-        get => $this->invitations;
-    }
-
+    public private(set) Collection $invitations;
     /**
      * @var Collection<int, ScreeningAudit>
      */
     #[ORM\OneToMany(targetEntity: ScreeningAudit::class, mappedBy: 'owner', cascade: ['persist', 'remove'])]
-    public Collection $screeningAudits {
-        get => $this->screeningAudits;
-    }
+    public private(set) Collection $screeningAudits;
 
     #[ORM\Embedded(class: UserProfil::class, columnPrefix: 'profile_')]
-    public UserProfil $profile;
-
-    /**
-     * @var bool Dismiss the onboarding steps.
-     */
-    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
-    public private(set) bool $dismissOnboarding = false;
+    public private(set) UserProfil $profile;
 
     /**
      * @var Collection<int, SupportThread>
@@ -197,33 +117,54 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public private(set) Collection $supportThread;
 
     /**
+     * @var Collection<int, WorkspaceMember>
+     */
+    #[ORM\OneToMany(targetEntity: WorkspaceMember::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    public private(set) Collection $members;
+
+    /**
+     * @var Collection<int, ComplianceFolder>
+     */
+    #[ORM\OneToMany(targetEntity: ComplianceFolder::class, mappedBy: 'assignedReviewer', cascade: ['persist', 'remove'])]
+    public private(set) Collection $folders;
+
+    /**
      * @param list<string> $roles
+     *
+     * @throws \Exception
      */
     private function __construct(
-        string $email,
-        string $firstName,
-        string $lastName,
-        bool $isVerified,
+        #[ORM\Column(type: Types::STRING, length: 180, unique: true)]
+        public private(set) string $email,
+        #[ORM\Column(type: Types::STRING, length: 100)]
+        #[Assert\Length(max: 100)]
+        public private(set) string $firstName,
+        #[ORM\Column(type: Types::STRING, length: 100)]
+        #[Assert\Length(max: 100)]
+        public private(set) string $lastName,
+        #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+        public private(set) bool $isVerified,
         array $roles = ['ROLE_USER'],
-        OnboardingStatus $onboardingStatus = OnboardingStatus::PENDING,
-        bool $isActif = false,
+        #[ORM\Column(type: Types::STRING, length: 50, nullable: true, enumType: OnboardingStatus::class)]
+        public private(set) OnboardingStatus $onboardingStatus = OnboardingStatus::PENDING,
+        #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+        public private(set) bool $isActif = false,
     ) {
-        $this->email = $email;
-        $this->firstName = $firstName;
-        $this->lastName = $lastName;
         $this->roles = array_values(array_unique($roles));
-        $this->isVerified = $isVerified;
-        $this->onboardingStatus = $onboardingStatus;
-        $this->isActif = $isActif;
         $this->slugId = $this->generate_ulid_prefixed('usr_');
         $this->profile = new UserProfil();
-        $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-        $this->updatedAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $this->createdAt = now();
+        $this->updatedAt = now();
         $this->supportThread = new ArrayCollection();
+        $this->invitations = new ArrayCollection();
+        $this->screeningAudits = new ArrayCollection();
+        $this->members = new ArrayCollection();
     }
 
     /**
      * @param list<string> $roles
+     *
+     * @throws \Exception
      */
     public static function create(
         string $email,
@@ -242,16 +183,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getUserIdentifier(): string
     {
-        if (empty($this->email)) {
+        if ('' === $this->email || '0' === $this->email) {
             throw new \LogicException('Un utilisateur doit avoir un email.');
         }
 
         return $this->email;
-    }
-
-    public function getPassword(): ?string
-    {
-        return $this->password;
     }
 
     public function getRoles(): array
@@ -268,25 +204,27 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getNormalizedEmail(): string
     {
-        return strtolower(trim($this->email ?? ''));
-    }
-
-    public function getNormalizedFirstName(): string
-    {
-        return ucfirst(strtoupper(trim($this->firstName ?? '')));
-    }
-
-    public function getNormalizedLastName(): ?string
-    {
-        if (empty($this->lastName)) {
-            return null;
-        }
-
-        return strtoupper(trim($this->lastName));
+        return $this->email;
     }
 
     /**
-     * Nom complet.
+     * Formatage pour affichage : Prénom avec première lettre en majuscule (ex: "Jean-Pierre").
+     */
+    public function getNormalizedFirstName(): string
+    {
+        return mb_convert_case($this->firstName, \MB_CASE_TITLE, 'UTF-8');
+    }
+
+    /**
+     * Formatage réglementaire : Nom entièrement en majuscules (ex: "DUPONT").
+     */
+    public function getNormalizedLastName(): string
+    {
+        return mb_strtoupper($this->lastName, 'UTF-8');
+    }
+
+    /**
+     * Nom complet au format légal pour rapports LCB-FT et DER : "Jean-Pierre DUPONT".
      */
     public function getFullName(): string
     {
@@ -299,38 +237,33 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getInitials(): string
     {
-        $firstName = (string) $this->getNormalizedFirstName();
-        $lastName = (string) $this->getNormalizedLastName();
+        $firstLetter = mb_substr($this->firstName, 0, 1, 'UTF-8');
+        $lastLetter = mb_substr($this->lastName, 0, 1, 'UTF-8');
 
-        // On récupère le premier caractère de manière sécurisée (compatible UTF-8)
-        $firstLetter = mb_substr($firstName, 0, 1);
-        $lastLetter = mb_substr($lastName, 0, 1);
-
-        if ($firstLetter === '' && $lastLetter === '') {
-            return '??'; // Valeur de repli (fallback)
+        if ('' === $firstLetter && '' === $lastLetter) {
+            return 'K';
         }
 
-        return sprintf(
-            '%s%s',
-            mb_strtoupper($firstLetter),
-            mb_strtoupper($lastLetter)
-        );
+        return mb_strtoupper($firstLetter . $lastLetter, 'UTF-8');
     }
 
     public function isTokenValid(?string $token, ?\DateTimeImmutable $expiresAt): bool
     {
-        if (null === $token || null === $expiresAt) {
+        if (null === $token || !$expiresAt instanceof \DateTimeImmutable) {
             return false;
         }
 
         return $expiresAt > new \DateTimeImmutable();
     }
 
+    /**
+     * @throws \Exception
+     * @throws RandomException
+     */
     public function generateMagicLinkToken(): void
     {
-        $now = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
         $this->magicLinkToken = bin2hex(random_bytes(64));
-        $this->magicLinkTokenExpiresAt = $now->add(new \DateInterval('PT10M'));
+        $this->magicLinkTokenExpiresAt = now()->add(new \DateInterval('PT10M'));
     }
 
     public function isMagicLinkTokenValid(): bool
@@ -357,19 +290,61 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->onboardingStatus = OnboardingStatus::COMPLETED;
     }
 
-    public function updateName(string $firstName, string $lastName): void
+    public function updateProfilInformations(string $firstName, string $lastName, ?JobRole $jobRole = null, ?string $phone = null): void
     {
         $this->firstName = $firstName;
         $this->lastName = $lastName;
+        $this->profile->jobTitle = $jobRole;
+        $this->profile->phoneNumber = $phone;
     }
 
-    public function isDismiss(): bool
+    public function dismissOnboarding(): void
     {
-        return $this->dismissOnboarding;
+        $this->profile->setDismissOnboarding(true);
     }
 
-    public function setDismissOnboarding(bool $dismissOnboarding): void
+    public function setOnboardingReminderSentAt(\DateTimeImmutable $date): void
     {
-        $this->dismissOnboarding = $dismissOnboarding;
+        $this->onboardingReminderSentAt = $date;
+    }
+
+    public function updateOnboardStatus(OnboardingStatus $status): void
+    {
+        $this->onboardingStatus = $status;
+    }
+
+    public function enabledProfil(): void
+    {
+        $this->isVerified = true;
+        $this->isOwner = true;
+        $this->isActif = true;
+    }
+
+    public function setIsTotpVerified(bool $isTotpVerified): void
+    {
+        $this->isTotpVerified = $isTotpVerified;
+    }
+
+    // 2. 🚨 LE POINT CLÉ : On modifie l'interface de Scheb
+    public function isGoogleAuthenticatorEnabled(): bool
+    {
+        // Scheb n'imposera le 2FA à la connexion QUE si cette méthode renvoie true.
+        // Donc on exige le secret ET la vérification !
+        return null !== $this->getGoogleAuthenticatorSecret() && $this->isTotpVerified;
+    }
+
+    public function getGoogleAuthenticatorUsername(): ?string
+    {
+        return $this->email;
+    }
+
+    public function getGoogleAuthenticatorSecret(): ?string
+    {
+        return $this->googleAuthenticatorSecret;
+    }
+
+    public function setGoogleAuthenticatorSecret(?string $googleAuthenticatorSecret): void
+    {
+        $this->googleAuthenticatorSecret = $googleAuthenticatorSecret;
     }
 }

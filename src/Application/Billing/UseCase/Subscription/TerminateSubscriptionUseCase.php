@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Billing\UseCase\Subscription;
 
 use App\Domain\Billing\Repository\SubscriptionRepositoryInterface;
@@ -8,7 +10,8 @@ readonly class TerminateSubscriptionUseCase
 {
     public function __construct(
         private SubscriptionRepositoryInterface $subscriptionRepository,
-    ) {}
+    ) {
+    }
 
     public function __invoke(string $stripeSubscriptionId): void
     {

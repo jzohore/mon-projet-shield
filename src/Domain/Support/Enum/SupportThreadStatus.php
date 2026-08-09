@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Support\Enum;
 
 enum SupportThreadStatus: string
@@ -45,11 +47,11 @@ enum SupportThreadStatus: string
 
     public function isOpen(): bool
     {
-        return $this === self::OPEN;
+        return self::OPEN === $this;
     }
 
     public function isResolved(): bool
     {
-        return $this === self::RESOLVED;
+        return self::RESOLVED === $this;
     }
 }

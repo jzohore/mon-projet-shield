@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\User\Enum;
 
 /**
- * Référentiel des rôles et métiers (Cible RegTech / B2B)
+ * Référentiel des rôles et métiers (Cible RegTech / B2B).
  */
 enum JobRole: string
 {

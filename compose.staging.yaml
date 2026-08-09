@@ -1,0 +1,118 @@
+services:
+  php-staging:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frankenphp_prod
+    container_name: kysure_web_staging
+    restart: unless-stopped
+    environment:
+      SERVER_NAME: '${SERVER_NAME:-:80}'
+      TRUSTED_PROXIES: '${TRUSTED_PROXIES}'
+      APP_ENV: staging
+      KYSURE_ROLE: web
+      SOPS_AGE_KEY: '${SOPS_AGE_KEY}'
+      DATABASE_URL: '${DATABASE_URL}'
+      MESSENGER_TRANSPORT_DSN: '${MESSENGER_TRANSPORT_DSN}'
+      MAILER_DSN: 'smtp://mailpit-staging:1025'
+      GOTENBERG_URL: 'http://gotenberg-staging:3000'
+      DOCUSEAL_URL: 'http://docuseal-staging:3000'
+    depends_on:
+      database-staging:
+        condition: service_healthy
+      rabbitmq-staging:
+        condition: service_healthy
+
+  worker-staging:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frankenphp_prod
+    container_name: kysure_worker_staging
+    restart: unless-stopped
+    environment:
+      APP_ENV: staging
+      KYSURE_ROLE: worker
+      SOPS_AGE_KEY: '${SOPS_AGE_KEY}'
+      DATABASE_URL: '${DATABASE_URL}'
+      MESSENGER_TRANSPORT_DSN: '${MESSENGER_TRANSPORT_DSN}'
+      MAILER_DSN: 'smtp://mailpit-staging:1025'
+      GOTENBERG_URL: 'http://gotenberg-staging:3000'
+      DOCUSEAL_URL: 'http://docuseal-staging:3000'
+    depends_on:
+      database-staging:
+        condition: service_healthy
+      rabbitmq-staging:
+        condition: service_healthy
+
+  database-staging:
+    image: 'postgres:16-alpine'
+    container_name: kysure_db_staging
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: '${POSTGRES_DB}'
+      POSTGRES_USER: '${POSTGRES_USER}'
+      POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
+    volumes:
+      - 'postgres_staging_data:/var/lib/postgresql/data'
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -d ${POSTGRES_DB} -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq-staging:
+    image: 'rabbitmq:4.3-management-alpine'
+    container_name: kysure_rabbitmq_staging
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: '${RABBITMQ_USER}'
+      RABBITMQ_DEFAULT_PASS: '${RABBITMQ_PASSWORD}'
+    volumes:
+      - 'rabbitmq_staging_data:/var/lib/rabbitmq'
+    healthcheck:
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  mailpit-staging:
+    image: 'axllent/mailpit:latest'
+    container_name: kysure_mailpit_staging
+    restart: unless-stopped
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_DATABASE_PATH: /data/mailpit.db
+      MP_SMTP_BIND_ADDR: '0.0.0.0:1025'
+      MP_UI_BIND_ADDR: '0.0.0.0:8025'
+    volumes:
+      - 'mailpit_staging_data:/data'
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.mailpit-staging.loadbalancer.server.port=8025"
+
+  docuseal-staging:
+    image: 'docuseal/docuseal:latest'
+    container_name: kysure_docuseal_staging
+    restart: unless-stopped
+    # 🛡️ FIX : Coolify réinjecte DATABASE_URL au niveau du conteneur même
+    # quand le compose déclare explicitement une valeur vide pour ce service
+    # (comportement confirmé empiriquement, contraire à la doc "compose =
+    # source de vérité"). On neutralise donc la variable directement dans
+    # l'environnement du process au démarrage, quelle que soit son origine,
+    # pour forcer DocuSeal à retomber sur SQLite dans /data.
+    entrypoint: ["sh", "-c", "unset DATABASE_URL; exec /app/bin/bundle exec puma -C /app/config/puma.rb --dir /app"]
+    volumes:
+      - 'docuseal_staging_data:/data'
+
+  gotenberg-staging:
+    image: 'gotenberg/gotenberg:8'
+    container_name: kysure_gotenberg_staging
+    restart: unless-stopped
+
+volumes:
+  postgres_staging_data: null
+  rabbitmq_staging_data: null
+  docuseal_staging_data: null
+  mailpit_staging_data: null

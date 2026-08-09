@@ -8,11 +8,6 @@
 
     {# On attache le contrôleur sur le parent #}
     <div data-controller="loading-transition" class="relative w-full max-w-lg mx-auto min-h-[400px] flex items-center justify-center">
-
-        {# ========================================== #}
-        {# 1. L'ÉTAT DE CHARGEMENT                    #}
-        {# ========================================== #}
-        {# On cible cet élément comme étant "loader" #}
         <div data-loading-transition-target="loader" class="w-full text-center flex flex-col items-center justify-center transition-all duration-500 opacity-100 scale-100">
 
             <div class="relative flex items-center justify-center size-24 mb-8">
@@ -55,7 +50,7 @@
                     Accéder à mon espace
                     {{ ux_icon('lucide:arrow-right', { class: 'size-4 ml-2' }) }}
                 </twig:Button>
-          <input type="hidden" name="_csrf_token" value="{{ csrf_token('onboarding_completed') }}">
+          <input type="hidden" name="_token" value="{{ csrf_token('onboarding_completed') }}">
             </form>
 
         </div>

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Support\UseCase;
 
 use App\Domain\Shared\Port\RealTimeNotifierInterface;
@@ -17,11 +19,12 @@ readonly class ReplyToSupportThreadUseCase
     public function __construct(
         private SupportThreadRepositoryInterface $threadRepository,
         private RealTimeNotifierInterface $notifier,
-    ) {}
+    ) {
+    }
 
     /**
-     * @param SupportThread $thread Le ticket concerné
-     * @param string $content Le contenu du message tapé
+     * @param SupportThread     $thread     Le ticket concerné
+     * @param string            $content    Le contenu du message tapé
      * @param SupportSenderType $senderType Qui envoie le message (Client ou Admin)
      */
     public function execute(SupportThread $thread, string $content, SupportSenderType $senderType): void

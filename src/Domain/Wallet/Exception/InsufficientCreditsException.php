@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Wallet\Exception;
 
 /**
@@ -10,9 +12,9 @@ final class InsufficientCreditsException extends \DomainException
 {
     // On peut définir un message par défaut clair pour ne pas avoir à le réécrire partout
     public function __construct(
-        string $message = "Solde de crédits insuffisant pour réaliser cette opération. Veuillez recharger votre compte.",
+        string $message = 'Solde de crédits insuffisant pour réaliser cette opération. Veuillez recharger votre compte.',
         int $code = 0,
-        ?\Throwable $previous = null
+        ?\Throwable $previous = null,
     ) {
         parent::__construct($message, $code, $previous);
     }

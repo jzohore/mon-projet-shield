@@ -1,24 +1,24 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Kyc\Repository;
 
 use App\Domain\Kyc\Entity\KycFolder;
 use App\Domain\Kyc\Enum\KycFolderStatus;
 use App\Domain\Workspace\Entity\Workspace;
-use DateTimeImmutable;
 use Pagerfanta\Pagerfanta;
 
 interface KycFolderRepositoryInterface
 {
     public function save(KycFolder $kycFolder): void;
+
     public function findBySlugId(string $slugId): ?KycFolder;
+
     public function findByToken(string $shareToken): ?KycFolder;
 
     /**
-     * @param string $email
      * @param array<KycFolderStatus> $statuses
-     * @param string $workspaceId
-     * @return KycFolder|null
      */
     public function findFirstByEmailAndStatuses(string $email, array $statuses, string $workspaceId): ?KycFolder;
 
@@ -31,12 +31,7 @@ interface KycFolderRepositoryInterface
 
     public function countDraftsForWorkspace(string $workspaceId): int;
 
-    /**
-     * @param Workspace $workspace
-     * @param DateTimeImmutable $since
-     * @return int
-     */
-    public function countSearchesSince(Workspace $workspace, DateTimeImmutable $since): int;
+    public function countSearchesSince(Workspace $workspace, \DateTimeImmutable $since): int;
 
     public function countAll(): int;
 }

@@ -1,0 +1,118 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\Firm\Entity;
+
+use App\Domain\Workspace\Entity\Workspace;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Types\UuidType;
+
+use function Symfony\Component\Clock\now;
+
+use Symfony\Component\Uid\Uuid;
+
+#[ORM\Entity]
+#[ORM\Table(name: 'regulatory_profiles')]
+class RegulatoryProfile
+{
+    #[ORM\Id]
+    #[ORM\Column(type: UuidType::NAME, unique: true)]
+    #[ORM\GeneratedValue(strategy: 'CUSTOM')]
+    #[ORM\CustomIdGenerator(class: 'doctrine.uuid_generator')]
+    public private(set) ?Uuid $id = null;
+
+    // --- DONNÉES PUREMENT AMF / DER ---
+
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    public private(set) ?string $logoStoragePath = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    public private(set) ?string $filename = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    public private(set) ?string $mimeType = null;
+
+    #[ORM\Column(nullable: true)]
+    public private(set) ?int $size = null;
+
+    #[ORM\Column(type: Types::STRING, length: 20, nullable: true)]
+    public private(set) ?string $oriasNumber = null;
+
+    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
+    public private(set) ?string $professionalAssociation = null; // CNCGP, ANACOFI...
+
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    public private(set) ?string $rcProInsurer = null;
+
+    #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
+    public private(set) ?string $rcProPolicyNumber = null;
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => true])]
+    public private(set) bool $isIndependent = true;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    public private(set) ?string $signatureBase64 = null;
+
+    /**
+     * @var array<int, array{name: string|null, address: string|null, email: string|null, phone: string|null}>
+     */
+    #[ORM\Column(type: Types::JSON)]
+    public private(set) array $partners = [];
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => true])]
+    public private(set) bool $isValidOrias = true;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true, options: ['default' => null])]
+    public private(set) ?\DateTimeImmutable $lastCheckOrias = null;
+
+    public function __construct(
+        #[ORM\OneToOne(targetEntity: Workspace::class, inversedBy: 'regulatoryProfile')]
+        #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
+        public private(set) Workspace $workspace,
+    ) {
+    }
+
+    public static function initiate(Workspace $workspace): self
+    {
+        return new self($workspace);
+    }
+
+    /**
+     * @param array<int, array{name: string|null, address: string|null, email: string|null, phone: string|null}> $partners
+     */
+    public function update(
+        ?string $oriasNumber,
+        ?string $professionalAssociation,
+        ?string $rcProInsurer,
+        ?string $rcProPolicyNumber,
+        bool $isIndependent,
+        array $partners,
+    ): void {
+        $this->oriasNumber = $oriasNumber;
+        $this->professionalAssociation = $professionalAssociation;
+        $this->rcProInsurer = $rcProInsurer;
+        $this->rcProPolicyNumber = $rcProPolicyNumber;
+        $this->isIndependent = $isIndependent;
+        $this->partners = $partners;
+        $this->lastCheckOrias = now();
+    }
+
+    public function updateStoragePath(string $storagePath, string $filename): void
+    {
+        $this->logoStoragePath = $storagePath;
+        $this->filename = $filename;
+    }
+
+    public function updateSignature(string $signatureBase64): void
+    {
+        $this->signatureBase64 = $signatureBase64;
+    }
+
+    public function updateOriasStatus(bool $isValidOrias, \DateTimeImmutable $checkedAt): void
+    {
+        $this->isValidOrias = $isValidOrias;
+        $this->lastCheckOrias = $checkedAt;
+    }
+}

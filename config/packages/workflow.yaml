@@ -1,0 +1,85 @@
+framework:
+    workflows:
+        compliance_folder_lifecycle:
+            type: 'state_machine'
+            audit_trail:
+                enabled: true
+            marking_store:
+                type: 'method'
+                property: 'status'
+            supports:
+                - App\Domain\Compliance\Entity\ComplianceFolder
+            initial_marking: draft
+            places:
+                - draft
+                - der_sent          # NOUVEAU
+                - kyc_pending       # NOUVEAU
+                - in_review
+                - needs_correction
+                - approved
+                - rejected
+                - archived
+            transitions:
+                # 1. Le CGP génère et envoie le DER
+                send_der:
+                    from: draft
+                    to: der_sent
+
+                # 2. Le client signe le DER (ou le CGP upload un DER signé)
+                sign_der:
+                    from: der_sent
+                    to: kyc_pending
+
+                # 3. Les documents KYC sont tous déposés
+                submit_documents:
+                    from: [kyc_pending, needs_correction]
+                    to: in_review
+
+                # 4. Le CGP refuse une pièce (ex: CNI floue)
+                request_correction:
+                    from: in_review
+                    to: needs_correction
+
+                # 5. Le CGP valide la conformité totale
+                approve:
+                    from: in_review
+                    to: approved
+
+                # Le CGP bloque le dossier
+                reject:
+                    from: in_review
+                    to: rejected
+        user_onboarding:
+            type: 'state_machine'
+            audit_trail:
+                enabled: true
+            marking_store:
+                type: 'method'
+                property: 'onboardingStatusString'
+            supports:
+                - App\Domain\User\Entity\User
+            initial_marking: 'pending'
+
+            places:
+                - 'pending'
+                - 'workspace'
+                - 'profil'
+                - 'plan'
+                - 'completed'
+
+            transitions:
+                start_workspace_setup:
+                    from: 'pending'
+                    to: 'workspace'
+
+                complete_workspace:
+                    from: 'workspace'
+                    to: 'profil'
+
+                complete_profil:
+                    from: 'profil'
+                    to: 'plan'
+
+                finalize_onboarding:
+                    from: 'plan'
+                    to: 'completed'

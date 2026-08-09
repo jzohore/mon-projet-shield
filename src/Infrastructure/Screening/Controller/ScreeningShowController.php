@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Screening\Controller;
 
 use App\Application\Screening\UseCase\GetScreeningInfo;
@@ -21,7 +23,8 @@ readonly class ScreeningShowController
 {
     public function __construct(
         private GetScreeningInfo $getScreeningInfo,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws RuntimeError

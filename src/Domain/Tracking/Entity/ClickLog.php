@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Tracking\Entity;
 
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
@@ -27,75 +29,42 @@ class ClickLog
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
     public private(set) string $slugId;
 
-    #[ORM\Column(length: 100)]
-    public private(set) string $elementName;
-
-    #[ORM\Column(type: Types::TEXT)]
-    public private(set) string $pageUrl;
-
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    public private(set) ?string $referrer;
-
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    public private(set) ?string $userAgent;
-
-    #[ORM\Column(length: 45, nullable: true)]
-    public private(set) ?string $ipAddress;
-
-    #[ORM\Column(length: 20, nullable: true)]
-    public private(set) ?string $resolution;
-
-    #[ORM\Column(length: 10, nullable: true)]
-    public private(set) ?string $locale;
-
-    #[ORM\Column(length: 100, nullable: true)]
-    public private(set) ?string $utmSource;
-
-    #[ORM\Column(length: 100, nullable: true)]
-    public private(set) ?string $utmMedium;
-
-    #[ORM\Column(length: 100, nullable: true)]
-    public private(set) ?string $utmCampaign;
-
-    #[ORM\Column(length: 255, nullable: true)]
-    public private(set) ?string $sessionId;
-
     #[ORM\Column]
     public private(set) \DateTimeImmutable $createdAt;
 
     /**
-     * Le constructeur est privé pour forcer l'utilisation de ClickLog::create()
+     * Le constructeur est privé pour forcer l'utilisation de ClickLog::create().
      */
     private function __construct(
-        string $elementName,
-        string $pageUrl,
-        ?string $referrer = null,
-        ?string $userAgent = null,
-        ?string $ipAddress = null,
-        ?string $resolution = null,
-        ?string $locale = null,
-        ?string $utmSource = null,
-        ?string $utmMedium = null,
-        ?string $utmCampaign = null,
-        ?string $sessionId = null
+        #[ORM\Column(length: 100)]
+        public private(set) string $elementName,
+        #[ORM\Column(type: Types::TEXT)]
+        public private(set) string $pageUrl,
+        #[ORM\Column(type: Types::TEXT, nullable: true)]
+        public private(set) ?string $referrer = null,
+        #[ORM\Column(type: Types::TEXT, nullable: true)]
+        public private(set) ?string $userAgent = null,
+        #[ORM\Column(length: 45, nullable: true)]
+        public private(set) ?string $ipAddress = null,
+        #[ORM\Column(length: 20, nullable: true)]
+        public private(set) ?string $resolution = null,
+        #[ORM\Column(length: 10, nullable: true)]
+        public private(set) ?string $locale = null,
+        #[ORM\Column(length: 100, nullable: true)]
+        public private(set) ?string $utmSource = null,
+        #[ORM\Column(length: 100, nullable: true)]
+        public private(set) ?string $utmMedium = null,
+        #[ORM\Column(length: 100, nullable: true)]
+        public private(set) ?string $utmCampaign = null,
+        #[ORM\Column(length: 255, nullable: true)]
+        public private(set) ?string $sessionId = null,
     ) {
-        $this->elementName = $elementName;
-        $this->pageUrl = $pageUrl;
-        $this->referrer = $referrer;
-        $this->userAgent = $userAgent;
-        $this->ipAddress = $ipAddress;
-        $this->resolution = $resolution;
-        $this->locale = $locale;
-        $this->utmSource = $utmSource;
-        $this->utmMedium = $utmMedium;
-        $this->utmCampaign = $utmCampaign;
-        $this->sessionId = $sessionId;
         $this->slugId = $this->generate_ulid_prefixed('click_log_');
         $this->createdAt = new \DateTimeImmutable();
     }
 
     /**
-     * Méthode statique de création (Named Constructor)
+     * Méthode statique de création (Named Constructor).
      */
     public static function create(
         string $elementName,
@@ -108,7 +77,7 @@ class ClickLog
         ?string $utmSource = null,
         ?string $utmMedium = null,
         ?string $utmCampaign = null,
-        ?string $sessionId = null
+        ?string $sessionId = null,
     ): self {
         return new self(
             $elementName,

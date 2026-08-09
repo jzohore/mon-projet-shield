@@ -6,9 +6,12 @@ namespace App\Infrastructure\Workspace\Persistence;
 
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
+use App\Domain\Workspace\Enum\InvitationStatus;
+use App\Domain\Workspace\Exception\WorkspaceInvitationNotFoundException;
 use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Symfony\Component\Uid\Uuid;
 
 /**
  * @method WorkspaceInvitation|null find($id, $lockMode = null, $lockVersion = null)
@@ -20,14 +23,18 @@ final readonly class WorkspaceInvitationRepository implements WorkspaceInvitatio
 {
     /** @var EntityRepository<WorkspaceInvitation> */
     private EntityRepository $repository;
+
     public function __construct(private EntityManagerInterface $entityManager)
     {
         $this->repository = $entityManager->getRepository(WorkspaceInvitation::class);
     }
-    public function save(WorkspaceInvitation $workspaceInvitation): void
+
+    public function save(WorkspaceInvitation $workspaceInvitation, bool $flush = true): void
     {
         $this->entityManager->persist($workspaceInvitation);
-        $this->entityManager->flush();
+        if ($flush) {
+            $this->entityManager->flush();
+        }
     }
 
     /**
@@ -69,5 +76,27 @@ final readonly class WorkspaceInvitationRepository implements WorkspaceInvitatio
     public function findByToken(string $token): ?WorkspaceInvitation
     {
         return $this->repository->findOneBy(['magicLinkToken' => $token]);
+    }
+
+    public function getById(Uuid $id): WorkspaceInvitation
+    {
+        $invitation = $this->repository->find($id);
+
+        if (null === $invitation) {
+            throw WorkspaceInvitationNotFoundException::withId((string) $id);
+        }
+
+        return $invitation;
+    }
+
+    public function hasPendingInvitation(Workspace $workspace, string $email): bool
+    {
+        $pendingCount = $this->repository->count([
+            'workspace' => $workspace,
+            'email' => $email,
+            'invitationStatus' => InvitationStatus::PENDING,
+        ]);
+
+        return $pendingCount > 0;
     }
 }

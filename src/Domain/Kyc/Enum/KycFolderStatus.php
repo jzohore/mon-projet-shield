@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Kyc\Enum;
 
 enum KycFolderStatus: string
@@ -11,6 +13,7 @@ enum KycFolderStatus: string
     case REJECTED = 'rejected';
     case ARCHIVED = 'archived';
     case NEEDS_CORRECTION = 'needs_correction';
+    case PENDING_DOCS = 'pending_docs';
 
     public function getLabel(): string
     {
@@ -22,6 +25,7 @@ enum KycFolderStatus: string
             self::REJECTED => 'Dossier refusé',
             self::ARCHIVED => 'Dossier archivé',
             self::NEEDS_CORRECTION => 'Corrections requises',
+            self::PENDING_DOCS => 'Documents en attente',
         };
     }
 

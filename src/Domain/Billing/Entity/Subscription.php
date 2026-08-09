@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Billing\Entity;
 
 use App\Domain\Billing\Enum\SubscriptionStatus;
@@ -7,6 +9,9 @@ use App\Domain\Workspace\Entity\Workspace;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
+
+use function Symfony\Component\Clock\now;
+
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity]
@@ -24,31 +29,6 @@ class Subscription
     public ?Uuid $id = null {
         get => $this->id;
     }
-
-    // Lien avec l'espace de travail
-    #[ORM\OneToOne(targetEntity: Workspace::class, inversedBy: 'subscription')]
-    #[ORM\JoinColumn(nullable: false)]
-    public private(set) Workspace $workspace;
-
-    // Le statut (lié à notre Enum)
-    #[ORM\Column(type: Types::STRING, enumType: SubscriptionStatus::class)]
-    public private(set) SubscriptionStatus $status;
-
-    // Le nom de ton offre interne (ex: "firm_premium", "solo_standard")
-    #[ORM\Column(type: Types::STRING)]
-    public private(set) string $planReference;
-
-    // ==========================================
-    // DONNÉES STRIPE (Synchronisées via Webhooks)
-    // ==========================================
-
-    // L'ID unique de l'abonnement chez Stripe (ex: sub_1MowQ...)
-    #[ORM\Column(type: Types::STRING, unique: true, nullable: true)]
-    public private(set) ?string $stripeSubscriptionId = null;
-
-    // L'ID du prix payé (ex: price_1MowQ...)
-    #[ORM\Column(type: Types::STRING)]
-    public private(set) string $stripePriceId;
 
     // Début de la période de facturation en cours
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
@@ -77,32 +57,35 @@ class Subscription
     /**
      * 1. On passe le constructeur en PRIVATE.
      * Seule la classe elle-même a le droit de s'instancier.
+     *
+     * @throws \Exception
      */
     private function __construct(
-        Workspace $workspace,
-        string $stripeSubscriptionId,
-        string $stripePriceId,
-        string $planReference,
-        SubscriptionStatus $status
+        #[ORM\OneToOne(targetEntity: Workspace::class, inversedBy: 'subscription')]
+        #[ORM\JoinColumn(nullable: false)]
+        public private(set) Workspace $workspace,
+        #[ORM\Column(type: Types::STRING, unique: true, nullable: true)]
+        public private(set) ?string $stripeSubscriptionId,
+        #[ORM\Column(type: Types::STRING)]
+        public private(set) string $stripePriceId,
+        #[ORM\Column(type: Types::STRING)]
+        public private(set) string $planReference,
+        #[ORM\Column(type: Types::STRING, enumType: SubscriptionStatus::class)]
+        public private(set) SubscriptionStatus $status,
     ) {
-        $this->workspace = $workspace;
-        $this->stripeSubscriptionId = $stripeSubscriptionId;
-        $this->stripePriceId = $stripePriceId;
-        $this->planReference = $planReference;
-        $this->status = $status;
-        $this->createdAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
-        $this->updateAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $this->createdAt = now();
+        $this->updateAt = now();
     }
 
     /**
-     * 2. Le Named Constructor (La Factory statique)
+     * 2. Le Named Constructor (La Factory statique).
      */
     public static function create(
         Workspace $workspace,
         string $stripeSubscriptionId,
         string $stripePriceId,
         string $planReference,
-        SubscriptionStatus $status = SubscriptionStatus::INCOMPLETE
+        SubscriptionStatus $status = SubscriptionStatus::INCOMPLETE,
     ): self {
         $subscription = new self(
             $workspace,
@@ -116,7 +99,7 @@ class Subscription
         $subscription->currentPeriodStart = new \DateTimeImmutable();
 
         // On donne 1h de battement le temps que le Webhook Stripe confirme le 1er paiement
-        $subscription->currentPeriodEnd = (new \DateTimeImmutable())->modify('+1 hour');
+        $subscription->currentPeriodEnd = new \DateTimeImmutable()->modify('+1 hour');
         $subscription->cancelAtPeriodEnd = false;
 
         return $subscription;
@@ -125,7 +108,7 @@ class Subscription
     public static function startCabinetTrial(
         Workspace $workspace,
         string $stripeSubscriptionId,
-        string $stripePriceId
+        string $stripePriceId,
     ): self {
         $now = new \DateTimeImmutable();
         $trialEnd = $now->modify('+30 days');
@@ -148,15 +131,14 @@ class Subscription
         return $subscription;
     }
 
-
     /**
-     * Méthode appelée UNIQUEMENT par ton contrôleur Webhook Stripe
+     * Méthode appelée UNIQUEMENT par ton contrôleur Webhook Stripe.
      */
     public function syncWithStripe(
         SubscriptionStatus $status,
         \DateTimeImmutable $periodStart,
         \DateTimeImmutable $periodEnd,
-        bool $cancelAtPeriodEnd
+        bool $cancelAtPeriodEnd,
     ): void {
         $this->status = $status;
         $this->currentPeriodStart = $periodStart;
@@ -165,7 +147,7 @@ class Subscription
     }
 
     /**
-     * Vérifie si le cabinet a le droit d'utiliser Kysure aujourd'hui
+     * Vérifie si le cabinet a le droit d'utiliser Kysure aujourd'hui.
      */
     public function isValid(): bool
     {
@@ -177,11 +159,8 @@ class Subscription
         // 2. La date de fin ne doit pas être dépassée
         // (On ajoute 24h de grâce en cas de retard de webhook Stripe)
         $gracePeriod = $this->currentPeriodEnd->modify('+1 day');
-        if (new \DateTimeImmutable() > $gracePeriod) {
-            return false;
-        }
 
-        return true;
+        return new \DateTimeImmutable() <= $gracePeriod;
     }
 
     /**
@@ -191,7 +170,7 @@ class Subscription
     public function getRemainingTrialDays(): int
     {
         // Si on n'est pas en période d'essai ou que la date n'est pas définie
-        if ($this->status !== SubscriptionStatus::TRIALING || $this->trialEndsAt === null) {
+        if (SubscriptionStatus::TRIALING !== $this->status || !$this->trialEndsAt instanceof \DateTimeImmutable) {
             return 0;
         }
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Tracking\Controller;
 
 use App\Application\Tracking\DTO\Request\ClickTrackingDto;

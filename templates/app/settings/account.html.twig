@@ -5,35 +5,39 @@
 
 
 {% block content %}
-    <div class="max-w-7xl mx-auto space-y-6">
-       {{ include('@app/settings/_header_settings.html.twig') }}
-        {# templates/settings/account.html.twig #}
-        <div class="max-w-3xl space-y-8 pb-12">
-            {# --- CARTE UNIQUE : INFORMATIONS PERSONNELLES --- #}
-            <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div class="flex flex-col space-y-1.5 p-6 border-b border-slate-100">
-                    <h3 class="font-semibold leading-none tracking-tight text-slate-900">Profil Utilisateur</h3>
-                    <p class="text-sm text-slate-500">Identité rattachée à votre espace sécurisé.</p>
-                </div>
-                <twig:UpdateNameFormComponent userSlugId="{{ app.user.slugId }}"
-                                              firstName="{{ app.user.firstName }}"
-                                              lastName="{{ app.user.lastName }}"
-                ></twig:UpdateNameFormComponent>
-            </section>
+    {{ include('@app/settings/_header_settings.html.twig') }}
+    <div class="max-w-3xl space-y-8 pb-12">
 
-            {# --- CARTE 2 : ZONE DE DANGER (Toujours utile) --- #}
-            <section class="rounded-xl border border-red-200 bg-red-50/30 shadow-sm mt-12">
-                <div class="flex flex-col space-y-1.5 p-6 pb-4">
-                    <h3 class="font-semibold leading-none tracking-tight text-red-600">Suppression du compte</h3>
-                    <p class="text-sm text-slate-600 mt-1">Action irréversible. Les données liées à la conformité (KYC) seront conservées selon la durée légale.</p>
-                </div>
-                <div class="p-6 pt-0">
-                    <button type="button" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-200 h-10 px-4 py-2">
-                        Demander la suppression
-                    </button>
-                </div>
-            </section>
+        {# 1. Profil Utilisateur #}
+        <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6 border-b border-slate-100">
+                <h3 class="font-semibold leading-none tracking-tight text-slate-900">Profil Utilisateur</h3>
+                <p class="text-sm text-slate-500">Identité rattachée à votre espace sécurisé.</p>
+            </div>
+            <twig:UpdateNameFormComponent></twig:UpdateNameFormComponent>
+        </section>
 
-        </div>
+        {# 🪄 NOUVEAU : 2. Sécurité & 2FA #}
+        <section class="rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex flex-col space-y-1.5 p-6 border-b border-slate-100">
+                <h3 class="font-semibold leading-none tracking-tight text-slate-900">Sécurité du compte</h3>
+                <p class="text-sm text-slate-500">Protégez votre espace avec l'authentification à double facteur (TOTP).</p>
+            </div>
+            <twig:UserTwoFactorSettingsComponent />
+        </section>
+
+        {# 3. Zone de danger (Suppression) #}
+        <section class="rounded-xl border border-red-200 bg-red-50/30 shadow-sm mt-12">
+            <div class="flex flex-col space-y-1.5 p-6 pb-4">
+                <h3 class="font-semibold leading-none tracking-tight text-red-600">Suppression du compte</h3>
+                <p class="text-sm text-slate-600 mt-1">Action irréversible. Les données liées à la conformité (KYC) seront conservées selon la durée légale.</p>
+            </div>
+            <div class="p-6 pt-0">
+                <button type="button" class="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 focus-visible:ring-offset-2 bg-red-100 text-red-700 hover:bg-red-200 border border-red-200 h-10 px-4 py-2">
+                    Demander la suppression
+                </button>
+            </div>
+        </section>
+
     </div>
 {% endblock %}

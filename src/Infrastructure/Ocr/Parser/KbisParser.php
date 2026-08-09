@@ -1,8 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Ocr\Parser;
 
-use App\Domain\Kyc\Enum\DocumentType;
+use App\Domain\Compliance\Enum\DocumentType;
 use Mindee\Input\InferenceParameters;
 use Mindee\Input\PathInput;
 use Mindee\Parsing\V2\InferenceResponse;
@@ -29,7 +31,7 @@ class KbisParser extends AbstractMindeeParser
 {
     public function supports(DocumentType $type): bool
     {
-        return $type === DocumentType::KBIS;
+        return DocumentType::KBIS === $type;
     }
 
     protected function callApi(string $absolutePath): object
@@ -69,7 +71,7 @@ class KbisParser extends AbstractMindeeParser
         if (isset($fields->establishments->items)) {
             foreach ($fields->establishments->items as $item) {
                 $establishments[] = [
-                    'address'  => $item->fields->establishment_address->value ?? null,
+                    'address' => $item->fields->establishment_address->value ?? null,
                     'activity' => $item->fields->establishment_activity->value ?? null,
                 ];
             }
@@ -77,18 +79,18 @@ class KbisParser extends AbstractMindeeParser
 
         // 3. Retour du tableau structuré global
         return [
-            'company_name'         => $fields->company_name->value ?? null,
-            'registration_number'  => $fields->registration_number->value ?? null, // ex: 429 225 683 R.C.S. Bobigny
-            'legal_form'           => $fields->legal_form->value ?? null,          // ex: SAS
-            'share_capital'        => $fields->share_capital->value ?? null,       // ex: 762500
-            'date_of_registration' => $fields->date_of_registration->value ?? null,// ex: 2000-01-27
-            'registered_address'   => $fields->registered_address->value ?? null,  // ex: 47 Allée des Impressionnistes...
-            'duration_of_company'  => $fields->duration_of_company->value ?? null, // ex: Jusqu'au 27/01/2099
-            'activity_code_ape'    => $fields->activity_code_ape->value ?? null,
+            'company_name' => $fields->company_name->value ?? null,
+            'registration_number' => $fields->registration_number->value ?? null, // ex: 429 225 683 R.C.S. Bobigny
+            'legal_form' => $fields->legal_form->value ?? null,          // ex: SAS
+            'share_capital' => $fields->share_capital->value ?? null,       // ex: 762500
+            'date_of_registration' => $fields->date_of_registration->value ?? null, // ex: 2000-01-27
+            'registered_address' => $fields->registered_address->value ?? null,  // ex: 47 Allée des Impressionnistes...
+            'duration_of_company' => $fields->duration_of_company->value ?? null, // ex: Jusqu'au 27/01/2099
+            'activity_code_ape' => $fields->activity_code_ape->value ?? null,
 
             // On injecte nos tableaux formatés
-            'management'           => $management,
-            'establishments'       => $establishments,
+            'management' => $management,
+            'establishments' => $establishments,
         ];
     }
 }

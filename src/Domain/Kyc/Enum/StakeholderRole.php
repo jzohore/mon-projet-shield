@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Kyc\Enum;
 
 enum StakeholderRole: string
@@ -33,15 +35,6 @@ enum StakeholderRole: string
             || str_contains($qualiteLower, 'directeur général')
         ) {
             return self::LEGAL_REPRESENTATIVE;
-        }
-
-        // 2. Les Dirigeants simples (Membres du conseil, directeurs non-généraux...)
-        if (
-            str_contains($qualiteLower, 'directeur')
-            || str_contains($qualiteLower, 'administrateur')
-            || str_contains($qualiteLower, 'membre')
-        ) {
-            return self::DIRECTOR;
         }
 
         // 3. Cas par défaut : On le met en Dirigeant simple si on ne sait pas

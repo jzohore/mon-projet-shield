@@ -1,0 +1,43 @@
+{# templates/emails/workspace/suspension.html.twig #}
+{% extends 'emails/base.html.twig' %}
+
+{# Pré-header et Titre du client mail #}
+{% block title %}Action Requise : Suspension de l'espace "{{ workspace_name }}"{% endblock %}
+
+{% block content %}
+    {# Titre en rouge pour souligner le statut critique #}
+    <h1 style="color: #dc2626;">Alerte de Conformité : Espace Suspendu</h1>
+
+    <p>Bonjour,</p>
+    <p>Nous vous informons que l'accès aux fonctionnalités réglementaires de l'espace de travail <strong>"{{ workspace_name }}"</strong> a été temporairement verrouillé à partir d'aujourd'hui ({{ suspension_date }}).</p>
+
+    {# Encart d'alerte métier (Design rouge "Danger") #}
+    <div style="background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 15px; margin: 20px 0; border-radius: 0 4px 4px 0;">
+        <p style="margin: 0; font-size: 14px; color: #991b1b;">
+            <strong>Motif de la suspension :</strong><br>
+            {{ suspension_reason }}<br>
+            <span style="font-size: 12px; display: block; margin-top: 5px;">
+                Par mesure de sécurité LCB-FT, la génération de documents légaux et l'accès aux dossiers clients sont limités tant que la situation n'est pas régularisée.
+            </span>
+        </p>
+    </div>
+
+    <p>Pour réactiver immédiatement vos services, veuillez mettre à jour vos informations légales depuis les paramètres de votre espace de travail.</p>
+
+    <div class="btn-container">
+        {# On peut forcer un style "danger" inline sur le bouton si ta classe .btn ne le gère pas #}
+        <a href="{{ action_url }}" class="btn" style="background-color: #dc2626; border-color: #b91c1c;">
+            Régulariser ma situation
+        </a>
+    </div>
+
+    <p style="font-size: 12px; color: #94a3b8; word-break: break-all;">
+        Si le bouton ne fonctionne pas, copiez et collez cette URL dans votre navigateur :<br>
+        <a href="{{ action_url }}" style="color: #64748b;">{{ action_url }}</a>
+    </p>
+{% endblock %}
+
+{# Surcharge du footer : Un email réglementaire a un contexte légal fort #}
+{% block footer_text %}
+    <p>Cet email est une notification automatique générée suite à un changement du statut légal de votre entreprise. En tant que plateforme RegTech, nous sommes tenus de suspendre l'activité des entités ne répondant plus aux exigences réglementaires en vigueur.</p>
+{% endblock %}

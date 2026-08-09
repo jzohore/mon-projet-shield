@@ -1,0 +1,51 @@
+<div {{ attributes }}>
+    {% if this.isVisible %}
+        <div class="animate-fade-in">
+
+            {# Le bouton retour qui purge la session et réveille le composant 1 #}
+            <button type="button"
+                    data-action="live#action"
+                    data-live-action-param="resetType"
+                    class="text-xs font-medium text-slate-400 hover:text-slate-900 mb-4 flex items-center gap-1 transition-colors">
+                <twig:ux:icon name="tabler:arrow-left" class="size-3.5" />
+                Retour au choix
+            </button>
+
+            <h2 class="text-xl font-bold text-slate-900 mb-2">Vos informations</h2>
+            <p class="text-sm text-slate-500 mb-6">Ces données permettront de pré-remplir vos documents légaux en toute sécurité.</p>
+
+            {{ form_start(form, {
+                'attr': {
+                    'data-action': 'live#action',
+                    'data-live-action-param': 'prevent|saveDraft'
+                }
+            }) }}
+
+            <div class="space-y-4">
+                {% if this.complianceDTO.type == 'individual' %}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>{{ form_row(form.firstName) }}</div>
+                        <div>{{ form_row(form.lastName) }}</div>
+                    </div>
+                    <div>{{ form_row(form.email) }}</div>
+                {% else %}
+                    <div class="p-4 bg-slate-50 text-sm text-slate-500 rounded-lg border border-slate-200">
+                        Formulaire de société en cours de construction...
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mt-8">
+                <twig:Button type="submit" variant="dark" class="w-full py-3" data-loading="action(saveDraft)|addAttribute(disabled)">
+                    <span data-loading="action(saveDraft)|hide">Enregistrer et continuer</span>
+                    <span data-loading="action(saveDraft)|show" class="hidden flex items-center justify-center gap-2">
+                            <twig:ux:icon name="tabler:loader" class="animate-spin size-5" />
+                            Sécurisation en cours...
+                        </span>
+                </twig:Button>
+            </div>
+
+            {{ form_end(form) }}
+        </div>
+    {% endif %}
+</div>

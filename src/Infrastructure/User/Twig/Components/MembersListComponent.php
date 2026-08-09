@@ -1,17 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Twig\Components;
 
-use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
+use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use Pagerfanta\Pagerfanta;
-use Symfony\Component\Uid\Uuid;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
-use Webmozart\Assert\Assert;
 
 #[AsLiveComponent(
     name: 'MembersListComponent',
@@ -24,9 +24,6 @@ class MembersListComponent
     #[LiveProp(writable: true, url: false)]
     public ?string $query = null;
 
-    #[LiveProp(writable: true)]
-    public Uuid $userSlugId;
-
     #[LiveProp(writable: true, url: false)]
     public ?bool $enabled = null;
 
@@ -37,30 +34,31 @@ class MembersListComponent
     public function previousPage(): void
     {
         if ($this->page > 1) {
-            $this->page--;
+            --$this->page;
         }
     }
 
     #[LiveAction]
     public function nextPage(): void
     {
-        $this->page++;
+        ++$this->page;
     }
+
     public function __construct(
         private readonly WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
-        private readonly GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
-    ) {}
+        private readonly CurrentWorkspaceProvider $currentWorkspaceProvider,
+    ) {
+    }
 
     /**
      * @return Pagerfanta<User>
      */
     public function getMembers(): Pagerfanta
     {
-        $workspace = ($this->getCurrentWorkspaceInfo)($this->userSlugId);
-        $workspaceSlugId = $workspace->slugId;
-        Assert::notNull($workspaceSlugId);
+        $workspace = $this->currentWorkspaceProvider->getWorkspace();
+
         /** @var Pagerfanta<User> $members */
-        $members = $this->workspaceMemberRepository->getMembersList($workspaceSlugId, $this->query);
+        $members = $this->workspaceMemberRepository->getMembersList($workspace, $this->query);
 
         $members->setMaxPerPage(10);
         $members->setCurrentPage($this->page);

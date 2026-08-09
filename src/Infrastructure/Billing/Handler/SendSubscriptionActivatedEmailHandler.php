@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Handler;
 
 use App\Infrastructure\Billing\Message\SendSubscriptionActivatedEmailMessage;
@@ -12,12 +14,11 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 readonly class SendSubscriptionActivatedEmailHandler
 {
     public function __construct(
-        private MailerInterface $mailer
-    ) {}
+        private MailerInterface $mailer,
+    ) {
+    }
 
     /**
-     * @param SendSubscriptionActivatedEmailMessage $message
-     * @return void
      * @throws TransportExceptionInterface
      */
     public function __invoke(SendSubscriptionActivatedEmailMessage $message): void

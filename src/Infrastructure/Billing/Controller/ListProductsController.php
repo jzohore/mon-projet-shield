@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Controller;
 
 use App\Application\Billing\UseCase\Credits\FindAllSortedByCreditsUseCase;
@@ -22,10 +24,10 @@ readonly class ListProductsController
      */
     public function __invoke(
         Environment $twig,
-        FindAllSortedByCreditsUseCase
-        $findAllSortedByCreditsUseCase,
+        FindAllSortedByCreditsUseCase $findAllSortedByCreditsUseCase,
     ): Response {
         $products = ($findAllSortedByCreditsUseCase)();
+
         return new Response(
             $twig->render('@app/billing/product_list.html.twig', [
                 'page_title' => 'Provisions de conformité',

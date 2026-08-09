@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Controller;
 
 use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
@@ -24,13 +26,11 @@ final class KycInvitationController
      */
     public function __invoke(
         Environment $twig,
-        GetCurrentWorkspaceInfo
-        $getCurrentWorkspaceInfo,
+        GetCurrentWorkspaceInfo $getCurrentWorkspaceInfo,
         #[CurrentUser]
-        User
-        $user,
+        User $user,
     ): Response {
-        if (null === $user->id) {
+        if (!$user->id instanceof \Symfony\Component\Uid\Uuid) {
             throw new \LogicException('Anomalie système : L\'utilisateur connecté n\'a pas d\'identifiant.');
         }
         $workspace = ($getCurrentWorkspaceInfo)($user->id);

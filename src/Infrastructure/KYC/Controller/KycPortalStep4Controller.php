@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Controller;
 
 use App\Application\Kyc\UseCase\GetCurrentKycFolderUseCase;
@@ -18,7 +20,9 @@ final readonly class KycPortalStep4Controller
 {
     public function __construct(
         private GetCurrentKycFolderUseCase $getCurrentKycFolderUseCase,
-    ) {}
+    ) {
+    }
+
     public function __invoke(
         Environment $twig,
         RequestStack $request,
@@ -26,13 +30,13 @@ final readonly class KycPortalStep4Controller
     ): Response {
         $id = $request->getSession()->get('kyc_slug_id');
 
-        if (! $id) {
+        if (!$id) {
             return new Response($urlGenerator->generate('app_login'));
         }
 
         $kycFolder = ($this->getCurrentKycFolderUseCase)($id);
 
-        if ($kycFolder->status !== KycFolderStatus::IN_REVIEW && !$kycFolder->isCertified) {
+        if (KycFolderStatus::IN_REVIEW !== $kycFolder->status && !$kycFolder->isCertified) {
             return new RedirectResponse($urlGenerator->generate('portal_kyc_documents'));
         }
 

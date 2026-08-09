@@ -1,34 +1,45 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Handler;
 
-use App\Domain\Kyc\Repository\KycDocumentRepositoryInterface;
+use App\Domain\Compliance\Repository\ComplianceDocumentRepositoryInterface;
+use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
 use App\Domain\Port\DocumentStorageInterface;
 use App\Infrastructure\KYC\Message\ProcessAndStoreKycDocumentMessage;
 use App\Infrastructure\Service\ImageOptimizer;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
+use Symfony\Component\Uid\Uuid;
 
 #[AsMessageHandler]
 readonly class ProcessAndStoreKycDocumentMessageHandler
 {
     public function __construct(
-        private KycDocumentRepositoryInterface $kycDocumentRepository,
+        private ComplianceDocumentRepositoryInterface $complianceDocumentRepository,
+        private ComplianceFolderRepositoryInterface $complianceFolderRepository,
         private DocumentStorageInterface $storage,
         private ImageOptimizer $imageOptimizer,
         private LoggerInterface $logger,
-    ) {}
+    ) {
+    }
 
     public function __invoke(ProcessAndStoreKycDocumentMessage $message): void
     {
-        $document = $this->kycDocumentRepository->findBySlugId($message->documentId);
+        $documentUuid = Uuid::fromString($message->documentId);
+        $document = $this->complianceDocumentRepository->findById($documentUuid);
+
+        $folderUuid = Uuid::fromString($message->folderId);
+        $folder = $this->complianceFolderRepository->findById($folderUuid);
 
         if (!$document || !file_exists($message->localTempPath)) {
             $this->logger->warning('KYC Processing failed: Document or local file missing', [
                 'document_id' => $message->documentId,
                 'path' => $message->localTempPath,
             ]);
+
             return;
         }
 
@@ -56,13 +67,12 @@ readonly class ProcessAndStoreKycDocumentMessageHandler
             );
 
             // 4. Upload S3
-            $directory = sprintf('kyc_folders/%s', $message->folderSlugId);
+            $directory = sprintf('compliance_folders/%s', $folder->slugId);
             $finalStoragePath = $this->storage->store($fileToStore, $directory);
 
             // 5. Persistance Domaine
-            $document->markAsUploaded($finalStoragePath);
-            $this->kycDocumentRepository->save($document);
-
+            $document->markAsUploaded($finalStoragePath, $message->originalName, $message->mimeType, $message->size);
+            $this->complianceDocumentRepository->save($document);
         } catch (\Throwable $e) {
             $this->logger->error('Error during KYC processing: ' . $e->getMessage());
             throw $e; // Re-throw pour la retry policy de Messenger

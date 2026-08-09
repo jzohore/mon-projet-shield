@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Controller\App\Settings;
 
 use App\Application\Billing\UseCase\Products\GetEnterpriseProductUseCase;
@@ -20,7 +22,8 @@ readonly class SubscriptionController
         private Environment $twig,
         private GetCurrentSubscriptionUseCase $currentSubscriptionUseCase,
         private GetEnterpriseProductUseCase $getEnterpriseProductUseCase,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws RuntimeError
@@ -31,6 +34,7 @@ readonly class SubscriptionController
     {
         $subscription = ($this->currentSubscriptionUseCase)();
         $product = ($this->getEnterpriseProductUseCase)();
+
         return new Response(
             $this->twig->render('@app/settings/subscription.html.twig', [
                 'page_title' => 'Paramètres - Gérer mon abonnement',

@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Screening\UseCase;
 
+use App\Domain\Screening\Entity\ScreeningAudit;
 use App\Domain\Screening\Event\DocumentSharedEvent;
-use App\Domain\Screening\Repository\ScreeningAuditRepositoryInterface;
 use App\Infrastructure\Screening\Message\ShareDocumentMessage;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
@@ -15,34 +17,33 @@ readonly class ShareDocumentUseCase
     public function __construct(
         private MessageBusInterface $messageBus,
         private EventDispatcherInterface $eventDispatcher,
-        private ScreeningAuditRepositoryInterface $screeningAuditRepository,
-    ) {}
+    ) {
+    }
 
     /**
      * @param array<int, string> $selectedEmails
      *
      * @throws ExceptionInterface
      */
-    public function __invoke(array $selectedEmails, string $shareDocumentId, string $senderSlugId): void
+    public function __invoke(array $selectedEmails, ScreeningAudit $audit): void
     {
         Assert::notEmpty($selectedEmails, 'Aucun destinataire sélectionné.');
-        $audit = $this->screeningAuditRepository->findOneBySlug($shareDocumentId);
-        Assert::notNull($audit);
-        Assert::notNull($audit->workspace->slugId);
-        Assert::notNull($audit->owner->email);
+
+        Assert::notNull($audit->owner->id);
+        Assert::notNull($audit->id);
 
         foreach ($selectedEmails as $email) {
             $this->messageBus->dispatch(new ShareDocumentMessage(
                 recipientEmail: $email,
-                auditSlugId: $shareDocumentId,
-                senderSlugId: $senderSlugId,
+                auditId: $audit->id->toString(),
+                senderId: $audit->owner->id->toString(),
             ));
         }
 
         $this->eventDispatcher->dispatch(new DocumentSharedEvent(
-            auditId: (string) $audit->id,
-            workspaceSlugId: $audit->workspace->slugId,
-            userEmail: $audit->owner->email,
+            audit: $audit,
+            workspace: $audit->workspace,
+            user: $audit->owner,
             recipients: $selectedEmails,
         ));
     }

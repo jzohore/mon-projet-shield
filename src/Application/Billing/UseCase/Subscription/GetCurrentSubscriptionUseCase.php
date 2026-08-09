@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Billing\UseCase\Subscription;
 
 use App\Application\Billing\DTO\Response\SubscriptionInfoResponse;
@@ -14,8 +16,8 @@ readonly class GetCurrentSubscriptionUseCase
         private WorkspaceQuotaManager $quotaManager,
         private CurrentWorkspaceProvider $currentWorkspaceProvider,
         private StripeService $stripeService,
-    ) {}
-
+    ) {
+    }
 
     public function __invoke(): SubscriptionInfoResponse
     {

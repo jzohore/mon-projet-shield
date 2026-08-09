@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Dashboard\DTO;
 
 use App\Domain\AuditLog\Entity\AuditLog;
@@ -22,6 +24,7 @@ final readonly class AdminDashboardStats
         /** @var array<Workspace> */
         public array $latestWorkspaces = [],
         /** @var AuditLog[] */
-        public array $latestAuditLogs = []
-    ) {}
+        public array $latestAuditLogs = [],
+    ) {
+    }
 }

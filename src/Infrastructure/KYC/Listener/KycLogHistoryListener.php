@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Listener;
 
 use App\Domain\Kyc\Event\BindCompanyEvent;
@@ -17,8 +19,9 @@ final readonly class KycLogHistoryListener
 {
     public function __construct(
         private KycFolderRepositoryInterface $kycFolderRepository,
-        private Security                     $security,
-    ) {}
+        private Security $security,
+    ) {
+    }
 
     #[AsEventListener]
     public function logResetHistory(CompanyResetEvent $event): void

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\KYC\Controller;
 
 use App\Application\Kyc\UseCase\GetCurrentKycFolderUseCase;
@@ -16,7 +18,9 @@ final readonly class KycPortalController
 {
     public function __construct(
         private GetCurrentKycFolderUseCase $getCurrentKycFolderUseCase,
-    ) {}
+    ) {
+    }
+
     public function __invoke(
         Environment $twig,
         RequestStack $request,
@@ -24,11 +28,12 @@ final readonly class KycPortalController
     ): Response {
         $id = $request->getSession()->get('kyc_slug_id');
 
-        if (! $id) {
+        if (!$id) {
             return new Response($urlGenerator->generate('app_login'));
         }
 
         $kycFolder = ($this->getCurrentKycFolderUseCase)($id);
+
         return new Response(
             $twig->render('app/kyc/portal/kyc_portal_company.html.twig', [
                 'page_title' => 'Identifiez votre société',

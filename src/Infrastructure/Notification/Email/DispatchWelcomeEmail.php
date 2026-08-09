@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Notification\Email;
 
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -13,13 +15,13 @@ class DispatchWelcomeEmail extends TemplatedEmail
     public function __construct(
         string $recipientEmail,
         string $firstName,
-        string $actionUrl
+        string $actionUrl,
     ) {
         parent::__construct();
 
         $this
             ->to(new Address($recipientEmail))
-            ->subject('Bienvenue sur Shield ! Finalisez votre inscription')
+            ->subject('Bienvenue, Finalisez votre inscription')
             ->htmlTemplate('emails/security/welcome_email.html.twig')
             ->context([
                 'first_name' => $firstName,

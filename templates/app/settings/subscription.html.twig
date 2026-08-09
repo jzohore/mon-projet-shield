@@ -5,226 +5,224 @@
 
 
 {% block content %}
-    <div class="max-w-7xl mx-auto space-y-6">
-        {{ include('@app/settings/_header_settings.html.twig') }}
-        {# On définit l'état une seule fois au début pour rendre le code lisible #}
-        {% set isTrial = subInfo.status == 'trialing' %}
+    {{ include('@app/settings/_header_settings.html.twig') }}
+    {# On définit l'état une seule fois au début pour rendre le code lisible #}
+    {% set isTrial = subInfo.status == 'trialing' %}
 
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="space-y-6">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="space-y-6">
 
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden relative">
-                    {% if isTrial %}
-                        <div class="absolute top-0 left-0 right-0 h-1 bg-amber-400"></div>
-                    {% endif %}
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden relative">
+                {% if isTrial %}
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-amber-400"></div>
+                {% endif %}
 
-                    <div class="p-6 sm:p-8">
-                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div>
-                                <div class="flex items-center gap-3 mb-1">
-                                    <h2 class="text-lg font-semibold text-slate-900">{{ product.name }}</h2>
+                <div class="p-6 sm:p-8">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <div class="flex items-center gap-3 mb-1">
+                                <h2 class="text-lg font-semibold text-slate-900">{{ product.name }}</h2>
 
-                                    {% if subInfo.status == 'trialing' %}
-                                        {# 🟡 ESSAI : Icône horloge #}
-                                        <span class="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                                {% if subInfo.status == 'trialing' %}
+                                    {# 🟡 ESSAI : Icône horloge #}
+                                    <span class="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
             {{ ux_icon('lucide:clock', {class: 'w-3.5 h-3.5'}) }}
             Essai : {{ subInfo.trialDaysRemaining }} jours restants
         </span>
 
-                                    {% elseif subInfo.status == 'active' %}
-                                        {# 🟢 ACTIF : On vérifie s'il est en cours d'annulation #}
-                                        {% if subInfo.cancelAtPeriodEnd %}
-                                            <span class="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">
+                                {% elseif subInfo.status == 'active' %}
+                                    {# 🟢 ACTIF : On vérifie s'il est en cours d'annulation #}
+                                    {% if subInfo.cancelAtPeriodEnd %}
+                                        <span class="inline-flex items-center gap-1.5 rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">
                 {{ ux_icon('lucide:calendar-clock', {class: 'w-3.5 h-3.5'}) }}
                 Prend fin le {{ subInfo.currentPeriodEnd|date('d/m/Y') }}
             </span>
-                                        {% else %}
-                                            <span class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                    {% else %}
+                                        <span class="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
                 Actif
             </span>
-                                        {% endif %}
+                                    {% endif %}
 
-                                    {% elseif subInfo.status == 'past_due' %}
-                                        {# 🔴 PAST DUE : Icône alerte/danger #}
-                                        <span class="inline-flex items-center gap-1.5 rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">
+                                {% elseif subInfo.status == 'past_due' %}
+                                    {# 🔴 PAST DUE : Icône alerte/danger #}
+                                    <span class="inline-flex items-center gap-1.5 rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20">
             {{ ux_icon('lucide:alert-circle', {class: 'w-3.5 h-3.5'}) }}
             Paiement en retard
         </span>
 
-                                    {% elseif subInfo.status == 'incomplete' %}
-                                        {# 🟠 INCOMPLETE : Icône avertissement #}
-                                        <span class="inline-flex items-center gap-1.5 rounded-md bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/20">
+                                {% elseif subInfo.status == 'incomplete' %}
+                                    {# 🟠 INCOMPLETE : Icône avertissement #}
+                                    <span class="inline-flex items-center gap-1.5 rounded-md bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/20">
             {{ ux_icon('lucide:alert-triangle', {class: 'w-3.5 h-3.5'}) }}
             Action requise
         </span>
 
-                                    {% elseif subInfo.status == 'canceled' %}
-                                        {# ⚪ CANCELED : C'est terminé #}
-                                        <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">
+                                {% elseif subInfo.status == 'canceled' %}
+                                    {# ⚪ CANCELED : C'est terminé #}
+                                    <span class="inline-flex items-center rounded-md bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-500/20">
             Terminé
         </span>
-                                    {% endif %}
-                                </div>
-                                <p class="text-sm text-slate-500">
-                                    {% if subInfo.cancelAtPeriodEnd %}
-                                        {# CAS 1 : IL A RÉSILIÉ (La fameuse règle d'or) #}
-                                        {% if isTrial %}
-                                            Votre essai gratuit se terminera le <strong>{{ subInfo.currentPeriodEnd|date('d/m/Y') }}</strong>. <br>
-                                            <span class="text-slate-500">Aucun prélèvement ne sera effectué.</span>
-                                        {% else %}
-                                            Votre accès prendra fin le <strong>{{ subInfo.currentPeriodEnd|date('d/m/Y') }}</strong>. <br>
-                                            <span class="text-slate-500">Votre abonnement ne sera pas renouvelé.</span>
-                                        {% endif %}
-
-                                    {% else %}
-                                        {# CAS 2 : TOUT EST NORMAL (Renouvellement automatique actif) #}
-                                        {% if isTrial %}
-                                            Le premier prélèvement aura lieu le <strong>{{ subInfo.currentPeriodEnd|date('d/m/Y') }}</strong>.
-                                        {% else %}
-                                            {{ subInfo.basePrice | format_currency('EUR', [], 'fr') }} / mois. <br>
-                                            Prochain prélèvement le <strong>{{ subInfo.currentPeriodEnd|date('d/m/Y') }}</strong>.
-                                        {% endif %}
-
-                                    {% endif %}
-                                </p>
-                            </div>
-
-                            <div class="flex gap-3">
-                                {% if subInfo.status == 'trialing' %}
-                                    {# Bouton pour passer à la caisse #}
-                                    <twig:Button as="a" href="{{ path('app_billing_buy', {id: product.slugId}) }}" variant="primary" size="sm" data-turbo="false">
-                                        Activer mon abonnement
-                                    </twig:Button>
-
-                                {% elseif subInfo.status == 'active' %}
-
-                                    {% if subInfo.cancelAtPeriodEnd %}
-                                        {# L'abonnement est en cours d'annulation : on lui propose de changer d'avis ! #}
-{#                                        <twig:Button as="a" href="" class="px-4 py-2 text-sm font-medium text-indigo-600 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors" size="sm" data-turbo="false">#}
-{#                                            Reprendre mon abonnement#}
-{#                                        </twig:Button>#}
-                                    {% else %}
-                                        {# L'abonnement est normal : il peut le résilier #}
-                                        <twig:Button as="a" href="{{ path('app_settings_subscription_cancel') }}" class="px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors" size="sm" data-turbo="false">
-                                            Résilier
-                                        </twig:Button>
-                                    {% endif %}
-
                                 {% endif %}
                             </div>
-                        </div>
+                            <p class="text-sm text-slate-500">
+                                {% if subInfo.cancelAtPeriodEnd %}
+                                    {# CAS 1 : IL A RÉSILIÉ (La fameuse règle d'or) #}
+                                    {% if isTrial %}
+                                        Votre essai gratuit se terminera le <strong>{{ subInfo.currentPeriodEnd|date('d/m/Y') }}</strong>. <br>
+                                        <span class="text-slate-500">Aucun prélèvement ne sera effectué.</span>
+                                    {% else %}
+                                        Votre accès prendra fin le <strong>{{ subInfo.currentPeriodEnd|date('d/m/Y') }}</strong>. <br>
+                                        <span class="text-slate-500">Votre abonnement ne sera pas renouvelé.</span>
+                                    {% endif %}
 
-                        <div class="mt-8 border-t border-slate-100 pt-8">
-                            <h3 class="text-sm font-medium text-slate-900 mb-4">
-                                {% if isTrial %}Consommation incluse dans l'essai{% else %}Consommation ce mois-ci{% endif %}
-                            </h3>
-
-                            {% set searchPercentage = (subInfo.searchesUsedThisMonth / subInfo.maxSearches) * 100 %}
-                            {% set searchPercentage = searchPercentage > 100 ? 100 : searchPercentage %}
-
-                            <div class="mb-2 flex justify-between text-sm">
-                                <span class="text-slate-500">Vérifications KYC / KYB</span>
-                                <span class="font-medium text-slate-900">{{ subInfo.searchesUsedThisMonth }} / {{ subInfo.maxSearches }}</span>
-                            </div>
-                            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
-                                <div class="{% if isTrial %}bg-amber-400{% else %}bg-indigo-600{% endif %} h-2.5 rounded-full transition-all duration-500" style="width: {{ searchPercentage }}%"></div>
-                            </div>
-                            <p class="mt-2 text-xs text-slate-500">
-                                {% if isTrial %}
-                                    Profitez de toutes les fonctionnalités sans limite jusqu'à la fin de votre essai.
                                 {% else %}
-                                    Il vous reste {{ subInfo.maxSearches - subInfo.searchesUsedThisMonth }} vérifications avant le renouvellement de votre quota.
+                                    {# CAS 2 : TOUT EST NORMAL (Renouvellement automatique actif) #}
+                                    {% if isTrial %}
+                                        Le premier prélèvement aura lieu le <strong>{{ subInfo.currentPeriodEnd|date('d/m/Y') }}</strong>.
+                                    {% else %}
+                                        {{ subInfo.basePrice | format_currency('EUR', [], 'fr') }} / mois. <br>
+                                        Prochain prélèvement le <strong>{{ subInfo.currentPeriodEnd|date('d/m/Y') }}</strong>.
+                                    {% endif %}
+
                                 {% endif %}
                             </p>
                         </div>
+
+                        <div class="flex gap-3">
+                            {% if subInfo.status == 'trialing' %}
+                                {# Bouton pour passer à la caisse #}
+                                <twig:Button as="a" href="{{ path('app_billing_buy', {id: product.slugId}) }}" variant="primary" size="sm" data-turbo="false">
+                                    Activer mon abonnement
+                                </twig:Button>
+
+                            {% elseif subInfo.status == 'active' %}
+
+                                {% if subInfo.cancelAtPeriodEnd %}
+                                    {# L'abonnement est en cours d'annulation : on lui propose de changer d'avis ! #}
+                                    {#                                        <twig:Button as="a" href="" class="px-4 py-2 text-sm font-medium text-indigo-600 bg-white border border-indigo-200 rounded-lg hover:bg-indigo-50 transition-colors" size="sm" data-turbo="false">#}
+                                    {#                                            Reprendre mon abonnement#}
+                                    {#                                        </twig:Button>#}
+                                {% else %}
+                                    {# L'abonnement est normal : il peut le résilier #}
+                                    <twig:Button as="a" href="{{ path('app_settings_subscription_cancel') }}" class="px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors" size="sm" data-turbo="false">
+                                        Résilier
+                                    </twig:Button>
+                                {% endif %}
+
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="mt-8 border-t border-slate-100 pt-8">
+                        <h3 class="text-sm font-medium text-slate-900 mb-4">
+                            {% if isTrial %}Consommation incluse dans l'essai{% else %}Consommation ce mois-ci{% endif %}
+                        </h3>
+
+                        {% set searchPercentage = (subInfo.searchesUsedThisMonth / subInfo.maxSearches) * 100 %}
+                        {% set searchPercentage = searchPercentage > 100 ? 100 : searchPercentage %}
+
+                        <div class="mb-2 flex justify-between text-sm">
+                            <span class="text-slate-500">Vérifications KYC / KYB</span>
+                            <span class="font-medium text-slate-900">{{ subInfo.searchesUsedThisMonth }} / {{ subInfo.maxSearches }}</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                            <div class="{% if isTrial %}bg-amber-400{% else %}bg-indigo-600{% endif %} h-2.5 rounded-full transition-all duration-500" style="width: {{ searchPercentage }}%"></div>
+                        </div>
+                        <p class="mt-2 text-xs text-slate-500">
+                            {% if isTrial %}
+                                Profitez de toutes les fonctionnalités sans limite jusqu'à la fin de votre essai.
+                            {% else %}
+                                Il vous reste {{ subInfo.maxSearches - subInfo.searchesUsedThisMonth }} vérifications avant le renouvellement de votre quota.
+                            {% endif %}
+                        </p>
                     </div>
                 </div>
-
-{#                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">#}
-{#                    <div class="px-6 py-5 border-b border-slate-200 flex justify-between items-center">#}
-{#                        <h2 class="text-base font-semibold text-slate-900">Moyen de paiement</h2>#}
-{#                        {% if not isTrial %}#}
-{#                            <button class="text-sm font-medium text-indigo-600 hover:text-indigo-700">Mettre à jour</button>#}
-{#                        {% endif %}#}
-{#                    </div>#}
-
-{#                    {% if isTrial %}#}
-{#                        <div class="p-6 flex items-center justify-between">#}
-{#                            <div class="flex items-center gap-4">#}
-{#                                <div class="h-10 w-14 border-2 border-dashed border-slate-300 rounded flex items-center justify-center text-slate-400">#}
-{#                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">#}
-{#                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />#}
-{#                                    </svg>#}
-{#                                </div>#}
-{#                                <div>#}
-{#                                    <p class="text-sm font-medium text-slate-900">Aucune carte enregistrée</p>#}
-{#                                    <p class="text-sm text-slate-500">Ajoutez une carte pour éviter l'interruption du service.</p>#}
-{#                                </div>#}
-{#                            </div>#}
-{#                            <button class="text-sm font-medium text-indigo-600 hover:text-indigo-700">#}
-{#                                Ajouter une méthode#}
-{#                            </button>#}
-{#                        </div>#}
-{#                    {% else %}#}
-{#                        <div class="p-6 flex items-center gap-4">#}
-{#                            <div class="h-10 w-14 bg-slate-800 rounded flex items-center justify-center text-white font-bold text-xs">#}
-{#                                VISA#}
-{#                            </div>#}
-{#                            <div>#}
-{#                                <p class="text-sm font-medium text-slate-900">Visa se terminant par 4242</p>#}
-{#                                <p class="text-sm text-slate-500">Expire en 12/2028</p>#}
-{#                            </div>#}
-{#                        </div>#}
-{#                    {% endif %}#}
-{#                </div>#}
-
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="px-6 py-5 border-b border-slate-200">
-                        <h2 class="text-base font-semibold text-slate-900">Historique de facturation</h2>
-                    </div>
-                    {% if isTrial %}
-                        <div class="p-8 text-center">
-                            <div class="mx-auto h-12 w-12 text-slate-300 mb-3">
-                                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                            </div>
-                            <p class="text-sm font-medium text-slate-900">Aucune facture pour le moment</p>
-                            <p class="mt-1 text-sm text-slate-500">Votre première facture sera générée à la fin de la période d'essai.</p>
-                        </div>
-                    {% else %}
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full divide-y divide-slate-200">
-                                <thead class="bg-slate-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Montant</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Statut</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Facture</th>
-                                </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-slate-200">
-                                {% for invoice in subInfo.invoices %}
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{{ invoice.date|format_date('medium', '', 'Europe/Paris') }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{{ invoice.amount| format_currency('EUR', [], 'fr') }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">Payée</span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <a href="{{ invoice.pdf_url }}" class="text-indigo-600 hover:text-indigo-900" target="_blank">Télécharger PDF</a>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-
-                                </tbody>
-                            </table>
-                        </div>
-                    {% endif %}
-                </div>
-
             </div>
-        </div>
 
+            {#                <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">#}
+            {#                    <div class="px-6 py-5 border-b border-slate-200 flex justify-between items-center">#}
+            {#                        <h2 class="text-base font-semibold text-slate-900">Moyen de paiement</h2>#}
+            {#                        {% if not isTrial %}#}
+            {#                            <button class="text-sm font-medium text-indigo-600 hover:text-indigo-700">Mettre à jour</button>#}
+            {#                        {% endif %}#}
+            {#                    </div>#}
+
+            {#                    {% if isTrial %}#}
+            {#                        <div class="p-6 flex items-center justify-between">#}
+            {#                            <div class="flex items-center gap-4">#}
+            {#                                <div class="h-10 w-14 border-2 border-dashed border-slate-300 rounded flex items-center justify-center text-slate-400">#}
+            {#                                    <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">#}
+            {#                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />#}
+            {#                                    </svg>#}
+            {#                                </div>#}
+            {#                                <div>#}
+            {#                                    <p class="text-sm font-medium text-slate-900">Aucune carte enregistrée</p>#}
+            {#                                    <p class="text-sm text-slate-500">Ajoutez une carte pour éviter l'interruption du service.</p>#}
+            {#                                </div>#}
+            {#                            </div>#}
+            {#                            <button class="text-sm font-medium text-indigo-600 hover:text-indigo-700">#}
+            {#                                Ajouter une méthode#}
+            {#                            </button>#}
+            {#                        </div>#}
+            {#                    {% else %}#}
+            {#                        <div class="p-6 flex items-center gap-4">#}
+            {#                            <div class="h-10 w-14 bg-slate-800 rounded flex items-center justify-center text-white font-bold text-xs">#}
+            {#                                VISA#}
+            {#                            </div>#}
+            {#                            <div>#}
+            {#                                <p class="text-sm font-medium text-slate-900">Visa se terminant par 4242</p>#}
+            {#                                <p class="text-sm text-slate-500">Expire en 12/2028</p>#}
+            {#                            </div>#}
+            {#                        </div>#}
+            {#                    {% endif %}#}
+            {#                </div>#}
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div class="px-6 py-5 border-b border-slate-200">
+                    <h2 class="text-base font-semibold text-slate-900">Historique de facturation</h2>
+                </div>
+                {% if isTrial %}
+                    <div class="p-8 text-center">
+                        <div class="mx-auto h-12 w-12 text-slate-300 mb-3">
+                            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                        </div>
+                        <p class="text-sm font-medium text-slate-900">Aucune facture pour le moment</p>
+                        <p class="mt-1 text-sm text-slate-500">Votre première facture sera générée à la fin de la période d'essai.</p>
+                    </div>
+                {% else %}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Montant</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase">Statut</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase">Facture</th>
+                            </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-slate-200">
+                            {% for invoice in subInfo.invoices %}
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-900">{{ invoice.date|format_date('medium', '', 'Europe/Paris') }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-500">{{ invoice.amount| format_currency('EUR', [], 'fr') }}</td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="inline-flex items-center rounded-full bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700">Payée</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <a href="{{ invoice.pdf_url }}" class="text-indigo-600 hover:text-indigo-900" target="_blank">Télécharger PDF</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
+            </div>
+
+        </div>
     </div>
+
 {% endblock %}

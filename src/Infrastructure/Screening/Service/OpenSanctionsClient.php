@@ -1,19 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Screening\Service;
 
 use App\Domain\Port\OpenSanctionsClientInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
+use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 readonly class OpenSanctionsClient implements OpenSanctionsClientInterface
 {
     public function __construct(
         private HttpClientInterface $httpClient,
         private string $openSanctionsApiKey,
-        private LoggerInterface $logger
-    ) {}
+        private LoggerInterface $logger,
+    ) {
+    }
 
     public function search(string $name, string $schema = 'Person'): array
     {
@@ -67,12 +70,12 @@ readonly class OpenSanctionsClient implements OpenSanctionsClientInterface
             $statusCode = $e->getResponse()->getStatusCode();
 
             // Si c'est l'erreur "Rate Limit Exceeded"
-            if ($statusCode === 429) {
+            if (429 === $statusCode) {
                 // 1. On logge l'erreur en critique pour que tu reçoives une alerte (Slack/Email)
                 $this->logger->critical('🚨 OPEN SANCTIONS RATE LIMIT ATTEINT ! Le service est bloqué.');
 
                 // 2. On lève une exception métier "propre" que le contrôleur pourra afficher au client
-                throw new \DomainException('Le service de vérification (Sanctions) est saturé pour le moment. Veuillez réessayer dans quelques minutes.');
+                throw new \DomainException('Le service de vérification (Sanctions) est saturé pour le moment. Veuillez réessayer dans quelques minutes.', $e->getCode(), $e);
             }
 
             // Pour toute autre erreur API (ex: 401 Unauthorized), on la laisse remonter

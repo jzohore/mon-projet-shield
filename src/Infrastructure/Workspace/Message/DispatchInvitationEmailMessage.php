@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Message;
 
 use Symfony\Component\Messenger\Attribute\AsMessage;
@@ -8,7 +10,8 @@ use Symfony\Component\Messenger\Attribute\AsMessage;
 final readonly class DispatchInvitationEmailMessage
 {
     public function __construct(
-        public ?string $workspaceSlugId,
+        public string $invitationId,
         public string $url,
-    ) {}
+    ) {
+    }
 }

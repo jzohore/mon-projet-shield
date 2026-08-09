@@ -1,0 +1,30 @@
+{# 🚨 On étend désormais le LAYOUT CLIENT, pas le base_portal #}
+{% extends '@app/client/layout_client.html.twig' %}
+
+{% block title %}Détail du dossier | KYSURE{% endblock %}
+
+{# On injecte le contenu dans le bloc client_main prévu par le layout #}
+{% block client_main %}
+    <div class="mb-8">
+        <a href="{{ path('app_portal_folders') }}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors mb-4 focus:outline-none focus:ring-2 focus:ring-[#0B261C] rounded-md">
+            <twig:ux:icon name="tabler:arrow-left" class="size-4" aria-hidden="true" />
+            Retour
+        </a>
+
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+                    {{ folder.title }}
+                </h1>
+                <p class="text-sm text-slate-500 mt-1 font-mono">Réf: {{ folder.reference }} • Ouvert le {{ folder.openedAtFormatted }}</p>
+            </div>
+
+            <span class="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-{{ folder.status.colorTheme }}-50 text-{{ folder.status.colorTheme }}-700 ring-1 ring-inset ring-{{ folder.status.colorTheme }}-600/20 shadow-sm w-fit">
+                {{ folder.status.label }}
+            </span>
+        </div>
+    </div>
+
+
+    <twig:ClientPortalDocumentListComponent folderId="{{ folder.id }}"></twig:ClientPortalDocumentListComponent>
+{% endblock %}

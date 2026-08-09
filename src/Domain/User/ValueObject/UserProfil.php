@@ -11,15 +11,38 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Embeddable]
 class UserProfil
 {
-    #[ORM\Column(type: Types::ENUM, length: 100, nullable: true, enumType: JobRole::class)]
-    public ?JobRole $jobTitle = null;
+    /**
+     * @var bool dismiss the onboarding steps
+     */
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    public private(set) bool $dismissOnboarding = false;
 
-    #[ORM\Column(type: Types::STRING, length: 20, nullable: true)]
-    public ?string $phoneNumber = null;
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    public private(set) ?string $stripeCustomerId = null;
 
-    public function __construct(?JobRole $jobTitle = null, ?string $phoneNumber = null)
+    #[ORM\Column(type: Types::STRING, length: 5, nullable: true)]
+    public private(set) ?string $lang = null;
+
+    public function __construct(
+        #[ORM\Column(type: Types::ENUM, length: 100, nullable: true, enumType: JobRole::class)]
+        public ?JobRole $jobTitle = null,
+        #[ORM\Column(type: Types::STRING, length: 20, nullable: true)]
+        public ?string $phoneNumber = null,
+    ) {
+    }
+
+    public function isDismiss(): bool
     {
-        $this->jobTitle = $jobTitle;
-        $this->phoneNumber = $phoneNumber;
+        return $this->dismissOnboarding;
+    }
+
+    public function setDismissOnboarding(bool $dismissOnboarding): void
+    {
+        $this->dismissOnboarding = $dismissOnboarding;
+    }
+
+    public function updateStripeCustomerId(string $stripeCustomerId): void
+    {
+        $this->stripeCustomerId = $stripeCustomerId;
     }
 }

@@ -1,19 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Workspace\Twig\Components;
 
-use App\Application\Workspace\UseCase\GetCurrentWorkspaceInfo;
 use App\Application\Workspace\UseCase\Onboarding\BindWorkspaceTypeUseCase;
-use App\Domain\User\Repository\UserRepositoryInterface;
+use App\Domain\Workspace\Enum\WorkspaceType;
+use App\Domain\Workspace\Exception\WorkspaceTypeNotFoundException;
+use App\Domain\Workspace\Service\CurrentUserProvider;
+use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
-use App\Domain\Workspace\Enum\WorkspaceType;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
-use Webmozart\Assert\Assert;
 
 #[AsLiveComponent(
     name: 'WorkspaceChoosePlanFormComponent',
@@ -26,34 +30,50 @@ class WorkspaceChoosePlanFormComponent
     #[LiveProp(writable: true)]
     public string $workspaceType = 'individual';
 
-    #[LiveProp]
-    public ?string $userSlugId = null;
-
     public function __construct(
-        private readonly UserRepositoryInterface $userRepository,
-        private readonly GetCurrentWorkspaceInfo $currentWorkspaceInfo,
+        private readonly CurrentWorkspaceProvider $workspaceProvider,
+        private readonly CurrentUserProvider $currentUserProvider,
         private readonly BindWorkspaceTypeUseCase $bindWorkspaceTypeUseCase,
         private readonly UrlGeneratorInterface $generator,
-    ) {}
+        private readonly LoggerInterface $logger,
+        private readonly RequestStack $requestStack,
+    ) {
+    }
 
     #[LiveAction]
-    public function finish(): Response
+    public function finish(): RedirectResponse // ✅ Plus précis que Response
     {
-        // 1. Sécurisation : On vérifie que la valeur correspond bien à notre Enum
-        $type = WorkspaceType::tryFrom($this->workspaceType);
+        $workspaceTypeEnum = WorkspaceType::tryFrom($this->workspaceType);
 
-        if (!$type) {
-            throw new \InvalidArgumentException('Type de structure invalide.');
+        if (!$workspaceTypeEnum) {
+            throw WorkspaceTypeNotFoundException::withWorkspaceType($this->workspaceType);
         }
 
-        Assert::notNull($this->userSlugId);
-        $user = $this->userRepository->getBySlug($this->userSlugId);
-        Assert::notNull($user->id);
-        Assert::notNull($user->slugId);
-        $workspace = ($this->currentWorkspaceInfo)($user->id);
-        Assert::notNull($workspace->slugId);
-        ($this->bindWorkspaceTypeUseCase)($type, $workspace->slugId, $user->slugId);
+        try {
+            $user = $this->currentUserProvider->getUser();
+            $workspace = $this->workspaceProvider->getWorkspace();
 
-        return new RedirectResponse($this->generator->generate('app_onboarding_finalization'));
+            ($this->bindWorkspaceTypeUseCase)(
+                workspaceType: $workspaceTypeEnum,
+                user: $user,
+                workspace: $workspace,
+            );
+
+            return new RedirectResponse($this->generator->generate('app_onboarding_finalization'));
+        } catch (\Exception $e) {
+            $this->logger->error('Échec lors de l\'attribution du plan au Workspace : ', [
+                'error' => $e->getMessage(),
+                'workspace_type' => $this->workspaceType,
+            ]);
+
+            /** @var FlashBagAwareSessionInterface $session */
+            $session = $this->requestStack->getSession();
+            $session->getFlashBag()->add(
+                type: 'error',
+                message: 'Une erreur est survenue lors de la validation de votre plan. Veuillez réessayer.'
+            );
+
+            return new RedirectResponse($this->generator->generate('app_onboarding_plan'));
+        }
     }
 }

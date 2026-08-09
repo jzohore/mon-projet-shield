@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Service;
 
 use App\Application\Billing\UseCase\Subscription\CreateSubscriptionUseCase;
@@ -13,8 +15,9 @@ readonly class CreateSubscription
     public function __construct(
         private LoggerInterface $logger,
         private StripeService $stripeService,
-        private CreateSubscriptionUseCase $createSubscriptionUseCase
-    ) {}
+        private CreateSubscriptionUseCase $createSubscriptionUseCase,
+    ) {
+    }
 
     public function create(Workspace $workspace, string $stripeCustomerId): void
     {

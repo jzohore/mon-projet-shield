@@ -1,17 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Kyc\UseCase;
 
 use App\Application\Kyc\DTO\Request\UploadKycDocumentRequest;
+use App\Domain\Compliance\Enum\DocumentType;
 use App\Domain\Kyc\Entity\KycDocument;
 use App\Domain\Kyc\Entity\KycFolder;
 use App\Domain\Kyc\Entity\Stakeholder;
-use App\Domain\Kyc\Enum\DocumentType;
 use App\Domain\Kyc\Event\KycDocumentReceivedLocalEvent;
 use App\Domain\Kyc\Repository\KycDocumentRepositoryInterface;
 use App\Domain\Kyc\Repository\KycFolderRepositoryInterface;
 use App\Domain\Kyc\Repository\StakeholderRepositoryInterface;
-use DomainException;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
@@ -25,15 +26,16 @@ final readonly class UploadKycDocumentUseCase
         private StakeholderRepositoryInterface $stakeholderRepository,
         private EventDispatcherInterface $eventDispatcher,
         private string $tempStorageDir, // Injection du paramètre (ex: '%kernel.project_dir%/var/uploads/kyc_temp')
-    ) {}
+    ) {
+    }
 
     public function __invoke(UploadKycDocumentRequest $request): void
     {
         $this->validator->validate($request);
 
         $folder = $this->kycFolderRepository->findBySlugId($request->folderSlugId);
-        if (!$folder) {
-            throw new DomainException("Dossier introuvable.");
+        if (!$folder instanceof KycFolder) {
+            throw new \DomainException('Dossier introuvable.');
         }
 
         [$type, $stakeholder] = $this->resolveDocumentContext($request->slotId);
@@ -68,17 +70,18 @@ final readonly class UploadKycDocumentUseCase
             $stakeholderSlug = str_replace('id_card_', '', $slotId);
             $stakeholder = $this->stakeholderRepository->findBySlugId($stakeholderSlug);
 
-            if (!$stakeholder) {
-                throw new DomainException("Intervenant introuvable.");
+            if (!$stakeholder instanceof Stakeholder) {
+                throw new \DomainException('Intervenant introuvable.');
             }
+
             return [DocumentType::ID_CARD, $stakeholder];
         }
 
         $type = match ($slotId) {
-            'kbis'     => DocumentType::KBIS,
+            'kbis' => DocumentType::KBIS,
             'articles_of_assoc' => DocumentType::ARTICLES_OF_ASSOC,
-            'rbe'      => DocumentType::RBE,
-            default    => throw new DomainException(sprintf('Type de document non reconnu: %s', $slotId)),
+            'rbe' => DocumentType::RBE,
+            default => throw new \DomainException(sprintf('Type de document non reconnu: %s', $slotId)),
         };
 
         return [$type, null];
@@ -88,8 +91,8 @@ final readonly class UploadKycDocumentUseCase
     {
         $document = $this->kycDocumentRepository->findOneByContext($folder, $type, $stakeholder);
 
-        if (!$document) {
-            return $stakeholder
+        if (!$document instanceof KycDocument) {
+            return $stakeholder instanceof Stakeholder
                 ? KycDocument::requestForStakeholder($folder, $stakeholder, $type)
                 : KycDocument::requestForCompany($folder, $type);
         }
@@ -108,6 +111,6 @@ final readonly class UploadKycDocumentUseCase
 
         $file->move($this->tempStorageDir, $filename);
 
-        return $this->tempStorageDir . DIRECTORY_SEPARATOR . $filename;
+        return $this->tempStorageDir . \DIRECTORY_SEPARATOR . $filename;
     }
 }

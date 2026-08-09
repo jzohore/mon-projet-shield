@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Form;
 
 use App\Application\User\DTO\Request\UpdateNameRequest;
@@ -20,6 +22,12 @@ class UpdateNameType extends AbstractType
                 ],
             ])
             ->add('lastName', TextType::class, [
+                'attr' => [
+                    'autocomplete' => 'family-name',
+                    'placeholder' => 'Ex: Dupont',
+                ],
+            ])
+            ->add('number', TextType::class, [
                 'attr' => [
                     'autocomplete' => 'family-name',
                     'placeholder' => 'Ex: Dupont',

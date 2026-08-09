@@ -5,10 +5,10 @@ parameters:
         - config/
         - public/
         - src/
+        - .php-cs-fixer.php
     excludePaths:
         - tests/*
         - config/secrets/*
-        - config/reference.php
     parallel:
         jobSize: 20
         maximumNumberOfProcesses: 4

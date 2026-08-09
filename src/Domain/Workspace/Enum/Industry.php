@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Workspace\Enum;
 
 namespace App\Domain\Workspace\Enum;
@@ -49,7 +51,7 @@ enum Industry: string
             str_starts_with($cleanApe, '6920') => self::ACCOUNTANT,
 
             // Gestion de patrimoine (Souvent immatriculés comme courtiers, conseil de gestion ou conseil financier)
-            in_array($cleanApe, ['6622Z', '7022Z', '6619B']) => self::WEALTH_MANAGEMENT,
+            in_array($cleanApe, ['6622Z', '7022Z', '6619B'], true) => self::WEALTH_MANAGEMENT,
 
             // Si le code APE ne correspond à aucune de nos cibles RegTech principales
             default => self::OTHER,

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Application\Billing\UseCase\Subscription;
 
 use App\Domain\Billing\Entity\Subscription;
@@ -13,7 +15,8 @@ readonly class CreateSubscriptionUseCase
     public function __construct(
         private SubscriptionRepositoryInterface $repository,
         private ProductRepositoryInterface $productRepository,
-    ) {}
+    ) {
+    }
 
     public function __invoke(Workspace $workspace, string $stripeSubscriptionId): void
     {

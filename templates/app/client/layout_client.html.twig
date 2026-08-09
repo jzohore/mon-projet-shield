@@ -1,0 +1,67 @@
+{% extends '@app/client/base_portal.html.twig' %}
+
+{% block layout %}
+    {# HEADER MOBILE-FIRST #}
+    <header class="bg-white/80 backdrop-blur-xl border-b border-slate-200 px-4 sm:px-6 py-3 flex justify-between items-center sticky top-0 z-40 shadow-sm w-full">
+
+        <div class="flex items-center gap-4">
+            {# Bouton Menu Burger (Mobile uniquement) #}
+            <button type="button" class="md:hidden p-2 -ml-2 text-slate-600 hover:text-slate-900 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0B261C]" aria-label="Ouvrir le menu">
+                <twig:ux:icon name="tabler:menu-2" class="size-6" />
+            </button>
+
+            <div class="flex items-center gap-3">
+                <span class="font-bold text-slate-900 tracking-tight">{{ company_name|default('KYSURE') }}</span>
+            </div>
+        </div>
+
+        {# Dropdown Profil (Inchangé) #}
+        <div class="flex items-center gap-3">
+            <div class="relative group inline-block">
+                <button type="button" aria-haspopup="menu" class="flex items-center justify-center size-9 sm:size-8 rounded-md bg-slate-100 text-slate-700 font-semibold text-[11px] border border-slate-300 shadow-sm hover:bg-slate-200 transition-all focus:outline-none focus:ring-2 focus:ring-[#0B261C] uppercase">
+                    {{ app.user.initials|default('CL') }}
+                </button>
+                {# ... Le reste de ton menu déroulant avatar ... #}
+            </div>
+        </div>
+    </header>
+
+    {# STRUCTURE MASTER-DETAIL #}
+    <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-12 flex-1 flex flex-col md:flex-row gap-8 lg:gap-12">
+
+        {# SIDEBAR (Cachée sur mobile par défaut via md:block) #}
+        <aside class="hidden md:block w-full md:w-64 shrink-0" aria-label="Menu principal">
+            <nav class="flex flex-col gap-1 sticky top-24">
+
+                {% set current_route = app.request.attributes.get('_route') %}
+
+                <a href="{{ path('app_portal_dashboard') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#0B261C] focus:ring-offset-1 {{ current_route == 'app_portal_dashboard' ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}"
+                   {% if current_route == 'app_portal_dashboard' %}aria-current="page"{% endif %}>
+                    <twig:ux:icon name="tabler:layout-dashboard" class="size-4 {{ current_route == 'app_portal_dashboard' ? 'text-slate-700' : 'text-slate-400' }}" aria-hidden="true" />
+                    Vue d'ensemble
+                </a>
+
+                <a href="{{ path('app_portal_folders') }}"
+                   class="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#0B261C] focus:ring-offset-1 {{ 'folder' in current_route ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900' }}">
+                    <twig:ux:icon name="tabler:folders" class="size-4 {{ 'folder' in current_route ? 'text-slate-700' : 'text-slate-400' }}" aria-hidden="true" />
+                    Mes dossiers
+                </a>
+
+                <div class="mt-6 mb-2">
+                    <h3 class="px-3 text-xs font-bold text-slate-400 uppercase tracking-wider">Configuration</h3>
+                </div>
+                <a href="#" class="flex items-center gap-3 px-3 py-2 text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-[#0B261C] focus:ring-offset-1">
+                    <twig:ux:icon name="tabler:user" class="size-4 text-slate-400" aria-hidden="true" />
+                    Mon profil
+                </a>
+            </nav>
+        </aside>
+
+        {# CIBLE DU CONTENU ENFANT #}
+        <main id="main-content" class="flex-1 min-w-0 w-full outline-none" tabindex="-1">
+            {% block client_main %}{% endblock %}
+        </main>
+
+    </div>
+{% endblock %}

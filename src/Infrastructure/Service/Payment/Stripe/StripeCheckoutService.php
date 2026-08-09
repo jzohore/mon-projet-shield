@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Service\Payment\Stripe;
 
 use App\Application\Billing\DTO\Response\ProductResponse;
@@ -13,30 +15,31 @@ readonly class StripeCheckoutService
 {
     public function __construct(
         private string $stripeSecretKey,
-    ) {}
+    ) {
+    }
 
     public function createSetupSessionUrl(
         User $user,
         Workspace $workspace,
         string $successUrl,
-        string $cancelUrl
+        string $cancelUrl,
     ): string {
         Stripe::setApiKey($this->stripeSecretKey);
 
         Assert::notNull($user->email);
-        Assert::notNull($user->stripeCustomerId);
+        Assert::notNull($user->profile->stripeCustomerId);
         Assert::notNull($workspace->subscription);
         Assert::notNull($workspace->subscription->stripeSubscriptionId);
 
         $session = Session::create([
-            'customer' => $user->stripeCustomerId,
+            'customer' => $user->profile->stripeCustomerId,
             'payment_method_types' => ['card'],
             'mode' => 'setup',
             'success_url' => $successUrl,
             'cancel_url' => $cancelUrl,
             'metadata' => [
                 'user_id' => (string) $user->id,
-                'user_email' => (string) $user->email,
+                'user_email' => $user->email,
                 'workspace_id' => (string) $workspace->id,
                 'stripe_subscription_id' => $workspace->subscription->stripeSubscriptionId,
                 'purpose' => 'activate_existing_subscription',
@@ -53,7 +56,7 @@ readonly class StripeCheckoutService
         ProductResponse $product,
         Workspace $workspace,
         string $successUrl,
-        string $cancelUrl
+        string $cancelUrl,
     ): string {
         Stripe::setApiKey($this->stripeSecretKey);
         Assert::notNull($user->email);
@@ -70,9 +73,9 @@ readonly class StripeCheckoutService
             'cancel_url' => $cancelUrl,
             'metadata' => [
                 'user_id' => (string) $user->id,
-                'user_email' => (string) $user->email,
+                'user_email' => $user->email,
                 'workspace_id' => (string) $workspace->id,
-                'product_id' => (string) $product->slugId,
+                'product_id' => $product->slugId,
                 'credits_to_add' => (string) $product->credits,
             ],
         ];

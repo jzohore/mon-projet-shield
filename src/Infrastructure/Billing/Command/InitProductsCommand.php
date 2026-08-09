@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Command;
 
 use App\Application\Billing\DTO\Request\CreateProductRequest;
@@ -17,7 +19,7 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 class InitProductsCommand extends Command
 {
     public function __construct(
-        private readonly CreateProductUseCase $createProductUseCase
+        private readonly CreateProductUseCase $createProductUseCase,
     ) {
         parent::__construct();
     }
@@ -61,7 +63,7 @@ class InitProductsCommand extends Command
                 0, // Ou crédits illimités selon ta logique
                 34900, // 349€
                 false,
-                "Accès complet au logiciel KYC/KYB avec monitoring automatisé mensuel.",
+                'Accès complet au logiciel KYC/KYB avec monitoring automatisé mensuel.',
                 true,
             ],
         ];

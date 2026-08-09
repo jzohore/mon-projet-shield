@@ -1,18 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\AuditLog\Entity;
 
 use App\Domain\AuditLog\Enum\AuditEventType;
+use App\Domain\Workspace\Entity\Workspace;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
+
+use function Symfony\Component\Clock\now;
+
 use Symfony\Component\Uid\Uuid;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'audit_logs')]
 #[ORM\Index(columns: ['event_name'])]
-#[ORM\Index(columns: ['resource_id'])]
 class AuditLog
 {
     use GenerateSlugPrefixedTrait;
@@ -30,47 +35,37 @@ class AuditLog
         get => $this->eventName;
     }
 
-    #[ORM\Column(type: Types::STRING, length: 180)]
-    public ?string $resourceId = null {
-        get => $this->resourceId;
-    }
-
     #[ORM\Column(type: Types::STRING, length: 255, unique: true)]
-    public ?string $slugId = null {
-        get => $this->slugId;
-    }
-
-    /**
-     * @var array<string, mixed>|null
-     */
-    #[ORM\Column(type: Types::JSON)]
-    public ?array $payload = null {
-        get => $this->payload ?? [];
-    }
+    public private(set) string $slugId;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
-    public \DateTimeImmutable $occurredAt {
-        get => $this->occurredAt;
+    public private(set) \DateTimeImmutable $occurredAt;
+
+    /**
+     * @param array<string, mixed> $payload
+     *
+     * @throws \Exception
+     */
+    protected function __construct(
+        AuditEventType $eventName,
+        #[ORM\Column(type: Types::JSON)]
+        public private(set) array $payload,
+        #[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'auditLogs')]
+        #[ORM\JoinColumn(nullable: true)]
+        public private(set) ?Workspace $workspace = null,
+    ) {
+        $this->eventName = $eventName;
+        $this->slugId = $this->generate_ulid_prefixed('aud_');
+        $this->occurredAt = now();
     }
 
     /**
-     * @param AuditEventType $eventName
-     * @param string $resourceId
      * @param array<string, mixed> $payload
-     * @throws \DateMalformedStringException
+     *
+     * @throws \Exception
      */
-    public function __construct(
-        AuditEventType $eventName,
-        string $resourceId,
-        array $payload = []
-    ) {
-        $this->eventName = $eventName;
-        $this->resourceId = strtolower(trim($resourceId));
-        $this->payload = $payload;
-
-        // Un préfixe logique pour l'audit
-        $this->slugId = $this->generate_ulid_prefixed('aud_');
-
-        $this->occurredAt = new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+    public static function initiate(AuditEventType $eventName, array $payload, ?Workspace $workspace = null): self
+    {
+        return new self($eventName, $payload, $workspace);
     }
 }

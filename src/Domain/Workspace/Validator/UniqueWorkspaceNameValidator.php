@@ -12,8 +12,9 @@ use Symfony\Component\Validator\Exception\UnexpectedTypeException;
 final class UniqueWorkspaceNameValidator extends ConstraintValidator
 {
     public function __construct(
-        private readonly WorkspaceRepositoryInterface $workspaceRepository
-    ) {}
+        private readonly WorkspaceRepositoryInterface $workspaceRepository,
+    ) {
+    }
 
     public function validate(mixed $value, Constraint $constraint): void
     {
@@ -27,8 +28,8 @@ final class UniqueWorkspaceNameValidator extends ConstraintValidator
 
         // On cherche s'il existe déjà un cabinet avec ce nom exact
         $existingWorkspace = $this->workspaceRepository->findOneByName($value);
-        if ($existingWorkspace !== null) {
-            if ($constraint->ignoreSlugId !== null && $existingWorkspace->slugId === $constraint->ignoreSlugId) {
+        if ($existingWorkspace instanceof \App\Domain\Workspace\Entity\Workspace) {
+            if (null !== $constraint->ignoreSlugId && $existingWorkspace->slugId === $constraint->ignoreSlugId) {
                 return;
             }
 
@@ -37,6 +38,5 @@ final class UniqueWorkspaceNameValidator extends ConstraintValidator
                 ->setParameter('{{ value }}', (string) $value)
                 ->addViolation();
         }
-
     }
 }

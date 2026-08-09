@@ -1,15 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\User\Message;
 
-use Symfony\Component\Messenger\Attribute\AsMessage;
+use App\Domain\User\Enum\UserType;
 
-#[AsMessage]
 final readonly class SendMagicLinkMessage
 {
     public function __construct(
-        public string $userEmail,
+        public string $email,
         public string $magicLinkToken,
-        public string $magicLinkUrl
-    ) {}
+        public UserType $recipientType,
+    ) {
+    }
 }

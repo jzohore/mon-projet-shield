@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Support\Twig\Components;
 
 use App\Application\Support\UseCase\MarkMessagesAsReadUseCase;
@@ -32,7 +34,8 @@ class AdminSupportChatComponent
         private readonly ReplyToSupportThreadUseCase $replyUseCase,
         private readonly MarkMessagesAsReadUseCase $markAsReadUseCase,
         private readonly SupportThreadRepositoryInterface $supportThreadRepository,
-    ) {}
+    ) {
+    }
 
     public function mount(SupportThread $thread): void
     {
@@ -52,10 +55,11 @@ class AdminSupportChatComponent
         // On marque comme lu
         $this->markAsReadUseCase->execute($this->thread, SupportSenderType::ADMIN);
     }
+
     #[LiveAction]
     public function sendMessage(LiveResponder $responder): void
     {
-        if (empty(trim($this->message))) {
+        if (in_array(trim($this->message), ['', '0'], true)) {
             return;
         }
 

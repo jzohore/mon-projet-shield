@@ -25,8 +25,8 @@ use Webmozart\Assert\Assert;
 )]
 class UpdateProfilFormComponent
 {
-    use DefaultActionTrait;
     use ComponentWithFormTrait;
+    use DefaultActionTrait;
 
     #[LiveProp]
     public ?string $userSlugId = null;
@@ -36,7 +36,8 @@ class UpdateProfilFormComponent
         private readonly LoggerInterface $logger,
         private readonly UrlGeneratorInterface $router,
         private readonly RequestStack $requestStack,
-    ) {}
+    ) {
+    }
 
     protected function instantiateForm(): FormInterface
     {
@@ -46,7 +47,6 @@ class UpdateProfilFormComponent
     #[LiveAction]
     public function save(): ?RedirectResponse
     {
-
         $this->submitForm();
 
         /** @var UserProfilRequest $dto */
@@ -58,13 +58,13 @@ class UpdateProfilFormComponent
             Assert::notNull($request, 'Cette action doit être exécutée dans un contexte HTTP.');
 
             $dto->lang = $request->getLocale();
-            //($this->updateProfilUseCase)($dto);
-
+            // ($this->updateProfilUseCase)($dto);
         } catch (\DomainException $e) {
             $this->logger->error('Erreur métier lors de la mise à jour du profil', [
                 'user_slug_id' => $this->userSlugId,
                 'error' => $e->getMessage(),
             ]);
+
             return null;
         }
 

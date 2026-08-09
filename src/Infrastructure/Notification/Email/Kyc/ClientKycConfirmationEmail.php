@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Notification\Email\Kyc;
 
 use Symfony\Bridge\Twig\Mime\TemplatedEmail;
@@ -20,9 +22,9 @@ class ClientKycConfirmationEmail extends TemplatedEmail
             ->subject('Votre dossier de conformité a bien été soumis')
             ->htmlTemplate('emails/kyc/kyc_submitted_client.html.twig')
             ->context([
-                'recipient_name'  => $recipientFullName,
-                'workspace_name'  => $workspaceName,
-                'reference'       => $folderReference,
+                'recipient_name' => $recipientFullName,
+                'workspace_name' => $workspaceName,
+                'reference' => $folderReference,
             ]);
     }
 }

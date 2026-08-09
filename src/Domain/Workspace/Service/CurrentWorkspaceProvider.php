@@ -1,23 +1,27 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Domain\Workspace\Service;
 
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use Symfony\Bundle\SecurityBundle\Security;
-use Webmozart\Assert\Assert;
 use Symfony\Contracts\Service\ResetInterface;
+use Webmozart\Assert\Assert;
 
-final class CurrentWorkspaceProvider implements ResetInterface
+class CurrentWorkspaceProvider implements ResetInterface
 {
     // Ce cache ne doit vivre QUE le temps d'une seule requête HTTP.
-    private ?string $cachedWorkspaceId = null;
+    private ?Workspace $cachedWorkspace = null;
+    private ?string $cachedUserId = null;
 
     public function __construct(
         private readonly WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
         private readonly Security $security,
-    ) {}
+    ) {
+    }
 
     /**
      * Appelé automatiquement par Symfony à la fin de chaque requête
@@ -25,7 +29,7 @@ final class CurrentWorkspaceProvider implements ResetInterface
      */
     public function reset(): void
     {
-        $this->cachedWorkspaceId = null;
+        $this->cachedWorkspace = null;
     }
 
     public function getWorkspace(): Workspace
@@ -35,20 +39,32 @@ final class CurrentWorkspaceProvider implements ResetInterface
         Assert::notNull($user, 'Utilisateur non connecté.');
         Assert::isInstanceOf($user, User::class, 'Utilisateur invalide.');
         Assert::notNull($user->id);
-        // 2. Si le cache est déjà plein, on l'utilise (vitesse)
-        if ($this->cachedWorkspaceId !== null) {
-            // Dans une version ultra-sécurisée, on pourrait vérifier ici
-            // que le cache appartient bien au $user actuel.
+
+        $currentUserId = (string) $user->id;
+
+        // 2. 🛡️ SÉCURITÉ MAXIMALE : Vérification du cache
+        if ($this->cachedWorkspace instanceof Workspace) {
+            // On s'assure que le cache appartient BIEN à l'utilisateur qui fait la requête
+            // (Protège contre les fuites mémoire de Swoole/FrankenPHP ou le "Switch User" (Impersonation) de Symfony)
+            if ($this->cachedUserId === $currentUserId) {
+                return $this->cachedWorkspace;
+            }
+
+            // Si l'ID ne correspond pas, c'est qu'on a un cache "sale" (changement d'utilisateur)
+            // On purge le cache immédiatement par sécurité.
+            $this->cachedWorkspace = null;
+            $this->cachedUserId = null;
         }
 
         // 3. Sinon, on va chercher l'info en base
         $workspaceMember = $this->workspaceMemberRepository->findOneByUser($user->id);
-        Assert::notNull($workspaceMember, "Aucun espace de travail trouvé pour cet utilisateur.");
+        Assert::notNull($workspaceMember, 'Aucun espace de travail trouvé pour cet utilisateur.');
 
         $workspace = $workspaceMember->workspace;
 
-        // On remplit le cache pour les prochains appels DURANT CETTE REQUÊTE uniquement
-        $this->cachedWorkspaceId = (string) $workspace->id;
+        // 4. On remplit le cache sécurisé pour les prochains appels
+        $this->cachedWorkspace = $workspace;
+        $this->cachedUserId = $currentUserId;
 
         return $workspace;
     }

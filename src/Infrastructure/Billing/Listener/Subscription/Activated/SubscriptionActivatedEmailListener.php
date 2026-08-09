@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Billing\Listener\Subscription\Activated;
 
 use App\Domain\Billing\Event\SubscriptionActivatedEvent;
@@ -14,7 +16,8 @@ readonly class SubscriptionActivatedEmailListener
 {
     public function __construct(
         private MessageBusInterface $messageBus,
-    ) {}
+    ) {
+    }
 
     /**
      * @throws ExceptionInterface

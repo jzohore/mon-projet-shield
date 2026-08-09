@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Infrastructure\Screening\Service;
 
 use App\Domain\Port\OpenSanctionsClientInterface;
@@ -35,7 +37,7 @@ class FakeOpenSanctionsClient implements OpenSanctionsClientInterface
         }
 
         // --- SCÉNARIO 2 : ENTREPRISE SOUS SANCTIONS (ex: si on tape "gazprom") ---
-        if ($schema === 'Company' || str_contains($nameLower, 'gazprom')) {
+        if ('Company' === $schema || str_contains($nameLower, 'gazprom')) {
             return [
                 'total_matches' => 1,
                 'alerts' => [

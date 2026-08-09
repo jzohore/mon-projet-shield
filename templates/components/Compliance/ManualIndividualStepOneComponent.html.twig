@@ -1,0 +1,96 @@
+<div {{ attributes }}>
+
+    <section class="bg-white rounded-md border border-slate-200 p-6 sm:p-8 shadow-sm">
+        {# En-tête de l'étape #}
+        <div class="flex items-center justify-between mb-6">
+            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-3">
+                <span class="size-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-sm font-black">1</span>
+                Qui est le client ?
+            </h3>
+
+            {# Petit badge de statut (Optionnel mais joli) #}
+            {% if not this.isEditing and this.complianceDTO.contactFirstName is not empty %}
+                <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                    <twig:ux:icon name="tabler:check" class="size-3" />
+                    Complété
+                </span>
+            {% endif %}
+        </div>
+
+        {# --------------------------------------------- #}
+        {# MODE ÉDITION (Formulaire)                     #}
+        {# --------------------------------------------- #}
+        {% if this.isEditing %}
+
+            {{ form_start(form, {
+                attr: {
+                    novalidate: true,
+                    'data-action': 'submit->live#action:prevent',
+                    'data-live-action-param': 'save',
+                }
+            }) }}
+
+            <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>{{ form_row(form.firstName) }}</div>
+                    <div>{{ form_row(form.lastName) }}</div>
+                </div>
+                <div>{{ form_row(form.email) }}</div>
+            </div>
+
+            <div class="flex items-center justify-end mt-8 pt-4 border-t border-slate-100">
+
+                {# Variable pour savoir si c'est une création ou une update #}
+                {% set isUpdate =  this.complianceDTO.contactFirstName is not empty %}
+
+                <twig:Button as="button" type="submit" variant="dark" class="w-full sm:w-auto px-8">
+                    {# État normal #}
+                    <span data-loading="action(save)|hide">
+                        {{ isUpdate ? 'Mettre à jour' : 'Enregistrer et continuer' }}
+                    </span>
+
+                    {# État de chargement (loading) #}
+                    <span data-loading="action(save)|show" class="hidden items-center gap-2">
+                        <twig:ux:icon name="tabler:loader" class="size-4 animate-spin" />
+                        {{ isUpdate ? 'Mise à jour...' : 'Enregistrement...' }}
+                    </span>
+                </twig:Button>
+            </div>
+
+            {{ form_end(form) }}
+
+            {# --------------------------------------------- #}
+            {# MODE LECTURE (Résumé propre)                  #}
+            {# --------------------------------------------- #}
+        {% else %}
+
+            <div class="bg-slate-50 rounded-xl p-5 ring-1 ring-slate-900/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+
+                <div class="flex items-center gap-4">
+                    {# Avatar généré avec les initiales #}
+                    <div class="h-10 w-10 rounded-full bg-white text-indigo-600 flex items-center justify-center font-bold text-xs ring-1 ring-slate-900/10 shadow-sm shrink-0">
+                        {{ this.complianceDTO.contactFirstName|first|upper }}{{ this.complianceDTO.contactLastName|first|upper }}
+                    </div>
+
+                    <div>
+                        <p class="text-sm font-bold text-slate-900">
+                            {{ this.complianceDTO.contactFirstName }} {{ this.complianceDTO.contactLastName }}
+                        </p>
+                        <p class="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+                            <twig:ux:icon name="tabler:mail" class="size-3.5" />
+                            {{ this.complianceDTO.contactEmail }}
+                        </p>
+                    </div>
+                </div>
+
+                <twig:Button variant="outline" size="sm" data-action="live#action" data-live-action-param="activateEditing" class="w-full sm:w-auto">
+                    <twig:ux:icon name="tabler:edit" class="size-4 mr-1.5" />
+                    Modifier les informations
+                </twig:Button>
+
+            </div>
+
+        {% endif %}
+    </section>
+
+</div>
