@@ -4,35 +4,29 @@ declare(strict_types=1);
 
 namespace App\Application\Workspace\UseCase;
 
-use App\Application\Workspace\DTO\Request\UpdateWorkspaceRequest;
+use App\Application\Workspace\DTO\Request\EditWorkspaceRequest;
+use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Event\WorkspaceUpdatedEvent;
 use App\Domain\Workspace\Exception\WorkspaceNameAlreadyExistsException;
 use App\Domain\Workspace\Exception\WorkspaceSiretAlreadyExistsException;
 use App\Domain\Workspace\Repository\WorkspaceRepositoryInterface;
-use App\Domain\Workspace\Service\CurrentUserProvider;
-use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Webmozart\Assert\Assert;
 
-readonly class UpdateInfoWorkspaceUseCase
+final readonly class EditWorkspaceUseCase
 {
     public function __construct(
         private WorkspaceRepositoryInterface $workspaceRepository,
-        private CurrentWorkspaceProvider $currentWorkspaceProvider,
         private EventDispatcherInterface $eventDispatcher,
-        private CurrentUserProvider $currentUserProvider,
     ) {
     }
 
-    public function __invoke(UpdateWorkspaceRequest $request): void
+    public function __invoke(Workspace $workspace, EditWorkspaceRequest $request): void
     {
-        $workspace = $this->currentWorkspaceProvider->getWorkspace();
-        $user = $this->currentUserProvider->getUser();
-
-        // 2. On capture les VRAIES anciennes valeurs depuis l'entité
         $oldName = $workspace->name;
-        $oldSiren = $workspace->siren;
         $oldSiret = $workspace->siret;
-
+        $updateByEmail = $request->updatedByEmail;
+        $updateByFullName = $request->updatedByFullName;
         // 3. Vérification du nom UNIQUEMENT s'il a changé
         $nameHasChanged = $request->name !== $oldName;
         if ($nameHasChanged && $this->workspaceRepository->existsByName($request->name)) {
@@ -41,37 +35,32 @@ readonly class UpdateInfoWorkspaceUseCase
 
         // 4. Vérification du SIRET UNIQUEMENT s'il a changé
         $siretHasChanged = $request->siret !== $oldSiret;
+        Assert::notNull($request->siret);
         if ($siretHasChanged && $this->workspaceRepository->existsBySiret($request->siret)) {
             throw WorkspaceSiretAlreadyExistsException::forSiret($request->siret);
         }
 
         // 5. Détection globale des changements
-        $hasAnyChanges = $nameHasChanged
-            || $siretHasChanged
-            || $request->siren !== $oldSiren
-            || $request->address !== $workspace->address
-            || $request->workspaceIndustry !== $workspace->industry;
+        $hasAnyChanges = $nameHasChanged || $siretHasChanged;
 
         if (!$hasAnyChanges) {
             return;
         }
-        $workspace->update(
+
+        $workspace->updateLegalDetails(
             name: $request->name,
             siret: $request->siret,
-            siren: $request->siren,
-            address: $request->address,
-            industry: $request->workspaceIndustry,
         );
 
+        // 2. Persistance
         $this->workspaceRepository->save($workspace);
 
-        // 7. Dispatch de l'événement avec les vraies anciennes données
         $this->eventDispatcher->dispatch(new WorkspaceUpdatedEvent(
             workspace: $workspace,
             oldName: $oldName,
             oldSiren: $oldSiret,
-            email: $user->email,
-            fullName: $user->getFullName(),
+            email: $updateByEmail,
+            fullName: $updateByFullName,
         ));
     }
 }

@@ -388,4 +388,13 @@ class Workspace
             $this->clients->add($client);
         }
     }
+
+    /**
+     * Seul le UseCase est autorisé à modifier ces données via cette méthode métier.
+     */
+    public function updateLegalDetails(string $name, string $siret): void
+    {
+        $this->name = $name;
+        $this->siret = $siret;
+    }
 }

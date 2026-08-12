@@ -24,8 +24,9 @@ readonly class AuditLogWorkspaceUpdatedListener
      */
     public function __invoke(WorkspaceUpdatedEvent $event): void
     {
-        $user = $event->user;
-        Assert::notNull($user->id);
+        Assert::notNull($event->fullName);
+        Assert::notNull($event->email);
+
         $workspace = $event->workspace;
 
         $audit = AuditLog::initiate(
@@ -34,9 +35,9 @@ readonly class AuditLogWorkspaceUpdatedListener
                 'workspace_new_name' => $workspace->name,
                 'workspace_old_name' => $event->oldName,
                 'workspace_old_siren' => $event->oldSiren,
-                'updated_by_email' => $user->email,
-                'actor_name' => $user->getFullName(),
-                'actor_email' => $user->email,
+                'updated_by_email' => $event->email,
+                'actor_name' => $event->fullName,
+                'actor_email' => $event->email,
             ],
             workspace: $workspace,
         );

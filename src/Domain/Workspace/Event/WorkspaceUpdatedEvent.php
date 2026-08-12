@@ -11,9 +11,11 @@ readonly class WorkspaceUpdatedEvent
 {
     public function __construct(
         public Workspace $workspace,
-        public User $user,
         public string $oldName,
         public string $oldSiren,
+        public ?string $email = null,
+        public ?string $fullName = null,
+        public ?User $user = null,
     ) {
     }
 }
