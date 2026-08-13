@@ -111,6 +111,7 @@ security:
                 trusted_parameter_name: _trusted
 
             switch_user: true
+            user_checker: App\Infrastructure\Security\WorkspaceStatusChecker
 
     # 2. VERROUILLAGE CHIRURGICAL DES ROUTES
     access_control:

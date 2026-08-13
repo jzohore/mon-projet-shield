@@ -25,4 +25,19 @@ readonly class GenerateLinkToken
 
         return sprintf('%s%s', rtrim($this->frontendUrl, '/'), $path);
     }
+
+    /**
+     * Génère un lien absolu vers le frontend pour les emails ou webhooks.
+     *
+     * @param array<string, mixed> $params Paramètres de la route (ex: ['slugId' => 'wrk_123'])
+     */
+    public function generateLink(string $routeName, array $params = []): string
+    {
+        $path = $this->router->generate(
+            name: $routeName,
+            parameters: $params,
+        );
+
+        return sprintf('%s%s', rtrim($this->frontendUrl, '/'), $path);
+    }
 }

@@ -1,0 +1,38 @@
+<div {{ attributes }}>
+    <div data-controller="form-dirty"
+         data-action="input->form-dirty#check change->form-dirty#check">
+
+        {{ form_start(form, {
+            attr: {
+                novalidate: true,
+                'data-action': 'live#action:prevent',
+                'data-live-action-param': 'save',
+            }
+        }) }}
+        <div class="mb-5">
+            {# Section Données AMF #}
+            {{ form_row(form.suspensionReason) }}
+        </div>
+
+        {# Footer de la carte #}
+        <div class="flex items-center justify-end">
+            <twig:Button as="button"
+                         type="submit"
+                         variant="warning"
+                         class="w-full sm:w-auto px-8 transition-all duration-200"
+                         data-form-dirty-target="submitButton">
+
+                <twig:ux:icon name="tabler:pause" class="size-4" aria-hidden="true" />
+                <span data-loading="action(save)|hide">Suspendre le cabinet</span>
+
+                {# Texte affiché PENDANT la requête AJAX #}
+                <span data-loading="action(save)|show" class="hidden items-center gap-2">
+                    <i class="fas fa-circle-notch fa-spin opacity-70"></i> Validation...
+                </span>
+
+            </twig:Button>
+        </div>
+
+        {{ form_end(form) }}
+    </div>
+</div>

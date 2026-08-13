@@ -177,7 +177,7 @@ class Workspace
     public private(set) Collection $clients;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
-    public private(set) string $email;
+    public private(set) ?string $email = null;
 
     private function __construct(string $name, string $siret, string $siren, string $legalName, string $address, #[ORM\Column(type: Types::STRING, length: 14, nullable: true)]
         public private(set) string $etatAdministratif, Industry $industry)
@@ -343,6 +343,17 @@ class Workspace
         $this->etatAdministratif = $etatAdministratif;
         $this->suspensionReason = $reason;
         $this->suspendedAt = now(); // Transition d'état métier explicit
+    }
+
+    public function suspend(string $reason): void
+    {
+        if (!$this->isActive) {
+            return;
+        }
+
+        $this->isActive = false;
+        $this->suspensionReason = trim($reason);
+        $this->suspendedAt = now();
     }
 
     /**

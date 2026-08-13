@@ -48,6 +48,7 @@ framework:
             'App\Infrastructure\Billing\Message\SetupBillingModeMessage': async_priority
             'App\Infrastructure\Workspace\Message\SendAccessRevokedEmailMessage': async_priority
             'App\Infrastructure\Compliance\Message\SendDerSignatureMessage': async_priority
+            'App\Infrastructure\Workspace\Message\DispatchSuspendedEmailMessage': async_priority
             #'App\Infrastructure\Compliance\Message\SendClientDerConfirmationMessage': async_priority
             #'App\Infrastructure\Compliance\Message\SendDerSignedNotificationMessage': async_priority
 

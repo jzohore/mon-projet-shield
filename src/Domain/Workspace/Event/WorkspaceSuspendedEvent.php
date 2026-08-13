@@ -10,6 +10,8 @@ readonly class WorkspaceSuspendedEvent
 {
     public function __construct(
         public Workspace $workspace,
+        public ?string $email = null,
+        public ?string $fullName = null,
     ) {
     }
 }

@@ -22,19 +22,8 @@
         </p>
     </div>
 
-    <p>Pour réactiver immédiatement vos services, veuillez mettre à jour vos informations légales depuis les paramètres de votre espace de travail.</p>
+    <p>Pour réactiver immédiatement vos services, veuillez nous contactez : {{ company_name }}.</p>
 
-    <div class="btn-container">
-        {# On peut forcer un style "danger" inline sur le bouton si ta classe .btn ne le gère pas #}
-        <a href="{{ action_url }}" class="btn" style="background-color: #dc2626; border-color: #b91c1c;">
-            Régulariser ma situation
-        </a>
-    </div>
-
-    <p style="font-size: 12px; color: #94a3b8; word-break: break-all;">
-        Si le bouton ne fonctionne pas, copiez et collez cette URL dans votre navigateur :<br>
-        <a href="{{ action_url }}" style="color: #64748b;">{{ action_url }}</a>
-    </p>
 {% endblock %}
 
 {# Surcharge du footer : Un email réglementaire a un contexte légal fort #}
