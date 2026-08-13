@@ -82,5 +82,7 @@ jobs:
         steps:
             - name: Trigger Coolify Deploy Webhook
               run: |
-                  curl --fail --request GET "${{ secrets.COOLIFY_WEBHOOK_URL }}" \
-                    --header "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}"
+                  # 🛡️ SECOPS : Le webhook est masqué via les Secrets GitHub.
+                  # Le flag -f (fail) fait crasher la CI si Coolify ne répond pas correctement.
+                  # L'utilisation des guillemets est vitale car l'URL contient une esperluette (&).
+                  curl --fail --silent --show-error --request GET "${{ secrets.COOLIFY_WEBHOOK_URL }}"
