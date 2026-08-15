@@ -167,15 +167,15 @@
             <div class="flex items-center gap-2 sm:gap-3 shrink-0">
 
                 {# 1. Badge Crédits / Essai (Style Pill minimaliste) #}
-                {% if workspaceInfo().isFirm %}
-                    {% set isTrial = subInfo().status == 'trialing' %}
-                    {% if isTrial and subInfo().trialDaysRemaining <= 10 and subInfo().trialDaysRemaining > 0 %}
-                        <a href="{{ path('app_settings_subscription') }}"
-                           class="hidden sm:inline-flex items-center rounded-md bg-amber-50 px-2 h-8 text-[12px] font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20 hover:bg-amber-100 transition-colors">
-                            Essai : {{ subInfo().trialDaysRemaining }} j
-                        </a>
-                    {% endif %}
-                {% endif %}
+{#                {% if workspaceInfo().isFirm %}#}
+{#                    {% set isTrial = subInfo().status == 'trialing' %}#}
+{#                    {% if isTrial and subInfo().trialDaysRemaining <= 10 and subInfo().trialDaysRemaining > 0 %}#}
+{#                        <a href="{{ path('app_settings_subscription') }}"#}
+{#                           class="hidden sm:inline-flex items-center rounded-md bg-amber-50 px-2 h-8 text-[12px] font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20 hover:bg-amber-100 transition-colors">#}
+{#                            Essai : {{ subInfo().trialDaysRemaining }} j#}
+{#                        </a>#}
+{#                    {% endif %}#}
+{#                {% endif %}#}
 
                 {% block button_page %}
                     {# 2. Bouton d'action principal (+) - size-8 sur Desktop #}

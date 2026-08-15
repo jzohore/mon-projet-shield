@@ -30,7 +30,7 @@ final class OnBoardingWorkspaceController
     ): Response {
         return new Response(
             $twig->render('@app/onboarding/workspace.html.twig', [
-                'page_title' => 'Trouvons votre entreprise',
+                'page_title' => 'Créons votre espace',
                 'sub_title' => 'Saisissez le nom de votre société ou votre numéro SIREN. 
                 Nous récupérerons automatiquement vos informations légales pour configurer votre espace.',
                 'user_slug_id' => $user->slugId,

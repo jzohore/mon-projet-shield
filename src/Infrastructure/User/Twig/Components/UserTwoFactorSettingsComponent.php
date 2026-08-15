@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\User\Twig\Components;
 
 use App\Domain\Workspace\Service\CurrentUserProvider;
+use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use Doctrine\ORM\EntityManagerInterface;
 use Scheb\TwoFactorBundle\Security\TwoFactor\Provider\Google\GoogleAuthenticatorInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -21,9 +22,10 @@ class UserTwoFactorSettingsComponent
     use DefaultActionTrait;
 
     public function __construct(
-        private CurrentUserProvider $currentUserProvider,
-        private EntityManagerInterface $em,
-        private GoogleAuthenticatorInterface $googleAuthenticator,
+        private readonly CurrentUserProvider $currentUserProvider,
+        private readonly EntityManagerInterface $em,
+        private readonly GoogleAuthenticatorInterface $googleAuthenticator,
+        private readonly CurrentWorkspaceProvider $currentWorkspaceProvider,
     ) {
     }
 
@@ -62,10 +64,11 @@ class UserTwoFactorSettingsComponent
     public function confirmSetup(): void
     {
         $user = $this->currentUserProvider->getUser();
-
+        $workspace = $this->currentWorkspaceProvider->getWorkspace();
         if ($this->googleAuthenticator->checkCode($user, $this->verificationCode)) {
             // ✅ SUCCÈS : Le code est bon, on valide définitivement !
             $user->setIsTotpVerified(true);
+            $workspace->claimTwoFactorBonus();
             $this->em->flush();
 
             $this->isSetupMode = false;

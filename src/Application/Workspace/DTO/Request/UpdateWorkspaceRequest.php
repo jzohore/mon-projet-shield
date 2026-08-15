@@ -28,7 +28,7 @@ class UpdateWorkspaceRequest
         pattern: '/^\d{14}$/',
         message: 'Le SIRET doit contenir exactement 14 chiffres, sans espaces.'
     )]
-    public string $siret = '';
+    public ?string $siret = null;
 
     // 🛡️ NOUVEAU : Validation de l'adresse
     #[Assert\NotBlank(message: 'L\'adresse de la structure est obligatoire.')]
@@ -42,7 +42,7 @@ class UpdateWorkspaceRequest
         pattern: '/^\d{9}$/',
         message: 'Le SIREN doit contenir exactement 9 chiffres, sans espaces.'
     )]
-    public string $siren = '';
+    public ?string $siren = null;
 
     public Industry $workspaceIndustry = Industry::OTHER;
 }

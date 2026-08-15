@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Workspace\Controller;
 
+use App\Domain\Firm\Entity\RegulatoryProfile;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use Endroid\QrCode\Builder\BuilderInterface;
 use Endroid\QrCode\Color\Color;
@@ -24,12 +25,15 @@ final class WorkspaceQrCodeController extends AbstractController
     #[Route('/app/onboarding/qr', name: 'app_workspace_qr_display', methods: ['GET'])]
     public function displayPage(): Response
     {
-        // On récupère le workspace (via ton provider habituel ou le user connecté)
-        // Exemple si tu as un helper ou via $this->getUser()->getWorkspace()
+        $profile = $this->currentWorkspaceProvider->getWorkspace()->regulatoryProfile;
+
+        if (!$profile instanceof RegulatoryProfile) {
+            return $this->redirectToRoute('app_dashboard');
+        }
 
         return $this->render('@app/workspace/qr_display.html.twig', [
             'page_title' => 'Entrée en relation Express',
-            'is_profil_valid' => $this->isProfileValid(),
+            'is_profil_valid' => $profile->isProfileValid(),
         ]);
     }
 
@@ -52,21 +56,5 @@ final class WorkspaceQrCodeController extends AbstractController
         return new Response($result->getString(), Response::HTTP_OK, [
             'Content-Type' => $result->getMimeType(),
         ]);
-    }
-
-    public function isProfileValid(): bool
-    {
-        $profile = $this->currentWorkspaceProvider->getWorkspace()->regulatoryProfile;
-        // (Utilise getRegulatoryProfile() si c'est une méthode)
-
-        if (!$profile instanceof \App\Domain\Firm\Entity\RegulatoryProfile) {
-            return false;
-        }
-
-        // 🛡️ La forteresse réglementaire : TOUT doit être rempli
-        return !in_array($profile->oriasNumber, [null, '', '0'], true)
-            && !in_array($profile->professionalAssociation, [null, '', '0'], true) // ex: ANACOFI, CNCGP...
-            && !in_array($profile->rcProInsurer, [null, '', '0'], true)            // Compagnie d'assurance
-            && !in_array($profile->rcProPolicyNumber, [null, '', '0'], true);      // Numéro de police
     }
 }

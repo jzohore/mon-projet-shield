@@ -58,7 +58,6 @@ readonly class StripeWebhookController
 
             return new Response('Invalid signature', Response::HTTP_BAD_REQUEST);
         }
-
         // =========================================================================
         // ÉVÉNEMENT 1 : PAIEMENT RÉUSSI (Achat de crédits ou Début d'abonnement)
         // =========================================================================
@@ -66,11 +65,9 @@ readonly class StripeWebhookController
             /** @var Session $session */
             $session = $event->data->object;
             $mode = $session->mode;
-
             $userIdString = $session->metadata->user_id ?? null;
             $userEmail = $session->metadata->user_email ?? null;
             $workspaceIdString = $session->metadata->workspace_id ?? null;
-
             if ('setup' === $mode && ($session->metadata->purpose ?? null) === 'activate_existing_subscription') {
                 $stripeSubscriptionId = $session->metadata->stripe_subscription_id ?? null;
 
@@ -131,7 +128,6 @@ readonly class StripeWebhookController
 
                 return new Response('Webhook handled', Response::HTTP_OK);
             }
-
             // CAS 1 : PAIEMENT PONCTUEL (Achat de Crédits pour les Indés)
             if ('payment' === $mode) {
                 $creditsToAdd = (int) ($session->metadata->credits_to_add ?? 0);
@@ -167,11 +163,11 @@ readonly class StripeWebhookController
             }
 
             return new Response('Webhook handled', Response::HTTP_OK);
-        } elseif ('customer.subscription.deleted' === $event->type) {
+        }
+        if ('customer.subscription.deleted' === $event->type) {
             /** @var Subscription $stripeSubscription */
             $stripeSubscription = $event->data->object;
             $stripeSubscriptionId = $stripeSubscription->id;
-
             try {
                 ($this->terminateSubscriptionUseCase)($stripeSubscriptionId);
             } catch (\Exception $e) {
@@ -181,10 +177,11 @@ readonly class StripeWebhookController
             }
 
             return new Response('Webhook handled', Response::HTTP_OK);
-        } elseif ('customer.subscription.updated' === $event->type) {
+        }
+
+        if ('customer.subscription.updated' === $event->type) {
             /** @var Subscription $stripeSubscription */
             $stripeSubscription = $event->data->object;
-
             try {
                 ($this->syncSubscriptionUseCase)($stripeSubscription);
             } catch (\Exception $e) {

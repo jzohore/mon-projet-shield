@@ -8,12 +8,9 @@ use App\Application\Workspace\DTO\Request\CreateWorkspaceRequest;
 use App\Application\Workspace\UseCase\Onboarding\CreateWorkspaceUseCase;
 use App\Infrastructure\Workspace\Form\CreateWorkspaceType;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\ComponentWithFormTrait;
@@ -23,23 +20,20 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
     name: 'CreateWorkspaceManualFormComponent',
     template: 'components/Workspace/CreateWorkspaceManualFormComponent.html.twig',
 )]
-class CreateWorkspaceManualFormComponent
+class CreateWorkspaceManualFormComponent extends AbstractController
 {
     use ComponentWithFormTrait;
     use DefaultActionTrait;
 
     public function __construct(
-        private readonly FormFactoryInterface $formFactory,
         private readonly CreateWorkspaceUseCase $workspaceUseCase,
         private readonly LoggerInterface $logger,
-        private readonly UrlGeneratorInterface $router,
-        private readonly RequestStack $requestStack,
     ) {
     }
 
     protected function instantiateForm(): FormInterface
     {
-        return $this->formFactory->create(CreateWorkspaceType::class, new CreateWorkspaceRequest(), [
+        return $this->createForm(CreateWorkspaceType::class, new CreateWorkspaceRequest(), [
             'include_siret' => false,
         ]);
     }
@@ -54,17 +48,20 @@ class CreateWorkspaceManualFormComponent
 
         try {
             $dto->legalName = $this->formValues['name'] ?? null;
-            $dto->siret = mt_rand(3, 900) . '0o000000000';
-            $dto->siren = mt_rand(3, 900) . '0o000000030';
 
             ($this->workspaceUseCase)($dto);
 
-            return new RedirectResponse($this->router->generate('app_onboarding_plan'));
+            return $this->redirectToRoute('app_onboarding_plan');
         } catch (\DomainException $e) {
             $this->logger->error('Erreur métier lors de la création du workspace', [
                 'workspace_name' => $dto->name,
                 'error' => $e->getMessage(),
             ]);
+
+            $this->addFlash(
+                type: 'error',
+                message: 'Erreur lors de la création du workspace'
+            );
 
             return null;
         } catch (\Exception $e) {
@@ -72,14 +69,12 @@ class CreateWorkspaceManualFormComponent
                 'error' => $e->getMessage(),
             ]);
 
-            /** @var FlashBagAwareSessionInterface $session */
-            $session = $this->requestStack->getSession();
-            $session->getFlashBag()->add(
+            $this->addFlash(
                 type: 'error',
                 message: 'Une erreur technique est survenue lors de la création de votre espace. Veuillez réessayer.'
             );
 
-            return new RedirectResponse($this->router->generate('app_onboarding_workspace_manual_config'));
+            return $this->redirectToRoute('app_onboarding_workspace');
         }
     }
 }

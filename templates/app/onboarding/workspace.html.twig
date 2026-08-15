@@ -9,9 +9,12 @@
         <h1 class="text-3xl font-bold tracking-tight text-slate-900 mb-3">
             {{ page_title }}
         </h1>
-        <p class="text-slate-500 text-base">
-            {{ sub_title }}
-        </p>
+{#        <p class="text-slate-500 text-base">#}
+{#            {{ sub_title }}#}
+{#        </p>#}
     </div>
-    <twig:CreateWorkspaceFormComponent></twig:CreateWorkspaceFormComponent>
+    <div class="bg-white rounded-md border border-slate-200 shadow-sm p-6 sm:p-8 mb-8">
+        <twig:CreateWorkspaceManualFormComponent userSlugId="{{ user_slug_id }}"></twig:CreateWorkspaceManualFormComponent>
+    </div>
+    {#    <twig:CreateWorkspaceFormComponent></twig:CreateWorkspaceFormComponent>#}
 {% endblock %}

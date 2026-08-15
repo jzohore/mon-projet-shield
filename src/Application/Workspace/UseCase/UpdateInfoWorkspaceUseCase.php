@@ -7,6 +7,7 @@ namespace App\Application\Workspace\UseCase;
 use App\Application\Workspace\DTO\Request\UpdateWorkspaceRequest;
 use App\Domain\Workspace\Event\WorkspaceUpdatedEvent;
 use App\Domain\Workspace\Exception\WorkspaceNameAlreadyExistsException;
+use App\Domain\Workspace\Exception\WorkspaceSirenAlreadyExistsException;
 use App\Domain\Workspace\Exception\WorkspaceSiretAlreadyExistsException;
 use App\Domain\Workspace\Repository\WorkspaceRepositoryInterface;
 use App\Domain\Workspace\Service\CurrentUserProvider;
@@ -28,10 +29,13 @@ readonly class UpdateInfoWorkspaceUseCase
         $workspace = $this->currentWorkspaceProvider->getWorkspace();
         $user = $this->currentUserProvider->getUser();
 
-        // 2. On capture les VRAIES anciennes valeurs depuis l'entité
+        // 1. On capture les VRAIES anciennes valeurs depuis l'entité
         $oldName = $workspace->name;
         $oldSiren = $workspace->siren;
         $oldSiret = $workspace->siret;
+
+        $newSiren = '' !== $request->siren ? $request->siren : null;
+        $newSiret = '' !== $request->siret ? $request->siret : null;
 
         // 3. Vérification du nom UNIQUEMENT s'il a changé
         $nameHasChanged = $request->name !== $oldName;
@@ -40,27 +44,35 @@ readonly class UpdateInfoWorkspaceUseCase
         }
 
         // 4. Vérification du SIRET UNIQUEMENT s'il a changé
-        $siretHasChanged = $request->siret !== $oldSiret;
-        if ($siretHasChanged && $this->workspaceRepository->existsBySiret($request->siret)) {
-            throw WorkspaceSiretAlreadyExistsException::forSiret($request->siret);
+        $siretHasChanged = $newSiret !== $oldSiret;
+        if ($siretHasChanged && null !== $newSiret && $this->workspaceRepository->existsBySiret($newSiret)) {
+            throw WorkspaceSiretAlreadyExistsException::forSiret($newSiret);
         }
 
-        // 5. Détection globale des changements
+        // 5. 🛡️ NOUVEAU : Vérification du SIREN UNIQUEMENT s'il a changé
+        $sirenHasChanged = $newSiren !== $oldSiren;
+        if ($sirenHasChanged && null !== $newSiren && $this->workspaceRepository->existsBySiren($newSiren)) {
+            // Assure-toi de créer cette exception de domaine !
+            throw WorkspaceSirenAlreadyExistsException::forSiren($newSiren);
+        }
+
+        // 6. Détection globale des changements
         $hasAnyChanges = $nameHasChanged
             || $siretHasChanged
-            || $request->siren !== $oldSiren
+            || $sirenHasChanged
             || $request->address !== $workspace->address
             || $request->workspaceIndustry !== $workspace->industry;
 
         if (!$hasAnyChanges) {
             return;
         }
+
         $workspace->update(
             name: $request->name,
-            siret: $request->siret,
-            siren: $request->siren,
             address: $request->address,
             industry: $request->workspaceIndustry,
+            siret: $newSiret,
+            siren: $newSiren,
         );
 
         $this->workspaceRepository->save($workspace);
@@ -69,7 +81,7 @@ readonly class UpdateInfoWorkspaceUseCase
         $this->eventDispatcher->dispatch(new WorkspaceUpdatedEvent(
             workspace: $workspace,
             oldName: $oldName,
-            oldSiren: $oldSiret,
+            oldSiren: $oldSiren,
             email: $user->email,
             fullName: $user->getFullName(),
         ));

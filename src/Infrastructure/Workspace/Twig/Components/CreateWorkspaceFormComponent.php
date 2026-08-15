@@ -6,17 +6,14 @@ namespace App\Infrastructure\Workspace\Twig\Components;
 
 use App\Application\Workspace\DTO\Request\CreateWorkspaceRequest;
 use App\Application\Workspace\UseCase\Onboarding\CreateWorkspaceUseCase;
-use App\Domain\Shared\Exception\AbstractDomainException;
 use App\Domain\Workspace\Enum\Industry;
 use App\Infrastructure\Service\SiretSearchService;
+use App\Infrastructure\Shared\Component\LiveFlashTrait;
 use App\Infrastructure\Workspace\Form\CreateWorkspaceType;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\Form\FormFactoryInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormInterface;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\DecodingExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\RedirectionExceptionInterface;
@@ -34,10 +31,11 @@ use Webmozart\Assert\Assert;
     name: 'CreateWorkspaceFormComponent',
     template: 'components/Workspace/CreateWorkspaceFormComponent.html.twig',
 )]
-class CreateWorkspaceFormComponent
+class CreateWorkspaceFormComponent extends AbstractController
 {
     use ComponentWithFormTrait;
     use DefaultActionTrait;
+    use LiveFlashTrait;
 
     #[LiveProp(writable: true)]
     public string $searchQuery = '';
@@ -61,18 +59,15 @@ class CreateWorkspaceFormComponent
     public bool $showMessage = false;
 
     public function __construct(
-        private readonly FormFactoryInterface $formFactory,
         private readonly CreateWorkspaceUseCase $workspaceUseCase,
         private readonly LoggerInterface $logger,
-        private readonly UrlGeneratorInterface $router,
         private readonly SiretSearchService $siretSearchService,
-        private readonly RequestStack $requestStack,
     ) {
     }
 
     protected function instantiateForm(): FormInterface
     {
-        return $this->formFactory->create(CreateWorkspaceType::class, new CreateWorkspaceRequest());
+        return $this->createForm(CreateWorkspaceType::class, new CreateWorkspaceRequest());
     }
 
     #[LiveAction]
@@ -125,7 +120,7 @@ class CreateWorkspaceFormComponent
     }
 
     #[LiveAction]
-    public function save(): ?RedirectResponse
+    public function save(): ?Response
     {
         $this->submitForm();
 
@@ -133,43 +128,40 @@ class CreateWorkspaceFormComponent
         $dto = $this->getForm()->getData();
 
         try {
-            Assert::notNull($this->workspaceSiren);
-            Assert::notNull($this->workspaceEtatAdministratif);
+            Assert::notNull($this->workspaceSiren, 'Veuillez sélectionner une entreprise valide.');
+            Assert::notNull($this->workspaceEtatAdministratif, 'Statut administratif manquant.');
 
+            // Hydratation manuelle
             $dto->legalName = $this->formValues['name'] ?? null;
-            $dto->siren = $this->workspaceSiren;
             $dto->etatAdministratif = $this->workspaceEtatAdministratif;
             $dto->workspaceIndustry = Industry::fromApeCode($this->workspaceIndustry);
 
             ($this->workspaceUseCase)($dto);
 
-            return new RedirectResponse($this->router->generate('app_onboarding_plan'));
-        } catch (AbstractDomainException $e) {
+            return $this->redirectToRoute('app_onboarding_plan');
+        } catch (\DomainException $e) {
             $this->logger->error('Erreur métier lors de la création du workspace', [
                 'workspace_name' => $dto->name,
                 'error' => $e->getMessage(),
             ]);
-            /** @var FlashBagAwareSessionInterface $session */
-            $session = $this->requestStack->getSession();
-            $session->getFlashBag()->add(
+
+            $this->addFlash(
                 type: 'error',
-                message: $e->getMessage(),
+                message: 'Erreur lors de la création du workspace'
             );
 
-            return new RedirectResponse($this->router->generate('app_onboarding_workspace'));
+            return $this->redirectToRoute('app_onboarding_workspace');
         } catch (\Exception $e) {
             $this->logger->critical('Crash système lors de la création du workspace', [
                 'error' => $e->getMessage(),
             ]);
 
-            /** @var FlashBagAwareSessionInterface $session */
-            $session = $this->requestStack->getSession();
-            $session->getFlashBag()->add(
+            $this->addFlash(
                 type: 'error',
                 message: 'Une erreur technique est survenue lors de la création de votre espace. Veuillez réessayer.'
             );
 
-            return new RedirectResponse($this->router->generate('app_onboarding_workspace'));
+            return $this->redirectToRoute('app_onboarding_workspace');
         }
     }
 

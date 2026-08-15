@@ -1,6 +1,11 @@
 <div {{ attributes }}>
     {# 1. Ajout du contrôleur form-dirty #}
     {# 2. On écoute 'input' (pour le texte) et 'change' (pour les select/checkbox) #}
+
+    {% include 'components/partials/_live_alerts.html.twig' with {
+        message: this.actionMessage|default(null),
+        type: this.actionMessageType|default('success')
+    } %}
     <div data-controller="form-dirty"
          data-action="input->form-dirty#check change->form-dirty#check">
 

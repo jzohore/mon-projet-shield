@@ -6,8 +6,9 @@ namespace App\Application\User\UseCase;
 
 use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\UserRepositoryInterface;
+use Webmozart\Assert\Assert;
 
-final readonly class UpdateProfilUseCase
+readonly class MarkAsOnboardingCompletedUseCase
 {
     public function __construct(
         private UserRepositoryInterface $userRepository,
@@ -16,7 +17,8 @@ final readonly class UpdateProfilUseCase
 
     public function __invoke(User $user): void
     {
-        $user->enabledProfil();
+        Assert::notNull($user);
+        $user->markAsOnboardingCompleted();
         $this->userRepository->save($user);
     }
 }

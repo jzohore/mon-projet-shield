@@ -7,15 +7,14 @@ namespace App\Infrastructure\User\Twig\Components;
 use App\Application\User\DTO\Request\UserProfilRequest;
 use App\Application\User\UseCase\UpdateUserInformationUseCase;
 use App\Domain\Workspace\Service\CurrentUserProvider;
+use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
 use App\Infrastructure\User\Form\UpdateProfilType;
 use Psr\Log\LoggerInterface;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Form\FormFactoryInterface;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\ComponentWithFormTrait;
@@ -25,7 +24,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
     name: 'UpdateNameFormComponent',
     template: 'components/User/UpdateNameFormComponent.html.twig',
 )]
-class UpdateNameFormComponent
+class UpdateNameFormComponent extends AbstractController
 {
     use ComponentWithFormTrait;
     use DefaultActionTrait;
@@ -35,9 +34,8 @@ class UpdateNameFormComponent
         private readonly FormFactoryInterface $formFactory,
         private readonly UpdateUserInformationUseCase $updateNameUseCase,
         private readonly LoggerInterface $logger,
-        private readonly RequestStack $requestStack,
-        private readonly UrlGeneratorInterface $urlGenerator,
         private readonly CurrentUserProvider $currentUserProvider,
+        private readonly CurrentWorkspaceProvider $currentWorkspaceProvider,
     ) {
     }
 
@@ -63,11 +61,15 @@ class UpdateNameFormComponent
         $userDTO = $this->getForm()->getData();
 
         try {
-            ($this->updateNameUseCase)($userDTO);
+            $user = $this->currentUserProvider->getUser();
+            $workspace = $this->currentWorkspaceProvider->getWorkspace();
+            ($this->updateNameUseCase)(
+                request: $userDTO,
+                user: $user,
+                workspace: $workspace,
+            );
 
-            /** @var FlashBagAwareSessionInterface $session */
-            $session = $this->requestStack->getSession();
-            $session->getFlashBag()->add(
+            $this->addFlash(
                 type: 'success',
                 message: 'Vos informations ont bien été modifié.'
             );
@@ -76,14 +78,12 @@ class UpdateNameFormComponent
                 'error' => $e->getMessage(),
             ]);
 
-            /** @var FlashBagAwareSessionInterface $session */
-            $session = $this->requestStack->getSession();
-            $session->getFlashBag()->add(
+            $this->addFlash(
                 type: 'error',
                 message: 'Une erreur est survenue lors de la modification de vos informations. Veuillez réessayer.'
             );
         }
 
-        return new RedirectResponse($this->urlGenerator->generate('app_settings_account'));
+        return $this->redirectToRoute('app_settings_account');
     }
 }

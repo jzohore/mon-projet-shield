@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\User\Listener\Onboarding;
 
-use App\Application\User\UseCase\UpdateProfilUseCase;
 use App\Domain\User\Event\UserOnboardingCompletedEvent;
 use App\Infrastructure\Service\Payment\Stripe\StripeService;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -14,7 +13,6 @@ readonly class CreateStripeCustomerListener
 {
     public function __construct(
         private StripeService $stripeService,
-        private UpdateProfilUseCase $updateProfilUseCase,
     ) {
     }
 
@@ -22,6 +20,5 @@ readonly class CreateStripeCustomerListener
     {
         $user = $event->user;
         $this->stripeService->createStripeCustomer($user);
-        ($this->updateProfilUseCase)($user);
     }
 }

@@ -132,6 +132,13 @@ final readonly class WorkspaceRepository implements WorkspaceRepositoryInterface
         return $siretCount > 0;
     }
 
+    public function existsBySiren(string $siren): bool
+    {
+        $sirenCount = $this->repository->count(['siret' => $siren]);
+
+        return $sirenCount > 0;
+    }
+
     /**
      * @return Workspace[]
      */

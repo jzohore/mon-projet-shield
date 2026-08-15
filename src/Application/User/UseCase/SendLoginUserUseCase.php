@@ -14,27 +14,35 @@ use App\Domain\User\Repository\AdminRepositoryInterface;
 use App\Domain\User\Repository\ClientRepositoryInterface;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Infrastructure\User\Message\SendMagicLinkMessage;
+use Psr\Log\LoggerInterface;
 use Random\RandomException;
 use Symfony\Component\Messenger\Exception\ExceptionInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Webmozart\Assert\Assert;
 
-readonly class SendLoginUserUseCase
+final readonly class SendLoginUserUseCase
 {
     public function __construct(
         private UserRepositoryInterface $userRepository,
         private MessageBusInterface $messageBus,
         private ClientRepositoryInterface $clientRepository,
         private AdminRepositoryInterface $adminRepository,
+        private LoggerInterface $securityLogger, // 🛡️ SECOPS : Journal d'audit dédié
     ) {
     }
 
     /**
-     * @throws ExceptionInterface|RandomException
+     * @throws ExceptionInterface|RandomException|UserNotFoundException
      */
     public function __invoke(LoginUserRequest $request): void
     {
         $email = strtolower(trim($request->email));
+        Assert::email($email, 'Le format de l\'adresse email est invalide.');
+
+        $this->securityLogger->info('Tentative de connexion Magic Link initiée', [
+            'email' => $email,
+            // 'ip' => $request->ipAddress // 💡 Recommandé : Passer l'IP dans le DTO depuis le contrôleur
+        ]);
 
         $user = $this->userRepository->findByEmail($email);
         if ($user instanceof User) {
@@ -57,6 +65,11 @@ readonly class SendLoginUserUseCase
             return;
         }
 
+        $this->securityLogger->warning('Tentative de connexion échouée : email introuvable', [
+            'email' => $email,
+        ]);
+
+        // Cette exception doit être "catchée" par le contrôleur pour renvoyer un message de succès générique.
         throw UserNotFoundException::withEmail($email);
     }
 
@@ -79,6 +92,8 @@ readonly class SendLoginUserUseCase
             magicLinkToken: $token,
             recipientType: UserType::CGP
         ));
+
+        $this->securityLogger->info('Magic Link généré et dispatché', ['type' => 'CGP', 'user_id' => $user->id?->toString()]);
     }
 
     /**
@@ -100,6 +115,8 @@ readonly class SendLoginUserUseCase
             magicLinkToken: $token,
             recipientType: UserType::CLIENT
         ));
+
+        $this->securityLogger->info('Magic Link généré et dispatché', ['type' => 'CLIENT', 'client_id' => $client->id?->toString()]);
     }
 
     /**
@@ -121,5 +138,7 @@ readonly class SendLoginUserUseCase
             magicLinkToken: $token,
             recipientType: UserType::ADMIN
         ));
+
+        $this->securityLogger->info('Magic Link généré et dispatché', ['type' => 'ADMIN', 'admin_id' => $admin->id?->toString()]);
     }
 }

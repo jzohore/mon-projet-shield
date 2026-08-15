@@ -5,89 +5,89 @@
 
 {% block content %}
     {% set is_cabinet = workspaceInfo().isFirm %}
+
     {# HEADER : LES 3 ACTIONS CLÉS #}
-    <header class="flex flex-col lg:flex-row lg:items-end">
+    <header class="flex flex-col lg:flex-row lg:items-end mb-8">
         <div>
-            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Espace  <span class="text-blue-600">{{ workspaceInfo().name | lower | capitalize }}</span></h1>
+            <h1 class="text-2xl font-semibold tracking-tight text-slate-900">
+                Espace <span class="text-indigo-600">{{ workspaceInfo().name | lower | capitalize }}</span>
+            </h1>
             <p class="text-sm text-slate-500 mt-1">Gérez vos analyses de conformité et vos rapports d'adéquation.</p>
         </div>
     </header>
 
-    {# SECTION KPIs #}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    {# SECTION KPIs (Style Linear/Stripe : Bordures douces, Ombres minimales, Tabular Nums) #}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         {# SOLDE #}
-        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm group">
-            {% if is_cabinet %}
-                <div class="flex justify-between items-start mb-2">
-                    <h2 class="text-sm font-medium text-slate-500">Analyses ce mois-ci</h2>
-                    {{ ux_icon('lucide:activity', { class: 'size-4 text-indigo-500' }) }}
+        <div class="bg-white rounded-xl border border-slate-200/75 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+            <div class="flex justify-between items-start mb-3">
+                <h2 class="text-sm font-medium text-slate-500">Dossiers restants</h2>
+                <div class="p-1.5 bg-emerald-50 text-emerald-600 rounded-md">
+                    {{ ux_icon('lucide:wallet', { class: 'size-4' }) }}
                 </div>
-                <div class="flex items-baseline gap-2 mt-2">
-                    <span class="text-3xl font-bold text-slate-900">{{ subInfo().searchesUsedThisMonth }}<span class="text-lg text-slate-400">/{{ subInfo().maxSearches }}</span></span>
-                </div>
-            {% else %}
-                <div class="flex justify-between items-start mb-2">
-                    <h2 class="text-sm font-medium text-slate-500">Crédits disponibles</h2>
-                    {{ ux_icon('lucide:wallet', { class: 'size-4 text-emerald-500' }) }}
-                </div>
-                <div class="flex items-baseline gap-2 mt-2">
-                    <span class="text-3xl font-bold text-slate-900"><twig:HeaderCreditsCounter /></span>
-                    <a href="{{ path('app_settings_billing') }}" class="text-xs font-medium text-emerald-600 hover:underline">Recharger</a>
-                </div>
-            {% endif %}
+            </div>
+            <div class="flex items-baseline gap-2">
+                <span class="text-3xl font-semibold tracking-tight text-slate-900 tabular-nums"><twig:HeaderCreditsCounter /></span>
+            </div>
         </div>
 
         {# EN COURS #}
-        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-            <div class="flex justify-between items-start mb-2">
+        <div class="bg-white rounded-xl border border-slate-200/75 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+            <div class="flex justify-between items-start mb-3">
                 <h2 class="text-sm font-medium text-slate-500">Dossiers en cours</h2>
-                {{ ux_icon('lucide:loader-2', { class: 'size-4 text-amber-500 animate-spin-slow' }) }}
+                <div class="p-1.5 bg-indigo-50 text-indigo-600 rounded-md">
+                    {{ ux_icon('lucide:loader-2', { class: 'size-4 animate-spin-slow' }) }}
+                </div>
             </div>
-            <div class="flex items-baseline gap-2 mt-2">
-                <span class="text-3xl font-bold text-slate-900">{{ stats_user.folderDraftWorkspaces }}</span>
-                <span class="text-xs text-slate-500">KYC/KYB actifs</span>
+            <div class="flex items-baseline gap-2">
+                <span class="text-3xl font-semibold tracking-tight text-slate-900 tabular-nums">{{ stats_user.folderDraftWorkspaces|default(0) }}</span>
+                <span class="text-xs font-medium text-slate-400">KYC/KYB actifs</span>
             </div>
         </div>
 
         {# ADVISORY #}
-        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-            <div class="flex justify-between items-start mb-2">
+        <div class="bg-white rounded-xl border border-slate-200/75 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+            <div class="flex justify-between items-start mb-3">
                 <h2 class="text-sm font-medium text-slate-500">Rapports Advisory</h2>
-                {{ ux_icon('lucide:file-text', { class: 'size-4 text-emerald-500' }) }}
+                <div class="p-1.5 bg-slate-50 text-slate-600 rounded-md">
+                    {{ ux_icon('lucide:file-text', { class: 'size-4' }) }}
+                </div>
             </div>
-            <div class="flex items-baseline gap-2 mt-2">
-                <span class="text-3xl font-bold text-slate-900">12</span>
-                <span class="text-xs text-slate-500">ce mois-ci</span>
+            <div class="flex items-baseline gap-2">
+                <span class="text-3xl font-semibold tracking-tight text-slate-900 tabular-nums">12</span>
+                <span class="text-xs font-medium text-slate-400">Ce mois-ci</span>
             </div>
         </div>
 
         {# ALERTES #}
-        <div class="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-            <div class="flex justify-between items-start mb-2">
+        <div class="bg-white rounded-xl border border-slate-200/75 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+            <div class="flex justify-between items-start mb-3">
                 <h2 class="text-sm font-medium text-slate-500">Alertes Risques</h2>
-                {{ ux_icon('lucide:shield-alert', { class: 'size-4 text-red-500' }) }}
+                <div class="p-1.5 bg-rose-50 text-rose-600 rounded-md">
+                    {{ ux_icon('lucide:shield-alert', { class: 'size-4' }) }}
+                </div>
             </div>
-            <div class="flex items-baseline gap-2 mt-2">
-                <span class="text-3xl font-bold text-slate-900">0</span>
-                <span class="text-xs text-slate-500">Sanctions/PEPs</span>
+            <div class="flex items-baseline gap-2">
+                <span class="text-3xl font-semibold tracking-tight text-slate-900 tabular-nums">0</span>
+                <span class="text-xs font-medium text-slate-400">Sanctions / PEPs</span>
             </div>
         </div>
     </div>
 
-    {# ACTIVITÉ RÉCENTE #}
+    {# ACTIVITÉ RÉCENTE (Empty State B2B Premium) #}
     <section>
         <div class="flex items-center justify-between mb-4">
-            <h2 class="text-lg font-bold text-slate-900">Activité récente</h2>
-            <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-700">Voir tout</a>
+            <h2 class="text-base font-semibold text-slate-900">Activité récente</h2>
+            <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">Voir tout</a>
         </div>
 
-        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-            <div class="p-16 text-center">
-                <div class="size-16 rounded-full bg-slate-50 flex items-center justify-center border border-slate-100 mb-4 mx-auto">
-                    {{ ux_icon('lucide:fingerprint', { class: 'size-8 text-slate-300' }) }}
+        <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 overflow-hidden">
+            <div class="py-12 px-6 text-center">
+                <div class="size-12 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mb-4 mx-auto">
+                    {{ ux_icon('lucide:fingerprint', { class: 'size-6 text-slate-400' }) }}
                 </div>
-                <h4 class="text-base font-semibold text-slate-900">Prêt à sécuriser vos relations ?</h4>
-                <p class="text-sm text-slate-500 mt-2 max-w-sm mx-auto">
+                <h4 class="text-sm font-semibold text-slate-900">Prêt à sécuriser vos relations ?</h4>
+                <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
                     Lancez un premier module pour générer vos fiches de synthèse ou vos rapports d'adéquation.
                 </p>
             </div>
@@ -102,122 +102,132 @@
         <div data-controller="onboarding"
              data-onboarding-target="widget"
              data-onboarding-dismiss-url-value="{{ path('app_user_dismiss_onboarding') }}"
-             class="fixed bottom-6 right-14 w-85 bg-white rounded-md shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-200 z-50 flex flex-col transition-all duration-500 ease-in-out">
+             class="fixed bottom-6 right-8 lg:right-14 w-[340px] bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200 z-50 flex flex-col transition-all duration-500 ease-in-out">
 
             {# HEADER #}
-            <div data-action="click->onboarding#toggle" class="px-5 py-4 border-b border-slate-50 flex justify-between items-center cursor-pointer select-none">
-                <div>
-                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                        Configuration
-                    </h3>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" class="p-1.5 cursor-pointer text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-colors">
+            <div data-action="click->onboarding#toggle" class="px-4 py-3 border-b border-slate-100 flex justify-between items-center cursor-pointer select-none hover:bg-slate-50 transition-colors rounded-t-xl">
+                <h3 class="text-sm font-semibold text-slate-900">
+                    Configuration du compte
+                </h3>
+                <div class="flex items-center gap-1">
+                    <button type="button" class="p-1 text-slate-400 hover:text-slate-700 rounded transition-colors">
                         {{ ux_icon('lucide:chevron-down', { class: 'size-4' }) }}
                     </button>
-                    <button type="button"
-                            data-action="click->onboarding#dismiss"
-                            class="p-1.5 cursor-pointer text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+                    <button type="button" data-action="click->onboarding#dismiss" class="p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded transition-colors">
                         {{ ux_icon('lucide:x', { class: 'size-4' }) }}
                     </button>
                 </div>
             </div>
 
-            {# CONTENT #}
-            <div data-onboarding-target="content" class="overflow-hidden transition-all duration-300 max-h-[450px]">
-                <div class="p-3 space-y-1">
+            {# Calcul des états d'onboarding #}
+            {% set is_org_completed = workspaceInfo().isOrgCompleted %}
+            {% set is_profile_completed = workspaceInfo().isRegProfilValid %}
+            {% set is_2fa_enabled = app.user.googleAuthenticatorEnabled %}
+            {% set has_first_kyc = workspaceInfo().foldersCount > 0 %}
+            {% set has_subscription = workspaceInfo().hasActiveSubscription|default(false) %}
 
-                    {# ÉTAPE 1 : OK #}
-                    <div class="flex items-center gap-3 p-3 rounded-xl opacity-50">
-                        <div class="size-5 rounded-full bg-emerald-100 flex items-center justify-center">
-                            {{ ux_icon('lucide:check', { class: 'size-3 text-emerald-600' }) }}
+            <div data-onboarding-target="content" class="overflow-hidden transition-all duration-300 max-h-[500px]">
+                <div class="p-2 space-y-0.5">
+
+                    {# ÉTAPE 1 : COMPTE VÉRIFIÉ #}
+                    <div class="flex items-center gap-3 p-2.5 rounded-lg opacity-50">
+                        <div class="size-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                            {{ ux_icon('lucide:check', { class: 'size-2.5 text-emerald-600' }) }}
                         </div>
-                        <span class="text-sm font-medium text-slate-600 line-through">Compte vérifié</span>
+                        <span class="text-sm font-medium text-slate-500 line-through decoration-slate-300">Compte vérifié</span>
                     </div>
-                    <div class="flex items-start gap-3 p-3 rounded-xl group hover:bg-slate-50 transition-colors">
-                        <div class="mt-0.5 size-5 rounded-full border-2 border-slate-200 group-hover:border-slate-400 flex items-center justify-center transition-colors"></div>
-                        <div class="flex-1">
-                            <a href="{{ path('app_settings_regulatory_profile') }}" class="block">
-                                <p class="text-sm font-medium text-slate-700">Renseigner votre profil réglementaire</p>
-                                <p class="text-xs text-slate-500 mt-0.5">Analysez une structure morale complexe.</p>
-                            </a>
-                        </div>
-                    </div>
-                    {% set is2fa = app.user.googleAuthenticatorEnabled %}
-                    <div class="flex items-start gap-3 p-3 rounded-xl {{ is2fa ? 'opacity-50' : 'bg-indigo-50/50' }}">
-                        <div class="mt-0.5 size-5 rounded-full {{ is2fa ? 'bg-emerald-100' : 'border-2 border-indigo-500' }} flex items-center justify-center">
-                            {% if is2fa %}
-                                {{ ux_icon('lucide:check', { class: 'size-3 text-emerald-600' }) }}
-                            {% else %}
-                                <div class="size-1.5 bg-indigo-500 rounded-full"></div>
+
+                    {# ÉTAPE 2 : ORGANISATION #}
+                    <div class="flex items-start gap-3 p-2.5 rounded-lg {{ is_org_completed ? 'opacity-50' : 'hover:bg-slate-50 transition-colors group' }}">
+                        <div class="mt-0.5 size-4 rounded-full flex items-center justify-center shrink-0 {{ is_org_completed ? 'bg-emerald-100' : 'border-[1.5px] border-indigo-500' }}">
+                            {% if is_org_completed %}
+                                {{ ux_icon('lucide:check', { class: 'size-2.5 text-emerald-600' }) }}
                             {% endif %}
                         </div>
                         <div class="flex-1">
-                            {% if not is2fa %}
-                                <a href="{{ path('app_settings_account') }}" class="group">
-                                    <p class="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Activer la double auth.</p>
-                                    <p class="text-xs text-slate-500 mt-0.5">Important pour la sécurité de votre compte.</p>
+                            {% if not is_org_completed %}
+                                <a href="{{ path('app_settings_organization') }}" class="block outline-none">
+                                    <p class="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Renseigner votre organisation</p>
                                 </a>
                             {% else %}
-                                <p class="text-sm font-medium text-slate-600 line-through">Double auth activé</p>
+                                <p class="text-sm font-medium text-slate-500 line-through decoration-slate-300">Organisation identifiée</p>
                             {% endif %}
                         </div>
                     </div>
 
-
-                    {# ÉTAPE 2 : KYC #}
-                    {% set kyc_done = count_members|default(0) >= 1 %}
-                    <div class="flex items-start gap-3 p-3 rounded-xl {{ kyc_done ? 'opacity-50' : 'bg-indigo-50/50' }}">
-                        <div class="mt-0.5 size-5 rounded-full {{ kyc_done ? 'bg-emerald-100' : 'border-2 border-indigo-500' }} flex items-center justify-center">
-                            {% if kyc_done %}
-                                {{ ux_icon('lucide:check', { class: 'size-3 text-emerald-600' }) }}
-                            {% else %}
-                                <div class="size-1.5 bg-indigo-500 rounded-full"></div>
+                    {# ÉTAPE 3 : PROFIL RÉGLEMENTAIRE #}
+                    <div class="flex items-start gap-3 p-2.5 rounded-lg {{ is_profile_completed ? 'opacity-50' : 'hover:bg-slate-50 transition-colors group' }}">
+                        <div class="mt-0.5 size-4 rounded-full flex items-center justify-center shrink-0 {{ is_profile_completed ? 'bg-emerald-100' : 'border-[1.5px] border-slate-300 group-hover:border-indigo-500 transition-colors' }}">
+                            {% if is_profile_completed %}
+                                {{ ux_icon('lucide:check', { class: 'size-2.5 text-emerald-600' }) }}
                             {% endif %}
                         </div>
                         <div class="flex-1">
-                            {% if not kyc_done %}
-                                <a href="{{ path('app_kyc_invitation') }}" class="group">
-                                    <p class="text-sm font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">Lancer un premier KYC</p>
-                                    <p class="text-xs text-slate-500 mt-0.5">Identifiez votre premier client physique.</p>
+                            {% if not is_profile_completed %}
+                                <a href="{{ path('app_settings_regulatory_profile') }}" class="block outline-none">
+                                    <p class="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Profil réglementaire</p>
                                 </a>
                             {% else %}
-                                <p class="text-sm font-medium text-slate-600 line-through">Module KYC testé</p>
+                                <p class="text-sm font-medium text-slate-500 line-through decoration-slate-300">Profil réglementaire renseigné</p>
                             {% endif %}
                         </div>
                     </div>
 
-                    {# ÉTAPE 3 : ADVISORY / KBIS #}
-                    <div class="flex items-start gap-3 p-3 rounded-xl group hover:bg-slate-50 transition-colors">
-                        <div class="mt-0.5 size-5 rounded-full border-2 border-slate-200 group-hover:border-slate-400 flex items-center justify-center transition-colors"></div>
+                    {# ÉTAPE 4 : SÉCURITÉ (2FA) #}
+                    <div class="flex items-start gap-3 p-2.5 rounded-lg {{ is_2fa_enabled ? 'opacity-50' : 'hover:bg-slate-50 transition-colors group' }}">
+                        <div class="mt-0.5 size-4 rounded-full flex items-center justify-center shrink-0 {{ is_2fa_enabled ? 'bg-emerald-100' : 'border-[1.5px] border-slate-300 group-hover:border-indigo-500 transition-colors' }}">
+                            {% if is_2fa_enabled %}
+                                {{ ux_icon('lucide:check', { class: 'size-2.5 text-emerald-600' }) }}
+                            {% endif %}
+                        </div>
                         <div class="flex-1">
-                            <a href="#" class="block">
-                                <p class="text-sm font-medium text-slate-700">Découvrir le module KYB</p>
-                                <p class="text-xs text-slate-500 mt-0.5">Analysez une structure morale complexe.</p>
-                            </a>
+                            {% if not is_2fa_enabled %}
+                                <a href="{{ path('app_settings_account') }}" class="block outline-none">
+                                    <p class="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Activer la double auth.</p>
+                                    <p class="text-xs text-emerald-600 font-medium mt-0.5">+1 dossier offert</p>
+                                </a>
+                            {% else %}
+                                <p class="text-sm font-medium text-slate-500 line-through decoration-slate-300">Double auth activée</p>
+                            {% endif %}
                         </div>
                     </div>
 
-                    {# ÉTAPE 4 : BILLING #}
-                    <div class="flex items-start gap-3 p-3 rounded-xl group hover:bg-slate-50 transition-colors">
-                        <div class="mt-0.5 size-5 rounded-full border-2 border-slate-200 group-hover:border-slate-400 flex items-center justify-center transition-colors"></div>
+                    {# ÉTAPE 5 : LANCER UN PREMIER KYC #}
+                    <div class="flex items-start gap-3 p-2.5 rounded-lg {{ has_first_kyc ? 'opacity-50' : 'hover:bg-slate-50 transition-colors group' }}">
+                        <div class="mt-0.5 size-4 rounded-full flex items-center justify-center shrink-0 {{ has_first_kyc ? 'bg-emerald-100' : 'border-[1.5px] border-slate-300 group-hover:border-indigo-500 transition-colors' }}">
+                            {% if has_first_kyc %}
+                                {{ ux_icon('lucide:check', { class: 'size-2.5 text-emerald-600' }) }}
+                            {% endif %}
+                        </div>
                         <div class="flex-1">
-                            {% if is_cabinet %}
-                                <a href="{{ path('app_employees_invitation') }}" class="block">
-                                    <p class="text-sm font-medium text-slate-700">Inviter des collaborateurs</p>
-                                    <p class="text-xs text-slate-500 mt-0.5">Travaillez en équipe sur vos dossiers.</p>
+                            {% if not has_first_kyc %}
+                                <a href="{{ path('app_compliance_new') }}" class="block outline-none">
+                                    <p class="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Lancer un premier KYC</p>
                                 </a>
                             {% else %}
-                                <a href="{{ path('app_settings_billing') }}" class="block">
-                                    <p class="text-sm font-medium text-slate-700">Recharger des crédits</p>
-                                    <p class="text-xs text-slate-500 mt-0.5">Packs de crédits sans expiration.</p>
+                                <p class="text-sm font-medium text-slate-500 line-through decoration-slate-300">Module KYC testé</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    {# ÉTAPE 6 : COLLABORATEURS / ABONNEMENT #}
+                    <div class="flex items-start gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors group">
+                        <div class="mt-0.5 size-4 rounded-full border-[1.5px] border-slate-300 group-hover:border-indigo-500 transition-colors flex items-center justify-center shrink-0"></div>
+                        <div class="flex-1">
+                            {% if is_cabinet and not has_subscription %}
+                                <a href="{{ path('app_settings_billing') }}" class="block outline-none">
+                                    <p class="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Passer à l'accès illimité</p>
+                                </a>
+                            {% else %}
+                                <a href="{{ path('app_employees_invitation') }}" class="block outline-none">
+                                    <p class="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Inviter des collaborateurs</p>
                                 </a>
                             {% endif %}
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
     {% endif %}
-
 {% endblock %}

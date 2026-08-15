@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Workspace\DTO\Response;
 
 use App\Domain\Workspace\Entity\Workspace;
+use Webmozart\Assert\Assert;
 
 final readonly class WorkspaceInfoResponse
 {
@@ -13,9 +14,10 @@ final readonly class WorkspaceInfoResponse
         public string $type,
         public bool $isFirm,
         // 2. Les paramètres avec valeur par défaut ensuite
-        public int $balance = 0,
+        public int $balance,
         public bool $isActivated = true,
         public bool $isSiretValid = true,
+        public int $foldersCount = 0,
         public ?string $slugId = null,
         public ?string $name = null,
         public ?string $legalName = null,
@@ -29,6 +31,9 @@ final readonly class WorkspaceInfoResponse
         public ?string $oriasNumber = null,
         public ?string $rcProInsurer = null,
         public ?\DateTimeImmutable $suspendedAt = null,
+        public ?bool $isRegProfilValid = null,
+        public ?bool $hasActiveSubscription = null,
+        public ?bool $isOrgCompleted = null,
     ) {
     }
 
@@ -40,12 +45,15 @@ final readonly class WorkspaceInfoResponse
         ?string $oriasNumber = null,
         ?string $rcProInsurer = null,
     ): self {
+        Assert::notNull($workspace->regulatoryProfile);
+
         return new self(
             type: $workspace->type->value,
             isFirm: $workspace->isFirm(),
             balance: $workspace->balance,
             isActivated: $workspace->isActive,
             isSiretValid: $workspace->isSiretValid,
+            foldersCount: $workspace->folders->count(),
             slugId: $workspace->slugId,
             name: $workspace->name,
             legalName: $workspace->legalName,
@@ -59,6 +67,9 @@ final readonly class WorkspaceInfoResponse
             oriasNumber: $oriasNumber,
             rcProInsurer: $rcProInsurer,
             suspendedAt: $workspace->suspendedAt,
+            isRegProfilValid: $workspace->regulatoryProfile->isProfileValid(),
+            hasActiveSubscription: $workspace->subscription?->isValid(),
+            isOrgCompleted: $workspace->isOrgCompleted(),
         );
     }
 }

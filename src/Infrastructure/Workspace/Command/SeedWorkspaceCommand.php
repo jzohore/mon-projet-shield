@@ -56,12 +56,11 @@ readonly class SeedWorkspaceCommand
         // 3. Création du Workspace
         $workspace = Workspace::create(
             name: 'Kysure',
-            siret: '90900900000011',
-            siren: '909009000',
             legalName: 'Kysure SAS',
             address: '4, villa des épinettes',
             etatAdministratif: 'A',
             industry: Industry::OTHER,
+            email: 'kysure@contact.fr'
         );
 
         $workspaceMember = WorkspaceMember::create($workspace, $user, InvitedRole::ROLE_WORKSPACE_ADMIN);

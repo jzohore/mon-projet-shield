@@ -53,10 +53,10 @@ class Workspace
     // --- DONNÉES REGTECH & FACTURATION ---
 
     #[ORM\Column(type: Types::STRING, length: 14, unique: true, nullable: true)]
-    public private(set) string $siret;
+    public private(set) ?string $siret = null;
 
     #[ORM\Column(type: Types::STRING, length: 14, unique: true, nullable: true)]
-    public private(set) string $siren;
+    public private(set) ?string $siren = null;
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     public ?string $legalName = null {
@@ -115,7 +115,7 @@ class Workspace
     }
 
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
-    public private(set) int $balance = 0;
+    public private(set) int $balance = 2;
 
     /**
      * @var array<int|string, mixed>|null
@@ -176,15 +176,14 @@ class Workspace
     #[ORM\ManyToMany(targetEntity: Client::class, mappedBy: 'workspaces')]
     public private(set) Collection $clients;
 
-    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
-    public private(set) ?string $email = null;
+    #[ORM\Column(options: ['default' => false])]
+    public private(set) bool $hasClaimed2faBonus = false;
 
-    private function __construct(string $name, string $siret, string $siren, string $legalName, string $address, #[ORM\Column(type: Types::STRING, length: 14, nullable: true)]
-        public private(set) string $etatAdministratif, Industry $industry)
+    private function __construct(string $name, string $legalName, string $address, #[ORM\Column(type: Types::STRING, length: 14, nullable: true)]
+        public private(set) string $etatAdministratif, Industry $industry, #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+        public private(set) string $email)
     {
         $this->name = trim($name);
-        $this->siret = trim($siret);
-        $this->siren = trim($siren);
         $this->legalName = trim($legalName);
         $this->address = trim($address);
         $this->slugId = $this->generate_ulid_prefixed('wrk_');
@@ -200,12 +199,12 @@ class Workspace
         $this->createdAt = now();
     }
 
-    public static function create(string $name, string $siret, string $siren, string $legalName, string $address, string $etatAdministratif, Industry $industry): self
+    public static function create(string $name, string $legalName, string $address, string $etatAdministratif, Industry $industry, string $email): self
     {
-        return new self($name, $siret, $siren, $legalName, $address, $etatAdministratif, $industry);
+        return new self($name, $legalName, $address, $etatAdministratif, $industry, trim($email));
     }
 
-    public function update(string $name, string $siret, string $siren, string $address, Industry $industry): void
+    public function update(string $name, string $address, Industry $industry, ?string $siret = null, ?string $siren = null): void
     {
         $this->name = $name;
         $this->siret = $siret;
@@ -294,12 +293,7 @@ class Workspace
 
     public function isFirm(): bool
     {
-        $isFirm = false;
-        if (WorkspaceType::FIRM === $this->type) {
-            $isFirm = true;
-        }
-
-        return $isFirm;
+        return WorkspaceType::FIRM === $this->type;
     }
 
     public function setVerifySiretLastAttemptedAt(): void
@@ -407,5 +401,21 @@ class Workspace
     {
         $this->name = $name;
         $this->siret = $siret;
+    }
+
+    public function isOrgCompleted(): bool
+    {
+        return !in_array($this->siret, [null, '', '0'], true)
+            && !in_array($this->siren, [null, '', '0'], true);
+    }
+
+    public function claimTwoFactorBonus(): void
+    {
+        if ($this->hasClaimed2faBonus) {
+            return;
+        }
+
+        $this->hasClaimed2faBonus = true;
+        ++$this->balance;
     }
 }

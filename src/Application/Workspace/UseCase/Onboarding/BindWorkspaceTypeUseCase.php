@@ -31,13 +31,13 @@ readonly class BindWorkspaceTypeUseCase
         $workspace->markAsActive();
 
         $user->updateOnboardStatus(OnboardingStatus::PLAN_SETUP);
-
+        $user->enabledProfil();
         $this->transactionManager->transactional(function () use ($workspace, $user): void {
             $this->workspaceRepository->save($workspace);
             $this->userRepository->save($user);
         });
 
         $this->eventDispatcher->dispatch(new UserOnboardingCompletedEvent($user, $workspace));
-        $this->eventDispatcher->dispatch(new CreateBillingModeEvent($workspace, $user));
+        // $this->eventDispatcher->dispatch(new CreateBillingModeEvent($workspace, $user));
     }
 }

@@ -313,6 +313,11 @@ class User implements UserInterface, TwoFactorInterface, \Stringable
         $this->onboardingStatus = $status;
     }
 
+    public function markAsOnboardingCompleted(): void
+    {
+        $this->onboardingStatus = OnboardingStatus::COMPLETED;
+    }
+
     public function enabledProfil(): void
     {
         $this->isVerified = true;

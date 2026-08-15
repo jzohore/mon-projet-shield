@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Security;
 
 use App\Domain\User\Entity\User;
+use App\Domain\User\Enum\OnboardingStatus;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Exception\CustomUserMessageAccountStatusException;
@@ -22,6 +23,15 @@ final readonly class WorkspaceStatusChecker implements UserCheckerInterface
     public function checkPreAuth(UserInterface $user): void
     {
         if (!$user instanceof User) {
+            return;
+        }
+
+        $onboardingStatuses = [
+            OnboardingStatus::PENDING,
+            OnboardingStatus::WORKSPACE_SETUP,
+        ];
+
+        if (in_array($user->onboardingStatus, $onboardingStatuses, true)) {
             return;
         }
 

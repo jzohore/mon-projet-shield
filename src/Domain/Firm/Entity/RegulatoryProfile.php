@@ -115,4 +115,12 @@ class RegulatoryProfile
         $this->isValidOrias = $isValidOrias;
         $this->lastCheckOrias = $checkedAt;
     }
+
+    public function isProfileValid(): bool
+    {
+        return !in_array($this->oriasNumber, [null, '', '0'], true)
+            && !in_array($this->professionalAssociation, [null, '', '0'], true) // ex: ANACOFI, CNCGP...
+            && !in_array($this->rcProInsurer, [null, '', '0'], true)            // Compagnie d'assurance
+            && !in_array($this->rcProPolicyNumber, [null, '', '0'], true);      // Numéro de police
+    }
 }

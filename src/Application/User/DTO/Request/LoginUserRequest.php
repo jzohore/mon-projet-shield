@@ -6,7 +6,7 @@ namespace App\Application\User\DTO\Request;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-readonly class LoginUserRequest
+class LoginUserRequest
 {
     public function __construct(
         #[Assert\NotBlank(message: 'L\'adresse email est obligatoire.')]

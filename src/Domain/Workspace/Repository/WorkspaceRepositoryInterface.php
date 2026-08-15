@@ -45,6 +45,8 @@ interface WorkspaceRepositoryInterface
 
     public function existsBySiret(string $siret): bool;
 
+    public function existsBySiren(string $siren): bool;
+
     /**
      * @return Workspace[]
      */
