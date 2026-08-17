@@ -6,7 +6,7 @@ namespace App\Infrastructure\Compliance\Twig\Components;
 
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Enum\MeetingProcessingStatus;
-use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
+use Doctrine\ORM\EntityManagerInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -16,60 +16,64 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
     name: 'AiReportDisplayComponent',
     template: 'components/Compliance/AiReportDisplayComponent.html.twig'
 )]
-class AiReportDisplayComponent
+final class AiReportDisplayComponent
 {
     use DefaultActionTrait;
 
+    #[LiveProp(writable: true)]
+    public bool $isOpen = true;
+
+    // 🛡️ NOUVEAU : État éphémère (le front est en train d'enregistrer)
+    #[LiveProp]
+    public bool $isListening = false;
+
+    #[LiveProp]
+    public ComplianceFolder $folder;
+
     public function __construct(
-        private readonly ComplianceFolderRepositoryInterface $folderRepository,
+        private readonly EntityManagerInterface $entityManager,
     ) {
     }
 
-    #[LiveProp]
-    public string $slugId;
-
-    #[LiveProp(writable: true)]
-    public bool $isOpen = false;
-
-    public function getFolder(): ?ComplianceFolder
+    public function getProcessingStatus(): ?\BackedEnum
     {
-        return $this->folderRepository->findOneBySlugId($this->slugId);
-    }
-
-    // 🛡️ Le statut vient directement de la base : plus de risque de désync
-    // entre le flag local du component (perdu au refresh) et la réalité du traitement.
-    public function getProcessingStatus(): ?MeetingProcessingStatus
-    {
-        return $this->getFolder()?->getMeetingProcessingStatus();
+        return $this->folder->getMeetingProcessingStatus();
     }
 
     public function isProcessing(): bool
     {
-        $status = $this->getProcessingStatus();
+        $status = $this->getProcessingStatus()?->value;
 
-        return MeetingProcessingStatus::FINALIZING === $status
-            || MeetingProcessingStatus::ANALYZING === $status;
-    }
-
-    #[LiveAction]
-    public function startPolling(): void
-    {
-        $this->isOpen = true;
-    }
-
-    #[LiveAction]
-    public function checkStatus(): void
-    {
-        // Rien à faire ici : le re-render Twig relit getProcessingStatus() à chaque poll.
-        // On garde l'action pour déclencher le re-render via le polling Symfony UX.
-        if (MeetingProcessingStatus::DONE === $this->getProcessingStatus()) {
-            $this->isOpen = true;
-        }
+        return in_array($status, ['finalizing', 'analyzing'], true);
     }
 
     #[LiveAction]
     public function toggle(): void
     {
         $this->isOpen = !$this->isOpen;
+    }
+
+    // 🚀 NOUVELLE ACTION : Déclenchée au "Play"
+    #[LiveAction]
+    public function startListening(): void
+    {
+        $this->isListening = true;
+        $this->isOpen = true;
+    }
+
+    #[LiveAction]
+    public function startPolling(): void
+    {
+        // On coupe l'état d'écoute local car on passe la main au serveur
+        $this->isListening = false;
+
+        $this->folder->setMeetingProcessingStatus(MeetingProcessingStatus::FINALIZING);
+        $this->isOpen = true;
+    }
+
+    #[LiveAction]
+    public function checkStatus(): void
+    {
+        $this->entityManager->refresh($this->folder);
     }
 }

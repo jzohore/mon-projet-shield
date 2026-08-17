@@ -1,0 +1,58 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Infrastructure\Compliance\Controller\Api;
+
+use App\Application\Workspace\UseCase\AppendAudioChunkUseCase;
+use App\Application\Workspace\UseCase\StopAudioUseCase;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\Routing\Attribute\Route;
+
+final class MeetingRecorderController extends AbstractController
+{
+    public function __construct(
+        private readonly AppendAudioChunkUseCase $appendAudioChunkUseCase,
+        private readonly StopAudioUseCase $stopAudioUseCase,
+    ) {
+    }
+
+    #[Route('/api/meeting/{slugId}/chunk', name: 'app_api_meeting_chunk', methods: ['POST'])]
+    public function receiveChunk(string $slugId, Request $request): JsonResponse
+    {
+        $audioFile = $request->files->get('audio_chunk');
+        $chunkIndex = (int) $request->request->get('chunk_index', 0);
+        $mimeType = (string) $request->request->get('mime_type');
+
+        if (!$audioFile) {
+            return $this->json(['error' => 'Aucun flux audio reçu.'], Response::HTTP_BAD_REQUEST);
+        }
+
+        try {
+            $this->appendAudioChunkUseCase->execute($slugId, $audioFile, $chunkIndex, $mimeType);
+
+            return $this->json(['status' => 'Chunk reçu.']);
+        } catch (\DomainException $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_PAYMENT_REQUIRED);
+        } catch (\InvalidArgumentException $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_NOT_FOUND);
+        }
+    }
+
+    #[Route('/api/meeting/{slugId}/stop', name: 'app_api_meeting_stop', methods: ['POST'])]
+    public function stopAndAnalyze(string $slugId, Request $request): JsonResponse
+    {
+        $consumedSeconds = (int) $request->request->get('consumed_seconds', 0);
+
+        try {
+            ($this->stopAudioUseCase)($slugId, $consumedSeconds);
+        } catch (\DomainException $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_PAYMENT_REQUIRED);
+        }
+
+        return $this->json(['status' => 'Audio en cours de finalisation.']);
+    }
+}

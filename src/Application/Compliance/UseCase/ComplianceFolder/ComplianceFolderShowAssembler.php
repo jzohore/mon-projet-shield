@@ -46,9 +46,7 @@ class ComplianceFolderShowAssembler
             ? $folder->lastName
             : 'Non défini';
 
-        $contactEmail = $folder instanceof IndividualFolder
-            ? $folder->email
-            : 'Non défini';
+        $contactEmail = $folder->workspace->email;
 
         $type = $folder instanceof IndividualFolder ? 'individual' : 'company';
         // Note: Assure-toi d'avoir une méthode de fallback pour l'email si elle n'est pas sur la classe parente
@@ -113,6 +111,8 @@ class ComplianceFolderShowAssembler
 
         $isManual = (bool) $folder->creationMethod; // Supposé disponible via la relation d'entité
 
+        $workspaceRemainingMinutes = $folder->workspace->getWorkspaceRemainingMinutes();
+
         // 5. Instanciation du ViewDTO
         return new ComplianceFolderShowResponse(
             id: (string) $folder->id,
@@ -128,6 +128,7 @@ class ComplianceFolderShowAssembler
             headerTitle: $headerTitle,
             headerSubtitle: $headerSubtitle,
             contactName: $contactName,
+            workspaceRemainingMinutes: $workspaceRemainingMinutes,
             companyDocuments: $companyDocs,
             individualDocuments: $individualDocs,
             stakeholders: [], // À mapper avec ton entité réelle

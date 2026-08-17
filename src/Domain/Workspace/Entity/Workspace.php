@@ -16,6 +16,7 @@ use App\Domain\Wallet\Entity\WalletTransaction;
 use App\Domain\Wallet\Exception\InsufficientCreditsException;
 use App\Domain\Workspace\Enum\Industry;
 use App\Domain\Workspace\Enum\WorkspaceType;
+use App\Domain\Workspace\Exception\QuotaExhaustedException;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
@@ -179,8 +180,14 @@ class Workspace
     #[ORM\Column(options: ['default' => false])]
     public private(set) bool $hasClaimed2faBonus = false;
 
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 180])]
+    public private(set) int $meetingMinutesAllocated = 180;
+
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 0])]
+    public private(set) int $meetingSecondsConsumed = 0;
+
     private function __construct(string $name, string $legalName, string $address, #[ORM\Column(type: Types::STRING, length: 14, nullable: true)]
-        public private(set) string $etatAdministratif, Industry $industry, #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+        public private(set) string $etatAdministratif, Industry $industry, #[ORM\Column(type: Types::STRING, length: 180, unique: true, nullable: true)]
         public private(set) string $email)
     {
         $this->name = trim($name);
@@ -417,5 +424,44 @@ class Workspace
 
         $this->hasClaimed2faBonus = true;
         ++$this->balance;
+    }
+
+    public function getWorkspaceRemainingMinutes(): int
+    {
+        $remainingSeconds = ($this->meetingMinutesAllocated * 60) - $this->meetingSecondsConsumed;
+
+        return max(0, (int) floor($remainingSeconds / 60));
+    }
+
+    public function assertMeetingRecordingIsAllowed(): void
+    {
+        if (!$this->isActive) {
+            throw QuotaExhaustedException::forWorkspace($this->name);
+        }
+
+        if ($this->getWorkspaceRemainingMinutes() <= 0) {
+            throw QuotaExhaustedException::forWorkspace($this->name);
+        }
+    }
+
+    /**
+     * Appelé une seule fois, à la finalisation de l'entretien, avec le temps
+     * réel consommé (voir FinalizeMeetingAudioHandler).
+     */
+    public function consumeMeetingSeconds(int $seconds): void
+    {
+        $this->meetingSecondsConsumed += max(0, $seconds);
+    }
+
+    /**
+     * Réservé aux admins (EasyAdmin) ou à un futur flux de paiement.
+     */
+    public function setMeetingMinutesAllocated(int $minutes): void
+    {
+        if ($minutes < 0) {
+            throw new \DomainException('Le quota alloué ne peut pas être négatif.');
+        }
+
+        $this->meetingMinutesAllocated = $minutes;
     }
 }

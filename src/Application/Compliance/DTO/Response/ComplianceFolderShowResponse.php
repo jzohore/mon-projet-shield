@@ -31,7 +31,7 @@ readonly class ComplianceFolderShowResponse
 
         // 💡 Contact
         public string $contactName,
-
+        public int $workspaceRemainingMinutes,
         // 💡 Collections de sous-DTOs pré-triées
         /** @var ComplianceDocumentResponse[] */
         public array $companyDocuments,

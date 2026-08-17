@@ -20,13 +20,28 @@ final readonly class GeminiMeetingAnalyzer implements MeetingAnalyzerInterface
 
     public function analyzeCompleteMeeting(ComplianceFolder $folder, string $audioFilePath): HolisticMeetingReportDto
     {
-        Assert::file($audioFilePath, sprintf('Le fichier audio d\'enregistrement est introuvable au chemin : "%s"', $audioFilePath));
-        Assert::readable($audioFilePath, sprintf('Le fichier audio au chemin "%s" n\'est pas accessible en lecture.', $audioFilePath));
+        // 🛡️ FIX : $audioFilePath est une URL S3 pré-signée, pas un chemin
+        // local — Assert::file()/Assert::readable() font un is_file() qui
+        // renvoie toujours false sur un wrapper https://, et ne pouvaient
+        // donc jamais fonctionner ici. On se contente de vérifier qu'on a
+        // bien une URL non vide, SANS jamais y injecter la valeur elle-même
+        // dans le message (une URL pré-signée contient des séquences %XX
+        // qui sont réinterprétées comme des directives sprintf par Assert
+        // en interne, provoquant un crash "N arguments are required").
+        Assert::stringNotEmpty($audioFilePath, 'Aucune URL de fichier audio fournie pour l\'analyse.');
 
-        // 🛡️ 2. Lecture sécurisée et Type Narrowing pour PHPStan
-        $rawContent = file_get_contents($audioFilePath);
-        Assert::string($rawContent, sprintf('Impossible de lire le contenu du fichier audio : "%s"', $audioFilePath));
-        Assert::stringNotEmpty($rawContent, sprintf('Le fichier audio est vide : "%s"', $audioFilePath));
+        // 🛡️ Téléchargement via le client HTTP injecté plutôt que
+        // file_get_contents() : indépendant du réglage allow_url_fopen
+        // (souvent désactivé en prod pour des raisons de sécurité), et plus
+        // facilement testable/mockable.
+        try {
+            $response = $this->httpClient->request('GET', $audioFilePath, ['timeout' => 60]);
+            $rawContent = $response->getContent();
+        } catch (\Throwable $e) {
+            throw new \RuntimeException('Impossible de télécharger le fichier audio depuis le stockage sécurisé.', $e->getCode(), previous: $e);
+        }
+
+        Assert::stringNotEmpty($rawContent, 'Le fichier audio téléchargé est vide.');
 
         // 3. Encodage Base64 certifié à 100% string
         $audioContent = base64_encode($rawContent);
@@ -55,7 +70,7 @@ final readonly class GeminiMeetingAnalyzer implements MeetingAnalyzerInterface
             {$previousContext}
 
             INSTRUCTIONS DE MISE À JOUR :
-            1. FUSIONNE les nouvelles informations avec l'historique précédent. 
+            1. FUSIONNE les nouvelles informations avec l'historique précédent.
             2. NE SUPPRIME AUCUN fait de l'historique sauf si le client le contredit dans le nouvel audio.
 
             Format STRICTEMENT JSON pur :
@@ -67,7 +82,6 @@ final readonly class GeminiMeetingAnalyzer implements MeetingAnalyzerInterface
             }
             TEXT;
 
-        // 🪄 LE FIX DU FIX : Retour à TON URL exacte qui fonctionnait (Modèle 3.5 en production)
         $url = sprintf('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=%s', $this->geminiApiKey);
 
         $response = $this->httpClient->request('POST', $url, [
@@ -80,7 +94,7 @@ final readonly class GeminiMeetingAnalyzer implements MeetingAnalyzerInterface
                 ]],
                 'generationConfig' => [
                     'response_mime_type' => 'application/json',
-                    'temperature' => 0.0, // 🛡️ Zéro créativité, 100% factuel
+                    'temperature' => 0.0,
                 ],
             ],
             'timeout' => 120,

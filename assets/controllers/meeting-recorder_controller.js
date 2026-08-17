@@ -1,4 +1,5 @@
 import { Controller } from '@hotwired/stimulus';
+import RecordRTC from 'recordrtc'; // 🛡️ Import de la librairie ultra-robuste
 
 export default class extends Controller {
     static values = {
@@ -8,145 +9,151 @@ export default class extends Controller {
     }
     static targets = ["indicator", "startBtn", "stopBtn", "pauseBtn", "resumeBtn", "timer"]
 
-    mediaRecorder = null;
-    chunkIntervalId = null;
+    recorder = null;
+    microphone = null;
     uiTimerId = null;
     secondsRemaining = 0;
-    pendingUploads = 0;
-    isPaused = false;
-    isStopping = false;
     chunkIndex = 0;
-    mimeType = 'audio/webm';
+    pendingUploads = 0;
 
     async start() {
-        if (this.mediaRecorder) return; // évite un double-start accidentel
-
-        if (this.maxMinutesValue <= 0) {
-            alert("Opération impossible : Le solde de minutes de votre cabinet est épuisé.");
-            return;
-        }
+        if (this.recorder) return;
+        if (this.maxMinutesValue <= 0) return alert("Solde de minutes épuisé.");
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            // 1. Capture propre du micro
+            this.microphone = await navigator.mediaDevices.getUserMedia({
+                audio: { echoCancellation: true, noiseSuppression: true }
+            });
 
-            // 🛡️ Fallback cross-browser : webm n'est pas supporté par Safari
-            this.mimeType = this.pickSupportedMimeType();
-            this.mediaRecorder = new MediaRecorder(stream, { mimeType: this.mimeType });
+            // 2. 🛡️ BOOTSTRAPPER : RecordRTC gère tous les bugs navigateurs (Safari, iOS, etc.)
+            this.recorder = new RecordRTC(this.microphone, {
+                type: 'audio',
+                mimeType: 'audio/webm', // RecordRTC fera un fallback auto sur Safari (mp4/wav)
+                recorderType: RecordRTC.StereoAudioRecorder, // Force un encodage stable
+                disableLogs: true, // Clean en prod
+                timeSlice: 10000, // Demande un chunk propre toutes les 10 secondes
+                ondataavailable: (blob) => {
+                    // Ce callback est appelé automatiquement et de manière 100% thread-safe
+                    if (blob.size > 0) {
+                        this.sendChunk(blob);
+                    }
+                }
+            });
 
+            // 3. Lancement
+            this.recorder.startRecording();
             this.chunkIndex = 0;
-            this.isStopping = false;
-
-            this.mediaRecorder.ondataavailable = (e) => {
-                if (e.data.size > 0) this.sendChunk(e.data);
-            };
-
-            this.mediaRecorder.start();
-            this.isPaused = false;
-
             this.secondsRemaining = this.maxMinutesValue * 60;
             this.updateTimerUI();
 
-            this.uiTimerId = setInterval(() => {
-                if (this.isPaused) return;
+            // 🚀 NOUVEAU : On prévient toute la page que l'écoute a commencé
+            const startListeningBtn = document.getElementById('btn-start-listening');
+            if (startListeningBtn) startListeningBtn.click();
 
+            this.uiTimerId = setInterval(() => {
+                if (this.recorder.getState() === 'paused') return;
                 this.secondsRemaining--;
                 this.updateTimerUI();
 
                 if (this.secondsRemaining <= 0) this.stop();
             }, 1000);
 
-            this.chunkIntervalId = setInterval(() => {
-                if (!this.isPaused && this.mediaRecorder.state === "recording") {
-                    this.mediaRecorder.requestData();
-                }
-            }, 10000);
-
             this.toggleUI('recording');
 
         } catch (err) {
-            alert("Erreur micro : Vérifiez les autorisations.");
+            console.error("Erreur micro:", err);
+            alert("Impossible d'accéder au microphone. Vérifiez vos autorisations.");
         }
     }
 
     pause() {
-        if (!this.mediaRecorder || this.mediaRecorder.state !== "recording") return;
-        this.mediaRecorder.pause();
-        this.isPaused = true;
-        this.mediaRecorder.requestData();
-        this.toggleUI('paused');
+        if (this.recorder && this.recorder.getState() === 'recording') {
+            this.recorder.pauseRecording();
+            this.toggleUI('paused');
+        }
     }
 
     resume() {
-        if (!this.mediaRecorder || this.mediaRecorder.state !== "paused") return;
-        this.mediaRecorder.resume();
-        this.isPaused = false;
-        this.toggleUI('recording');
+        if (this.recorder && this.recorder.getState() === 'paused') {
+            this.recorder.resumeRecording();
+            this.toggleUI('recording');
+        }
     }
 
     async stop() {
-        if (this.isStopping) return; // empêche un double-appel (timer à 0 + clic manuel)
-        if (!this.mediaRecorder || (this.mediaRecorder.state !== "recording" && this.mediaRecorder.state !== "paused")) return;
+        if (!this.recorder || this.recorder.getState() === 'stopped' || this.isStopping) return;
 
         this.isStopping = true;
-
         clearInterval(this.uiTimerId);
-        clearInterval(this.chunkIntervalId);
+        this.timerTarget.innerHTML = "Enregistrement...";
+        this.timerTarget.classList.add("text-indigo-600", "animate-pulse");
 
-        this.timerTarget.innerHTML = "Sauvegarde...";
-        this.timerTarget.classList.add("text-amber-500", "animate-pulse");
+        this.recorder.stopRecording(async () => {
+            if (this.microphone) {
+                this.microphone.getTracks().forEach(track => track.stop());
+                this.microphone = null;
+            }
 
-        // 🪄 Calcul du temps réel consommé (Temps de départ - Temps restant)
-        const totalAllocatedSeconds = this.maxMinutesValue * 60;
-        const consumedSeconds = totalAllocatedSeconds - this.secondsRemaining;
+            // On attend la fin des uploads en cours
+            await this.waitForPendingUploads();
 
-        const recorder = this.mediaRecorder;
-        const stream = recorder.stream;
+            // 🔄 Restauration : Calcul précis du temps consommé
+            const totalAllocatedSeconds = this.maxMinutesValue * 60;
+            const consumedSeconds = totalAllocatedSeconds - Math.max(0, this.secondsRemaining);
 
-        // 🛡️ FIX RACE CONDITION : on attend l'événement natif "stop" du MediaRecorder,
-        // qui ne se déclenche qu'APRÈS que le dernier "dataavailable" ait été traité
-        // (donc APRÈS que sendChunk() ait incrémenté pendingUploads).
-        // Avant ce fix, le polling démarrait immédiatement et pouvait voir
-        // pendingUploads === 0 alors que le dernier chunk n'avait pas encore été envoyé.
-        const waitForFinalChunk = new Promise((resolve) => {
-            recorder.addEventListener('stop', () => resolve(), { once: true });
+            const formData = new FormData();
+            formData.append('consumed_seconds', consumedSeconds.toString());
+
+            try {
+                // 🛡️ Envoi POST avec FormData ET les headers stricts pour Symfony
+                const res = await fetch(this.stopUrlValue, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const data = await res.json().catch(() => ({}));
+
+                if (!res.ok) {
+                    throw new Error(data.error || `Erreur serveur (${res.status})`);
+                }
+
+                // 🚀 BOOTSTRAPPER FIX : On clique virtuellement sur le bouton caché pour lancer le polling
+                const startPollingBtn = document.getElementById('btn-start-polling');
+                if (startPollingBtn) {
+                    startPollingBtn.click();
+                }
+
+            } catch (err) {
+                alert(`Erreur: ${err.message}`);
+                console.error("Stop Error:", err);
+            } finally {
+                this.recorder.destroy();
+                this.recorder = null;
+                this.toggleUI('idle');
+            }
         });
-
-        if (recorder.state === "paused") {
-            // stop() peut être appelé directement depuis l'état "paused",
-            // pas besoin de resume() avant (ça évite un aller-retour d'état inutile)
-        }
-        recorder.stop();
-        stream.getTracks().forEach(t => t.stop());
-
-        await waitForFinalChunk;
-
-        // Maintenant on peut attendre en toute sécurité que tous les uploads
-        // (y compris le tout dernier) soient terminés
-        await this.waitForPendingUploads();
+    }
+    async sendChunk(blob) {
+        this.pendingUploads++;
+        const formData = new FormData();
+        // RecordRTC garantit l'extension et le format du blob
+        formData.append('audio_chunk', blob, `chunk_${this.chunkIndex}.webm`);
+        formData.append('chunk_index', this.chunkIndex++);
 
         try {
-            const formData = new FormData();
-            formData.append('consumed_seconds', consumedSeconds);
-
-            const res = await fetch(this.stopUrlValue, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!res.ok) {
-                throw new Error(`Statut HTTP ${res.status}`);
-            }
-
-            const liveComponent = document.querySelector('[data-live-name-value="compliance_ai_report"]');
-            if (liveComponent) {
-                liveComponent.dispatchEvent(new CustomEvent('meeting:stopped'));
+            const res = await fetch(this.chunkUrlValue, { method: 'POST', body: formData });
+            if (res.status === 402 || res.status === 403) {
+                this.stop(); // Stoppe net si Symfony hurle au quota dépassé
             }
         } catch (err) {
-            alert("Erreur lors de la finalisation de l'enregistrement. Veuillez réessayer ou contacter le support.");
+            console.error('Erreur réseau Chunk:', err);
         } finally {
-            this.mediaRecorder = null;
-            this.isStopping = false;
-            this.toggleUI('idle');
+            this.pendingUploads--;
         }
     }
 
@@ -161,71 +168,17 @@ export default class extends Controller {
         });
     }
 
-    async sendChunk(blob) {
-        this.pendingUploads++;
-        const formData = new FormData();
-        formData.append('audio_chunk', blob);
-        formData.append('chunk_index', this.chunkIndex++);
-        // 🛡️ Le backend doit savoir quel conteneur a réellement été utilisé
-        // (Safari enregistre en audio/mp4, pas en audio/webm) pour traiter
-        // et remuxer le fichier correctement.
-        formData.append('mime_type', this.mimeType);
-
-        try {
-            const res = await fetch(this.chunkUrlValue, { method: 'POST', body: formData });
-            if (res.status === 402 || res.status === 403) {
-                alert("Quota dépassé.");
-                this.stop();
-            } else if (!res.ok) {
-                // 🛡️ Chunk perdu : on prévient au lieu d'échouer silencieusement
-                console.error(`Échec d'envoi du chunk ${formData.get('chunk_index')} : HTTP ${res.status}`);
-            }
-        } catch (err) {
-            console.error('Erreur réseau lors de l\'envoi du chunk audio :', err);
-        } finally {
-            this.pendingUploads--;
-        }
-    }
-
-    pickSupportedMimeType() {
-        const candidates = ['audio/webm', 'audio/mp4', 'audio/ogg'];
-        for (const type of candidates) {
-            if (MediaRecorder.isTypeSupported(type)) return type;
-        }
-        return ''; // laisse le navigateur choisir par défaut
-    }
-
+    // --- Gestion de l'UI (Frugale) ---
     toggleUI(state) {
-        // state = 'idle' | 'recording' | 'paused'
-
-        if (this.hasStartBtnTarget) {
-            this.startBtnTarget.classList.toggle('hidden', state !== 'idle');
-        }
-
-        if (this.hasPauseBtnTarget) {
-            this.pauseBtnTarget.classList.toggle('hidden', state !== 'recording');
-        }
-
-        if (this.hasResumeBtnTarget) {
-            this.resumeBtnTarget.classList.toggle('hidden', state !== 'paused');
-        }
-
-        if (this.hasStopBtnTarget) {
-            this.stopBtnTarget.classList.toggle('hidden', state === 'idle');
-        }
+        if (this.hasStartBtnTarget) this.startBtnTarget.classList.toggle('hidden', state !== 'idle');
+        if (this.hasPauseBtnTarget) this.pauseBtnTarget.classList.toggle('hidden', state !== 'recording');
+        if (this.hasResumeBtnTarget) this.resumeBtnTarget.classList.toggle('hidden', state !== 'paused');
+        if (this.hasStopBtnTarget) this.stopBtnTarget.classList.toggle('hidden', state === 'idle');
 
         if (this.hasIndicatorTarget) {
             this.indicatorTarget.classList.toggle('animate-pulse', state === 'recording');
-            this.indicatorTarget.classList.toggle('text-red-500', state === 'recording');
-        }
-
-        if (this.hasTimerTarget) {
-            if (state === 'paused') {
-                this.timerTarget.classList.add('text-amber-500', 'animate-pulse');
-                this.timerTarget.classList.remove('text-slate-700', 'text-red-500');
-            } else if (state === 'recording') {
-                this.timerTarget.classList.remove('animate-pulse', 'text-amber-500');
-            }
+            if (state === 'idle') this.indicatorTarget.classList.replace('bg-rose-500', 'bg-slate-300');
+            if (state === 'paused') this.indicatorTarget.classList.replace('bg-rose-500', 'bg-amber-400');
         }
     }
 
@@ -233,20 +186,8 @@ export default class extends Controller {
         const displaySeconds = Math.max(0, this.secondsRemaining);
         const m = Math.floor(displaySeconds / 60).toString().padStart(2, '0');
         const s = (displaySeconds % 60).toString().padStart(2, '0');
-        const timeString = `${m}:${s}`;
 
-        this.timerTarget.innerHTML = timeString;
-
-        if (!this.isPaused) {
-            const isCritical = displaySeconds > 0 && displaySeconds <= 300;
-            if (isCritical) {
-                this.timerTarget.classList.add('text-red-500');
-            } else {
-                this.timerTarget.classList.remove('text-red-500');
-            }
-        }
-
-        const externalTimer = document.getElementById('external-timer-display');
-        if (externalTimer) externalTimer.innerHTML = timeString;
+        this.timerTarget.innerHTML = `${m}:${s}`;
+        this.timerTarget.classList.toggle('text-rose-600', displaySeconds > 0 && displaySeconds <= 300);
     }
 }

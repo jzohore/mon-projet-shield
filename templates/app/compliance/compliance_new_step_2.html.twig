@@ -31,9 +31,9 @@
                 }) }}>
 
                 <div class="flex flex-col text-right">
-                <span data-meeting-recorder-target="timer" class="text-xs font-mono font-bold text-slate-400">
-                    {{ isQuotaExhausted ? '00:00' : (dto.workspaceRemainingMinutes ~ ':00') }}
-                </span>
+    <span data-meeting-recorder-target="timer" class="text-xs font-mono font-bold text-slate-400">
+        {{ isQuotaExhausted ? '00:00' : (dto.workspaceRemainingMinutes ~ ':00') }}
+    </span>
                 </div>
 
                 <div class="relative group">
@@ -43,25 +43,18 @@
                         </button>
                     {% else %}
                         <div class="flex items-center gap-1">
-                            <!-- Start / Poursuivre -->
                             <button type="button" data-action="click->meeting-recorder#start" data-meeting-recorder-target="startBtn"
                                     class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Enregistrer">
                                 {{ ux_icon('tabler:microphone', { class: 'size-5' }) }}
                             </button>
-
-                            <!-- Pause -->
                             <button type="button" data-action="click->meeting-recorder#pause" data-meeting-recorder-target="pauseBtn"
                                     class="hidden p-2 text-amber-600 bg-amber-50 rounded-xl transition-all">
                                 {{ ux_icon('tabler:player-pause', { class: 'size-5' }) }}
                             </button>
-
-                            <!-- Resume -->
                             <button type="button" data-action="click->meeting-recorder#resume" data-meeting-recorder-target="resumeBtn"
                                     class="hidden p-2 text-emerald-600 bg-emerald-50 rounded-xl transition-all">
                                 {{ ux_icon('tabler:player-play', { class: 'size-5' }) }}
                             </button>
-
-                            <!-- Stop -->
                             <button type="button" data-action="click->meeting-recorder#stop" data-meeting-recorder-target="stopBtn"
                                     class="hidden p-2 text-rose-600 bg-rose-50 rounded-xl transition-all animate-pulse">
                                 {{ ux_icon('tabler:square-rounded', { class: 'size-5' }) }}
@@ -257,7 +250,7 @@
                         </div>
                     {% endif %}
 
-                    <twig:AiReportDisplayComponent slugId="{{ folder.slugId }}"></twig:AiReportDisplayComponent>
+                    <twig:AiReportDisplayComponent folder="{{ folder }}"></twig:AiReportDisplayComponent>
                     {# LES COMPOSANTS MÉTIER #}
                     <twig:ManualIndividualStepOneComponent complianceFolder="{{ folder }}" method="{{ method }}" type="{{ type }}"></twig:ManualIndividualStepOneComponent>
 
