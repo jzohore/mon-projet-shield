@@ -1,34 +1,15 @@
 {# templates/compliance/_ai_report_display.html.twig #}
 {% set report = dto.postMeetingReport %}
 
-<div class="px-6 py-6 sm:px-8 sm:py-8 bg-white">
+<div class="px-6 py-6 sm:px-6 sm:py-6 bg-white">
 
-    {# 1. EN-TÊTE DU RAPPORT & ACTIONS #}
-    <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-        <div>
-            <div class="flex items-center gap-2.5">
-                <h3 class="text-base font-semibold tracking-tight text-slate-900">Compte-rendu d'adéquation</h3>
-            </div>
-            <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-                Généré le {{ report.analyzedAt|date('d/m/Y à H:i') }}
-            </p>
+    <div>
+        <div class="flex items-center gap-2.5">
+            <h3 class="text-base font-semibold tracking-tight text-slate-900">Compte-rendu d'adéquation</h3>
         </div>
-
-        {# BOUTONS ACTION (Style Stripe Dashboard) #}
-        <div class="flex items-center gap-2">
-            <a href=""
-               class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:text-slate-900 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)] focus:outline-none focus:ring-2 focus:ring-slate-900/10">
-                {{ ux_icon('lucide:download', { class: 'size-3.5 text-slate-500' }) }}
-                <span>Télécharger PDF</span>
-            </a>
-
-            <button type="button"
-                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.05)] focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2">
-                {{ ux_icon('lucide:mail', { class: 'size-3.5 text-slate-300' }) }}
-                <span>Envoyer au client</span>
-            </button>
-        </div>
-
+        <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+            Généré le {{ report.analyzedAt|date('d/m/Y à H:i') }}
+        </p>
     </div>
 
 
@@ -70,7 +51,7 @@
 
         {% if report.actionPlan is not empty %}
             <div class="space-y-2">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Plan d'action du CGP</h4>
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Plan d'action</h4>
 
                 <div class="bg-indigo-50/30 p-4 rounded-xl border border-indigo-100/50 space-y-2.5">
                     {% for action in report.actionPlan %}

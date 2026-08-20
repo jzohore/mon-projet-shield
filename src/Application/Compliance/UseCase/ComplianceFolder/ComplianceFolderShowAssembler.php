@@ -46,7 +46,9 @@ class ComplianceFolderShowAssembler
             ? $folder->lastName
             : 'Non défini';
 
-        $contactEmail = $folder->workspace->email;
+        $contactEmail = $folder instanceof IndividualFolder
+            ? $folder->email
+            : 'Non défini';
 
         $type = $folder instanceof IndividualFolder ? 'individual' : 'company';
         // Note: Assure-toi d'avoir une méthode de fallback pour l'email si elle n'est pas sur la classe parente
@@ -118,12 +120,14 @@ class ComplianceFolderShowAssembler
             id: (string) $folder->id,
             slugId: $folder->slugId,
             workspaceName: $folder->workspace->name,
+            workspaceEmail: $folder->workspace->email,
             reference: $folder->reference,
             statusValue: $folder->status->value,
             statusLabel: $folder->status->getLabel(),
             isManual: $isManual,
             isKyb: $isKyb,
             isDraft: $isDraft,
+            isAcceptedRecording: $folder->isAcceptRecording,
             method: $folder->creationMethod,
             headerTitle: $headerTitle,
             headerSubtitle: $headerSubtitle,

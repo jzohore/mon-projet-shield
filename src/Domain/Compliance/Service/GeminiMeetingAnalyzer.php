@@ -20,14 +20,6 @@ final readonly class GeminiMeetingAnalyzer implements MeetingAnalyzerInterface
 
     public function analyzeCompleteMeeting(ComplianceFolder $folder, string $audioFilePath): HolisticMeetingReportDto
     {
-        // 🛡️ FIX : $audioFilePath est une URL S3 pré-signée, pas un chemin
-        // local — Assert::file()/Assert::readable() font un is_file() qui
-        // renvoie toujours false sur un wrapper https://, et ne pouvaient
-        // donc jamais fonctionner ici. On se contente de vérifier qu'on a
-        // bien une URL non vide, SANS jamais y injecter la valeur elle-même
-        // dans le message (une URL pré-signée contient des séquences %XX
-        // qui sont réinterprétées comme des directives sprintf par Assert
-        // en interne, provoquant un crash "N arguments are required").
         Assert::stringNotEmpty($audioFilePath, 'Aucune URL de fichier audio fournie pour l\'analyse.');
 
         // 🛡️ Téléchargement via le client HTTP injecté plutôt que

@@ -115,6 +115,9 @@ abstract class ComplianceFolder
     #[ORM\Column(type: 'string', length: 50, nullable: true)]
     public private(set) ?string $audioMimeType = null;
 
+    #[ORM\Column(type: Types::BOOLEAN, nullable: true, options: ['default' => false])]
+    public private(set) bool $isAcceptRecording = false;
+
     /**
      * ✅ Constructeur protégé (DDD).
      */
@@ -422,6 +425,11 @@ abstract class ComplianceFolder
     public function setAudioMimeType(?string $mimeType): void
     {
         $this->audioMimeType = $mimeType;
+    }
+
+    public function markAsRecording(): void
+    {
+        $this->isAcceptRecording = true;
     }
 
     abstract public function isDraftEmpty(): bool;

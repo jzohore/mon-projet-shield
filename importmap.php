@@ -23,4 +23,6 @@ return [
     '@kurkle/color' => ['version' => '0.4.0'],
     'signature_pad' => ['version' => '5.1.3'],
     'recordrtc' => ['version' => '5.6.2'],
+    'shadcn/dist/tailwind.css' => ['version' => '4.18.0', 'type' => 'css'],
+    'tw-animate-css/dist/tw-animate.css' => ['version' => '1.4.0', 'type' => 'css'],
 ];

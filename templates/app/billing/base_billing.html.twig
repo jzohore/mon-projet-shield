@@ -66,6 +66,7 @@
         </main>
 
         {# FOOTER (Assistance & Branding SaaS sur mobile/desktop) #}
+        {% if app.current_route != 'app_compliance_method_new' %}
         <footer class="p-6 text-center text-sm text-slate-500 relative z-10 shrink-0 flex flex-col items-center justify-center gap-2 mt-auto">
             <div>
                 Un problème technique ?
@@ -78,6 +79,7 @@
                 <twig:ux:icon name="tabler:lock" class="size-3" /> Sécurisé par {{ company_name }}
             </div>
         </footer>
+        {% endif %}
 
     </div>
 </div>

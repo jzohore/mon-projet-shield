@@ -1,10 +1,13 @@
 {# templates/components/AiReportDisplayComponent.html.twig #}
-<div {{ attributes }}
-    id="meeting-ai-report"
-    {% if this.isProcessing %}data-poll="delay(3000)|checkStatus"{% endif %}
-    class="w-full max-w-5xl mx-auto mb-8 relative">
 
-    {# 🚀 FIX STIMULUS : Boutons fantômes (Intacts) #}
+{# 1. LE PARENT : Fusion parfaite côté serveur via .defaults() #}
+<div {{ attributes.defaults({
+    'id': 'meeting-ai-report',
+    'class': 'fixed bottom-6 right-6 lg:right-10 z-50 pointer-events-none'
+}) }}
+    {% if this.isProcessing %}data-poll="delay(3000)|checkStatus"{% endif %}>
+
+    {# Boutons fantômes #}
     <button type="button" class="hidden" id="btn-start-listening" data-action="live#action" data-live-action-param="startListening"></button>
     <button type="button" class="hidden" id="btn-start-polling" data-action="live#action" data-live-action-param="startPolling"></button>
 
@@ -12,77 +15,94 @@
     {% set status = this.processingStatus %}
 
     {% if this.isListening or this.isProcessing or folder.postMeetingReport is not empty %}
-        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden transition-all duration-500">
 
-            {# HEADER ACCORDÉON (Épuré) #}
-            <button type="button" data-action="live#action" data-live-action-param="toggle"
-                    class="w-full flex items-center justify-between px-5 py-4 hover:bg-slate-50/50 transition-colors focus:outline-none">
+        {# 2. L'ENFANT : Rôle UI et Stimulus. #}
+        <div data-controller="ai-widget"
+             data-ai-widget-key-value="{{ folder.slugId }}"
+             class="bg-white rounded-xl shadow-[0_12px_40px_rgb(0,0,0,0.15)] border border-slate-200 flex flex-col transition-all duration-500 ease-in-out opacity-0 translate-y-8 pointer-events-auto">
 
-                <div class="flex items-center gap-3">
-                    {# Plus de background coloré permanent, juste une belle icône #}
-                    <div class="{{ this.isListening ? 'text-rose-500' : 'text-slate-700' }}">
-                        {{ ux_icon(this.isListening ? 'lucide:mic' : 'lucide:sparkles', { class: 'size-5' ~ (this.isListening ? ' animate-pulse' : '') }) }}
+            {# HEADER #}
+            <div data-action="click->ai-widget#toggle:stop"
+                 class="shrink-0 px-4 py-3 border-b border-slate-100 flex justify-between items-center cursor-pointer select-none hover:bg-slate-50 transition-colors rounded-t-xl bg-white">
+
+                <div class="flex items-center gap-2.5 overflow-hidden">
+                    <div class="flex items-center justify-center size-6 rounded-md shrink-0 {{ this.isListening ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600' }}">
+                        {{ ux_icon(this.isListening ? 'lucide:mic' : 'lucide:sparkles', { class: 'size-3.5' ~ (this.isListening ? ' animate-pulse' : '') }) }}
                     </div>
-                    <span class="text-sm font-semibold text-slate-900">
-                        {{ this.isListening ? 'Capture audio en cours' : 'Synthèse IA de l\'entretien' }}
-                    </span>
+
+                    {# 🚀 AJOUT TARGET : headerText #}
+                    <h3 data-ai-widget-target="headerText" class="text-sm font-semibold text-slate-900 truncate transition-colors">
+                        {% if this.isListening %}
+                            Capture audio active
+                        {% elseif status and status.value in ['finalizing', 'analyzing'] %}
+                            Assistant IA
+                        {% else %}
+                            Synthèse terminée
+                        {% endif %}
+                    </h3>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    {# BADGES D'ÉTAT (Minimalistes) #}
-                    {% if this.isListening %}
-                        <span class="text-xs font-medium text-rose-600 flex items-center gap-2">
-                            <span class="relative flex size-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span><span class="relative inline-flex rounded-full size-2 bg-rose-500"></span></span>
-                            Enregistrement
-                        </span>
-                    {% elseif status and status.value == 'finalizing' %}
-                        <span class="text-xs font-medium text-slate-500 flex items-center gap-1.5">
-                            {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin' }) }} Sécurisation
-                        </span>
-                    {% elseif status and status.value == 'analyzing' %}
-                        <span class="text-xs font-medium text-indigo-600 flex items-center gap-1.5">
-                            {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin' }) }} Analyse IA
-                        </span>
-                    {% elseif status and status.value == 'failed' %}
-                        <span class="text-xs font-medium text-rose-600">Échec</span>
-                    {% endif %}
-
-                    {{ ux_icon('lucide:chevron-down', { class: 'size-4 text-slate-400 transition-transform ' ~ (isOpen ? '-rotate-180' : '') }) }}
+                <div class="flex items-center gap-1 shrink-0 ml-2">
+                    <button type="button" class="p-1 text-slate-400 hover:text-slate-700 rounded transition-colors" data-ai-widget-target="chevron">
+                        {{ ux_icon('lucide:chevron-down', { class: 'size-4 transition-transform duration-300' }) }}
+                    </button>
                 </div>
-            </button>
+            </div>
 
-            {# CONTENU DE L'ACCORDÉON #}
-            {% if isOpen %}
-                {# On supprime le fond gris et on ajoute un simple trait de séparation très clair #}
-                <div class="border-t border-slate-100">
+            {# CORPS PLIABLE #}
+            <div data-ai-widget-target="content" class="flex flex-col w-full overflow-hidden transition-[max-height] duration-500 ease-in-out">
+                <div class="flex-1 overflow-y-auto bg-slate-50/20">
 
                     {% if this.isListening %}
-                        <div class="flex flex-col items-center justify-center py-12 px-6 text-center">
-                            <div class="relative mb-4">
-                                <div class="absolute inset-0 bg-rose-100 rounded-full animate-ping opacity-30"></div>
-                                <div class="relative p-3 bg-white border border-rose-100 rounded-full shadow-sm">
+                        <div class="flex flex-col items-center justify-center p-10 text-center">
+                            <div class="relative mb-3 mt-2">
+                                {# 🚀 AJOUT TARGET : pulse + ajout transition-colors #}
+                                <div data-ai-widget-target="pulse" class="absolute inset-0 bg-rose-100 rounded-full animate-ping opacity-50 transition-colors duration-300"></div>
+                                <div class="relative bg-white border border-rose-100 p-3 rounded-full shadow-sm">
                                     {{ ux_icon('lucide:activity', { class: 'size-6 text-rose-500' }) }}
                                 </div>
                             </div>
-                            <span class="text-sm font-semibold text-slate-900">L'IA vous écoute en toute sécurité...</span>
-                            <p class="text-xs text-slate-500 mt-2 max-w-sm">
-                                L'audio est segmenté et crypté en temps réel. Cliquez sur <strong>Stop</strong> à la fin du rendez-vous.
-                            </p>
+
+                            {# 🚀 AJOUT TARGET : statusText #}
+                            <span data-ai-widget-target="statusText" class="text-sm font-semibold text-slate-900 transition-colors">L'IA vous écoute...</span>
+
+                            <p class="text-xs text-slate-500 mt-1 mb-2">L'audio est crypté en temps réel.</p>
+                            <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Cliquez sur Stop pour analyser</span>
                         </div>
-                    {% elseif status and (status.value == 'finalizing' or status.value == 'analyzing') %}
-                        <div class="flex flex-col items-center justify-center py-12 px-6 text-center">
-                            {{ ux_icon('lucide:sparkles', { class: 'size-6 text-indigo-400 animate-pulse mb-3' }) }}
-                            <span class="text-sm font-semibold text-slate-900">L'IA rédige la synthèse...</span>
-                            <span class="text-xs text-slate-500 mt-1">Génération du profil de risque et des recommandations.</span>
+
+                    {% elseif status and status.value == 'finalizing' %}
+                        <div class="flex flex-col items-center justify-center p-10 text-center">
+                            {{ ux_icon('lucide:loader-2', { class: 'size-6 text-slate-400 animate-spin mb-3 mt-2' }) }}
+                            <span class="text-sm font-semibold text-slate-700">Sécurisation du fichier...</span>
                         </div>
+
+                    {% elseif status and status.value == 'analyzing' %}
+                        <div class="flex flex-col items-center justify-center p-10 text-center">
+                            {{ ux_icon('lucide:sparkles', { class: 'size-6 text-indigo-500 animate-pulse mb-3 mt-2' }) }}
+                            <span class="text-sm font-semibold text-indigo-900">Analyse du discours...</span>
+                        </div>
+
                     {% elseif folder.postMeetingReport is not empty %}
-                        <div class="animate-in slide-in-from-top-2 fade-in duration-300">
-                            {# L'inclusion du rapport avec tout le contenu #}
-                            {{ include('@app/compliance/_ai_report_display.html.twig', { 'dto': folder }) }}
+                        <div class="animate-in fade-in duration-500">
+                            {{ include('@app/compliance/_ai_report_display.html.twig', { 'dto': folder, 'hide_actions': true }) }}
                         </div>
                     {% endif %}
                 </div>
-            {% endif %}
+
+                {# FOOTER FIXE #}
+                {% if folder.postMeetingReport is not empty %}
+                    <div class="shrink-0 p-3.5 border-t border-slate-100 bg-white flex flex-wrap items-center justify-end gap-2 rounded-b-xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
+                        <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10">
+                            {{ ux_icon('lucide:pencil', { class: 'size-3.5 text-slate-500' }) }}
+                            <span>Ajuster</span>
+                        </button>
+                        <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2">
+                            {{ ux_icon('lucide:mail', { class: 'size-3.5 text-slate-300' }) }}
+                            <span>Traiter</span>
+                        </button>
+                    </div>
+                {% endif %}
+            </div>
         </div>
     {% endif %}
 </div>

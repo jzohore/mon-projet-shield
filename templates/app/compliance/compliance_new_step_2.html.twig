@@ -16,7 +16,6 @@
                 </h1>
                 <p class="text-xs text-slate-500">
                     {{ type == 'individual' ? 'Personne physique' : 'Personne morale' }}
-                    • <span class="text-indigo-600 font-medium">Envoi par lien sécurisé</span>
                 </p>
             </div>
         </div>
@@ -35,7 +34,7 @@
         {{ isQuotaExhausted ? '00:00' : (dto.workspaceRemainingMinutes ~ ':00') }}
     </span>
                 </div>
-
+                {% if dto.isAcceptedRecording %}
                 <div class="relative group">
                     {% if isQuotaExhausted %}
                         <button type="button" disabled class="p-2 text-slate-400 bg-slate-100 rounded-xl cursor-not-allowed">
@@ -63,114 +62,163 @@
                     {% endif %}
                 </div>
             </div>
+                {% else %}
+                    <button type="button" disabled class="p-2 text-slate-400 bg-slate-100 rounded-xl cursor-not-allowed">
+                        {{ ux_icon('tabler:microphone-off', { class: 'size-5' }) }}
+                    </button>
+                {% endif %}
+
             {% if is_granted('DELETE', folder) %}
-                <div data-controller="inline-confirm"
-                     data-action="click@window->inline-confirm#clickOutside"
-                     class="inline-block">
-                    <twig:Button
-                        class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
-                        title="Supprimer le brouillon"
-                        data-action="inline-confirm#toggle"
-                        title="Révoquer"
-                    >
-                        {{ ux_icon('lucide:trash-2', { class: 'size-5' }) }}
-                    </twig:Button>
+                <div class="relative group inline-block">
+                    <button type="button"
+                            aria-haspopup="menu"
+                            class="flex items-center justify-center size-8 sm:size-7 rounded-md text-white shadow-sm hover:bg-violet-300 transition-all active:scale-95 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:ring-offset-1">
+                        {{ ux_icon('lsicon:setting-outline', { class: 'size-4 text-indigo-600' }) }}
+                    </button>
 
-                    <div data-inline-confirm-target="popover"
-                         class="hidden z-[100] w-64 bg-white border border-slate-200 rounded-md shadow-xl p-3 animate-in fade-in zoom-in-95 duration-200">
+                    {# MENU DÉROULANT (+) : Architecture ultra-dense #}
+                    <div role="menu"
+                         class="absolute right-0 mt-1.5 w-56 bg-white rounded-lg shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-200/80 opacity-0 invisible translate-y-1 group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 focus-within:opacity-100 focus-within:visible focus-within:translate-y-0 transition-all duration-150 z-50">
 
-                        <p class="text-sm text-slate-700 font-medium mb-3 text-center">
-                            Êtes-vous sûr de vouloir supprimer ce dossier ?
-                        </p>
+                        <div class="p-1">
 
-                        <div class="flex gap-2">
-                            <twig:Button variant="secondary"
-                                         data-action="live#action inline-confirm#close"
-                                         size="sm"
-                            >
-                                Annuler
-                            </twig:Button>
-                            <div>
-                                <twig:Button
-                                    type="submit"
-                                    form="delete-form"
-                                    variant="destructive"
-                                >
-                                    <twig:ux:icon name="lucide:user-x" class="w-4 h-4 mr-2" />
-                                    Supprimer
-                                </twig:Button>
-                            </div>
+                            {# ACTION 1 : Le fameux "Zéro Friction" (Déclenche le Modal) #}
+                            <button
+                               type="submit"
+                               role="menuitem"
+                               form="confidential-form"
+                               class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-md transition-colors text-left cursor-pointer outline-none focus:bg-slate-50 w-full">
+                                {% if folder.isConfidential %}
+                                    {{ ux_icon('iconamoon:lock-fill', { class: 'size-3.5 text-indigo-600' }) }}
+                                    Dévérouiller
+                                {% else %}
+                                    {{ ux_icon('iconamoon:lock-off-fill', { class: 'size-3.5' }) }}
+                                    Vérouiller le dossier
+                                {% endif %}
+                            </button>
+
+                            <div class="h-px bg-slate-100 my-1 mx-2"></div>
+
+
+                            <button
+                                type="submit"
+                               role="menuitem"
+                                form="delete-form"
+                               class="flex items-center gap-2 px-2 py-1.5 text-[13px] font-medium text-red-600 hover:bg-red-50 hover:text-red-700 rounded-md transition-colors cursor-pointer w-full">
+                                {{ ux_icon('lucide:trash-2', { class: 'size-3.5' }) }}
+                                Supprimer
+                            </button>
 
                         </div>
                     </div>
                 </div>
+{#                <div data-controller="inline-confirm"#}
+{#                     data-action="click@window->inline-confirm#clickOutside"#}
+{#                     class="inline-block">#}
+{#                    <twig:Button#}
+{#                        class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-red-500"#}
+{#                        title="Supprimer le brouillon"#}
+{#                        data-action="inline-confirm#toggle"#}
+{#                        title="Révoquer"#}
+{#                    >#}
+{#                        {{ ux_icon('lucide:trash-2', { class: 'size-5' }) }}#}
+{#                    </twig:Button>#}
+
+{#                    <div data-inline-confirm-target="popover"#}
+{#                         class="hidden z-[100] w-64 bg-white border border-slate-200 rounded-md shadow-xl p-3 animate-in fade-in zoom-in-95 duration-200">#}
+
+{#                        <p class="text-sm text-slate-700 font-medium mb-3 text-center">#}
+{#                            Êtes-vous sûr de vouloir supprimer ce dossier ?#}
+{#                        </p>#}
+
+{#                        <div class="flex gap-2">#}
+{#                            <twig:Button variant="secondary"#}
+{#                                         data-action="live#action inline-confirm#close"#}
+{#                                         size="sm"#}
+{#                            >#}
+{#                                Annuler#}
+{#                            </twig:Button>#}
+{#                            <div>#}
+{#                                <twig:Button#}
+{#                                    type="submit"#}
+{#                                    form="delete-form"#}
+{#                                    variant="destructive"#}
+{#                                >#}
+{#                                    <twig:ux:icon name="lucide:user-x" class="w-4 h-4 mr-2" />#}
+{#                                    Supprimer#}
+{#                                </twig:Button>#}
+{#                            </div>#}
+
+{#                        </div>#}
+{#                    </div>#}
+{#                </div>#}
             {% endif %}
 
             {% if is_granted('MAKE_CONFIDENTIAL', folder) %}
-                <div data-controller="inline-confirm"
-                     data-action="click@window->inline-confirm#clickOutside"
-                     class="inline-block">
-                    <twig:Button
-                        class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        title="Rendre ce dossier confidentiel"
-                        data-action="inline-confirm#toggle"
-                        title="Confidentiel"
-                    >
-                        {% if folder.isConfidential %}
-                            {{ ux_icon('iconamoon:lock-fill', { class: 'size-5 text-indigo-600' }) }}
-                        {% else %}
-                            {{ ux_icon('iconamoon:lock-off-fill', { class: 'size-5' }) }}
-                        {% endif %}
-                    </twig:Button>
+{#                <div data-controller="inline-confirm"#}
+{#                     data-action="click@window->inline-confirm#clickOutside"#}
+{#                     class="inline-block">#}
+{#                    <twig:Button#}
+{#                        class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"#}
+{#                        title="Rendre ce dossier confidentiel"#}
+{#                        data-action="inline-confirm#toggle"#}
+{#                        title="Confidentiel"#}
+{#                    >#}
+{#                        {% if folder.isConfidential %}#}
+{#                            {{ ux_icon('iconamoon:lock-fill', { class: 'size-5 text-indigo-600' }) }}#}
+{#                        {% else %}#}
+{#                            {{ ux_icon('iconamoon:lock-off-fill', { class: 'size-5' }) }}#}
+{#                        {% endif %}#}
+{#                    </twig:Button>#}
 
-                    <div data-inline-confirm-target="popover"
-                         class="hidden z-[100] w-64 bg-white border border-slate-200 rounded-md shadow-xl p-3 animate-in fade-in zoom-in-95 duration-200">
-                        {% if folder.isConfidential %}
-                            <p class="text-sm text-slate-700 font-medium mb-3 text-center">
-                                Voulez-vous rendre ce dossier accessible ?
-                            </p>
+{#                    <div data-inline-confirm-target="popover"#}
+{#                         class="hidden z-[100] w-64 bg-white border border-slate-200 rounded-md shadow-xl p-3 animate-in fade-in zoom-in-95 duration-200">#}
+{#                        {% if folder.isConfidential %}#}
+{#                            <p class="text-sm text-slate-700 font-medium mb-3 text-center">#}
+{#                                Voulez-vous rendre ce dossier accessible ?#}
+{#                            </p>#}
 
-                            <div class="flex flex-col gap-2">
-                                <twig:Button variant="secondary"
-                                             data-action="live#action inline-confirm#close"
-                                             size="sm"
-                                >
-                                    Non
-                                </twig:Button>
-                                <twig:Button
-                                    type="submit"
-                                    form="make-accessible-form"
-                                    variant="primary"
-                                >
-                                    Oui
-                                </twig:Button>
+{#                            <div class="flex flex-col gap-2">#}
+{#                                <twig:Button variant="secondary"#}
+{#                                             data-action="live#action inline-confirm#close"#}
+{#                                             size="sm"#}
+{#                                >#}
+{#                                    Non#}
+{#                                </twig:Button>#}
+{#                                <twig:Button#}
+{#                                    type="submit"#}
+{#                                    form="make-accessible-form"#}
+{#                                    variant="primary"#}
+{#                                >#}
+{#                                    Oui#}
+{#                                </twig:Button>#}
 
-                            </div>
-                        {% else %}
-                            <p class="text-sm text-slate-700 font-medium mb-3 text-center">
-                                Voulez-vous rendre ce dossier confidentiel ?
-                            </p>
+{#                            </div>#}
+{#                        {% else %}#}
+{#                            <p class="text-sm text-slate-700 font-medium mb-3 text-center">#}
+{#                                Voulez-vous rendre ce dossier confidentiel ?#}
+{#                            </p>#}
 
-                            <div class="flex flex-col gap-2">
-                                <twig:Button variant="secondary"
-                                             data-action="live#action inline-confirm#close"
-                                             size="sm"
-                                >
-                                    Non
-                                </twig:Button>
-                                <twig:Button
-                                    type="submit"
-                                    form="confidential-form"
-                                    variant="primary"
-                                >
-                                    Oui
-                                </twig:Button>
+{#                            <div class="flex flex-col gap-2">#}
+{#                                <twig:Button variant="secondary"#}
+{#                                             data-action="live#action inline-confirm#close"#}
+{#                                             size="sm"#}
+{#                                >#}
+{#                                    Non#}
+{#                                </twig:Button>#}
+{#                                <twig:Button#}
+{#                                    type="submit"#}
+{#                                    form="confidential-form"#}
+{#                                    variant="primary"#}
+{#                                >#}
+{#                                    Oui#}
+{#                                </twig:Button>#}
 
-                            </div>
-                        {% endif %}
+{#                            </div>#}
+{#                        {% endif %}#}
 
-                    </div>
-                </div>
+{#                    </div>#}
+{#                </div>#}
             {% endif %}
 
 
@@ -201,6 +249,7 @@
         <input type="hidden" name="_token" value="{{ csrf_token('make-confidential-compliance') }}">
     </form>
 
+
     <div class="py-6 sm:py-10">
         <div class="bg-slate-50/50 pb-24 rounded-3xl relative">
             <div class="mx-auto px-2 sm:px-6 max-w-3xl">
@@ -213,8 +262,6 @@
                             {{ type == 'individual' ? 'Personne physique' : 'Personne morale' }}
                         </h2>
                     </div>
-
-                    {# 🪄 LA BANNIÈRE DE CONFIDENTIALITÉ #}
                     {% if folder.isConfidential %}
                         <div class="bg-indigo-50/80 border border-indigo-200 rounded-xl p-5 flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between shadow-sm animate-fade-in">
 
@@ -253,6 +300,10 @@
                     <twig:AiReportDisplayComponent folder="{{ folder }}"></twig:AiReportDisplayComponent>
                     {# LES COMPOSANTS MÉTIER #}
                     <twig:ManualIndividualStepOneComponent complianceFolder="{{ folder }}" method="{{ method }}" type="{{ type }}"></twig:ManualIndividualStepOneComponent>
+                    {% if not dto.postMeetingReport %}
+                        <twig:AcceptRecordingTwigComponent complianceFolder="{{ folder }}" method="{{ method }}" type="{{ type }}"></twig:AcceptRecordingTwigComponent>
+
+                    {% endif %}
 
                     <twig:GenerateDERComponent complianceFolder="{{ folder }}"></twig:GenerateDERComponent>
 {#                    <twig:ManualIndividualStepTwoComponent folder="{{ folder }}"></twig:ManualIndividualStepTwoComponent>#}

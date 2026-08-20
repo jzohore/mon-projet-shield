@@ -16,7 +16,7 @@ interface DocumentStorageInterface
      *
      * @return string Le chemin relatif ou l'URL du fichier enregistré
      */
-    public function store(UploadedFile $file, string $directory): string;
+    public function store(UploadedFile $file, string $directory, ?string $filename = null): string;
 
     /**
      * Supprime physiquement un fichier du stockage.

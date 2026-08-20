@@ -247,5 +247,16 @@
             {% endif %}
 
         </section>
+    {% else %}
+
+        <div class="bg-slate-50 border border-slate-200 border-l-4 border-l-slate-400 rounded-xl p-4 flex items-center gap-3 shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-all">
+            <div class="text-slate-400 shrink-0">
+                {{ ux_icon('lucide:info', { class: 'size-5' }) }}
+            </div>
+            <p class="text-sm text-slate-600 font-medium">
+                Validez les informations du client pour débloquer la génération du DER.
+            </p>
+        </div>
+
     {% endif %}
 </div>

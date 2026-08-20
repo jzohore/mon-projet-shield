@@ -44,7 +44,7 @@ final readonly class AppendAudioChunkUseCase
         $this->storage->store(
             $chunk,
             self::chunksDirectory($folder->slugId),
-            // sprintf('%06d.chunk', $chunkIndex)
+            sprintf('%06d.chunk', $chunkIndex)
         );
     }
 

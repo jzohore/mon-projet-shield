@@ -20,7 +20,7 @@ readonly class LocalDocumentStorage implements DocumentStorageInterface
     ) {
     }
 
-    public function store(UploadedFile $file, string $directory): string
+    public function store(UploadedFile $file, string $directory, ?string $filename = null): string
     {
         // 1. Nettoyage du nom de fichier original (sécurité)
         $originalFilename = pathinfo($file->getClientOriginalName(), \PATHINFO_FILENAME);

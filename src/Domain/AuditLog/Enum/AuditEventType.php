@@ -62,6 +62,8 @@ enum AuditEventType: string
     case DER_SIGNED = 'der.signed';
     case SIGNATURE_UPDATED = 'der.signature_updated';
 
+    case ACCEPTED_RECORDING = 'ac.recording';
+
     // --- ANALYSES & SCREENING (SANCTIONS / PPE) ---
     case SCREENING_PERFORMED = 'screening.performed';
     case ADVISORY_REPORT_GENERATED = 'advisory.generated';
@@ -128,6 +130,7 @@ enum AuditEventType: string
             self::DER_OPENED => 'Consultation du DER par le client',
             self::DER_SIGNED => 'Signature électronique du DER',
             self::SIGNATURE_UPDATED => 'Mise à jour des paramètres de signature',
+            self::ACCEPTED_RECORDING => 'Accord pour enregistrer l\'entretien',
 
             // Screening
             self::SCREENING_PERFORMED => 'Vérification Listes de Sanctions / PPE',
@@ -189,6 +192,7 @@ enum AuditEventType: string
             self::DER_GENERATED,
             self::DER_OPENED,
             self::DER_SIGNED,
+            self::ACCEPTED_RECORDING,
             self::SIGNATURE_UPDATED => 'DER & Signature',
 
             self::SUBSCRIPTION_ACTIVATED,

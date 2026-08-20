@@ -17,12 +17,14 @@ readonly class ComplianceFolderShowResponse
         public string $id,
         public string $slugId,
         public string $workspaceName,
+        public string $workspaceEmail,
         public string $reference,
         public string $statusValue,
         public string $statusLabel,
         public bool $isManual,
         public bool $isKyb,
         public bool $isDraft,
+        public bool $isAcceptedRecording,
         public string $method,
 
         // 💡 Les données calculées et prêtes à l'emploi pour Twig
