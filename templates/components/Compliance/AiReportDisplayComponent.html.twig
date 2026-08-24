@@ -3,6 +3,7 @@
 {# 1. LE PARENT : Fusion parfaite côté serveur via .defaults() #}
 <div {{ attributes.defaults({
     'id': 'meeting-ai-report',
+    'data-live-ignore': 'true',
     'class': 'fixed bottom-6 right-6 lg:right-10 z-50 pointer-events-none'
 }) }}
     {% if this.isProcessing %}data-poll="delay(3000)|checkStatus"{% endif %}>
@@ -84,7 +85,7 @@
 
                     {% elseif folder.postMeetingReport is not empty %}
                         <div class="animate-in fade-in duration-500">
-                            {{ include('@app/compliance/_ai_report_display.html.twig', { 'dto': folder, 'hide_actions': true }) }}
+                            {{ include('@app/compliance/_ai_report_display.html.twig', { 'dto': this.meetingReport, 'hide_actions': true }) }}
                         </div>
                     {% endif %}
                 </div>

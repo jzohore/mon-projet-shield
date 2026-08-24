@@ -7,6 +7,7 @@ namespace App\Application\Workspace\UseCase;
 use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
 use App\Domain\Port\DocumentStorageInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Webmozart\Assert\Assert;
 
 final readonly class AppendAudioChunkUseCase
 {
@@ -20,7 +21,7 @@ final readonly class AppendAudioChunkUseCase
      * @throws \DomainException          si le quota (kill-switch ou minutes) est épuisé
      * @throws \InvalidArgumentException si le dossier n'existe pas
      */
-    public function execute(string $folderSlugId, UploadedFile $chunk, int $chunkIndex, ?string $mimeType = null): void
+    public function execute(string $folderSlugId, string $sessionId, UploadedFile $chunk, int $chunkIndex, ?string $mimeType = null): void
     {
         $folder = $this->folderRepository->findOneBySlugId($folderSlugId);
         if (!$folder) {
@@ -43,17 +44,17 @@ final readonly class AppendAudioChunkUseCase
         // FrankenPHP ou entre le process HTTP et un consumer Messenger séparé.
         $this->storage->store(
             $chunk,
-            self::chunksDirectory($folder->slugId),
+            self::chunksDirectory($folder->slugId, $sessionId),
             sprintf('%06d.chunk', $chunkIndex)
         );
     }
 
-    public static function chunksDirectory(string $folderSlugId): string
+    public static function chunksDirectory(string $folderSlugId, string $sessionId): string
     {
-        if (!preg_match('/^[A-Za-z0-9_-]+$/', $folderSlugId)) {
-            throw new \InvalidArgumentException('Identifiant de dossier invalide.');
-        }
+        Assert::regex($folderSlugId, '/^[A-Za-z0-9_-]+$/', 'Identifiant de dossier invalide.');
+        Assert::uuid($sessionId, 'Format de session_id invalide.');
 
-        return sprintf('tmp/meetings/%s/chunks', $folderSlugId);
+        // 🚀 Le chemin devient impénétrable aux Race Conditions
+        return sprintf('tmp/meetings/%s/%s/chunks', $folderSlugId, $sessionId);
     }
 }

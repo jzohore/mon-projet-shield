@@ -1,63 +1,84 @@
 {# templates/compliance/_ai_report_display.html.twig #}
-{% set report = dto.postMeetingReport %}
 
 <div class="px-6 py-6 sm:px-6 sm:py-6 bg-white">
 
-    <div>
-        <div class="flex items-center gap-2.5">
-            <h3 class="text-base font-semibold tracking-tight text-slate-900">Compte-rendu d'adéquation</h3>
-        </div>
-        <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
-            Généré le {{ report.analyzedAt|date('d/m/Y à H:i') }}
-        </p>
-    </div>
 
 
-    <div class="flex flex-wrap items-center gap-y-2 py-4 my-4 border-b border-slate-100 text-xs">
+    <div class="flex flex-wrap items-center gap-y-2  border-b border-slate-100 text-xs">
 
-        {# Profil de risque #}
-        <div class="flex items-center pr-6 py-1">
-            <span class="text-slate-500 mr-2">Profil de risque :</span>
-            <span class="font-semibold text-indigo-600 flex items-center gap-1">
-                {{ ux_icon('lucide:shield-alert', { class: 'size-3.5' }) }}
-                {{ report.riskProfile|default('Non déterminé') }}
+        <div>
+            <div class="flex items-center gap-2.5">
+                <h3 class="text-base font-semibold tracking-tight text-slate-900">Compte-rendu d'adéquation</h3>
+            </div>
+            <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
+                Profil de risque : <span class="font-semibold text-indigo-600 flex items-center gap-1">
+                    {{ dto.riskProfileDetected|default('Non déterminé') }}
             </span>
+            </p>
         </div>
+
 
     </div>
     {# 3. CONTENU RÉDACTIONNEL (SYNTHÈSE & PLAN D'ACTION) #}
-    <div class="space-y-6">
+    <div class="space-y-6 mt-8">
 
         <div class="space-y-2">
             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Synthèse de l'échange</h4>
             <div class="text-sm text-slate-700 leading-relaxed bg-white p-4 rounded-lg border border-slate-100 shadow-2xs">
-                {{ report.summary|nl2br }}
+                {{ dto.executiveSummary|nl2br }}
             </div>
         </div>
 
-        {% if report.kycUpdates is not empty %}
-            <div class="space-y-2">
+        {% if dto.kycUpdates is not empty %}
+            <div class="space-y-3">
                 <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Mises à jour KYC requises</h4>
-                <ul class="space-y-1.5 bg-white p-4 rounded-lg border border-slate-100 shadow-2xs">
-                    {% for update in report.kycUpdates %}
-                        <li class="flex items-start gap-2 text-xs text-slate-700">
-                            {{ ux_icon('lucide:dot', { class: 'size-4 text-indigo-600 shrink-0 mt-0.5' }) }}
-                            <span>{{ update }}</span>
-                        </li>
+
+                <div class="bg-white p-4 rounded-lg border border-slate-100 shadow-2xs space-y-4">
+                    {# 🚀 Première boucle : On itère sur les sessions #}
+                    {% for sessionGroup in dto.kycUpdates %}
+                        <div class="space-y-2">
+                            {# Affichage de la date comme un en-tête de sous-section élégant #}
+                            <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-50 pb-1">
+                                Session du {{ sessionGroup.date }}
+                            </div>
+
+                            {# 🚀 Seconde boucle : On liste les éléments avec la puce bleue #}
+                            <ul class="space-y-1.5 pl-1">
+                                {% for item in sessionGroup.items %}
+                                    <li class="flex items-start gap-2 text-xs text-slate-700">
+                                        {{ ux_icon('lucide:dot', { class: 'size-4 text-indigo-600 shrink-0 mt-0.5' }) }}
+                                        <span>{{ item }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                     {% endfor %}
-                </ul>
+                </div>
             </div>
         {% endif %}
 
-        {% if report.actionPlan is not empty %}
-            <div class="space-y-2">
-                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Plan d'action</h4>
+        {% if dto.actionPlan is not empty %}
+            <div class="space-y-3">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Mises à jour KYC requises</h4>
 
-                <div class="bg-indigo-50/30 p-4 rounded-xl border border-indigo-100/50 space-y-2.5">
-                    {% for action in report.actionPlan %}
-                        <div class="flex items-start gap-2.5 text-xs text-slate-700 leading-relaxed">
-                            {{ ux_icon('lucide:check-square', { class: 'size-4 text-indigo-600 shrink-0 mt-0.5' }) }}
-                            <span>{{ action }}</span>
+                <div class="bg-white p-4 rounded-lg border border-slate-100 shadow-2xs space-y-4">
+                    {# 🚀 Première boucle : On itère sur les sessions #}
+                    {% for sessionGroup in dto.actionPlan %}
+                        <div class="space-y-2">
+                            {# Affichage de la date comme un en-tête de sous-section élégant #}
+                            <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wide border-b border-slate-50 pb-1">
+                                Session du {{ sessionGroup.date }}
+                            </div>
+
+                            {# 🚀 Seconde boucle : On liste les éléments avec la puce bleue #}
+                            <ul class="space-y-1.5 pl-1">
+                                {% for item in sessionGroup.items %}
+                                    <li class="flex items-start gap-2 text-xs text-slate-700">
+                                        {{ ux_icon('lucide:dot', { class: 'size-4 text-indigo-600 shrink-0 mt-0.5' }) }}
+                                        <span>{{ item }}</span>
+                                    </li>
+                                {% endfor %}
+                            </ul>
                         </div>
                     {% endfor %}
                 </div>

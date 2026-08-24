@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Compliance\Twig\Components;
 
+use App\Application\Compliance\DTO\Response\HolisticMeetingReportDto;
+use App\Application\Compliance\UseCase\ComplianceFolder\BuildHolisticMeetingReportUseCase;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Enum\MeetingProcessingStatus;
 use Doctrine\ORM\EntityManagerInterface;
@@ -32,6 +34,7 @@ final class AiReportDisplayComponent
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
+        private readonly BuildHolisticMeetingReportUseCase $buildHolisticMeetingReportUseCase,
     ) {
     }
 
@@ -75,5 +78,10 @@ final class AiReportDisplayComponent
     public function checkStatus(): void
     {
         $this->entityManager->refresh($this->folder);
+    }
+
+    public function getMeetingReport(): HolisticMeetingReportDto
+    {
+        return ($this->buildHolisticMeetingReportUseCase)($this->folder);
     }
 }

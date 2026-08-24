@@ -48,6 +48,10 @@ abstract class ComplianceFolder
     #[ORM\OneToMany(targetEntity: ComplianceDocument::class, mappedBy: 'folder', cascade: ['persist', 'remove'])]
     public private(set) Collection $documents;
 
+    /** @var Collection<int, MeetingRecording> */
+    #[ORM\OneToMany(targetEntity: MeetingRecording::class, mappedBy: 'complianceFolder', cascade: ['persist', 'remove'])]
+    public private(set) Collection $meetingRecordings;
+
     /**
      * @var array<int|string, mixed>
      */
@@ -135,6 +139,7 @@ abstract class ComplianceFolder
         );
         $this->slugId = $this->generate_ulid_prefixed('comp_fol_');
         $this->restrictedUsers = new ArrayCollection();
+        $this->meetingRecordings = new ArrayCollection();
     }
 
     public function addMetadata(string $key, mixed $value): void
@@ -430,6 +435,13 @@ abstract class ComplianceFolder
     public function markAsRecording(): void
     {
         $this->isAcceptRecording = true;
+    }
+
+    public function addMeetingRecording(MeetingRecording $recording): void
+    {
+        if (!$this->meetingRecordings->contains($recording)) {
+            $this->meetingRecordings->add($recording);
+        }
     }
 
     abstract public function isDraftEmpty(): bool;

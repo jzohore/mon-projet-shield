@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace App\Domain\Compliance\Service;
 
-use App\Application\Compliance\DTO\Request\HolisticMeetingReportDto;
+use App\Application\Compliance\UseCase\ComplianceFolder\SaveGeminiAnalysisUseCase;
 use App\Domain\Compliance\Entity\BusinessFolder;
-use App\Domain\Compliance\Entity\ComplianceFolder;
+use App\Domain\Compliance\Entity\MeetingRecording;
+use App\Domain\Compliance\Event\MeetingAnalysisCompletedEvent;
+use App\Domain\Compliance\Exception\CannotAttachGeminiOutputException;
+use App\Domain\Port\DocumentStorageInterface;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Webmozart\Assert\Assert;
 
@@ -15,17 +20,20 @@ final readonly class GeminiMeetingAnalyzer implements MeetingAnalyzerInterface
     public function __construct(
         private HttpClientInterface $httpClient,
         private string $geminiApiKey,
+        private SaveGeminiAnalysisUseCase $saveGeminiAnalysisUseCase,
+        private LoggerInterface $logger,
+        private EventDispatcherInterface $eventDispatcher,
+        private DocumentStorageInterface $storage,
     ) {
     }
 
-    public function analyzeCompleteMeeting(ComplianceFolder $folder, string $audioFilePath): HolisticMeetingReportDto
+    public function analyzeCompleteMeeting(MeetingRecording $recording): void
     {
+        $folder = $recording->complianceFolder;
+        $audioFilePath = $this->storage->getTemporaryUrl($recording->s3Path);
+
         Assert::stringNotEmpty($audioFilePath, 'Aucune URL de fichier audio fournie pour l\'analyse.');
 
-        // 🛡️ Téléchargement via le client HTTP injecté plutôt que
-        // file_get_contents() : indépendant du réglage allow_url_fopen
-        // (souvent désactivé en prod pour des raisons de sécurité), et plus
-        // facilement testable/mockable.
         try {
             $response = $this->httpClient->request('GET', $audioFilePath, ['timeout' => 60]);
             $rawContent = $response->getContent();
@@ -35,42 +43,38 @@ final readonly class GeminiMeetingAnalyzer implements MeetingAnalyzerInterface
 
         Assert::stringNotEmpty($rawContent, 'Le fichier audio téléchargé est vide.');
 
-        // 3. Encodage Base64 certifié à 100% string
         $audioContent = base64_encode($rawContent);
+
+        // 🚀 FIX 3 : Déduction dynamique du MimeType depuis l'extension finale S3
+        $extension = pathinfo($recording->s3Path, \PATHINFO_EXTENSION);
+        $dynamicMimeType = match ($extension) {
+            'mp4', 'm4a' => 'audio/mp4',
+            'wav' => 'audio/wav',
+            'ogg' => 'audio/ogg',
+            default => 'audio/webm',
+        };
+
         $isKyb = $folder instanceof BusinessFolder;
         $systemInstruction = $isKyb
             ? "Tu analyses un entretien d'une PERSONNE MORALE (Holding/Entreprise). Extrais la structure, les UBO, l'origine des fonds."
             : "Tu analyses un entretien d'une PERSONNE PHYSIQUE. Extrais la situation familiale, patrimoniale et les objectifs.";
 
-        // State Reducer Pattern
-        $existingReport = $folder->postMeetingReport;
-        $previousContext = null !== $existingReport
-            ? 'HISTORIQUE PRÉCÉDENT À CONSERVER ET ENRICHIR : ' . json_encode($existingReport, \JSON_UNESCAPED_UNICODE)
-            : 'Ceci est la première analyse de cet entretien.';
-
-        // 🛡️ Le prompt Grounding (Garde-fou AMF) est maintenu
         $prompt = <<<TEXT
             Tu es un expert en conformité réglementaire AMF.
             {$systemInstruction}
 
-            RÈGLES ABSOLUES ET IMPÉRATIVES :
-            1. Base-toi UNIQUEMENT sur les propos tenus dans l'audio.
-            2. INTERDICTION STRICTE d'inventer des données. Ne suppose rien. Pas d'âge, pas de montant, pas de situation familiale si ce n'est pas prononcé.
-            3. Si l'audio est un test, hors sujet ou vide de données financières, écris "Test ou hors sujet" et laisse les autres champs ouverts/vides.
-            4. Si une info manque, indique "Non mentionné".
-
-            {$previousContext}
-
-            INSTRUCTIONS DE MISE À JOUR :
-            1. FUSIONNE les nouvelles informations avec l'historique précédent.
-            2. NE SUPPRIME AUCUN fait de l'historique sauf si le client le contredit dans le nouvel audio.
+            RÈGLES ABSOLUES ET IMPÉRATIVES (EXTRACTION PURE) :
+            1. Base-toi UNIQUEMENT sur les propos tenus dans cet audio précis.
+            2. INTERDICTION STRICTE d'inventer des données ou de déduire des informations non verbalisées. Ne suppose rien.
+            3. Si l'audio est un test, hors sujet ou vide de données financières, écris "Test ou hors sujet" et laisse les tableaux vides.
+            4. Tu ne dois PAS chercher à fusionner avec un historique. Ton rôle est uniquement d'extraire les faits nouveaux de cette session.
 
             Format STRICTEMENT JSON pur :
             {
-              "executiveSummary": "Synthèse factuelle stricte. Indique si c'est un test.",
+              "executiveSummary": "Synthèse factuelle stricte de CE fragment audio uniquement.",
               "riskProfileDetected": "Prudent/Equilibré/Dynamique ou 'Non déterminé'",
-              "kycUpdates": ["Liste uniquement les faits EXPLICITEMENT prononcés"],
-              "actionPlan": ["Action à mener", "Laisse vide si rien à faire"]
+              "kycUpdates": ["Liste uniquement les faits EXPLICITEMENT prononcés dans cet audio"],
+              "actionPlan": ["Action à mener suite à cet audio", "Laisse vide si rien à faire"]
             }
             TEXT;
 
@@ -81,7 +85,8 @@ final readonly class GeminiMeetingAnalyzer implements MeetingAnalyzerInterface
                 'contents' => [[
                     'parts' => [
                         ['text' => $prompt],
-                        ['inline_data' => ['mime_type' => 'audio/webm', 'data' => $audioContent]],
+                        // 🚀 Utilisation du bon mime-type pour éviter le rejet de Google
+                        ['inline_data' => ['mime_type' => $dynamicMimeType, 'data' => $audioContent]],
                     ],
                 ]],
                 'generationConfig' => [
@@ -95,11 +100,19 @@ final readonly class GeminiMeetingAnalyzer implements MeetingAnalyzerInterface
         $data = $response->toArray();
         $result = json_decode($data['candidates'][0]['content']['parts'][0]['text'] ?? '{}', true);
 
-        return new HolisticMeetingReportDto(
-            executiveSummary: $result['executiveSummary'] ?? 'Analyse impossible.',
-            riskProfileDetected: $result['riskProfileDetected'] ?? 'Non déterminé',
-            kycUpdates: $result['kycUpdates'] ?? [],
-            actionPlan: $result['actionPlan'] ?? [],
-        );
+        try {
+            ($this->saveGeminiAnalysisUseCase)($recording, $result);
+        } catch (CannotAttachGeminiOutputException) {
+            $this->logger->info('Analyse déjà présente, on stoppe le traitement en doublon.', [
+                'recording_slug_id' => $recording->slugId,
+            ]);
+
+            return;
+        }
+        Assert::notNull($recording->id);
+        $this->eventDispatcher->dispatch(new MeetingAnalysisCompletedEvent(
+            recordingId: $recording->id->toRfc4122(),
+            folderSlugId: $folder->slugId
+        ));
     }
 }

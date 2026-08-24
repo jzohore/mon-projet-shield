@@ -27,6 +27,8 @@ enum ErrorCode: string
 
     // Compliance & KYC
     case COMPLIANCE_FOLDER_NOT_FOUND = 'COMPLIANCE_FOLDER_NOT_FOUND';
+
+    case CANNOT_ATTACH_GEMINI_OUTPUT = 'CANNOT_ATTACH_GEMINI_OUTPUT';
     case KYC_ALREADY_VALIDATED = 'KYC_ALREADY_VALIDATED';
     case KYC_FOLDER_NOT_IN_REVIEW = 'KYC_FOLDER_NOT_IN_REVIEW';
     case KYC_MISSING_DOCUMENTS = 'KYC_MISSING_DOCUMENTS';
@@ -75,6 +77,7 @@ enum ErrorCode: string
 
             // Conformité, LCB-FT & KYC
             self::COMPLIANCE_FOLDER_NOT_FOUND => 'Le dossier de conformité demandé est introuvable.',
+            self::CANNOT_ATTACH_GEMINI_OUTPUT => 'Le rapport IA est déjà attaché à cet enregistrement.',
             self::KYC_ALREADY_VALIDATED => 'Ce dossier de conformité est validé et ne peut plus subir de modifications.',
             self::KYC_FOLDER_NOT_IN_REVIEW => 'Ce dossier ne peut pas être approuvé car il n\'est pas actuellement en cours d\'analyse.',
             self::KYC_MISSING_DOCUMENTS => 'Soumission impossible : des pièces justificatives obligatoires sont manquantes.',

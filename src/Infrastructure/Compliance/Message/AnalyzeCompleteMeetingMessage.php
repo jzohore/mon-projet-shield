@@ -6,7 +6,8 @@ namespace App\Infrastructure\Compliance\Message;
 
 readonly class AnalyzeCompleteMeetingMessage
 {
-    public function __construct(public string $folderSlugId, public string $audioFilePath, public int $consumedSeconds)
-    {
+    public function __construct(
+        public string $recordingId, // L'UUID de l'entité MeetingRecording
+    ) {
     }
 }

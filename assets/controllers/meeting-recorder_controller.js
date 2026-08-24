@@ -17,6 +17,7 @@ export default class extends Controller {
     chunkIndex = 0;
     pendingUploads = 0;
     isStopping = false;
+    sessionId = null; // 🚀 AJOUT : Identifiant unique de session pour l'isolation S3
 
     // Analyse Audio (Fiabilité matérielle)
     audioContext = null;
@@ -25,30 +26,53 @@ export default class extends Controller {
     audioProcessingInterval = null;
     silenceTimer = null;
 
+    disconnect() {
+        if (this.uiTimerId) clearInterval(this.uiTimerId);
+        this.stopAudioAnalysis().catch(() => {});
+
+        if (this.recorder) {
+            try { this.recorder.destroy(); } catch (e) {}
+            this.recorder = null;
+        }
+
+        if (this.microphone) {
+            this.microphone.getTracks().forEach(track => track.stop());
+            this.microphone = null;
+        }
+
+        // On nettoie les écouteurs d'événements globaux pour ne pas les empiler
+        window.removeEventListener('kysure:recording:paused', this.handlePause);
+        window.removeEventListener('kysure:recording:resumed', this.handleResume);
+    }
+
     async start() {
+        console.log('start() appelé, recorder=', this.recorder, 'isStopping=', this.isStopping);
+
         if (this.recorder || this.isStopping) return;
         if (this.maxMinutesValue <= 0) return alert("Solde de minutes épuisé.");
 
+        // 🚀 AJOUT : Génération de l'UUID pour isoler cet enregistrement sur S3
+        this.sessionId = this.generateSafeUUID();
         try {
-            // 1. Capture propre du micro (🛡️ FIX : noiseSuppression à false pour éviter les coupures de voix)
+            // 1. Capture propre du micro
             this.microphone = await navigator.mediaDevices.getUserMedia({
                 audio: { echoCancellation: true, noiseSuppression: false }
             });
 
-            // 2. 🛡️ Sécurité Matérielle : Détection de la perte du micro (ex: Airpods déconnectés)
+            // 2. Sécurité Matérielle
             const audioTrack = this.microphone.getAudioTracks()[0];
             audioTrack.addEventListener('ended', () => this.handleHardwareError("Microphone déconnecté."));
             audioTrack.addEventListener('mute', () => this.handleHardwareError("Microphone muté par le système."));
 
-            // 3. Lancement de l'analyse audio (VU-Mètre + Silence)
+            // 3. Lancement de l'analyse audio
             this.startAudioAnalysis();
 
-            // 4. 🛡️ BOOTSTRAPPER FIX : Retrait de StereoAudioRecorder. On laisse RecordRTC utiliser MediaStreamRecorder natif.
+            // 4. RecordRTC natif
             this.recorder = new RecordRTC(this.microphone, {
                 type: 'audio',
-                mimeType: 'audio/webm', // Fallback natif géré par le navigateur (ex: Safari -> mp4)
-                disableLogs: true, // Clean en prod
-                timeSlice: 10000, // Demande un chunk propre toutes les 10 secondes
+                mimeType: 'audio/webm',
+                disableLogs: true,
+                timeSlice: 10000,
                 ondataavailable: (blob) => {
                     if (blob.size > 0 && !this.isStopping) {
                         this.sendChunk(blob);
@@ -62,7 +86,6 @@ export default class extends Controller {
             this.secondsRemaining = this.maxMinutesValue * 60;
             this.updateTimerUI();
 
-            // 🚀 BOOTSTRAPPER FIX : Le clic fantôme est exécuté APRES la garantie de succès de RecordRTC
             const startListeningBtn = document.getElementById('btn-start-listening');
             if (startListeningBtn) startListeningBtn.click();
 
@@ -86,7 +109,6 @@ export default class extends Controller {
         if (this.recorder && this.recorder.getState() === 'recording') {
             this.recorder.pauseRecording();
             this.toggleUI('paused');
-            // 🚀 Émission de l'événement local de pause
             window.dispatchEvent(new CustomEvent('kysure:recording:paused'));
         }
     }
@@ -95,7 +117,6 @@ export default class extends Controller {
         if (this.recorder && this.recorder.getState() === 'paused') {
             this.recorder.resumeRecording();
             this.toggleUI('recording');
-            // 🚀 Émission de l'événement local de reprise
             window.dispatchEvent(new CustomEvent('kysure:recording:resumed'));
         }
     }
@@ -105,7 +126,7 @@ export default class extends Controller {
 
         this.isStopping = true;
         clearInterval(this.uiTimerId);
-        this.stopAudioAnalysis();
+        await this.stopAudioAnalysis();
 
         this.timerTarget.innerHTML = "Enregistrement...";
         this.timerTarget.classList.add("text-indigo-600", "animate-pulse");
@@ -116,18 +137,16 @@ export default class extends Controller {
                 this.microphone = null;
             }
 
-            // On attend la fin des uploads en cours
             await this.waitForPendingUploads();
 
-            // Calcul précis du temps consommé
             const totalAllocatedSeconds = this.maxMinutesValue * 60;
             const consumedSeconds = totalAllocatedSeconds - Math.max(0, this.secondsRemaining);
 
             const formData = new FormData();
             formData.append('consumed_seconds', consumedSeconds.toString());
+            formData.append('session_id', this.sessionId); // 🚀 AJOUT : Transmission de l'UUID au serveur
 
             try {
-                // Envoi POST final
                 const res = await fetch(this.stopUrlValue, {
                     method: 'POST',
                     body: formData,
@@ -143,7 +162,6 @@ export default class extends Controller {
                     throw new Error(data.error || `Erreur serveur (${res.status})`);
                 }
 
-                // 🚀 Déclenchement du LiveComponent pour afficher l'analyse IA
                 const startPollingBtn = document.getElementById('btn-start-polling');
                 if (startPollingBtn) {
                     startPollingBtn.click();
@@ -153,12 +171,11 @@ export default class extends Controller {
                 alert(`Erreur: ${err.message}`);
                 console.error("Stop Error:", err);
             } finally {
-                // 🛡️ FIX : Vérification stricte avant destruction pour éviter une double exception
                 if (this.recorder) {
                     try {
                         this.recorder.destroy();
                     } catch (e) {
-                        console.warn("Erreur silencieuse lors de la destruction du recorder:", e);
+                        console.warn("Erreur silencieuse:", e);
                     }
                     this.recorder = null;
                 }
@@ -175,10 +192,7 @@ export default class extends Controller {
         this.pendingUploads++;
         const formData = new FormData();
 
-        // 🛡️ FIX : Récupération dynamique du mime_type réel (et gestion du fallback Safari)
         const actualMimeType = blob.type || 'audio/webm';
-
-        // 🛡️ FIX : Déduction logique de l'extension de fichier
         let extension = 'webm';
         if (actualMimeType.includes('mp4')) extension = 'mp4';
         else if (actualMimeType.includes('wav') || actualMimeType.includes('wave')) extension = 'wav';
@@ -186,12 +200,13 @@ export default class extends Controller {
 
         formData.append('audio_chunk', blob, `chunk_${this.chunkIndex}.${extension}`);
         formData.append('chunk_index', this.chunkIndex++);
-        formData.append('mime_type', actualMimeType); // 🛡️ FIX : Crucial pour le FFmpeg backend
+        formData.append('mime_type', actualMimeType);
+        formData.append('session_id', this.sessionId); // 🚀 AJOUT : Transmission de l'UUID pour chaque chunk
 
         try {
             const res = await fetch(this.chunkUrlValue, { method: 'POST', body: formData });
             if (res.status === 402 || res.status === 403) {
-                this.stop(); // Stoppe net si Symfony hurle au quota dépassé
+                this.stop();
             }
         } catch (err) {
             console.error('Erreur réseau Chunk:', err);
@@ -211,20 +226,17 @@ export default class extends Controller {
         });
     }
 
-    // --- Sécurité Matérielle & UI ---
-
     handleHardwareError(message) {
         console.error(message);
         alert(`Attention : ${message} L'enregistrement est compromis.`);
         if (this.recorder && this.recorder.getState() === 'recording') {
-            this.pause(); // On met en pause pour laisser le temps au CGP de rebrancher
+            this.pause();
         }
     }
 
     startAudioAnalysis() {
-        // Frugalité : on initialise le contexte uniquement quand nécessaire
         const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return; // Sécurité si le navigateur est très vieux
+        if (!AudioContext) return;
 
         this.audioContext = new AudioContext();
         const source = this.audioContext.createMediaStreamSource(this.microphone);
@@ -242,13 +254,11 @@ export default class extends Controller {
             for (let i = 0; i < this.dataArray.length; i++) sum += this.dataArray[i];
             const average = sum / this.dataArray.length;
 
-            // Détection de silence prolongé (seuil arbitraire très bas)
             if (average < 2) {
                 if (!this.silenceTimer) {
                     this.silenceTimer = setTimeout(() => {
                         console.warn("Silence détecté : Le micro ne capte aucun son.");
-                        // Optionnel : tu pourrais déclencher une Toast Notification ici
-                    }, 10000); // 10 secondes de silence continu
+                    }, 10000);
                 }
             } else {
                 if (this.silenceTimer) {
@@ -259,17 +269,23 @@ export default class extends Controller {
         }, 200);
     }
 
-    stopAudioAnalysis() {
+    async stopAudioAnalysis() {
         if (this.audioProcessingInterval) clearInterval(this.audioProcessingInterval);
         if (this.silenceTimer) clearTimeout(this.silenceTimer);
+
         if (this.audioContext && this.audioContext.state !== 'closed') {
-            this.audioContext.close().catch(console.error);
+            try {
+                // 🛡️ On force le thread JS à attendre le déverrouillage matériel
+                await this.audioContext.close();
+            } catch (e) {
+                console.error("Erreur silencieuse lors de la fermeture de l'AudioContext:", e);
+            }
         }
+
         this.audioContext = null;
         this.analyser = null;
     }
 
-    // --- Gestion de l'UI ---
     toggleUI(state) {
         if (this.hasStartBtnTarget) this.startBtnTarget.classList.toggle('hidden', state !== 'idle');
         if (this.hasPauseBtnTarget) this.pauseBtnTarget.classList.toggle('hidden', state !== 'recording');
@@ -288,5 +304,19 @@ export default class extends Controller {
 
         this.timerTarget.innerHTML = `${m}:${s}`;
         this.timerTarget.classList.toggle('text-rose-600', displaySeconds > 0 && displaySeconds <= 300);
+    }
+
+    // 🛡️ NOUVEAU : Générateur d'UUID résistant aux environnements locaux non sécurisés
+    generateSafeUUID() {
+        if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+            return crypto.randomUUID();
+        }
+
+        // Fallback mathématique si le navigateur bloque l'API crypto (ex: localhost sans SSL valide)
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c === 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
     }
 }

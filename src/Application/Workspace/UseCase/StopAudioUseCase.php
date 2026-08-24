@@ -17,7 +17,7 @@ final readonly class StopAudioUseCase
     ) {
     }
 
-    public function __invoke(string $slugId, int $consumedSeconds): void
+    public function __invoke(string $slugId, string $sessionId, int $consumedSeconds): void
     {
         $folder = $this->complianceFolderRepository->findOneBySlugId($slugId);
 
@@ -27,8 +27,11 @@ final readonly class StopAudioUseCase
 
         $folder->workspace->assertMeetingRecordingIsAllowed();
 
+        // 🚀 On transmet le sessionId au Worker qui ira assembler les chunks
+        // de ce dossier S3 spécifique.
         $this->messageBus->dispatch(new FinalizeMeetingAudioMessage(
             folderSlugId: $slugId,
+            sessionId: $sessionId,
             consumedSeconds: $consumedSeconds
         ));
     }

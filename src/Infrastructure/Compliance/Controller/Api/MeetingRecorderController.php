@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Webmozart\Assert\Assert;
 
 final class MeetingRecorderController extends AbstractController
 {
@@ -26,13 +27,16 @@ final class MeetingRecorderController extends AbstractController
         $audioFile = $request->files->get('audio_chunk');
         $chunkIndex = (int) $request->request->get('chunk_index', 0);
         $mimeType = (string) $request->request->get('mime_type');
+        $sessionId = (string) $request->request->get('session_id');
 
         if (!$audioFile) {
             return $this->json(['error' => 'Aucun flux audio reçu.'], Response::HTTP_BAD_REQUEST);
         }
 
         try {
-            $this->appendAudioChunkUseCase->execute($slugId, $audioFile, $chunkIndex, $mimeType);
+            Assert::uuid($sessionId, 'Identifiant de session manquant ou invalide.');
+
+            $this->appendAudioChunkUseCase->execute($slugId, $sessionId, $audioFile, $chunkIndex, $mimeType);
 
             return $this->json(['status' => 'Chunk reçu.']);
         } catch (\DomainException $e) {
@@ -46,9 +50,14 @@ final class MeetingRecorderController extends AbstractController
     public function stopAndAnalyze(string $slugId, Request $request): JsonResponse
     {
         $consumedSeconds = (int) $request->request->get('consumed_seconds', 0);
+        $sessionId = (string) $request->request->get('session_id');
 
         try {
-            ($this->stopAudioUseCase)($slugId, $consumedSeconds);
+            Assert::uuid($sessionId, 'Identifiant de session manquant ou invalide.');
+
+            ($this->stopAudioUseCase)($slugId, $sessionId, $consumedSeconds);
+        } catch (\InvalidArgumentException $e) {
+            return $this->json(['error' => $e->getMessage()], Response::HTTP_BAD_REQUEST);
         } catch (\DomainException $e) {
             return $this->json(['error' => $e->getMessage()], Response::HTTP_PAYMENT_REQUIRED);
         }

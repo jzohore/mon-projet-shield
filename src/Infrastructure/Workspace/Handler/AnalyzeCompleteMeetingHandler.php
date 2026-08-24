@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Workspace\Handler;
 
-use App\Domain\Compliance\Enum\MeetingProcessingStatus;
-use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
+use App\Domain\Compliance\Repository\MeetingRecordRepositoryInterface;
 use App\Domain\Compliance\Service\MeetingAnalyzerInterface;
-use App\Domain\Port\DocumentStorageInterface;
 use App\Infrastructure\Compliance\Message\AnalyzeCompleteMeetingMessage;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -16,55 +14,43 @@ use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 final readonly class AnalyzeCompleteMeetingHandler
 {
     public function __construct(
-        private ComplianceFolderRepositoryInterface $folderRepository,
+        private MeetingRecordRepositoryInterface $recordingRepository,
         private MeetingAnalyzerInterface $analyzer,
         private LoggerInterface $logger,
-        private DocumentStorageInterface $storage,
     ) {
     }
 
     public function __invoke(AnalyzeCompleteMeetingMessage $message): void
     {
-        $folder = $this->folderRepository->findOneBySlugId($message->folderSlugId);
+        // 1. On récupère la trace d'audit (qui contient l'URL S3 et le lien vers le dossier)
+        $recording = $this->recordingRepository->findById($message->recordingId);
 
-        if (!$folder) {
-            $this->logger->error('Analyse IA avortée : Dossier introuvable.', ['slug' => $message->folderSlugId]);
+        if (!$recording) {
+            $this->logger->error('Analyse IA avortée : Enregistrement introuvable en base.', [
+                'recordingId' => $message->recordingId,
+            ]);
 
-            return;
+            return; // Impossible de continuer sans la trace
         }
 
         try {
-            $this->logger->info('Génération du lien sécurisé S3 pour l\'audio...');
-            $audioTemporaryUrl = $this->storage->getTemporaryUrl($message->audioFilePath);
-
-            $this->logger->info('Lancement de l\'analyse Gemini via flux réseau...');
-            $reportDto = $this->analyzer->analyzeCompleteMeeting($folder, $audioTemporaryUrl);
-
-            $folder->setPostMeetingReport([
-                'summary' => $reportDto->executiveSummary,
-                'riskProfile' => $reportDto->riskProfileDetected,
-                'kycUpdates' => $reportDto->kycUpdates,
-                'actionPlan' => $reportDto->actionPlan,
-                'analyzedAt' => new \DateTimeImmutable()->format('Y-m-d H:i:s'),
+            $this->logger->info('Lancement de l\'analyse Gemini via flux réseau...', [
+                'recordingId' => $message->recordingId,
             ]);
 
-            $folder->setMeetingProcessingStatus(MeetingProcessingStatus::DONE);
-            $this->folderRepository->save($folder);
-            $this->logger->info('Analyse IA terminée et sauvegardée en base.');
+            // 2. Le service s'occupe de TOUT (Extraction, Sauvegarde JSON brut, Dispatch Event)
+            $this->analyzer->analyzeCompleteMeeting($recording);
 
-            //            $this->eventDispatcher->dispatch(new MeetingAnalyzedEvent(
-            //                $folder->slugId,
-            //                $message->audioFilePath,
-            //                $message->consumedSeconds,
-            //            ));
+            $this->logger->info('Appel Gemini terminé avec succès.', [
+                'recordingId' => $message->recordingId,
+            ]);
         } catch (\Throwable $e) {
             $this->logger->critical('CRASH lors de l\'analyse IA : ' . $e->getMessage(), [
-                'folder' => $message->folderSlugId,
+                'recordingId' => $message->recordingId,
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            // On ne fait PAS de unlink() car le fichier n'est pas sur le disque local.
-            // On throw l'exception pour que Messenger passe le message en "failed" et retente plus tard.
+            // Le throw permet à Messenger de retenter (RetryStrategy) si l'API Google timeout
             throw $e;
         }
     }
