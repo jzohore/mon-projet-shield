@@ -19,6 +19,8 @@ class ComplianceFolderShowAssembler
             ComplianceFolderStatus::DRAFT,
             ComplianceFolderStatus::DER_GENERATED,
         ], true);
+
+        $isArchived = $folder->isArchived();
         $isKyb = $folder instanceof BusinessFolder;
 
         // 1. Formatage du Titre et Sous-titre (La logique quitte Twig !)
@@ -127,6 +129,7 @@ class ComplianceFolderShowAssembler
             isManual: $isManual,
             isKyb: $isKyb,
             isDraft: $isDraft,
+            isArchived: $isArchived,
             isAcceptedRecording: $folder->isAcceptRecording,
             method: $folder->creationMethod,
             headerTitle: $headerTitle,

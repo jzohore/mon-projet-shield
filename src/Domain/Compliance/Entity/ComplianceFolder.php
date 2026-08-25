@@ -262,6 +262,17 @@ abstract class ComplianceFolder
         $this->saveHistory('Dossier sécurisé', 'Accès restreint à une liste d\'utilisateurs spécifique.');
     }
 
+    public function markAsArchive(string $email): void
+    {
+        $this->status = ComplianceFolderStatus::ARCHIVED;
+        $this->saveHistory('Dossier archivé', 'Le dossier à été mis en archive par : ' . $email);
+    }
+
+    public function markAsDeleted(): void
+    {
+        $this->status = ComplianceFolderStatus::DELETED;
+    }
+
     /**
      * ✅ Règle métier : Vérification d'accès.
      */
@@ -301,6 +312,11 @@ abstract class ComplianceFolder
     public function isDraft(): bool
     {
         return ComplianceFolderStatus::DRAFT === $this->status;
+    }
+
+    public function isArchived(): bool
+    {
+        return ComplianceFolderStatus::ARCHIVED === $this->status;
     }
 
     public function markAsDerGenerated(): void

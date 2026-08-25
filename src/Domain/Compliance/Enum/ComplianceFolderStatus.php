@@ -19,6 +19,7 @@ enum ComplianceFolderStatus: string
     case APPROVED = 'approved';
     case REJECTED = 'rejected';
     case ARCHIVED = 'archived';
+    case DELETED = 'deleted';
     case NEEDS_CORRECTION = 'needs_correction';
     case PENDING_DOCS = 'pending_docs';
 
@@ -44,6 +45,7 @@ enum ComplianceFolderStatus: string
             self::APPROVED => 'Conforme', // Le mot magique pour un CGP face à l'AMF
             self::REJECTED => 'Non conforme',
             self::ARCHIVED => 'Archivé',
+            self::DELETED => 'Supprimé',
         };
     }
 
@@ -53,7 +55,7 @@ enum ComplianceFolderStatus: string
 
         return $baseClasses . match ($this) {
             // Gris (États neutres ou de départ)
-            self::DRAFT, self::ARCHIVED => 'bg-slate-50 text-slate-600 ring-slate-500/10',
+            self::DRAFT, self::ARCHIVED, self::DELETED => 'bg-slate-50 text-slate-600 ring-slate-500/10',
 
             // Bleu (Information / Progression)
             self::DER_GENERATED, self::DER_OPENED => 'bg-blue-50 text-blue-700 ring-blue-700/10',
@@ -102,6 +104,7 @@ enum ComplianceFolderStatus: string
             // États finaux
             self::APPROVED,
             self::REJECTED,
+            self::ARCHIVED,
         ];
     }
 }

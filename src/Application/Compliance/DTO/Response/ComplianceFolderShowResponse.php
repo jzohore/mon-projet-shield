@@ -24,6 +24,7 @@ readonly class ComplianceFolderShowResponse
         public bool $isManual,
         public bool $isKyb,
         public bool $isDraft,
+        public bool $isArchived,
         public bool $isAcceptedRecording,
         public string $method,
 

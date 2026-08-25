@@ -69,6 +69,6 @@ class ComplianceListComponent
      */
     public function getStatuses(): array
     {
-        return ComplianceFolderStatus::cases();
+        return ComplianceFolderStatus::getKycPhaseStatuses();
     }
 }

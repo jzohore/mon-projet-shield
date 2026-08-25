@@ -94,6 +94,8 @@ class ComplianceFolderRepository implements ComplianceFolderRepositoryInterface
             ->leftJoin('cf.assignedReviewer', 'owner')
             ->andWhere('cf.workspace = :workspace')
             ->setParameter('workspace', $workspace)
+            ->andWhere('cf.status != :deletedStatus')
+            ->setParameter('deletedStatus', ComplianceFolderStatus::DELETED) // Adapte la valeur de l'Enum selon ton code
             ->orderBy('cf.createdAt', 'DESC');
 
         if ($search) {
@@ -101,6 +103,7 @@ class ComplianceFolderRepository implements ComplianceFolderRepositoryInterface
                 ->setParameter('search', '%' . $search . '%');
         }
 
+        // Filtre explicite si l'utilisateur sélectionne un statut précis dans l'UI
         if ($status instanceof ComplianceFolderStatus) {
             $qb->andWhere('cf.status = :status')
                 ->setParameter('status', $status);

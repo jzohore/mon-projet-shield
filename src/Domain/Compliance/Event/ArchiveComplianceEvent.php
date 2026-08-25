@@ -6,7 +6,7 @@ namespace App\Domain\Compliance\Event;
 
 use Symfony\Contracts\EventDispatcher\Event;
 
-class DeleteComplianceEvent extends Event
+class ArchiveComplianceEvent extends Event
 {
     public function __construct(
         public readonly string $folderSlugId,

@@ -98,6 +98,65 @@
                             </button>
 
                             <div class="h-px bg-slate-100 my-1 mx-2"></div>
+                            <twig:Dialog id="edit_profile">
+                                <twig:Dialog:Trigger>
+
+                                    <twig:Button
+                                        class="inline-flex items-start justify-start gap-2.5 px-2 py-1.5 text-[13px] font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900 rounded-md transition-colors text-left cursor-pointer outline-none focus:bg-slate-50 w-full"
+
+                                        {{ ...dialog_trigger_attrs }}>
+                                        <span class="flex items-center gap-1.5">
+                                            {{ ux_icon('iconamoon:lock-fill', { class: 'size-3.5 text-indigo-600' }) }}
+                                        Archivé
+                                        </span>
+
+                                    </twig:Button>
+
+                                </twig:Dialog:Trigger>
+                                <twig:Dialog:Content>
+                                    <twig:Dialog:Header>
+                                        <twig:Dialog:Title class="text-slate-900">Archiver le dossier client</twig:Dialog:Title>
+                                        <twig:Dialog:Description class="text-slate-600">
+                                            Cette action va clôturer ce dossier de conformité. Il ne sera plus modifiable, mais restera accessible en lecture seule dans vos archives pour répondre aux obligations de l'AMF.
+                                        </twig:Dialog:Description>
+                                    </twig:Dialog:Header>
+
+                                    {# Bloc d'avertissement B2B (Style Linear/Stripe) - Scannable et sans fioritures #}
+                                    <div class="my-4 border-l-4 border-amber-500 bg-slate-50 p-4 rounded-r-md">
+                                        <div class="flex gap-3">
+                                            <div class="space-y-2">
+                                                <p class="text-sm font-semibold text-slate-900">
+                                                    Conséquences immédiates :
+                                                </p>
+                                                <ul class="text-sm text-slate-600 space-y-1 list-disc ml-4 marker:text-slate-400">
+                                                    <li>L'espace de collecte du client sera définitivement désactivé.</li>
+                                                    <li>La piste d'audit et les documents signés seront scellés.</li>
+                                                    <li>Les relances automatiques par email seront interrompues.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <twig:Dialog:Footer>
+                                        <twig:Dialog:Close>
+                                            <twig:Button variant="outline" {{ ...dialog_close_attrs }} class="text-slate-700 border-slate-200 hover:bg-slate-100">
+                                                Annuler
+                                            </twig:Button>
+                                        </twig:Dialog:Close>
+
+                                        {# Formulaire d'action avec protection CSRF #}
+                                        <form action="{{ path('app_compliance_archive_folder', {
+                                            slugId: folder.slugId, type: type, method: method
+                                        }) }}" method="post" class="inline-block">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('archive_folder_' ~ folder.slugId) }}">
+                                            <twig:Button type="submit" variant="destructive">
+                                                Archiver le dossier
+                                            </twig:Button>
+                                        </form>
+                                    </twig:Dialog:Footer>
+                                </twig:Dialog:Content>
+                            </twig:Dialog>
+                            <div class="h-px bg-slate-100 my-1 mx-2"></div>
 
 
                             <button

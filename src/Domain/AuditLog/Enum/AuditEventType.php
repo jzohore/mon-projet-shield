@@ -42,6 +42,8 @@ enum AuditEventType: string
     case KYC_FOLDER_SUBMITTED = 'kyc.folder_submitted';
     case KYC_FOLDER_APPROVED = 'kyc.folder_approved';
     case KYC_FOLDER_REJECTED = 'kyc.folder_rejected';
+    case KYC_FOLDER_ARCHIVED = 'kyc.folder_archived';
+    case KYC_FOLDER_DELETED = 'kyc.folder_deleted';
 
     // --- INTERVENANTS KYC (STAKEHOLDERS / UBO) ---
     case KYC_STAKEHOLDER_ADDED = 'kyc.stakeholder_added';
@@ -111,6 +113,8 @@ enum AuditEventType: string
             self::KYC_FOLDER_SUBMITTED => 'Soumission du dossier par le client',
             self::KYC_FOLDER_APPROVED => 'Validation finale du dossier LCB-FT',
             self::KYC_FOLDER_REJECTED => 'Rejet du dossier LCB-FT',
+            self::KYC_FOLDER_ARCHIVED => 'Archivage du dossier LCB-FT',
+            self::KYC_FOLDER_DELETED => 'Suppression du dossier LCB-FT',
 
             // Stakeholders
             self::KYC_STAKEHOLDER_ADDED => 'Ajout d\'un bénéficiaire effectif (UBO)',
@@ -187,6 +191,8 @@ enum AuditEventType: string
             self::KYC_DOCUMENT_VALIDATED,
             self::KYC_DOCUMENT_REJECTED,
             self::KYC_DOCUMENT_EXPIRED,
+            self::KYC_FOLDER_ARCHIVED,
+            self::KYC_FOLDER_DELETED,
             self::DOCUMENT_SHARED => 'Dossiers LCB-FT',
 
             self::DER_GENERATED,
