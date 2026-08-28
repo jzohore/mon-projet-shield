@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Application\ComplianceFolder;
 
 use App\Application\Compliance\UseCase\MeetingRecord\DeleteMeetingAudioUseCase;
@@ -67,11 +69,9 @@ final class DeleteMeetingAudioUseCaseTest extends TestCase
         // L'EventDispatcher doit expédier l'événement avec les bonnes données
         $this->eventDispatcher->expects($this->once())
             ->method('dispatch')
-            ->with($this->callback(static function (MeetingAudioDeletedEvent $event) use ($recordingId, $s3Path, $user): bool {
-                return $event->recordingId === $recordingId->toString()
-                    && $event->filePath === $s3Path
-                    && $event->deletedByEmail === $user->email;
-            }));
+            ->with($this->callback(static fn (MeetingAudioDeletedEvent $event): bool => $event->recordingId === $recordingId->toString()
+                && $event->filePath === $s3Path
+                && $event->deletedByEmail === $user->email));
 
         // --- ACT ---
         ($this->useCase)($recording);

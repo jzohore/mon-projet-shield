@@ -1,107 +1,143 @@
 name: 🚀 KYSURE CI/CD Pipeline
 
-# 🛡️ LES BONS DÉCLENCHEURS (Triggers)
 on:
-    pull_request:
-        branches: [ main, staging ] # La CI tourne quand on propose du code
     push:
-        branches: [ staging ]       # La CD tourne quand on valide (merge) le code sur staging
+        branches-ignore:
+            - staging   # 🛡️ Évite la boucle infinie : le job merge-to-staging pousse
+            # sur staging, ce qui redéclencherait le workflow sans cette exclusion.
 
+# 🛡️ Permissions par défaut resserrées au strict minimum (lecture seule).
+# Seul le job qui en a réellement besoin (merge-to-staging) élève ses droits
+# localement, ci-dessous — évite qu'un job d'analyse statique dispose d'un
+# droit d'écriture sur le repo dont il n'a aucun usage.
 permissions:
     contents: read
 
 jobs:
-    # ==========================================
-    # 🛠️ CI : INTÉGRATION CONTINUE (Tourne sur les PRs)
-    # ==========================================
-
+    # 🛡️ ÉTAPE 1a : SECRETS & CONTRÔLE QUALITÉ CODE
     quality-assurance:
         name: Code Quality & Static Analysis (PHP 8.4)
-        # Ne tourne que sur les PRs pour économiser des ressources, ou si on push direct sur staging
-        if: github.event_name == 'pull_request' || github.event_name == 'push'
         runs-on: ubuntu-latest
-        timeout-minutes: 15
+        timeout-minutes: 20
 
         steps:
-            - name: Checkout Code
-              uses: actions/checkout@v4 # 🚀 FIX : v4 est la dernière version
-              with:
-                  fetch-depth: 0
+            -   name: Checkout Code
+                uses: actions/checkout@v7
+                with:
+                    fetch-depth: 0   # nécessaire pour les tâches GrumPHP basées sur git diff, et pour gitleaks
 
-            - name: Scan for leaked secrets (gitleaks)
-              uses: gitleaks/gitleaks-action@v2
-              env:
-                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            # 🛡️ Scan de secrets : clés API, tokens, mots de passe committés par
+            # erreur. Placé en tout premier car quasi instantané et le plus
+            # critique à attraper avant tout le reste.
+            -   name: Scan for leaked secrets (gitleaks)
+                uses: gitleaks/gitleaks-action@v2
+                env:
+                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Setup PHP 8.4
-              uses: shivammathur/setup-php@v2
-              with:
-                  php-version: '8.4'
-                  extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql, apcu, opcache, zip, amqp, sockets, gd, imagick, sodium
-                  coverage: none
+            -   name: Setup PHP 8.4
+                uses: shivammathur/setup-php@v2
+                with:
+                    php-version: '8.4'
+                    extensions: mbstring, xml, ctype, iconv, intl, pdo_pgsql, apcu, opcache, zip, amqp, sockets, gd, imagick, sodium
+                    coverage: none
 
-            - name: Validate composer.json
-              run: composer validate --strict
+            -   name: Validate composer.json / composer.lock
+                run: composer validate --strict
 
-            - name: Get Composer Cache Directory
-              id: composer-cache
-              run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
+            -   name: Get Composer Cache Directory
+                id: composer-cache
+                run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
-            - name: Cache Dependencies
-              uses: actions/cache@v4
-              with:
-                  path: ${{ steps.composer-cache.outputs.dir }}
-                  key: ${{ runner.os }}-composer-php84-${{ hashFiles('**/composer.lock') }}
-                  restore-keys: ${{ runner.os }}-composer-php84-
+            -   name: Cache Dependencies
+                uses: actions/cache@v4
+                with:
+                    path: ${{ steps.composer-cache.outputs.dir }}
+                    key: ${{ runner.os }}-composer-php84-${{ hashFiles('**/composer.lock') }}
+                    restore-keys: ${{ runner.os }}-composer-php84-
 
-            - name: Install Dependencies
-              run: composer install --prefer-dist --no-progress --no-interaction
+            -   name: Install Dependencies
+                run: composer install --prefer-dist --no-progress --no-interaction
 
-            - name: Run KYSURE Quality Pipeline (GrumPHP)
-              run: vendor/bin/grumphp run --no-interaction
+            -   name: Run KYSURE Quality Pipeline (GrumPHP)
+                run: vendor/bin/grumphp run --no-interaction
 
+    # 🛡️ ÉTAPE 1b : SÉCURITÉ DOCKER (lint + build + scan de vulnérabilités)
+    # Tourne en parallèle de quality-assurance. Aurait attrapé, avant tout
+    # merge, chacun des bugs de build qu'on a dû déboguer en live sur staging
+    # (opcache.preload, extension sodium manquante, Caddyfile cassé...).
     docker-security:
         name: 🐳 Docker Build & Security Scan
-        if: github.event_name == 'pull_request' || github.event_name == 'push'
         runs-on: ubuntu-latest
-        timeout-minutes: 15
+        timeout-minutes: 20
 
         steps:
+            -   name: Checkout Code
+                uses: actions/checkout@v7
+
+            -   name: Lint Dockerfile (hadolint)
+                uses: hadolint/hadolint-action@v3.1.0
+                with:
+                    dockerfile: Dockerfile
+                    # Niveau d'échec : n'arrête le job que sur les erreurs, pas
+                    # les infos/styles. À resserrer à "warning" quand le
+                    # Dockerfile sera stabilisé.
+                    failure-threshold: error
+
+            # 🛡️ Smoke test : vérifie que l'image se construit réellement.
+            # Les ARG ont des valeurs par défaut factices dans le Dockerfile
+            # (APP_SECRET, DATABASE_URL, SENTRY_DSN) — aucun secret réel requis
+            # pour ce build de vérification.
+            -   name: Build Docker image (smoke test)
+                run: |
+                    docker build --target frankenphp_prod -t kysure-ci-scan:${{ github.sha }} .
+
+            -   name: Scan image for vulnerabilities (Trivy)
+                uses: aquasecurity/trivy-action@v0.36.0
+                with:
+                    image-ref: kysure-ci-scan:${{ github.sha }}
+                    format: table
+                    # 🛡️ Se limite au CRITICAL pour démarrer sans bloquer sur
+                    # l'existant : resserrer à "CRITICAL,HIGH" une fois le
+                    # backlog de vulnérabilités connu traité.
+                    severity: CRITICAL
+                    exit-code: 1
+                    ignore-unfixed: true   # pas de blocage sur des CVE sans correctif disponible
+
+    # 🔀 ÉTAPE 2 : FUSION AUTOMATIQUE VERS STAGING
+    merge-to-staging:
+        name: 🔀 Auto-Merge to Staging
+        needs: [quality-assurance, docker-security]
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write   # 🛡️ Élevé uniquement ici, pour git push origin staging
+        steps:
             - name: Checkout Code
-              uses: actions/checkout@v4 # 🚀 FIX : v4
-
-            - name: Lint Dockerfile (hadolint)
-              uses: hadolint/hadolint-action@v3.1.0
+              uses: actions/checkout@v7
               with:
-                  dockerfile: Dockerfile
-                  failure-threshold: error
+                  fetch-depth: 0
+                  token: ${{ secrets.GITHUB_TOKEN }}
 
-            - name: Build Docker image (smoke test)
+            - name: Merge branch to staging
               run: |
-                  docker build --target frankenphp_prod -t kysure-ci-scan:${{ github.sha }} .
+                  git config user.name "github-actions[bot]"
+                  git config user.email "github-actions[bot]@users.noreply.github.com"
 
-            - name: Scan image for vulnerabilities (Trivy)
-              uses: aquasecurity/trivy-action@master # 🚀 FIX : master ou 0.28.0 (la syntaxe a changé récemment)
-              with:
-                  image-ref: kysure-ci-scan:${{ github.sha }}
-                  format: table
-                  severity: CRITICAL
-                  exit-code: 1
-                  ignore-unfixed: true
+                  git fetch origin staging || true
+                  git checkout staging || git checkout -b staging
 
-    # ==========================================
-    # 🚀 CD : DÉPLOIEMENT CONTINU (Tourne UNIQUEMENT sur un push/merge staging)
-    # ==========================================
+                  # Fusionne la branche de ticket courante vers staging
+                  git merge "${{ github.sha }}" --no-edit
 
+                  git push origin staging
+
+#    # 🚀 ÉTAPE 3 : DÉPLOIEMENT SUR LE SERVEUR
 #    deploy-coolify:
 #        name: 🚀 Deploy Staging to Coolify
-#        # Ne s'exécute que si les tests passent ET qu'on est sur la branche staging
-#        needs: [quality-assurance, docker-security]
-#        if: github.ref == 'refs/heads/staging' && github.event_name == 'push'
+#        needs: merge-to-staging
 #        runs-on: ubuntu-latest
 #        steps:
 #            - name: Trigger Coolify Deploy Webhook
 #              run: |
-#                  curl --fail --request POST "${{ secrets.COOLIFY_BASE_URL }}/api/v1/applications/${{ secrets.COOLIFY_APP_UUID }}/start" \
+#                  curl --request POST "${{ secrets.COOLIFY_BASE_URL }}/api/v1/applications/${{ secrets.COOLIFY_APP_UUID }}/start" \
 #                    --header "Authorization: Bearer ${{ secrets.COOLIFY_API_TOKEN }}" \
 #                    --header "Accept: application/json"

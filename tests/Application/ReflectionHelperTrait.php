@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Application;
 
 trait ReflectionHelperTrait
@@ -9,9 +11,12 @@ trait ReflectionHelperTrait
      * Idéal pour simuler un état Doctrine en base de données.
      *
      * @template T of object
-     * @param class-string<T> $className
+     *
+     * @param class-string<T>      $className
      * @param array<string, mixed> $properties
+     *
      * @return T
+     *
      * @throws \ReflectionException
      */
     private function createEntityState(string $className, array $properties = []): object
