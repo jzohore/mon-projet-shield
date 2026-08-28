@@ -25,10 +25,19 @@ interface MeetingRecordRepositoryInterface
      */
     public function findById(Uuid|string $id): ?MeetingRecording;
 
+    public function findBySlugId(string $slugId): ?MeetingRecording;
+
     /**
      * Liste tous les dossiers actifs d'un espace de travail.
      *
      * @return MeetingRecording[]
      */
     public function findAllByFolder(ComplianceFolder $complianceFolder): array;
+
+    /**
+     * Liste tous les dossiers actifs d'un espace de travail.
+     *
+     * @return MeetingRecording[]
+     */
+    public function findActiveByFolder(ComplianceFolder $complianceFolder): array;
 }

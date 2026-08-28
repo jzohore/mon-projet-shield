@@ -14,7 +14,7 @@
 
     {% set folder = this.folder %}
     {% set status = this.processingStatus %}
-
+    {% set meeting = this.meetingReport %}
     {% if this.isListening or this.isProcessing or folder.postMeetingReport is not empty %}
 
         {# 2. L'ENFANT : Rôle UI et Stimulus. #}
@@ -83,25 +83,112 @@
                             <span class="text-sm font-semibold text-indigo-900">Analyse du discours...</span>
                         </div>
 
-                    {% elseif folder.postMeetingReport is not empty %}
+                    {% elseif meeting is not empty %}
                         <div class="animate-in fade-in duration-500">
-                            {{ include('@app/compliance/_ai_report_display.html.twig', { 'dto': this.meetingReport, 'hide_actions': true }) }}
+                            {% if this.isDeleted %}
+                                <div class="flex items-center gap-4 border-b border-slate-200 bg-slate-50 p-6">
+                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500">
+                                        {{ ux_icon('lucide:trash-2', { class: 'size-5' }) }}
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-900">
+                                            Synthèse effacée
+                                        </p>
+                                        <p class="text-xs text-slate-500 mt-0.5">
+                                            Les données ont été supprimées. Vous pouvez enregistrer une nouvelle session.
+                                        </p>
+                                    </div>
+                                </div>
+                            {% else %}
+                                {{ include('@app/compliance/_ai_report_display.html.twig', { 'dto': this.meetingReport, 'hide_actions': true }) }}
+                            {% endif %}
                         </div>
                     {% endif %}
                 </div>
 
                 {# FOOTER FIXE #}
-                {% if folder.postMeetingReport is not empty %}
-                    <div class="shrink-0 p-3.5 border-t border-slate-100 bg-white flex flex-wrap items-center justify-end gap-2 rounded-b-xl shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
-                        <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-900/10">
-                            {{ ux_icon('lucide:pencil', { class: 'size-3.5 text-slate-500' }) }}
-                            <span>Ajuster</span>
-                        </button>
-                        <button type="button" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-all shadow-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2">
-                            {{ ux_icon('lucide:mail', { class: 'size-3.5 text-slate-300' }) }}
-                            <span>Traiter</span>
-                        </button>
+                    {# Barre d'actions (Footer de la carte) #}
+                {% if not this.isDeleted and meeting is not empty and not this.isListening and status.value not in ['finalizing', 'analyzing'] %}
+                    {% if meeting.isExplorable %}
+                    <div class="flex items-center justify-between rounded-b-xl border-t border-slate-100 bg-slate-50/50 px-4 py-3">
+
+
+                        <twig:Dialog id="delete_meetings_record">
+
+                            <twig:Dialog:Trigger>
+                                <twig:Button variant="ghost" class="text-rose-600 hover:bg-rose-50 hover:text-rose-700 text-xs px-2 py-1.5 h-auto" {{ ...dialog_trigger_attrs }}>
+                <span class="flex items-center gap-1.5">
+                    {{ ux_icon('lucide:trash-2', { class: 'size-3.5' }) }}
+                    Supprimer la synthèse
+                </span>
+                                </twig:Button>
+                            </twig:Dialog:Trigger>
+
+                            <twig:Dialog:Content>
+                                <twig:Dialog:Header>
+                                    <twig:Dialog:Title class="text-slate-900">Supprimer la synthèse IA</twig:Dialog:Title>
+                                    <twig:Dialog:Description class="text-slate-500 mt-2">
+                                        Êtes-vous sûr de vouloir effacer ce compte-rendu d'entretien ?
+                                    </twig:Dialog:Description>
+                                </twig:Dialog:Header>
+
+                                {# Bloc d'avertissement B2B - Adapté à l'action réelle #}
+                                <div class="my-5 border-l-4 border-rose-500 bg-rose-50 p-4 rounded-r-md">
+                                    <div class="flex gap-3">
+                                        <div class="space-y-2">
+                                            <p class="text-sm font-semibold text-rose-900">
+                                                Conséquences immédiates :
+                                            </p>
+                                            <ul class="text-xs text-rose-700 space-y-1 list-disc ml-4 marker:text-rose-400">
+                                                <li>Le texte généré par l'IA et vos corrections seront définitivement effacés.</li>
+                                                <li>L'enregistrement audio source sera également supprimé (si applicable).</li>
+                                                <li>Cette action sera consignée dans la piste d'audit LCB-FT du dossier.</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <twig:Dialog:Footer>
+                                    <twig:Dialog:Close>
+                                        <twig:Button variant="outline" {{ ...dialog_close_attrs }} class="text-slate-700 border-slate-200 hover:bg-slate-100">
+                                            Annuler
+                                        </twig:Button>
+                                    </twig:Dialog:Close>
+
+                                    {# Bouton LiveComponent : Déclenche la suppression avec état de chargement intégré #}
+                                    <twig:Button type="button"
+                                                 variant="destructive"
+                                                 class="bg-rose-600 hover:bg-rose-700 text-white shadow-sm"
+                                                 data-action="live#action"
+                                                 data-live-action-param="deleteMeetingReport"
+                                                 data-loading="action(deleteMeetingReport)|addAttribute(disabled)">
+
+                    <span data-loading="action(deleteMeetingReport)|hide" class="flex items-center gap-2">
+                        {{ ux_icon('lucide:trash', { class: 'size-4' }) }}
+                        Supprimer définitivement
+                    </span>
+
+                                        <span data-loading="action(deleteMeetingReport)|show" class="hidden items-center gap-2">
+                        {{ ux_icon('lucide:loader-2', { class: 'size-4 animate-spin' }) }}
+                        Suppression...
+                    </span>
+
+                                    </twig:Button>
+                                </twig:Dialog:Footer>
+                            </twig:Dialog:Content>
+                        </twig:Dialog>
+
+                            <div class="flex items-center gap-2">
+                                <twig:Button variant="outline" class="text-slate-700 border-slate-200 hover:bg-white bg-white shadow-sm text-xs h-auto py-1.5">
+                    <span class="flex items-center gap-1.5">
+                        {{ ux_icon('lucide:pencil', { class: 'size-3.5 text-slate-500' }) }}
+                        Ajuster le texte
+                    </span>
+                                </twig:Button>
+                            </div>
+
                     </div>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>

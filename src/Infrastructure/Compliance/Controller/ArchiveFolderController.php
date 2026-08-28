@@ -10,6 +10,7 @@ use App\Domain\Shared\Exception\AbstractDomainException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Attribute\Route;
@@ -30,7 +31,7 @@ final class ArchiveFolderController extends AbstractController
         Request $request,
         string $type,
         string $method,
-    ): \Symfony\Component\HttpFoundation\RedirectResponse {
+    ): RedirectResponse {
         $token = (string) $request->request->get('_token', '');
         $slug = $complianceFolder->slugId;
 

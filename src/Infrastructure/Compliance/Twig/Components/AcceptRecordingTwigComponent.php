@@ -68,7 +68,7 @@ class AcceptRecordingTwigComponent extends AbstractController
                 'Vous pouvez lancez l\'enregistrement.'
             );
         } catch (AbstractDomainException $e) {
-            $this->logger->warning('Tentative d\'envoie du DER bloquée.', [
+            $this->logger->warning('Action impossible : accepter l\'enregistrement du meeting', [
                 'folder_slug' => $this->complianceFolder->slugId,
                 'error' => $e->getMessage(),
             ]);
@@ -78,7 +78,7 @@ class AcceptRecordingTwigComponent extends AbstractController
                 $e->getMessage()
             );
         } catch (\Exception $e) {
-            $this->logger->error('Crash système lors de l\'envoi du DER.', [
+            $this->logger->error('Crash système lors de l\'acceptation de l\'enregistrement.', [
                 'folder_slug' => $this->complianceFolder->slugId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),

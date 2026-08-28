@@ -47,6 +47,9 @@ class MeetingRecording
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public private(set) \DateTimeImmutable $recordedAt;
 
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $audioDeletedAt = null;
+
     private function __construct(
         #[ORM\ManyToOne(targetEntity: ComplianceFolder::class, inversedBy: 'meetingRecordings')]
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -96,5 +99,19 @@ class MeetingRecording
         }
 
         $this->geminiRawOutput = $output;
+    }
+
+    public function markAudioAsDeleted(): void
+    {
+        if ($this->audioDeletedAt instanceof \DateTimeImmutable) {
+            throw new \DomainException('Le fichier audio a déjà été supprimé.');
+        }
+
+        $this->audioDeletedAt = now()->setTimezone(new \DateTimeZone('UTC'));
+    }
+
+    public function hasAudioBeenDeleted(): bool
+    {
+        return $this->audioDeletedAt instanceof \DateTimeImmutable;
     }
 }

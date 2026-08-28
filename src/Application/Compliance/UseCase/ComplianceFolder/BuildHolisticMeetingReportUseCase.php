@@ -7,13 +7,18 @@ namespace App\Application\Compliance\UseCase\ComplianceFolder;
 use App\Application\Compliance\DTO\Response\HolisticMeetingReportDto;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Entity\MeetingRecording;
+use App\Domain\Compliance\Repository\MeetingRecordRepositoryInterface;
 
 final readonly class BuildHolisticMeetingReportUseCase
 {
+    public function __construct(
+        private MeetingRecordRepositoryInterface $meetingRecordRepository,
+    ) {
+    }
+
     public function __invoke(ComplianceFolder $folder): HolisticMeetingReportDto
     {
-        /** @var MeetingRecording[] $recordings */
-        $recordings = $folder->meetingRecordings->toArray();
+        $recordings = $this->meetingRecordRepository->findActiveByFolder($folder);
 
         // 🛡️ SÉCURITÉ : On s'assure de trier du plus ancien au plus récent (ASC)
         // pour que la chronologie de lecture soit logique pour le CGP.
@@ -23,20 +28,26 @@ final readonly class BuildHolisticMeetingReportUseCase
         $globalRiskProfile = 'Non déterminé';
         $globalKycUpdates = [];
         $globalActionPlan = [];
+        $slugIds = [];
+        $isExplorable = true;
 
         foreach ($recordings as $recording) {
             $output = $recording->geminiRawOutput;
             if (empty($output)) {
                 continue;
             }
+            $slugIds[] = $recording->slugId;
 
             // Formatage de la date (ex: 22/08/2026 à 13:07)
             // On utilise le fuseau horaire de Paris pour l'affichage UI
+
             $dateStr = $recording->recordedAt->setTimezone(new \DateTimeZone('Europe/Paris'))->format('d/m/Y à H:i');
 
             // 1. Fusion du résumé (Avec ligne de démarcation visuelle)
             if (!empty($output['executiveSummary']) && 'Test ou hors sujet' !== $output['executiveSummary']) {
                 $globalSummary .= sprintf("Session du %s \n%s\n\n", $dateStr, trim($output['executiveSummary']));
+            } else {
+                $isExplorable = false;
             }
 
             // 2. Profil de risque (Le plus récent fait foi)
@@ -71,11 +82,15 @@ final readonly class BuildHolisticMeetingReportUseCase
             }
         }
 
+        $emptyStateMessage = "L'analyse IA n'a détecté aucune donnée exploitable dans cet enregistrement (audio inaudible ou hors sujet). Vous pouvez relancer une nouvelle capture vocale.";
+
         return new HolisticMeetingReportDto(
-            executiveSummary: trim($globalSummary) ?: 'Aucune donnée exploitable extraite des sessions.',
+            executiveSummary: trim($globalSummary) ?: $emptyStateMessage,
             riskProfileDetected: $globalRiskProfile,
             kycUpdates: $globalKycUpdates,
-            actionPlan: $globalActionPlan
+            actionPlan: $globalActionPlan,
+            slugId: $slugIds,
+            isExplorable: (bool) trim($globalSummary),
         );
     }
 }

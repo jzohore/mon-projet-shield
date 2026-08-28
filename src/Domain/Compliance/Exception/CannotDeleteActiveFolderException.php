@@ -13,7 +13,7 @@ class CannotDeleteActiveFolderException extends AbstractDomainException
     public static function forFolder(string $reference): self
     {
         return new self(
-            message: sprintf('Le dossier "%s" ne peut pas être supprimer car il n\'est plus en brouillon .', $reference),
+            message: 'Le fichier audio a déjà été supprimé',
             errorCode: ErrorCode::CANNOT_DELETE_ACTIVE_FOLDER,
             statusCode: Response::HTTP_NOT_FOUND, // 422
             payload: ['folder_reference' => $reference],

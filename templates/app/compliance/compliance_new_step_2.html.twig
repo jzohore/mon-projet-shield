@@ -98,7 +98,7 @@
                             </button>
 
                             <div class="h-px bg-slate-100 my-1 mx-2"></div>
-                            <twig:Dialog id="edit_profile">
+                            <twig:Dialog id="archive_compliance_folder">
                                 <twig:Dialog:Trigger>
 
                                     <twig:Button
@@ -106,8 +106,8 @@
 
                                         {{ ...dialog_trigger_attrs }}>
                                         <span class="flex items-center gap-1.5">
-                                            {{ ux_icon('iconamoon:lock-fill', { class: 'size-3.5 text-indigo-600' }) }}
-                                        Archivé
+                                           {{ ux_icon('lucide:trash-2', { class: 'size-3.5' }) }}
+                                        Archiver
                                         </span>
 
                                     </twig:Button>
@@ -116,7 +116,7 @@
                                 <twig:Dialog:Content>
                                     <twig:Dialog:Header>
                                         <twig:Dialog:Title class="text-slate-900">Archiver le dossier client</twig:Dialog:Title>
-                                        <twig:Dialog:Description class="text-slate-600">
+                                        <twig:Dialog:Description class="text-slate-600 mt-5">
                                             Cette action va clôturer ce dossier de conformité. Il ne sera plus modifiable, mais restera accessible en lecture seule dans vos archives pour répondre aux obligations de l'AMF.
                                         </twig:Dialog:Description>
                                     </twig:Dialog:Header>
@@ -158,16 +158,64 @@
                             </twig:Dialog>
                             <div class="h-px bg-slate-100 my-1 mx-2"></div>
 
+                            <twig:Dialog id="delete_compliance_folder">
+                                <twig:Dialog:Trigger>
 
-                            <button
-                                type="submit"
-                               role="menuitem"
-                                form="delete-form"
-                               class="flex items-center gap-2 px-2 py-1.5 text-[13px] font-medium text-red-600 hover:bg-red-50 hover:text-red-700 rounded-md transition-colors cursor-pointer w-full">
-                                {{ ux_icon('lucide:trash-2', { class: 'size-3.5' }) }}
-                                Supprimer
-                            </button>
+                                    <twig:Button
+                                        class="inline-flex items-start justify-start gap-2.5 px-2 py-1.5 text-[13px] font-medium text-red-600 hover:bg-slate-50 hover:text-red-900 rounded-md transition-colors text-left cursor-pointer outline-none focus:bg-slate-50 w-full"
 
+                                        {{ ...dialog_trigger_attrs }}>
+                                        <span class="flex items-center gap-1.5">
+                                            {{ ux_icon('lucide:trash-2', { class: 'size-3.5' }) }}
+                                        Supprimer
+                                        </span>
+
+                                    </twig:Button>
+
+                                </twig:Dialog:Trigger>
+                                <twig:Dialog:Content>
+                                    <twig:Dialog:Header>
+                                        <twig:Dialog:Title class="text-slate-900">Archiver le dossier client</twig:Dialog:Title>
+                                        <twig:Dialog:Description class="text-red-800 mt-5 font-bold">
+                                            Cette action va supprimer ce dossier de conformité.
+                                        </twig:Dialog:Description>
+                                    </twig:Dialog:Header>
+
+                                    {# Bloc d'avertissement B2B (Style Linear/Stripe) - Scannable et sans fioritures #}
+                                    <div class="my-4 border-l-4 border-red-500 bg-slate-50 p-4 rounded-r-md">
+                                        <div class="flex gap-3">
+                                            <div class="space-y-2">
+                                                <p class="text-sm font-semibold text-slate-900">
+                                                    Conséquences immédiates :
+                                                </p>
+                                                <ul class="text-sm text-slate-600 space-y-1 list-disc ml-4 marker:text-slate-400">
+                                                    <li>L'espace de collecte du client sera définitivement désactivé.</li>
+                                                    <li>La piste d'audit et les documents signés seront scellés.</li>
+                                                    <li>Les relances automatiques par email seront interrompues.</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <twig:Dialog:Footer>
+                                        <twig:Dialog:Close>
+                                            <twig:Button variant="outline" {{ ...dialog_close_attrs }} class="text-slate-700 border-slate-200 hover:bg-slate-100">
+                                                Annuler
+                                            </twig:Button>
+                                        </twig:Dialog:Close>
+
+                                        {# Formulaire d'action avec protection CSRF #}
+                                        <form action="{{ path('app_compliance_delete_folder', {
+                                            slugId: folder.slugId, type: type, method: method
+                                        }) }}" method="post" class="inline-block">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('delete_folder_' ~ folder.slugId) }}">
+                                            <twig:Button type="submit" variant="destructive">
+                                                Supprimer le dossier
+                                            </twig:Button>
+                                        </form>
+                                    </twig:Dialog:Footer>
+                                </twig:Dialog:Content>
+                            </twig:Dialog>
                         </div>
                     </div>
                 </div>
@@ -289,9 +337,6 @@
 {% endblock %}
 {% block portal_content %}
     {# Formulaire caché pour la suppression du brouillon #}
-    <form id="delete-form" method="POST" action="{{ path('app_compliance_delete_folder', {slugId: folder.slugId}) }}">
-        <input type="hidden" name="_token" value="{{ csrf_token('remove-compliance') }}">
-    </form>
     <form id="setup-form" method="POST" action="{{ path('app_compliance_submit_for_review', {slugId: folder.slugId}) }}">
         <input type="hidden" name="_token" value="{{ csrf_token('submit-for-review-compliance') }}">
     </form>
@@ -356,7 +401,7 @@
                         </div>
                     {% endif %}
 
-                    <twig:AiReportDisplayComponent folder="{{ folder }}"></twig:AiReportDisplayComponent>
+                    <twig:AiReportDisplayComponent folder="{{ folder }}" method="{{ method }}" type="{{ type }}"></twig:AiReportDisplayComponent>
                     {# LES COMPOSANTS MÉTIER #}
                     <twig:ManualIndividualStepOneComponent complianceFolder="{{ folder }}" method="{{ method }}" type="{{ type }}"></twig:ManualIndividualStepOneComponent>
                     {% if not dto.postMeetingReport %}

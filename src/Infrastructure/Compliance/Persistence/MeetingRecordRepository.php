@@ -52,4 +52,20 @@ readonly class MeetingRecordRepository implements MeetingRecordRepositoryInterfa
     {
         return $this->repository->findBy(['complianceFolder' => $complianceFolder]);
     }
+
+    public function findBySlugId(string $slugId): ?MeetingRecording
+    {
+        return $this->repository->findOneBy(['slugId' => $slugId]);
+    }
+
+    public function findActiveByFolder(ComplianceFolder $complianceFolder): array
+    {
+        return $this->repository->createQueryBuilder('mr')
+            ->andWhere('mr.complianceFolder = :compliance_folder')
+            ->andWhere('mr.audioDeletedAt IS NULL')
+            ->orderBy('mr.recordedAt', 'ASC')
+            ->setParameter('compliance_folder', $complianceFolder)
+            ->getQuery()
+            ->getResult();
+    }
 }
