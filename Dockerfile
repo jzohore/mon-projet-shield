@@ -85,7 +85,7 @@ COPY --link composer.* symfony.* ./
 RUN set -eux; \
     php -d opcache.preload= "$(command -v composer)" install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
 
-COPY --link --exclude=frankenphp/ . ./
+COPY --link . ./
 ARG APP_SECRET="kysure_ci_dummy_secret_for_build_only"
 ARG DATABASE_URL="postgresql://dummy:dummy@127.0.0.1:5432/dummy"
 ARG SENTRY_DSN="https://dummy_public_key@dummy.ingest.sentry.io/1234567"
