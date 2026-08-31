@@ -1,8 +1,7 @@
 #syntax=docker/dockerfile:1
 
 # 🛡️ KYSURE STANDARD : On sécurise la version à PHP 8.4
-FROM dunglas/frankenphp:1-php8.4 AS frankenphp_upstream
-
+FROM dunglas/frankenphp:1-php8.4-bookworm AS frankenphp_upstream
 # Base FrankenPHP image
 FROM frankenphp_upstream AS frankenphp_base
 
@@ -37,8 +36,8 @@ RUN set -eux; \
     ;
 
 # 🔐 KYSURE SEC : Installation dynamique de SOPS selon l'architecture du CPU (AMD64 ou ARM64)
-ARG TARGETARCH
-RUN curl -L -o /usr/local/bin/sops https://github.com/getsops/sops/releases/download/v3.8.1/sops-v3.8.1.linux.${TARGETARCH:-amd64} \
+ARG SOPS_VERSION="v3.9.0"
+RUN curl -L "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64" -o /usr/local/bin/sops \
     && chmod +x /usr/local/bin/sops
 
 RUN echo "memory_limit = 512M" > /usr/local/etc/php/conf.d/symfony.ini
@@ -95,7 +94,6 @@ ARG SENTRY_DSN="https://dummy_public_key@dummy.ingest.sentry.io/1234567"
 RUN set -eux; \
     mkdir -p var/cache var/log var/share; \
     composer dump-autoload --classmap-authoritative --no-dev; \
-    # 🚨 ON SUPPRIME composer dump-env prod ICI POUR LAISSER SOPS AGIR AU DEMARRAGE
     composer run-script --no-dev post-install-cmd; \
     php bin/console tailwind:build; \
     if [ -f importmap.php ]; then \
