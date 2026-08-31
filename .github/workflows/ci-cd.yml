@@ -89,7 +89,7 @@ jobs:
             # pour ce build de vérification.
             -   name: Build Docker image (smoke test)
                 run: |
-                    docker build --target frankenphp_prod -t kysure-ci-scan:${{ github.sha }} .
+                    docker build --pull --target frankenphp_prod -t kysure-ci-scan:${{ github.sha }} .
 
             -   name: Scan image for vulnerabilities (Trivy)
                 uses: aquasecurity/trivy-action@v0.36.0

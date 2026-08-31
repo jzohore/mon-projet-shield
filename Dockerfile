@@ -36,7 +36,7 @@ RUN set -eux; \
     ;
 
 # 🔐 KYSURE SEC : Installation dynamique de SOPS selon l'architecture du CPU (AMD64 ou ARM64)
-ARG SOPS_VERSION="v3.9.0"
+ARG SOPS_VERSION="v3.13.3"
 RUN curl -L "https://github.com/getsops/sops/releases/download/${SOPS_VERSION}/sops-${SOPS_VERSION}.linux.amd64" -o /usr/local/bin/sops \
     && chmod +x /usr/local/bin/sops
 
