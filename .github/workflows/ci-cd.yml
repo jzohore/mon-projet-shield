@@ -102,6 +102,10 @@ jobs:
                     severity: CRITICAL
                     exit-code: 1
                     ignore-unfixed: true   # pas de blocage sur des CVE sans correctif disponible
+                    # 🛡️ Exceptions justifiées + datées : binaires Go tiers
+                    # (frankenphp, sops) dont l'upstream n'a pas encore de build
+                    # corrigé. Voir .trivyignore (revue le 2026-10-15).
+                    trivyignores: .trivyignore
 
     # 🔀 ÉTAPE 2 : FUSION AUTOMATIQUE VERS STAGING
     merge-to-staging:

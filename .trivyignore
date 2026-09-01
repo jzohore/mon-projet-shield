@@ -1,0 +1,23 @@
+# 🛡️ KYSURE SEC — Exceptions Trivy (vulnérabilités dans des binaires Go tiers)
+#
+# Règle : on n'ignore QUE des CVE dont (a) aucun binaire upstream corrigé n'existe
+# encore et (b) la surface d'attaque est absente de cette image. Chaque entrée a
+# une date de revue : si dépassée, on retire la ligne et on rebuild.
+#
+# --- À REVOIR LE 2026-10-15 ---------------------------------------------------
+
+# CVE-2026-56854 — golang.org/x/crypto/ssh : contournement des restrictions
+# source-address sur un serveur SSH.
+# Binaires touchés : /usr/local/bin/frankenphp, /usr/local/bin/sops
+# Statut : x/crypto 0.55.0 non encore intégré par FrankenPHP ni getsops (release
+#          la plus récente compilée avec 0.54.0).
+# Exploitabilité : NULLE — aucun serveur SSH n'est exposé par cette image.
+CVE-2026-56854
+
+# GHSA-r277-6w6q-xmqw — github.com/getkin/kin-openapi : ValidationHandler.Load()
+# fail-open (NoopAuthenticationFunc par défaut) → bypass d'authentification.
+# Binaire touché : /usr/local/bin/frankenphp (dépendance transitive, module non
+#          utilisé dans notre Caddyfile).
+# Statut : correctif 0.144.0 non encore embarqué dans l'image dunglas/frankenphp.
+# Exploitabilité : NULLE dans notre chemin de requête (pas de validation OpenAPI).
+GHSA-r277-6w6q-xmqw
