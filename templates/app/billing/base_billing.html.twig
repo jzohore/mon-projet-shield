@@ -83,6 +83,11 @@
 
     </div>
 </div>
+
+{# Overlays flottants (position: fixed) — rendus HORS de toute zone animée
+   pour ne pas hériter d'un bloc conteneur créé par un ancêtre `transform`. #}
+{% block floating_widgets %}{% endblock %}
+
 {% include '@app/partials/_flashes.html.twig' %}
 </body>
 

@@ -77,7 +77,7 @@ class Client implements UserInterface, TwoFactorInterface
      *
      * @var Collection<int, Workspace>
      */
-    #[ORM\ManyToMany(targetEntity: Workspace::class)]
+    #[ORM\ManyToMany(targetEntity: Workspace::class, inversedBy: 'clients')]
     #[ORM\JoinTable(name: 'client_workspaces')]
     public private(set) Collection $workspaces;
 

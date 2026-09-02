@@ -6,127 +6,250 @@ namespace App\Infrastructure\ExternalApi;
 
 use App\Domain\Workspace\Gateway\OriasCheckerInterface;
 use App\Domain\Workspace\ValueObject\OriasStatusResult;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\DomCrawler\Crawler;
+use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Webmozart\Assert\Assert;
 
+/**
+ * Lecture du registre public ORIAS via la fiche « showIntermediaire/{SIREN} ».
+ *
+ * ⚠️ L'endpoint résout le segment d'URL comme un **SIREN** (9 chiffres), pas
+ * comme le n° d'immatriculation ORIAS (8 chiffres). Il renvoie :
+ *   - le HTML de la fiche si le SIREN est connu ;
+ *   - un JSON `{"error": "..."}` sinon.
+ *
+ * ⚠️ Dépend de la structure HTML du site (aucun contrat d'API). Un échec de
+ * lecture donne {@see OriasStatusResult::unavailable()} (à réessayer) ; une
+ * réponse ORIAS explicite (404, JSON d'erreur, fiche « Radié ») donne
+ * {@see OriasStatusResult::notRegistered()}.
+ */
 final readonly class OriasChecker implements OriasCheckerInterface
 {
     private const string BASE_URL = 'https://www.orias.fr/home/showIntermediaire/';
 
+    /** L'endpoint attend un SIREN : 9 chiffres. */
+    private const string SIREN_PATTERN = '/^\d{9}$/';
+
+    private const float TIMEOUT = 10.0;
+
     public function __construct(
         private HttpClientInterface $httpClient,
+        private LoggerInterface $logger,
     ) {
     }
 
+    /**
+     * @param string $oriasNumber un SIREN (9 chiffres, espaces tolérés)
+     */
     public function checkNumber(string $oriasNumber): OriasStatusResult
     {
-        $cleanNumber = preg_replace('/\s+/', '', trim($oriasNumber));
+        $siren = (string) preg_replace('/\s+/', '', trim($oriasNumber));
 
-        if (empty($cleanNumber)) {
-            return OriasStatusResult::invalid($oriasNumber, 'Le numéro ORIAS fourni est vide.');
+        if (1 !== preg_match(self::SIREN_PATTERN, $siren)) {
+            return OriasStatusResult::notRegistered(
+                $siren,
+                'Le numéro fourni n\'a pas le format d\'un SIREN (9 chiffres attendus pour interroger l\'ORIAS).',
+            );
         }
 
         try {
-            $response = $this->httpClient->request('GET', self::BASE_URL . $cleanNumber, [
+            $response = $this->httpClient->request('GET', self::BASE_URL . $siren, [
                 'headers' => [
                     'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
                     'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 ],
-                'timeout' => 10.0,
+                'timeout' => self::TIMEOUT,
             ]);
 
-            if (404 === $response->getStatusCode()) {
-                return OriasStatusResult::invalid($cleanNumber, 'Aucun intermédiaire trouvé sur l\'ORIAS pour ce numéro.');
+            $statusCode = $response->getStatusCode();
+
+            if (404 === $statusCode) {
+                return OriasStatusResult::notRegistered($siren, 'Aucun intermédiaire trouvé sur l\'ORIAS pour ce SIREN.');
             }
 
-            if (200 !== $response->getStatusCode()) {
-                return OriasStatusResult::invalid($cleanNumber, sprintf('Le serveur ORIAS a répondu avec le code HTTP %d.', $response->getStatusCode()));
+            if (200 !== $statusCode) {
+                $this->logger->warning('Réponse inattendue du registre ORIAS.', ['siren' => $siren, 'status' => $statusCode]);
+
+                return OriasStatusResult::unavailable($siren, sprintf('Le registre ORIAS a répondu avec le code HTTP %d.', $statusCode));
             }
 
-            $html = $response->getContent();
-            $crawler = new Crawler($html);
+            $body = $response->getContent();
+        } catch (TransportExceptionInterface $e) {
+            $this->logger->warning('Registre ORIAS injoignable.', ['siren' => $siren, 'error' => $e->getMessage()]);
 
-            if ($crawler->filter('.no-result, .alert-danger')->count() > 0) {
-                return OriasStatusResult::invalid($cleanNumber, 'Intermédiaire introuvable ou numéro invalide.');
+            return OriasStatusResult::unavailable($siren, 'Le registre ORIAS est momentanément injoignable.');
+        }
+
+        // ORIAS renvoie un JSON d'erreur quand le SIREN n'est pas au registre.
+        if (null !== $jsonError = $this->jsonError($body)) {
+            return OriasStatusResult::notRegistered($siren, $jsonError);
+        }
+
+        try {
+            return $this->parseIntermediary($body, $siren);
+        } catch (\Throwable $e) {
+            $this->logger->warning('Fiche ORIAS illisible (structure inattendue).', [
+                'siren' => $siren,
+                'content_length' => \strlen($body),
+                'content_sha1' => sha1($body),
+                'error' => $e->getMessage(),
+            ]);
+
+            return OriasStatusResult::unavailable($siren, 'La fiche ORIAS n\'a pas pu être analysée (structure inattendue).');
+        }
+    }
+
+    private function jsonError(string $body): ?string
+    {
+        $trimmed = ltrim($body);
+        if ('' === $trimmed || '{' !== $trimmed[0]) {
+            return null;
+        }
+
+        $decoded = json_decode($trimmed, true);
+
+        return \is_array($decoded) && \is_string($decoded['error'] ?? null) ? $decoded['error'] : null;
+    }
+
+    private function parseIntermediary(string $html, string $siren): OriasStatusResult
+    {
+        $crawler = new Crawler($html);
+
+        if ($crawler->filter('.no-result, .alert-danger')->count() > 0) {
+            return OriasStatusResult::notRegistered($siren, 'Intermédiaire introuvable ou numéro invalide.');
+        }
+
+        $criteria = $this->extractCriteria($crawler);
+        $legalName = $this->extractLegalName($crawler, $criteria);
+
+        // Fiche atteinte mais aucun champ reconnu : probable dérive de structure → à réessayer.
+        if ([] === $criteria && null === $legalName) {
+            throw new \RuntimeException('Aucun critère ni dénomination extraits de la fiche.');
+        }
+
+        $status = trim($criteria['Etat & Inscriptions'] ?? '');
+
+        // « Radié 0 » : connu du registre mais plus autorisé à exercer.
+        if (str_contains(mb_strtolower($status), 'radié')) {
+            return OriasStatusResult::notRegistered($siren, sprintf('Intermédiaire radié du registre ORIAS (%s).', $status));
+        }
+
+        return OriasStatusResult::valid(
+            oriasNumber: $siren,
+            registrationStatus: '' !== $status ? $status : 'Inscrit',
+            legalName: $legalName,
+            categories: $this->extractCategories($crawler),
+            associations: $this->extractAssociations($crawler),
+            registeredOriasNumber: $this->normalizeDigits($criteria['N° Orias'] ?? null),
+        );
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function extractCriteria(Crawler $crawler): array
+    {
+        $criteria = [];
+        $crawler->filter('.listCritere li')->each(static function (Crawler $node) use (&$criteria): void {
+            $spans = $node->filter('span');
+            if ($spans->count() >= 2) {
+                $label = trim($spans->eq(0)->text());
+                $criteria[$label] = (string) preg_replace('/^[\pZ\pC]+|[\pZ\pC]+$/u', '', trim($spans->eq(1)->text()));
             }
+        });
 
-            // 1. Liste des critères principaux
-            $extractedData = [];
-            $crawler->filter('.listCritere li')->each(static function (Crawler $node) use (&$extractedData): void {
-                $spans = $node->filter('span');
-                if ($spans->count() >= 2) {
-                    $label = trim($spans->eq(0)->text());
-                    $value = trim($spans->eq(1)->text());
-                    $extractedData[$label] = preg_replace('/^[\pZ\pC]+|[\pZ\pC]+$/u', '', $value);
-                }
-            });
+        return $criteria;
+    }
 
-            // 2. Nom & Statut
-            $legalName = $extractedData['Sigle, Enseigne, Nom commercial']
-                ?? $extractedData['Dénomination']
-                ?? $extractedData['Nom, Prénoms']
-                ?? null;
+    /**
+     * @param array<string, string> $criteria
+     */
+    private function extractLegalName(Crawler $crawler, array $criteria): ?string
+    {
+        $name = $criteria['Sigle, Enseigne, Nom commercial']
+            ?? $criteria['Dénomination']
+            ?? $criteria['Nom, Prénoms']
+            ?? null;
 
-            if (null === $legalName) {
-                $h1Node = $crawler->filter('h1.bigTitle');
-                if ($h1Node->count() > 0) {
-                    $legalName = trim($h1Node->text());
-                }
+        if (null !== $name && '' !== $name) {
+            return $name;
+        }
+
+        $h1 = $crawler->filter('h1.bigTitle');
+
+        return $h1->count() > 0 ? trim($h1->text()) : null;
+    }
+
+    /**
+     * Libellés des catégories d'inscription (COA, MIA, IOBSP, …).
+     *
+     * @return list<string>
+     */
+    private function extractCategories(Crawler $crawler): array
+    {
+        $categories = [];
+
+        // Structure actuelle : .mainResult .typeInterm .infoBulle
+        $crawler->filter('.mainResult .typeInterm .infoBulle')->each(static function (Crawler $node) use (&$categories): void {
+            $label = trim($node->text());
+            if ('' !== $label) {
+                $categories[] = $label;
             }
+        });
 
-            $statusText = $extractedData['Etat & Inscriptions'] ?? 'Inscrit';
-
-            // 3. Catégories
-            $categories = [];
+        // Repli sur l'ancienne structure au cas où certaines fiches ne seraient pas migrées.
+        if ([] === $categories) {
             $crawler->filter('.leftSideResult .item')->each(static function (Crawler $node) use (&$categories): void {
-                $lines = explode("\n", trim($node->text()));
-                $sigle = trim($lines[0]);
+                $sigle = trim(explode("\n", trim($node->text()))[0]);
                 if ('' !== $sigle) {
                     $categories[] = $sigle;
                 }
             });
+        }
 
-            // 4. EXTRACTION DES ASSOCIATIONS (Nouveau)
-            $associations = [];
-            $crawler->filter('.detailResult')->each(static function (Crawler $node) use (&$associations): void {
-                $header = $node->filter('.detailResult--header h4.title');
+        return array_values(array_unique($categories));
+    }
 
-                // On vérifie que c'est bien le bloc des Associations (et non celui des Mandats)
-                if ($header->count() > 0 && false !== stripos($header->text(), 'Association')) {
-                    // On boucle sur les lignes du tableau contenu dans ce bloc
-                    $node->filter('.detailResult--content tbody tr')->each(static function (Crawler $tr) use (&$associations): void {
-                        $tds = $tr->filter('td');
-
-                        // La 2ème colonne (index 1) contient la dénomination de l'association
-                        if ($tds->count() >= 2) {
-                            $assoName = trim($tds->eq(1)->text());
-                            if ('' !== $assoName) {
-                                // Parfois l'ORIAS met le SIREN à la fin du nom (ex: "CNCEF Assurance 878643915")
-                                // On peut nettoyer les chiffres à la fin si on veut un nom propre :
-                                $assoName = preg_replace('/\s\d+$/', '', $assoName);
-                                Assert::notNull($assoName);
-                                $associations[] = trim($assoName);
-                            }
-                        }
-                    });
-                }
-            });
-
-            if ([] === $extractedData && null === $legalName) {
-                return OriasStatusResult::invalid($cleanNumber, 'Format de la page ORIAS non reconnu.');
+    /**
+     * Associations professionnelles agréées. Structure incertaine sur le site
+     * actuel : on tente l'ancien bloc, sinon liste vide.
+     *
+     * @return list<string>
+     */
+    private function extractAssociations(Crawler $crawler): array
+    {
+        $associations = [];
+        $crawler->filter('.detailResult')->each(static function (Crawler $node) use (&$associations): void {
+            $header = $node->filter('.detailResult--header h4.title');
+            if (0 === $header->count() || false === stripos($header->text(), 'Association')) {
+                return;
             }
 
-            return new OriasStatusResult(
-                oriasNumber: $cleanNumber,
-                isValid: true,
-                registrationStatus: trim($statusText),
-                legalName: $legalName,
-                categories: array_unique(array_filter($categories)),
-                associations: array_unique(array_filter($associations)) // Envoi du tableau dédoublonné
-            );
-        } catch (\Throwable $e) {
-            return OriasStatusResult::invalid($cleanNumber, 'Erreur de lecture du DOM ORIAS : ' . $e->getMessage());
+            $node->filter('.detailResult--content tbody tr')->each(static function (Crawler $tr) use (&$associations): void {
+                $cells = $tr->filter('td');
+                if ($cells->count() < 2) {
+                    return;
+                }
+
+                $name = trim((string) preg_replace('/\s\d+$/', '', trim($cells->eq(1)->text())));
+                if ('' !== $name) {
+                    $associations[] = $name;
+                }
+            });
+        });
+
+        return array_values(array_unique($associations));
+    }
+
+    private function normalizeDigits(?string $value): ?string
+    {
+        if (null === $value) {
+            return null;
         }
+
+        $digits = preg_replace('/\D+/', '', $value);
+
+        return \is_string($digits) && '' !== $digits ? $digits : null;
     }
 }

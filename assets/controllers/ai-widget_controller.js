@@ -19,7 +19,7 @@ export default class extends Controller {
             this.element.style.transition = '';
             this.contentTarget.style.transition = '';
             // On retire les classes d'invisibilité initiales
-            this.element.classList.remove('opacity-0', 'translate-y-8', 'pointer-events-none');
+            this.element.classList.remove('opacity-0', 'translate-y-2', 'pointer-events-none');
             this.element.classList.add('opacity-100', 'translate-y-0');
         });
 
@@ -51,14 +51,14 @@ export default class extends Controller {
         if (this.isCollapsed) {
             // ÉTAT FERMÉ : Widget compact (300px)
             this.contentTarget.style.maxHeight = '0px';
-            this.element.classList.remove('w-[calc(100vw-2rem)]', 'sm:w-[440px]');
+            this.element.classList.remove('w-[92vw]', 'sm:w-[440px]');
             this.element.classList.add('w-[300px]');
             if (this.hasChevronTarget) this.chevronTarget.classList.remove('-rotate-180');
         } else {
             // ÉTAT OUVERT : Side-panel (440px max)
             this.contentTarget.style.maxHeight = '75vh';
             this.element.classList.remove('w-[300px]');
-            this.element.classList.add('w-[calc(100vw-2rem)]', 'sm:w-[440px]');
+            this.element.classList.add('w-[92vw]', 'sm:w-[440px]');
             if (this.hasChevronTarget) this.chevronTarget.classList.add('-rotate-180');
         }
 

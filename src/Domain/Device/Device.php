@@ -26,7 +26,7 @@ class Device
         get => $this->id;
     }
 
-    #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'devices')]
+    #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'owner_id', nullable: false, onDelete: 'CASCADE')]
     public ?User $owner = null {
         get => $this->owner;
