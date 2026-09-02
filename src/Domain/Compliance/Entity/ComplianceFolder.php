@@ -87,8 +87,14 @@ abstract class ComplianceFolder
     #[ORM\Column]
     public private(set) bool $isConfidential = false;
 
-    /** @var Collection<int, User> */
-    #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'folders')]
+    /**
+     * Liste blanche d'accès (dossier confidentiel). Relation unidirectionnelle :
+     * `User#folders` est l'inverse de {@see self::$assignedReviewer}, pas de
+     * celle-ci.
+     *
+     * @var Collection<int, User>
+     */
+    #[ORM\ManyToMany(targetEntity: User::class)]
     #[ORM\JoinTable(name: 'compliance_folder_restricted_users')]
     public private(set) Collection $restrictedUsers;
 
@@ -458,6 +464,28 @@ abstract class ComplianceFolder
         if (!$this->meetingRecordings->contains($recording)) {
             $this->meetingRecordings->add($recording);
         }
+    }
+
+    /**
+     * Trace d'audit AMF : le CGP a figé la synthèse d'entretien du dossier.
+     */
+    public function recordMeetingReportValidated(int $version, string $validatedByName): void
+    {
+        $this->saveHistory(
+            'Rapport d\'entretien validé',
+            sprintf('Version %d figée par %s', $version, $validatedByName)
+        );
+    }
+
+    /**
+     * Trace d'audit AMF : le CGP a révoqué une version figée de la synthèse.
+     */
+    public function recordMeetingReportRevoked(int $version, string $revokedByName, string $reason): void
+    {
+        $this->saveHistory(
+            'Rapport d\'entretien révoqué',
+            sprintf('Version %d révoquée par %s. Motif : %s', $version, $revokedByName, $reason)
+        );
     }
 
     abstract public function isDraftEmpty(): bool;

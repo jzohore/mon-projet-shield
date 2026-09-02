@@ -401,7 +401,6 @@
                         </div>
                     {% endif %}
 
-                    <twig:AiReportDisplayComponent folder="{{ folder }}" method="{{ method }}" type="{{ type }}"></twig:AiReportDisplayComponent>
                     {# LES COMPOSANTS MÉTIER #}
                     <twig:ManualIndividualStepOneComponent complianceFolder="{{ folder }}" method="{{ method }}" type="{{ type }}"></twig:ManualIndividualStepOneComponent>
                     {% if not dto.postMeetingReport %}
@@ -416,4 +415,11 @@
             </div>
         </div>
     </div>
+{% endblock %}
+
+{# Widget IA flottant : rendu au niveau <body>, hors de la colonne animée
+   (`animate-in slide-in-from-bottom-4`) dont le `transform` casserait le
+   `position: fixed` du widget. #}
+{% block floating_widgets %}
+    <twig:AiReportDisplayComponent folder="{{ folder }}" method="{{ method }}" type="{{ type }}"></twig:AiReportDisplayComponent>
 {% endblock %}

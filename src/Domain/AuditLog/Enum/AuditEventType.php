@@ -65,6 +65,8 @@ enum AuditEventType: string
     case SIGNATURE_UPDATED = 'der.signature_updated';
 
     case ACCEPTED_RECORDING = 'ac.recording';
+    case MEETING_REPORT_VALIDATED = 'meeting.report_validated';
+    case MEETING_REPORT_REVOKED = 'meeting.report_revoked';
 
     // --- ANALYSES & SCREENING (SANCTIONS / PPE) ---
     case SCREENING_PERFORMED = 'screening.performed';
@@ -135,6 +137,8 @@ enum AuditEventType: string
             self::DER_SIGNED => 'Signature électronique du DER',
             self::SIGNATURE_UPDATED => 'Mise à jour des paramètres de signature',
             self::ACCEPTED_RECORDING => 'Accord pour enregistrer l\'entretien',
+            self::MEETING_REPORT_VALIDATED => 'Validation du rapport d\'entretien IA',
+            self::MEETING_REPORT_REVOKED => 'Révocation du rapport d\'entretien IA',
 
             // Screening
             self::SCREENING_PERFORMED => 'Vérification Listes de Sanctions / PPE',
@@ -199,6 +203,8 @@ enum AuditEventType: string
             self::DER_OPENED,
             self::DER_SIGNED,
             self::ACCEPTED_RECORDING,
+            self::MEETING_REPORT_VALIDATED,
+            self::MEETING_REPORT_REVOKED,
             self::SIGNATURE_UPDATED => 'DER & Signature',
 
             self::SUBSCRIPTION_ACTIVATED,
@@ -215,6 +221,7 @@ enum AuditEventType: string
         return match ($this) {
             self::KYC_FOLDER_APPROVED,
             self::DER_SIGNED,
+            self::MEETING_REPORT_VALIDATED,
             self::ORIAS_CHECK_SUCCESS,
             self::SIRET_CHECK_SUCCESS,
             self::SUBSCRIPTION_ACTIVATED => 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -225,6 +232,7 @@ enum AuditEventType: string
             self::KYC_DOCUMENT_REJECTED,
             self::ORIAS_CHECK_FAILED,
             self::SIRET_CHECK_FAILED,
+            self::MEETING_REPORT_REVOKED,
             self::SUBSCRIPTION_CANCELED => 'bg-rose-50 text-rose-700 border-rose-200',
 
             self::ADMIN_IMPERSONATION_START,
@@ -249,7 +257,8 @@ enum AuditEventType: string
             self::WORKSPACE_SUSPENDED,
             self::ORIAS_CHECK_FAILED,
             self::SIRET_CHECK_FAILED,
-            self::KYC_FOLDER_REJECTED => true,
+            self::KYC_FOLDER_REJECTED,
+            self::MEETING_REPORT_REVOKED => true,
             default => false,
         };
     }

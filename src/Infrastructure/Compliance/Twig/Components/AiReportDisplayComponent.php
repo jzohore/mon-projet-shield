@@ -6,11 +6,16 @@ namespace App\Infrastructure\Compliance\Twig\Components;
 
 use App\Application\Compliance\DTO\Response\HolisticMeetingReportDto;
 use App\Application\Compliance\UseCase\ComplianceFolder\BuildHolisticMeetingReportUseCase;
+use App\Application\Compliance\UseCase\ComplianceFolder\RevokeMeetingReportUseCase;
+use App\Application\Compliance\UseCase\ComplianceFolder\ValidateMeetingReportUseCase;
 use App\Application\Compliance\UseCase\MeetingRecord\DeleteMeetingAudioUseCase;
 use App\Domain\Compliance\Entity\ComplianceFolder;
+use App\Domain\Compliance\Entity\ValidatedMeetingReport;
 use App\Domain\Compliance\Enum\MeetingProcessingStatus;
 use App\Domain\Compliance\Repository\MeetingRecordRepositoryInterface;
+use App\Domain\Compliance\Repository\ValidatedMeetingReportRepositoryInterface;
 use App\Domain\Shared\Exception\AbstractDomainException;
+use App\Infrastructure\Compliance\Voter\MeetingReportVoter;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
@@ -55,11 +60,27 @@ final class AiReportDisplayComponent extends AbstractController
     #[LiveProp]
     public bool $isDeleted = false;
 
+    /**
+     * Motif de révocation saisi par le CGP (lié au textarea via data-model).
+     */
+    #[LiveProp(writable: true)]
+    public string $revokeReason = '';
+
+    /**
+     * Mémo intra-requête du rapport validé en vigueur (non sérialisé).
+     */
+    private ?ValidatedMeetingReport $inForceReport = null;
+
+    private bool $inForceReportLoaded = false;
+
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
         private readonly BuildHolisticMeetingReportUseCase $buildHolisticMeetingReportUseCase,
         private readonly MeetingRecordRepositoryInterface $meetingRecordRepository,
         private readonly DeleteMeetingAudioUseCase $deleteMeetingAudioUseCase,
+        private readonly ValidateMeetingReportUseCase $validateMeetingReportUseCase,
+        private readonly RevokeMeetingReportUseCase $revokeMeetingReportUseCase,
+        private readonly ValidatedMeetingReportRepositoryInterface $validatedMeetingReportRepository,
         private readonly LoggerInterface $logger,
     ) {
     }
@@ -131,5 +152,73 @@ final class AiReportDisplayComponent extends AbstractController
     public function getMeetingReport(): HolisticMeetingReportDto
     {
         return ($this->buildHolisticMeetingReportUseCase)($this->folder);
+    }
+
+    /**
+     * Le rapport figé actuellement en vigueur pour ce dossier, ou null si la
+     * synthèse est encore au stade brouillon.
+     */
+    public function getValidatedReport(): ?ValidatedMeetingReport
+    {
+        if (!$this->inForceReportLoaded) {
+            $this->inForceReport = $this->validatedMeetingReportRepository->findInForceByFolder($this->folder);
+            $this->inForceReportLoaded = true;
+        }
+
+        return $this->inForceReport;
+    }
+
+    public function isValidated(): bool
+    {
+        return $this->getValidatedReport() instanceof ValidatedMeetingReport;
+    }
+
+    #[LiveAction]
+    public function validateReport(): void
+    {
+        $this->denyAccessUnlessGranted(MeetingReportVoter::VALIDATE, $this->folder);
+
+        try {
+            ($this->validateMeetingReportUseCase)($this->folder->slugId);
+            $this->refreshValidatedReport();
+            $this->addFlash('success', 'Rapport d\'entretien validé : il est désormais figé.');
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        } catch (\Throwable) {
+            $this->logger->error('Crash lors de la validation du rapport d\'entretien.', ['folder' => $this->folder->slugId]);
+            $this->addFlash('error', 'Erreur système lors de la validation.');
+        }
+    }
+
+    #[LiveAction]
+    public function revokeReport(): void
+    {
+        $this->denyAccessUnlessGranted(MeetingReportVoter::REVOKE, $this->folder);
+
+        $report = $this->getValidatedReport();
+
+        if (!$report instanceof ValidatedMeetingReport) {
+            $this->addFlash('error', 'Aucun rapport validé à révoquer.');
+
+            return;
+        }
+
+        try {
+            ($this->revokeMeetingReportUseCase)($report->slugId, $this->revokeReason);
+            $this->revokeReason = '';
+            $this->refreshValidatedReport();
+            $this->addFlash('success', 'Rapport d\'entretien révoqué. Vous pouvez en valider une nouvelle version.');
+        } catch (\DomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        } catch (\Throwable) {
+            $this->logger->error('Crash lors de la révocation du rapport d\'entretien.', ['folder' => $this->folder->slugId]);
+            $this->addFlash('error', 'Erreur système lors de la révocation.');
+        }
+    }
+
+    private function refreshValidatedReport(): void
+    {
+        $this->inForceReport = null;
+        $this->inForceReportLoaded = false;
     }
 }

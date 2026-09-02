@@ -47,6 +47,12 @@ services:
     # Résolution du système de stockage des documents (S3 par défaut)
     App\Domain\Port\DocumentStorageInterface: '@App\Infrastructure\Storage\ScalewayS3DocumentStorage'
 
+    # Vérification ORIAS : le scraper réel enveloppé d'un cache (résultats définitifs uniquement)
+    App\Domain\Workspace\Gateway\OriasCheckerInterface: '@App\Infrastructure\ExternalApi\CachedOriasChecker'
+    App\Infrastructure\ExternalApi\CachedOriasChecker:
+        arguments:
+            $inner: '@App\Infrastructure\ExternalApi\OriasChecker'
+
     # Résolution de l'OCR via sa Factory
     App\Domain\Port\OcrProviderInterface:
         factory: [ '@App\Infrastructure\Ocr\OcrFactory', 'create' ]

@@ -9,8 +9,29 @@ use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Entity\MeetingRecording;
 use App\Domain\Compliance\Repository\MeetingRecordRepositoryInterface;
 
+/**
+ * Reconstruit à la volée la synthèse d'entretien consolidée d'un dossier, en
+ * fusionnant dans l'ordre chronologique la sortie brute de l'IA de chaque
+ * enregistrement actif.
+ *
+ * C'est la source de vérité du BROUILLON. Le DTO produit ici est, une fois
+ * validé par le CGP, figé tel quel dans
+ * {@see \App\Domain\Compliance\Entity\ValidatedMeetingReport} : toute évolution
+ * de sa forme est donc un sujet de compatibilité pour les rapports déjà validés.
+ */
 final readonly class BuildHolisticMeetingReportUseCase
 {
+    /** Valeur renvoyée par l'IA quand elle n'a pas su qualifier le risque. */
+    private const string RISK_PROFILE_UNKNOWN = 'Non déterminé';
+
+    /** Marqueur renvoyé par l'IA pour un enregistrement de test / hors sujet. */
+    private const string OFF_TOPIC_MARKER = 'Test ou hors sujet';
+
+    /** Fuseau d'affichage des dates de session (lecture CGP). */
+    private const string DISPLAY_TIMEZONE = 'Europe/Paris';
+
+    private const string EMPTY_STATE_MESSAGE = "L'analyse IA n'a détecté aucune donnée exploitable dans les enregistrements de cet entretien (audio inaudible ou hors sujet). Vous pouvez relancer une nouvelle capture vocale.";
+
     public function __construct(
         private MeetingRecordRepositoryInterface $meetingRecordRepository,
     ) {
@@ -18,79 +39,95 @@ final readonly class BuildHolisticMeetingReportUseCase
 
     public function __invoke(ComplianceFolder $folder): HolisticMeetingReportDto
     {
-        $recordings = $this->meetingRecordRepository->findActiveByFolder($folder);
+        $recordings = $this->chronologicalActiveRecordings($folder);
+        $displayTimezone = new \DateTimeZone(self::DISPLAY_TIMEZONE);
 
-        // 🛡️ SÉCURITÉ : On s'assure de trier du plus ancien au plus récent (ASC)
-        // pour que la chronologie de lecture soit logique pour le CGP.
-        usort($recordings, static fn (MeetingRecording $a, MeetingRecording $b): int => $a->recordedAt <=> $b->recordedAt);
-
-        $globalSummary = '';
-        $globalRiskProfile = 'Non déterminé';
-        $globalKycUpdates = [];
-        $globalActionPlan = [];
-        $slugIds = [];
-        $isExplorable = true;
+        $summaryBlocks = [];
+        $riskProfile = self::RISK_PROFILE_UNKNOWN;
+        $kycUpdates = [];
+        $actionPlan = [];
+        $sourceSlugIds = [];
 
         foreach ($recordings as $recording) {
             $output = $recording->geminiRawOutput;
-            if (empty($output)) {
+
+            if (null === $output || [] === $output) {
                 continue;
             }
-            $slugIds[] = $recording->slugId;
 
-            // Formatage de la date (ex: 22/08/2026 à 13:07)
-            // On utilise le fuseau horaire de Paris pour l'affichage UI
+            $sourceSlugIds[] = $recording->slugId;
+            $sessionDate = $recording->recordedAt->setTimezone($displayTimezone)->format('d/m/Y à H:i');
 
-            $dateStr = $recording->recordedAt->setTimezone(new \DateTimeZone('Europe/Paris'))->format('d/m/Y à H:i');
-
-            // 1. Fusion du résumé (Avec ligne de démarcation visuelle)
-            if (!empty($output['executiveSummary']) && 'Test ou hors sujet' !== $output['executiveSummary']) {
-                $globalSummary .= sprintf("Session du %s \n%s\n\n", $dateStr, trim($output['executiveSummary']));
-            } else {
-                $isExplorable = false;
+            // 1. Synthèse : un bloc par session exploitable.
+            $sessionSummary = trim($output['executiveSummary'] ?? '');
+            if ('' !== $sessionSummary && self::OFF_TOPIC_MARKER !== $sessionSummary) {
+                $summaryBlocks[] = sprintf("Session du %s\n%s", $sessionDate, $sessionSummary);
             }
 
-            // 2. Profil de risque (Le plus récent fait foi)
-            if (!empty($output['riskProfileDetected']) && 'Non déterminé' !== $output['riskProfileDetected']) {
-                $globalRiskProfile = $output['riskProfileDetected'];
+            // 2. Profil de risque : le plus récent (dernier itéré) fait foi.
+            $sessionRisk = trim($output['riskProfileDetected'] ?? '');
+            if ('' !== $sessionRisk && self::RISK_PROFILE_UNKNOWN !== $sessionRisk) {
+                $riskProfile = $sessionRisk;
             }
 
-            // 🚀 3. Fusion des KYC Updates (Mode regroupement lisible)
-            if (!empty($output['kycUpdates'])) {
-                // array_filter retire automatiquement les chaînes vides ("") du résultat
-                $sessionKycItems = array_filter(array_map(trim(...), $output['kycUpdates']));
-
-                if ([] !== $sessionKycItems) {
-                    $globalKycUpdates[] = [
-                        'date' => $dateStr,
-                        // array_values répare les index cassés par array_filter (ex: 0, 2, 3 -> 0, 1, 2)
-                        'items' => array_values($sessionKycItems),
-                    ];
-                }
+            // 3. + 4. KYC / plan d'action : un groupe daté par session non vide.
+            $sessionKyc = $this->normalizeItems($output['kycUpdates'] ?? null);
+            if ([] !== $sessionKyc) {
+                $kycUpdates[] = ['date' => $sessionDate, 'items' => $sessionKyc];
             }
 
-            // 🚀 4. Action Plan : Création d'un bloc structuré
-            if (!empty($output['actionPlan'])) {
-                $sessionActionItems = array_filter(array_map(trim(...), $output['actionPlan']));
-
-                if ([] !== $sessionActionItems) {
-                    $globalActionPlan[] = [
-                        'date' => $dateStr,
-                        'items' => array_values($sessionActionItems),
-                    ];
-                }
+            $sessionActions = $this->normalizeItems($output['actionPlan'] ?? null);
+            if ([] !== $sessionActions) {
+                $actionPlan[] = ['date' => $sessionDate, 'items' => $sessionActions];
             }
         }
 
-        $emptyStateMessage = "L'analyse IA n'a détecté aucune donnée exploitable dans cet enregistrement (audio inaudible ou hors sujet). Vous pouvez relancer une nouvelle capture vocale.";
+        $summary = implode("\n\n", $summaryBlocks);
+        $isExplorable = '' !== $summary;
 
         return new HolisticMeetingReportDto(
-            executiveSummary: trim($globalSummary) ?: $emptyStateMessage,
-            riskProfileDetected: $globalRiskProfile,
-            kycUpdates: $globalKycUpdates,
-            actionPlan: $globalActionPlan,
-            slugId: $slugIds,
-            isExplorable: (bool) trim($globalSummary),
+            executiveSummary: $isExplorable ? $summary : self::EMPTY_STATE_MESSAGE,
+            riskProfileDetected: $riskProfile,
+            kycUpdates: $kycUpdates,
+            actionPlan: $actionPlan,
+            slugId: $sourceSlugIds,
+            isExplorable: $isExplorable,
         );
+    }
+
+    /**
+     * @return MeetingRecording[] du plus ancien au plus récent
+     */
+    private function chronologicalActiveRecordings(ComplianceFolder $folder): array
+    {
+        $recordings = $this->meetingRecordRepository->findActiveByFolder($folder);
+
+        // Le repository trie déjà en ASC ; on le garantit ici pour que la fusion
+        // ne dépende pas de ce détail d'implémentation.
+        usort(
+            $recordings,
+            static fn (MeetingRecording $a, MeetingRecording $b): int => $a->recordedAt <=> $b->recordedAt,
+        );
+
+        return $recordings;
+    }
+
+    /**
+     * Nettoie une liste d'items renvoyée par l'IA : chaînes trimmées, vides
+     * écartées, index recompacté. Tolérant à une clé absente.
+     *
+     * @param array<int, string>|null $rawItems
+     *
+     * @return list<string>
+     */
+    private function normalizeItems(?array $rawItems): array
+    {
+        if (null === $rawItems) {
+            return [];
+        }
+
+        $items = array_filter(array_map(trim(...), $rawItems));
+
+        return array_values($items);
     }
 }

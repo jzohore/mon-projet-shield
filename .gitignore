@@ -34,3 +34,6 @@ phpstan.neon
 /.deptrac.cache
 ###< deptrac/deptrac ###
 /.php-cs-fixer.php
+
+# Claude Code — réglages perso (hooks locaux)
+.claude/settings.local.json

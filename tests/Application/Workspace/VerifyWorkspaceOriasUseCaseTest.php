@@ -10,6 +10,7 @@ use App\Domain\Firm\Repository\RegulatoryProfileRepositoryInterface;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Event\WorkspaceOriasCheckFailedEvent;
 use App\Domain\Workspace\Event\WorkspaceOriasCheckSucceededEvent;
+use App\Domain\Workspace\Exception\OriasRegistryUnavailableException;
 use App\Domain\Workspace\Exception\WorkspaceNotFoundException;
 use App\Domain\Workspace\Gateway\OriasCheckerInterface;
 use App\Domain\Workspace\Repository\WorkspaceRepositoryInterface;
@@ -20,17 +21,12 @@ use PHPUnit\Framework\TestCase;
 use Psr\EventDispatcher\EventDispatcherInterface;
 use Psr\Log\LoggerInterface;
 
-/**
- * @covers \App\Application\Workspace\UseCase\VerifyOrias\VerifyWorkspaceOriasUseCase
- */
 final class VerifyWorkspaceOriasUseCaseTest extends TestCase
 {
     private WorkspaceRepositoryInterface&MockObject $workspaceRepository;
     private EventDispatcherInterface&MockObject $eventDispatcher;
     private LoggerInterface&MockObject $logger;
     private RegulatoryProfileRepositoryInterface&MockObject $regulatoryProfileRepository;
-
-    // Utilisation du Fake au lieu d'un MockObject !
     private FakeOriasChecker $oriasCheckerFake;
     private VerifyWorkspaceOriasUseCase $useCase;
 
@@ -40,7 +36,6 @@ final class VerifyWorkspaceOriasUseCaseTest extends TestCase
         $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $this->logger = $this->createMock(LoggerInterface::class);
         $this->regulatoryProfileRepository = $this->createMock(RegulatoryProfileRepositoryInterface::class);
-
         $this->oriasCheckerFake = new FakeOriasChecker();
 
         $this->useCase = new VerifyWorkspaceOriasUseCase(
@@ -48,82 +43,72 @@ final class VerifyWorkspaceOriasUseCaseTest extends TestCase
             $this->oriasCheckerFake,
             $this->eventDispatcher,
             $this->logger,
-            $this->regulatoryProfileRepository
+            $this->regulatoryProfileRepository,
         );
     }
 
     #[AllowMockObjectsWithoutExpectations]
-    public function testThrowsExceptionWhenWorkspaceNotFound(): void
+    public function testThrowsWhenWorkspaceNotFound(): void
     {
-        $this->workspaceRepository->expects(self::once())
-            ->method('findOneBySlug')
-            ->with('invalid-slug')
-            ->willReturn(null);
+        $this->workspaceRepository->method('findOneBySlug')->willReturn(null);
 
-        try {
-            ($this->useCase)('invalid-slug', 'admin@kysure.fr');
-            self::fail('Exception attendue.');
-        } catch (WorkspaceNotFoundException $e) {
-            self::assertInstanceOf(WorkspaceNotFoundException::class, $e);
-        }
+        $this->expectException(WorkspaceNotFoundException::class);
+
+        ($this->useCase)('invalid-slug', 'admin@kysure.fr');
     }
 
     #[AllowMockObjectsWithoutExpectations]
-    public function testThrowsExceptionWhenRegulatoryProfileIsMissing(): void
+    public function testThrowsWhenRegulatoryProfileIsMissing(): void
     {
-        $workspace = $this->createWorkspaceEntity('cabinet-test', '1230309', false);
-        $this->workspaceRepository->expects(self::once())->method('findOneBySlug')->willReturn($workspace);
+        $this->workspaceRepository->method('findOneBySlug')
+            ->willReturn($this->workspace('cabinet-test', siren: '070012345', withProfile: false));
 
-        try {
-            ($this->useCase)('cabinet-test', 'admin@kysure.fr');
-            self::fail('Exception attendue.');
-        } catch (\InvalidArgumentException $e) {
-            self::assertSame('Le cabinet "cabinet-test" ne possède pas de profil réglementaire.', $e->getMessage());
-        }
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('ne possède pas de profil réglementaire');
+
+        ($this->useCase)('cabinet-test', 'admin@kysure.fr');
     }
 
     #[AllowMockObjectsWithoutExpectations]
-    public function testThrowsExceptionWhenSirenIsMissing(): void
+    public function testThrowsWhenNoSirenNorSiretIsExploitable(): void
     {
-        // On passe explicitement une chaîne vide `""` (ou null) pour le SIREN
-        $workspace = $this->createWorkspaceEntity('cabinet-test', '', true);
+        $this->workspaceRepository->method('findOneBySlug')
+            ->willReturn($this->workspace('cabinet-test', siren: null, withProfile: true));
 
-        $this->workspaceRepository->expects(self::once())
-            ->method('findOneBySlug')
-            ->willReturn($workspace);
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Aucun numéro SIREN/SIRET exploitable pour le cabinet "cabinet-test".');
 
-        try {
-            // Le UseCase s'exécute, l'assertion stringNotEmpty échoue et stoppe tout.
-            // Le Fake n'est JAMAIS appelé, donc pas de RuntimeException !
-            ($this->useCase)('cabinet-test', 'admin@kysure.fr');
-            self::fail('Une InvalidArgumentException aurait dû être levée pour l\'absence de SIREN.');
-        } catch (\InvalidArgumentException $e) {
-            self::assertSame('Aucun numéro SIREN renseigné pour le cabinet "cabinet-test".', $e->getMessage());
-        }
+        ($this->useCase)('cabinet-test', 'admin@kysure.fr');
     }
 
     #[AllowMockObjectsWithoutExpectations]
-    public function testDispatchesFailedEventAndThrowsWhenOriasIsInvalid(): void
+    public function testDerivesSirenFromSiretWhenSirenIsMissing(): void
     {
-        $workspace = $this->createWorkspaceEntity('cabinet-test', '440714103', true);
+        $workspace = $this->workspace('cabinet-test', siren: null, withProfile: true, siret: '123 456 789 00012');
+        $this->workspaceRepository->method('findOneBySlug')->willReturn($workspace);
+        $this->oriasCheckerFake->result = OriasStatusResult::valid('123456789', 'Inscrit', 'CABINET TEST');
+
+        ($this->useCase)('cabinet-test', 'admin@kysure.fr');
+
+        self::assertSame('123456789', $this->oriasCheckerFake->calledWith);
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testMarksProfileInvalidAndDispatchesFailedEventWhenNotRegistered(): void
+    {
+        $workspace = $this->workspace('cabinet-test', siren: '070012345', withProfile: true);
         $profile = $workspace->regulatoryProfile;
         self::assertNotNull($profile);
 
-        $this->workspaceRepository->expects(self::once())->method('findOneBySlug')->willReturn($workspace);
+        $this->workspaceRepository->method('findOneBySlug')->willReturn($workspace);
+        $this->oriasCheckerFake->result = OriasStatusResult::notRegistered('070012345', 'Introuvable sur le registre.');
 
-        // Configuration du FAKE au lieu du Mock
-        $invalidResult = OriasStatusResult::invalid('440714103', 'Introuvable sur le registre.');
-        $this->oriasCheckerFake->expectedResult = $invalidResult;
-
-        $this->regulatoryProfileRepository->expects(self::once())
-            ->method('save')
-            ->with(self::identicalTo($profile));
-
+        $this->regulatoryProfileRepository->expects(self::once())->method('save')->with(self::identicalTo($profile));
         $this->eventDispatcher->expects(self::once())
             ->method('dispatch')
             ->willReturnCallback(static function (object $event): object {
                 self::assertInstanceOf(WorkspaceOriasCheckFailedEvent::class, $event);
-                self::assertSame('440714103', $event->oriasNumber);
+                self::assertSame('070012345', $event->oriasNumber);
 
                 return $event;
             });
@@ -135,30 +120,47 @@ final class VerifyWorkspaceOriasUseCaseTest extends TestCase
             self::assertSame('Échec de la vérification ORIAS : Introuvable sur le registre.', $e->getMessage());
         }
 
-        // Assertion que le Fake a bien été appelé avec le bon argument
-        self::assertSame('440714103', $this->oriasCheckerFake->calledWithNumber);
-
+        self::assertSame('070012345', $this->oriasCheckerFake->calledWith);
         self::assertFalse($profile->isValidOrias);
         self::assertNotNull($profile->lastCheckOrias);
     }
 
     #[AllowMockObjectsWithoutExpectations]
-    public function testUpdatesProfileAndDispatchesSuccessEventWhenOriasIsValid(): void
+    public function testLeavesProfileUntouchedAndThrowsRetryableWhenRegistryUnavailable(): void
     {
-        $workspace = $this->createWorkspaceEntity('cabinet-test', '440714103', true);
+        $workspace = $this->workspace('cabinet-test', siren: '070012345', withProfile: true);
+        $profile = $workspace->regulatoryProfile;
+        self::assertNotNull($profile);
+        self::assertTrue($profile->isValidOrias, 'Précondition : profil réputé conforme.');
+
+        $this->workspaceRepository->method('findOneBySlug')->willReturn($workspace);
+        $this->oriasCheckerFake->result = OriasStatusResult::unavailable('070012345', 'Registre injoignable.');
+
+        $this->regulatoryProfileRepository->expects(self::never())->method('save');
+        $this->eventDispatcher->expects(self::never())->method('dispatch');
+
+        $this->expectException(OriasRegistryUnavailableException::class);
+
+        try {
+            ($this->useCase)('cabinet-test', 'admin@kysure.fr');
+        } finally {
+            self::assertTrue($profile->isValidOrias, 'Le statut de conformité ne doit pas changer.');
+            self::assertNull($profile->lastCheckOrias);
+        }
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testUpdatesProfileAndDispatchesSuccessEventWhenValid(): void
+    {
+        $workspace = $this->workspace('cabinet-test', siren: '070012345', withProfile: true);
         $profile = $workspace->regulatoryProfile;
         self::assertNotNull($profile);
 
-        $this->workspaceRepository->expects(self::once())->method('findOneBySlug')->willReturn($workspace);
+        $this->workspaceRepository->method('findOneBySlug')->willReturn($workspace);
+        $validResult = OriasStatusResult::valid('070012345', 'Inscrit', 'CABINET TEST', ['COA'], ['CNCEF']);
+        $this->oriasCheckerFake->result = $validResult;
 
-        // Configuration du FAKE
-        $validResult = new OriasStatusResult('440714103', true, 'Inscrit', 'API', ['COA'], ['CNCEF']);
-        $this->oriasCheckerFake->expectedResult = $validResult;
-
-        $this->regulatoryProfileRepository->expects(self::once())
-            ->method('save')
-            ->with(self::identicalTo($profile));
-
+        $this->regulatoryProfileRepository->expects(self::once())->method('save')->with(self::identicalTo($profile));
         $this->eventDispatcher->expects(self::once())
             ->method('dispatch')
             ->willReturnCallback(static function (object $event) use ($validResult): object {
@@ -170,26 +172,21 @@ final class VerifyWorkspaceOriasUseCaseTest extends TestCase
 
         ($this->useCase)('cabinet-test', 'admin@kysure.fr');
 
-        self::assertSame('440714103', $this->oriasCheckerFake->calledWithNumber);
+        self::assertSame('070012345', $this->oriasCheckerFake->calledWith);
         self::assertTrue($profile->isValidOrias);
         self::assertNotNull($profile->lastCheckOrias);
     }
 
-    private function createWorkspaceEntity(string $name, ?string $siren, bool $withProfile): Workspace
+    private function workspace(string $name, ?string $siren, bool $withProfile, ?string $siret = null): Workspace
     {
-        $refClass = new \ReflectionClass(Workspace::class);
-        $workspace = $refClass->newInstanceWithoutConstructor();
-
-        $propName = $refClass->getProperty('name');
-        $propName->setValue($workspace, $name);
-
-        $propSiren = $refClass->getProperty('siren');
-        $propSiren->setValue($workspace, $siren);
+        $ref = new \ReflectionClass(Workspace::class);
+        $workspace = $ref->newInstanceWithoutConstructor();
+        $ref->getProperty('name')->setValue($workspace, $name);
+        $ref->getProperty('siren')->setValue($workspace, $siren);
+        $ref->getProperty('siret')->setValue($workspace, $siret);
 
         if ($withProfile) {
-            $profile = new RegulatoryProfile($workspace);
-            $propProfile = $refClass->getProperty('regulatoryProfile');
-            $propProfile->setValue($workspace, $profile);
+            $ref->getProperty('regulatoryProfile')->setValue($workspace, new RegulatoryProfile($workspace));
         }
 
         return $workspace;
@@ -197,22 +194,17 @@ final class VerifyWorkspaceOriasUseCaseTest extends TestCase
 }
 
 /**
- * FAKE PATTERN : Remplaçant de l'infrastructure pour les tests unitaires.
- * Totalement compris par PHPStan et insensible aux règles de finalité.
+ * Fake d'infrastructure : insensible aux règles de finalité, compris par PHPStan.
  */
 final class FakeOriasChecker implements OriasCheckerInterface
 {
-    public ?OriasStatusResult $expectedResult = null;
-    public ?string $calledWithNumber = null;
+    public ?OriasStatusResult $result = null;
+    public ?string $calledWith = null;
 
     public function checkNumber(string $oriasNumber): OriasStatusResult
     {
-        $this->calledWithNumber = $oriasNumber;
+        $this->calledWith = $oriasNumber;
 
-        if (!$this->expectedResult instanceof OriasStatusResult) {
-            throw new \RuntimeException('Le FakeOriasChecker n\'a pas été configuré avec un $expectedResult.');
-        }
-
-        return $this->expectedResult;
+        return $this->result ?? throw new \RuntimeException('FakeOriasChecker non configuré.');
     }
 }
