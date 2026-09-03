@@ -76,7 +76,8 @@ class ValidatedMeetingReport
      *     kycUpdates: array<int, array{date: string, items: array<int, string>}>,
      *     actionPlan: array<int, array{date: string, items: array<int, string>}>,
      *     slugId: array<int, string>,
-     *     isExplorable?: bool
+     *     isExplorable?: bool,
+     *     isAdjusted?: bool
      * } $content
      * @param list<string> $sourceRecordingSlugs
      */
@@ -122,7 +123,8 @@ class ValidatedMeetingReport
      *     kycUpdates: array<int, array{date: string, items: array<int, string>}>,
      *     actionPlan: array<int, array{date: string, items: array<int, string>}>,
      *     slugId: array<int, string>,
-     *     isExplorable?: bool
+     *     isExplorable?: bool,
+     *     isAdjusted?: bool
      * } $content
      * @param list<string> $sourceRecordingSlugs
      */

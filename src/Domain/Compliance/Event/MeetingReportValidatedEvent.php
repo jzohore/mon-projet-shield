@@ -13,6 +13,7 @@ readonly class MeetingReportValidatedEvent
         public int $version,
         public string $validatedByEmail,
         public string $validatedByName,
+        public bool $adjusted = false,
     ) {
     }
 }

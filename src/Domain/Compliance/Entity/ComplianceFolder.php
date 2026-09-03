@@ -469,11 +469,16 @@ abstract class ComplianceFolder
     /**
      * Trace d'audit AMF : le CGP a figé la synthèse d'entretien du dossier.
      */
-    public function recordMeetingReportValidated(int $version, string $validatedByName): void
+    public function recordMeetingReportValidated(int $version, string $validatedByName, bool $adjusted = false): void
     {
         $this->saveHistory(
             'Rapport d\'entretien validé',
-            sprintf('Version %d figée par %s', $version, $validatedByName)
+            sprintf(
+                'Version %d figée par %s%s',
+                $version,
+                $validatedByName,
+                $adjusted ? ' (texte ajusté par le CGP)' : ''
+            )
         );
     }
 

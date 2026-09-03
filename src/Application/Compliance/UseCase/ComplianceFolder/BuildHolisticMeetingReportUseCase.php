@@ -7,6 +7,7 @@ namespace App\Application\Compliance\UseCase\ComplianceFolder;
 use App\Application\Compliance\DTO\Response\HolisticMeetingReportDto;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Entity\MeetingRecording;
+use App\Domain\Compliance\Enum\AdvisoryRiskProfile;
 use App\Domain\Compliance\Repository\MeetingRecordRepositoryInterface;
 
 /**
@@ -21,9 +22,6 @@ use App\Domain\Compliance\Repository\MeetingRecordRepositoryInterface;
  */
 final readonly class BuildHolisticMeetingReportUseCase
 {
-    /** Valeur renvoyée par l'IA quand elle n'a pas su qualifier le risque. */
-    private const string RISK_PROFILE_UNKNOWN = 'Non déterminé';
-
     /** Marqueur renvoyé par l'IA pour un enregistrement de test / hors sujet. */
     private const string OFF_TOPIC_MARKER = 'Test ou hors sujet';
 
@@ -43,7 +41,7 @@ final readonly class BuildHolisticMeetingReportUseCase
         $displayTimezone = new \DateTimeZone(self::DISPLAY_TIMEZONE);
 
         $summaryBlocks = [];
-        $riskProfile = self::RISK_PROFILE_UNKNOWN;
+        $riskProfile = AdvisoryRiskProfile::NON_DETERMINE;
         $kycUpdates = [];
         $actionPlan = [];
         $sourceSlugIds = [];
@@ -64,9 +62,10 @@ final readonly class BuildHolisticMeetingReportUseCase
                 $summaryBlocks[] = sprintf("Session du %s\n%s", $sessionDate, $sessionSummary);
             }
 
-            // 2. Profil de risque : le plus récent (dernier itéré) fait foi.
-            $sessionRisk = trim($output['riskProfileDetected'] ?? '');
-            if ('' !== $sessionRisk && self::RISK_PROFILE_UNKNOWN !== $sessionRisk) {
+            // 2. Profil de risque : le plus récent (dernier itéré) fait foi ;
+            //    on canonicalise le libellé libre de l'IA sur l'enum.
+            $sessionRisk = AdvisoryRiskProfile::fromLabel($output['riskProfileDetected'] ?? null);
+            if (AdvisoryRiskProfile::NON_DETERMINE !== $sessionRisk) {
                 $riskProfile = $sessionRisk;
             }
 
@@ -87,7 +86,7 @@ final readonly class BuildHolisticMeetingReportUseCase
 
         return new HolisticMeetingReportDto(
             executiveSummary: $isExplorable ? $summary : self::EMPTY_STATE_MESSAGE,
-            riskProfileDetected: $riskProfile,
+            riskProfileDetected: $riskProfile->value,
             kycUpdates: $kycUpdates,
             actionPlan: $actionPlan,
             slugId: $sourceSlugIds,

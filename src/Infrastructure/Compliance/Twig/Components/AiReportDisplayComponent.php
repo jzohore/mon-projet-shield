@@ -11,9 +11,11 @@ use App\Application\Compliance\UseCase\ComplianceFolder\ValidateMeetingReportUse
 use App\Application\Compliance\UseCase\MeetingRecord\DeleteMeetingAudioUseCase;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Entity\ValidatedMeetingReport;
+use App\Domain\Compliance\Enum\AdvisoryRiskProfile;
 use App\Domain\Compliance\Enum\MeetingProcessingStatus;
 use App\Domain\Compliance\Repository\MeetingRecordRepositoryInterface;
 use App\Domain\Compliance\Repository\ValidatedMeetingReportRepositoryInterface;
+use App\Domain\Compliance\ValueObject\MeetingReportAdjustments;
 use App\Domain\Shared\Exception\AbstractDomainException;
 use App\Infrastructure\Compliance\Voter\MeetingReportVoter;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
@@ -67,11 +69,28 @@ final class AiReportDisplayComponent extends AbstractController
     public string $revokeReason = '';
 
     /**
+     * Mode « Ajuster le texte » : le CGP amende le brouillon avant validation.
+     */
+    #[LiveProp(writable: true)]
+    public bool $isEditing = false;
+
+    /**
+     * Corrections saisies (null = non touché, on garde le texte de l'IA).
+     */
+    #[LiveProp(writable: true)]
+    public ?string $draftSummary = null;
+
+    #[LiveProp(writable: true)]
+    public ?string $draftRiskProfile = null;
+
+    /**
      * Mémo intra-requête du rapport validé en vigueur (non sérialisé).
      */
     private ?ValidatedMeetingReport $inForceReport = null;
 
     private bool $inForceReportLoaded = false;
+
+    private ?HolisticMeetingReportDto $meetingReportCache = null;
 
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -151,7 +170,87 @@ final class AiReportDisplayComponent extends AbstractController
 
     public function getMeetingReport(): HolisticMeetingReportDto
     {
-        return ($this->buildHolisticMeetingReportUseCase)($this->folder);
+        return $this->meetingReportCache ??= ($this->buildHolisticMeetingReportUseCase)($this->folder);
+    }
+
+    /**
+     * Texte affiché, par ordre de priorité : l'instantané figé (rapport validé),
+     * sinon la correction en cours du CGP, sinon la synthèse IA.
+     */
+    public function getDisplaySummary(): string
+    {
+        $validated = $this->getValidatedReport();
+        if ($validated instanceof ValidatedMeetingReport) {
+            return (string) ($validated->content['summary'] ?? $this->getMeetingReport()->executiveSummary);
+        }
+
+        return $this->draftSummary ?? $this->getMeetingReport()->executiveSummary;
+    }
+
+    public function getDisplayRiskProfile(): string
+    {
+        $validated = $this->getValidatedReport();
+        if ($validated instanceof ValidatedMeetingReport) {
+            return (string) ($validated->content['riskProfile'] ?? $this->getMeetingReport()->riskProfileDetected);
+        }
+
+        return $this->draftRiskProfile ?? $this->getMeetingReport()->riskProfileDetected;
+    }
+
+    /**
+     * Choix proposés dans la liste déroulante « Profil de risque ».
+     *
+     * @return list<AdvisoryRiskProfile>
+     */
+    public function getRiskProfileOptions(): array
+    {
+        return AdvisoryRiskProfile::selectable();
+    }
+
+    /**
+     * Le CGP a-t-il modifié quelque chose par rapport au brouillon IA ?
+     */
+    public function hasAdjustments(): bool
+    {
+        return !$this->effectiveAdjustments()->isEmpty();
+    }
+
+    /**
+     * Corrections réellement différentes du brouillon IA (les champs inchangés
+     * sont ignorés → pas de faux « texte ajusté »).
+     */
+    private function effectiveAdjustments(): MeetingReportAdjustments
+    {
+        $dto = $this->getMeetingReport();
+
+        $summary = null !== $this->draftSummary && trim($this->draftSummary) !== trim($dto->executiveSummary)
+            ? $this->draftSummary : null;
+
+        $draftProfile = null !== $this->draftRiskProfile ? AdvisoryRiskProfile::tryFrom($this->draftRiskProfile) : null;
+        $riskProfile = null !== $draftProfile && $draftProfile !== AdvisoryRiskProfile::fromLabel($dto->riskProfileDetected)
+            ? $draftProfile : null;
+
+        return MeetingReportAdjustments::fromInput($summary, $riskProfile);
+    }
+
+    #[LiveAction]
+    public function startEditing(): void
+    {
+        $this->denyAccessUnlessGranted(MeetingReportVoter::VALIDATE, $this->folder);
+
+        $dto = $this->getMeetingReport();
+        $this->draftSummary ??= $dto->executiveSummary;
+        $this->draftRiskProfile ??= $dto->riskProfileDetected;
+        $this->isEditing = true;
+        $this->isOpen = true;
+    }
+
+    #[LiveAction]
+    public function cancelEditing(): void
+    {
+        $this->isEditing = false;
+        $this->draftSummary = null;
+        $this->draftRiskProfile = null;
     }
 
     /**
@@ -178,15 +277,22 @@ final class AiReportDisplayComponent extends AbstractController
     {
         $this->denyAccessUnlessGranted(MeetingReportVoter::VALIDATE, $this->folder);
 
+        $adjustments = $this->effectiveAdjustments();
+
         try {
-            ($this->validateMeetingReportUseCase)($this->folder->slugId);
+            ($this->validateMeetingReportUseCase)($this->folder->slugId, $adjustments);
+            $this->isEditing = false;
+            $this->draftSummary = null;
+            $this->draftRiskProfile = null;
             $this->refreshValidatedReport();
-            $this->addFlash('success', 'Rapport d\'entretien validé : il est désormais figé.');
+            $this->addLiveFlash('success', $adjustments->isEmpty()
+                ? 'Rapport d\'entretien validé : il est désormais figé.'
+                : 'Rapport d\'entretien validé avec vos ajustements : il est désormais figé.');
         } catch (\DomainException $e) {
-            $this->addFlash('error', $e->getMessage());
+            $this->addLiveFlash('error', $e->getMessage());
         } catch (\Throwable) {
             $this->logger->error('Crash lors de la validation du rapport d\'entretien.', ['folder' => $this->folder->slugId]);
-            $this->addFlash('error', 'Erreur système lors de la validation.');
+            $this->addLiveFlash('error', 'Erreur système lors de la validation.');
         }
     }
 
@@ -207,12 +313,12 @@ final class AiReportDisplayComponent extends AbstractController
             ($this->revokeMeetingReportUseCase)($report->slugId, $this->revokeReason);
             $this->revokeReason = '';
             $this->refreshValidatedReport();
-            $this->addFlash('success', 'Rapport d\'entretien révoqué. Vous pouvez en valider une nouvelle version.');
+            $this->addLiveFlash('success', 'Rapport d\'entretien révoqué. Vous pouvez en valider une nouvelle version.');
         } catch (\DomainException $e) {
-            $this->addFlash('error', $e->getMessage());
+            $this->addLiveFlash('error', $e->getMessage());
         } catch (\Throwable) {
             $this->logger->error('Crash lors de la révocation du rapport d\'entretien.', ['folder' => $this->folder->slugId]);
-            $this->addFlash('error', 'Erreur système lors de la révocation.');
+            $this->addLiveFlash('error', 'Erreur système lors de la révocation.');
         }
     }
 

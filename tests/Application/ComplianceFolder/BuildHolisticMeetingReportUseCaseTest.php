@@ -64,6 +64,17 @@ final class BuildHolisticMeetingReportUseCaseTest extends TestCase
         self::assertSame('Équilibré', $dto->riskProfileDetected, "La valeur 'Non déterminé' de r3 ne doit pas écraser r2.");
     }
 
+    public function testRiskProfileIsCanonicalisedOntoTheEnum(): void
+    {
+        $this->recordRepository->method('findActiveByFolder')->willReturn([
+            $this->recording('r1', '2026-08-01 10:00:00', ['executiveSummary' => 'Ok.', 'riskProfileDetected' => '  equilibre ']),
+        ]);
+
+        $dto = ($this->useCase)($this->createEntityState(BusinessFolder::class));
+
+        self::assertSame('Équilibré', $dto->riskProfileDetected);
+    }
+
     public function testOffTopicSessionIsExcludedFromSummaryButStillCounted(): void
     {
         $this->recordRepository->method('findActiveByFolder')->willReturn([
