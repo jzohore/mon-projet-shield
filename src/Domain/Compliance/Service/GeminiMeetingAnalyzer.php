@@ -72,7 +72,7 @@ final readonly class GeminiMeetingAnalyzer implements MeetingAnalyzerInterface
             Format STRICTEMENT JSON pur :
             {
               "executiveSummary": "Synthèse factuelle stricte de CE fragment audio uniquement.",
-              "riskProfileDetected": "Prudent/Equilibré/Dynamique ou 'Non déterminé'",
+              "riskProfileDetected": "Un de : Prudent, Équilibré, Dynamique, Offensif, ou 'Non déterminé'. Écris exactement l'un de ces libellés.",
               "kycUpdates": ["Liste uniquement les faits EXPLICITEMENT prononcés dans cet audio"],
               "actionPlan": ["Action à mener suite à cet audio", "Laisse vide si rien à faire"]
             }

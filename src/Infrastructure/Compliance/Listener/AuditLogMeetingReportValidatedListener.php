@@ -35,6 +35,7 @@ readonly class AuditLogMeetingReportValidatedListener
                 'folder_reference' => $folder->reference,
                 'report_slug_id' => $event->reportSlugId,
                 'report_version' => $event->version,
+                'text_adjusted_by_cgp' => $event->adjusted,
                 'actor_name' => $event->validatedByName,
                 'actor_email' => $event->validatedByEmail,
                 'generated_at' => new \DateTimeImmutable()->format(\DateTimeInterface::ATOM),

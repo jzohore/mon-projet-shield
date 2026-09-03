@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Application\Compliance\UseCase\ComplianceFolder;
 
+use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Entity\ValidatedMeetingReport;
 use App\Domain\Compliance\Enum\MeetingProcessingStatus;
 use App\Domain\Compliance\Event\MeetingReportValidatedEvent;
 use App\Domain\Compliance\Exception\ComplianceFolderNotFoundException;
 use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
 use App\Domain\Compliance\Repository\ValidatedMeetingReportRepositoryInterface;
+use App\Domain\Compliance\ValueObject\MeetingReportAdjustments;
 use App\Domain\Database\TransactionManagerInterface;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -19,6 +21,9 @@ use Webmozart\Assert\Assert;
  * Fige la synthèse d'entretien consolidée d'un dossier telle que validée par le
  * CGP : à partir de cet instant elle ne bouge plus, quelles que soient les
  * évolutions des enregistrements source ou de la logique de fusion.
+ *
+ * Le CGP peut amender le brouillon avant de le figer ({@see MeetingReportAdjustments}) ;
+ * l'instantané figé porte alors le texte corrigé et le marqueur `isAdjusted`.
  *
  * L'autorisation « CGP responsable du dossier » relève d'un voter au niveau du
  * contrôleur, comme partout ailleurs dans l'application ; ce use case se limite
@@ -39,11 +44,13 @@ final readonly class ValidateMeetingReportUseCase
     /**
      * @return string le slugId du rapport validé créé
      */
-    public function __invoke(string $folderSlugId): string
+    public function __invoke(string $folderSlugId, ?MeetingReportAdjustments $adjustments = null): string
     {
+        $adjustments ??= MeetingReportAdjustments::none();
+
         $folder = $this->folderRepository->findOneBySlugId($folderSlugId);
 
-        if (!$folder instanceof \App\Domain\Compliance\Entity\ComplianceFolder) {
+        if (!$folder instanceof ComplianceFolder) {
             throw ComplianceFolderNotFoundException::withId($folderSlugId);
         }
 
@@ -63,16 +70,17 @@ final readonly class ValidateMeetingReportUseCase
 
         $user = $this->userProvider->getUser();
         $version = $this->reportRepository->findLatestVersionNumber($folder) + 1;
+        $wasAdjusted = !$adjustments->isEmpty();
 
         $validatedReport = ValidatedMeetingReport::validate(
             complianceFolder: $folder,
             validatedBy: $user,
-            content: $report->toArray(),
+            content: $adjustments->applyTo($report->toArray()),
             sourceRecordingSlugs: array_values($report->slugId),
             version: $version,
         );
 
-        $folder->recordMeetingReportValidated($version, $user->getFullName());
+        $folder->recordMeetingReportValidated($version, $user->getFullName(), $wasAdjusted);
 
         // Rapport figé + trace d'historique du dossier commités ensemble, ou pas du tout.
         $this->transactionManager->transactional(function () use ($validatedReport, $folder): void {
@@ -88,6 +96,7 @@ final readonly class ValidateMeetingReportUseCase
             version: $version,
             validatedByEmail: $user->email,
             validatedByName: $user->getFullName(),
+            adjusted: $wasAdjusted,
         ));
 
         return $validatedReport->slugId;

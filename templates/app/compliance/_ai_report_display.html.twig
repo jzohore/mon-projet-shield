@@ -12,7 +12,7 @@
             </div>
             <p class="text-xs text-slate-500 mt-1 flex items-center gap-1.5">
                 Profil de risque : <span class="font-semibold text-indigo-600 flex items-center gap-1">
-                    {{ dto.riskProfileDetected|default('Non déterminé') }}
+                    {{ risk_override|default(dto.riskProfileDetected|default('Non déterminé')) }}
             </span>
             </p>
         </div>
@@ -25,7 +25,7 @@
         <div class="space-y-2">
             <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Synthèse de l'échange</h4>
             <div class="text-sm text-slate-700 leading-relaxed bg-white p-4 rounded-lg border border-slate-100 shadow-2xs">
-                {{ dto.executiveSummary|nl2br }}
+                {{ (summary_override|default(dto.executiveSummary))|nl2br }}
             </div>
         </div>
 

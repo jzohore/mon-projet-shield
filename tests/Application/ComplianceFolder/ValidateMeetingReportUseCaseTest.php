@@ -10,12 +10,14 @@ use App\Domain\Compliance\Entity\BusinessFolder;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Entity\MeetingRecording;
 use App\Domain\Compliance\Entity\ValidatedMeetingReport;
+use App\Domain\Compliance\Enum\AdvisoryRiskProfile;
 use App\Domain\Compliance\Enum\MeetingProcessingStatus;
 use App\Domain\Compliance\Event\MeetingReportValidatedEvent;
 use App\Domain\Compliance\Exception\ComplianceFolderNotFoundException;
 use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
 use App\Domain\Compliance\Repository\MeetingRecordRepositoryInterface;
 use App\Domain\Compliance\Repository\ValidatedMeetingReportRepositoryInterface;
+use App\Domain\Compliance\ValueObject\MeetingReportAdjustments;
 use App\Domain\Database\TransactionManagerInterface;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Service\CurrentUserProvider;
@@ -93,14 +95,44 @@ final class ValidateMeetingReportUseCaseTest extends TestCase
                 && 'marie@kysure.test' === $e->validatedByEmail
                 && 'Marie CURIE' === $e->validatedByName
                 && str_starts_with($e->reportSlugId, 'meeting_report_')
-                && '' !== $e->reportId));
+                && '' !== $e->reportId
+                && false === $e->adjusted));
 
         $slugId = ($this->useCase)('comp_fol_1');
 
         self::assertStringStartsWith('meeting_report_', $slugId);
         self::assertNotEmpty($folder->history);
         self::assertSame("Rapport d'entretien validé", $folder->history[0]['title']);
-        self::assertStringContainsString('Version 1 figée par Marie CURIE', $folder->history[0]['description']);
+        self::assertSame('Version 1 figée par Marie CURIE', $folder->history[0]['description']);
+    }
+
+    public function testAppliesCgpAdjustmentsToTheFrozenContent(): void
+    {
+        $folder = $this->folder(MeetingProcessingStatus::DONE);
+
+        $this->folderRepository->method('findOneBySlugId')->willReturn($folder);
+        $this->reportRepository->method('findInForceByFolder')->willReturn(null);
+        $this->reportRepository->method('findLatestVersionNumber')->willReturn(0);
+        $this->recordRepository->method('findActiveByFolder')->willReturn([$this->explorableRecording()]);
+        $this->folderRepository->expects($this->once())->method('save');
+
+        $this->reportRepository->expects($this->once())
+            ->method('save')
+            ->with($this->callback(static function (ValidatedMeetingReport $report): bool {
+                self::assertSame('Synthèse revue par le CGP.', $report->content['summary']);
+                self::assertSame('Prudent', $report->content['riskProfile']);
+                self::assertTrue($report->content['isAdjusted']);
+
+                return true;
+            }));
+
+        $this->eventDispatcher->expects($this->once())
+            ->method('dispatch')
+            ->with($this->callback(static fn (MeetingReportValidatedEvent $e): bool => $e->adjusted));
+
+        ($this->useCase)('comp_fol_1', MeetingReportAdjustments::fromInput('  Synthèse revue par le CGP.  ', AdvisoryRiskProfile::PRUDENT));
+
+        self::assertStringContainsString('(texte ajusté par le CGP)', $folder->history[0]['description']);
     }
 
     public function testNextVersionIsLatestPlusOne(): void

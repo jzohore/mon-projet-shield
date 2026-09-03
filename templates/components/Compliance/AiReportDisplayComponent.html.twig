@@ -1,269 +1,241 @@
-{# templates/components/AiReportDisplayComponent.html.twig #}
+{# templates/components/Compliance/AiReportDisplayComponent.html.twig #}
 
-{# 1. LE PARENT : Fusion parfaite côté serveur via .defaults() #}
+{# Conteneur fixe. PAS de data-live-ignore ici : le composant doit rester
+   réactif. Le contrôleur Stimulus `ai-widget` ré-applique son état plié/déplié
+   après chaque rendu Live. #}
 <div {{ attributes.defaults({
     'id': 'meeting-ai-report',
-    'data-live-ignore': 'true',
     'class': 'fixed bottom-6 right-6 lg:right-10 z-50 pointer-events-none'
 }) }}
     {% if this.isProcessing %}data-poll="delay(3000)|checkStatus"{% endif %}>
-
-    {# Boutons fantômes #}
+    {% include 'components/partials/_live_alerts.html.twig' with {
+        message: this.actionMessage|default(null),
+        type: this.actionMessageType|default('success')
+    } %}
+    {# Déclencheurs externes (front d'enregistrement) #}
     <button type="button" class="hidden" id="btn-start-listening" data-action="live#action" data-live-action-param="startListening"></button>
     <button type="button" class="hidden" id="btn-start-polling" data-action="live#action" data-live-action-param="startPolling"></button>
 
     {% set folder = this.folder %}
     {% set status = this.processingStatus %}
     {% set meeting = this.meetingReport %}
+    {% set validated = this.validatedReport %}
+    {% set is_ready = not this.isListening
+        and status.value not in ['finalizing', 'analyzing']
+        and meeting is not empty and meeting.isExplorable
+        and not this.isDeleted %}
+
     {% if this.isListening or this.isProcessing or folder.postMeetingReport is not empty %}
 
-        {# 2. L'ENFANT : Rôle UI et Stimulus. #}
         <div data-controller="ai-widget"
              data-ai-widget-key-value="{{ folder.slugId }}"
-             class="w-[92vw] sm:w-[440px] bg-white rounded-xl shadow-[0_12px_40px_rgb(0,0,0,0.15)] border border-slate-200 flex flex-col transition-[opacity,transform,width] duration-300 ease-out opacity-0 translate-y-2 pointer-events-auto motion-reduce:transition-none">
+             class="w-[92vw] sm:w-[400px] flex flex-col overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_12px_44px_-12px_rgba(15,23,42,0.22)] transition-[opacity,transform,width] duration-300 ease-out pointer-events-auto motion-reduce:transition-none">
 
-            {# HEADER #}
-            <div data-action="click->ai-widget#toggle:stop"
-                 class="shrink-0 px-4 py-3 border-b border-slate-100 flex justify-between items-center cursor-pointer select-none hover:bg-slate-50 transition-colors rounded-t-xl bg-white">
+            {# ─────────────────────────  EN-TÊTE  ───────────────────────── #}
+            <div class="flex h-12 shrink-0 select-none items-center gap-2 pl-4 pr-2">
+                <div class="flex min-w-0 flex-1 cursor-pointer items-center gap-2" data-action="click->ai-widget#toggle:stop">
+                    {% if this.isListening %}
+                        {{ ux_icon('lucide:activity', { class: 'size-3.5 shrink-0 text-rose-500 animate-pulse', 'aria-hidden': 'true' }) }}
+                    {% else %}
+                        {{ ux_icon('lucide:zap', { class: 'size-3.5 shrink-0 text-slate-400', 'aria-hidden': 'true' }) }}
+                    {% endif %}
 
-                <div class="flex items-center gap-2.5 overflow-hidden">
-                    <div class="flex items-center justify-center size-6 rounded-md shrink-0 {{ this.isListening ? 'bg-rose-50 text-rose-600' : 'bg-indigo-50 text-indigo-600' }}">
-                        {{ ux_icon(this.isListening ? 'lucide:mic' : 'lucide:sparkles', { class: 'size-3.5' ~ (this.isListening ? ' animate-pulse' : '') }) }}
-                    </div>
-
-                    {# 🚀 AJOUT TARGET : headerText #}
-                    <h3 data-ai-widget-target="headerText" class="text-sm font-semibold text-slate-900 truncate transition-colors">
-                        {% if this.isListening %}
-                            Capture audio active
-                        {% elseif status and status.value in ['finalizing', 'analyzing'] %}
-                            Assistant IA
-                        {% else %}
-                            Synthèse terminée
+                    <h3 data-ai-widget-target="headerText" class="truncate text-[13px] font-semibold text-slate-900">
+                        {% if this.isListening %}Écoute en cours
+                        {% elseif status.value == 'finalizing' %}Sécurisation…
+                        {% elseif status.value == 'analyzing' %}Analyse en cours
+                        {% elseif validated %}Synthèse validée
+                        {% else %}Synthèse d'entretien
                         {% endif %}
                     </h3>
+
+                    {% if validated %}{{ ux_icon('lucide:lock', { class: 'size-3 shrink-0 text-slate-400', 'aria-hidden': 'true' }) }}{% endif %}
                 </div>
 
-                <div class="flex items-center gap-1 shrink-0 ml-2">
-                    <button type="button" class="p-1 text-slate-400 hover:text-slate-700 rounded transition-colors" data-ai-widget-target="chevron">
-                        {{ ux_icon('lucide:chevron-down', { class: 'size-4 transition-transform duration-300' }) }}
-                    </button>
-                </div>
+                <button type="button" aria-label="Réduire" data-ai-widget-target="chevron" data-action="click->ai-widget#toggle:stop"
+                        class="grid size-8 place-items-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700">
+                    {{ ux_icon('lucide:chevron-down', { class: 'size-4 transition-transform duration-300' }) }}
+                </button>
             </div>
 
-            {# CORPS PLIABLE #}
-            <div data-ai-widget-target="content" class="flex flex-col w-full overflow-hidden max-h-[75vh] transition-[max-height] duration-300 ease-out motion-reduce:transition-none">
-                <div class="flex-1 overflow-y-auto bg-slate-50/20">
+            <div class="h-px shrink-0 bg-slate-100"></div>
+
+            {# ─────────────────────────  CORPS PLIABLE  ───────────────────────── #}
+            <div data-ai-widget-target="content" class="flex w-full flex-col overflow-hidden max-h-[75vh] transition-[max-height] duration-300 ease-out motion-reduce:transition-none">
+                <div class="flex-1 overflow-y-auto">
 
                     {% if this.isListening %}
-                        <div class="flex flex-col items-center justify-center p-10 text-center">
-                            <div class="relative mb-3 mt-2">
-                                {# 🚀 AJOUT TARGET : pulse + ajout transition-colors #}
-                                <div data-ai-widget-target="pulse" class="absolute inset-0 bg-rose-100 rounded-full animate-ping opacity-50 transition-colors duration-300"></div>
-                                <div class="relative bg-white border border-rose-100 p-3 rounded-full shadow-sm">
-                                    {{ ux_icon('lucide:activity', { class: 'size-6 text-rose-500' }) }}
-                                </div>
-                            </div>
-
-                            {# 🚀 AJOUT TARGET : statusText #}
-                            <span data-ai-widget-target="statusText" class="text-sm font-semibold text-slate-900 transition-colors">L'IA vous écoute...</span>
-
-                            <p class="text-xs text-slate-500 mt-1 mb-2">L'audio est crypté en temps réel.</p>
-                            <span class="text-[10px] font-medium text-slate-400 uppercase tracking-wider">Cliquez sur Stop pour analyser</span>
+                        <div class="flex flex-col items-center justify-center gap-2 px-8 py-12 text-center">
+                            <div data-ai-widget-target="pulse" class="size-2 rounded-full bg-rose-500 animate-pulse"></div>
+                            <span data-ai-widget-target="statusText" class="text-sm font-medium text-slate-900">L'IA vous écoute…</span>
+                            <span class="text-xs text-slate-400">Audio chiffré. Cliquez sur Stop pour analyser.</span>
                         </div>
 
-                    {% elseif status and status.value == 'finalizing' %}
-                        <div class="flex flex-col items-center justify-center p-10 text-center">
-                            {{ ux_icon('lucide:loader-2', { class: 'size-6 text-slate-400 animate-spin mb-3 mt-2' }) }}
-                            <span class="text-sm font-semibold text-slate-700">Sécurisation du fichier...</span>
+                    {% elseif status.value == 'finalizing' or status.value == 'analyzing' %}
+                        <div class="flex items-center justify-center gap-2.5 px-8 py-12">
+                            {{ ux_icon('lucide:loader-2', { class: 'size-4 shrink-0 text-slate-400 animate-spin', 'aria-hidden': 'true' }) }}
+                            <span class="text-sm font-medium text-slate-600">{{ status.value == 'finalizing' ? 'Sécurisation du fichier…' : 'Analyse du discours…' }}</span>
                         </div>
 
-                    {% elseif status and status.value == 'analyzing' %}
-                        <div class="flex flex-col items-center justify-center p-10 text-center">
-                            {{ ux_icon('lucide:sparkles', { class: 'size-6 text-indigo-500 animate-pulse mb-3 mt-2' }) }}
-                            <span class="text-sm font-semibold text-indigo-900">Analyse du discours...</span>
+                    {% elseif this.isDeleted %}
+                        <div class="flex flex-col items-center justify-center gap-1.5 px-8 py-12 text-center">
+                            {{ ux_icon('lucide:check', { class: 'size-5 text-slate-400', 'aria-hidden': 'true' }) }}
+                            <span class="text-sm font-medium text-slate-900">Synthèse supprimée</span>
+                            <span class="text-xs text-slate-400">Vous pouvez enregistrer une nouvelle session.</span>
                         </div>
 
                     {% elseif meeting is not empty %}
-                        <div class="animate-in fade-in duration-500">
-                            {% if this.isDeleted %}
-                                <div class="flex items-center gap-4 border-b border-slate-200 bg-slate-50 p-6">
-                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-500">
-                                        {{ ux_icon('lucide:trash-2', { class: 'size-5' }) }}
-                                    </div>
-                                    <div>
-                                        <p class="text-sm font-semibold text-slate-900">
-                                            Synthèse effacée
-                                        </p>
-                                        <p class="text-xs text-slate-500 mt-0.5">
-                                            Les données ont été supprimées. Vous pouvez enregistrer une nouvelle session.
-                                        </p>
-                                    </div>
+                        {% if this.isEditing %}
+                            {# ── Édition : mêmes repères que la lecture, contenu malléable ── #}
+                            <div class="space-y-5 px-6 py-5">
+                                <div class="flex items-baseline justify-between gap-3">
+                                    <label for="draft_risk_profile" class="text-xs font-medium uppercase tracking-wide text-slate-400">Profil de risque</label>
+                                    <span class="relative">
+                                        <select id="draft_risk_profile" data-model="draftRiskProfile"
+                                                class="cursor-pointer appearance-none bg-transparent pr-5 text-right text-[13px] font-medium text-slate-800 focus:outline-none">
+                                            {% for profile in this.riskProfileOptions %}
+                                                <option value="{{ profile.value }}" {{ profile.value == this.draftRiskProfile ? 'selected' : '' }}>{{ profile.value }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        {{ ux_icon('lucide:chevron-down', { class: 'pointer-events-none absolute right-0 top-1/2 size-3.5 -translate-y-1/2 text-slate-400' }) }}
+                                    </span>
                                 </div>
-                            {% else %}
-                                {{ include('@app/compliance/_ai_report_display.html.twig', { 'dto': this.meetingReport, 'hide_actions': true }) }}
-                            {% endif %}
-                        </div>
+
+                                <div class="space-y-2">
+                                    <div class="flex items-baseline justify-between gap-3">
+                                        <span class="text-xs font-medium uppercase tracking-wide text-slate-400">Synthèse de l'échange</span>
+                                        <button type="button" class="text-xs font-medium text-slate-500 transition-colors hover:text-slate-900"
+                                                data-action="live#action" data-live-action-param="cancelEditing">Annuler</button>
+                                    </div>
+                                    <textarea id="draft_summary" rows="13" data-model="draftSummary"
+                                              class="block w-full rounded-lg border border-slate-200 bg-white px-3.5 py-3 text-[15px] leading-relaxed text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10">{{ this.draftSummary }}</textarea>
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="relative">
+                                {{ include('@app/compliance/_ai_report_display.html.twig', {
+                                    'dto': this.meetingReport,
+                                    'hide_actions': true,
+                                    'summary_override': this.displaySummary,
+                                    'risk_override': this.displayRiskProfile,
+                                }) }}
+                                {% if not validated %}
+                                    <button type="button" data-action="live#action" data-live-action-param="startEditing"
+                                            class="absolute right-6 top-5 text-xs font-medium text-slate-500 transition-colors hover:text-slate-900">
+                                        {{ this.hasAdjustments ? 'Continuer' : 'Modifier' }}
+                                    </button>
+                                {% endif %}
+                            </div>
+                        {% endif %}
                     {% endif %}
                 </div>
 
-                {# ─────────────────────────  BARRE D'ACTIONS  ───────────────────────── #}
-                {% if not this.isDeleted and meeting is not empty and not this.isListening
-                    and status.value not in ['finalizing', 'analyzing'] and meeting.isExplorable %}
-                    {% set validated = this.validatedReport %}
-
-                    <div class="rounded-b-xl border-t border-slate-100 bg-slate-50/50 px-4 py-3">
+                {# ─────────────  PIED  ─────────────
+                   Une action primaire (ou un simple constat), + au plus un lien
+                   discret et visible pour l'action secondaire de l'état courant. #}
+                {% if is_ready %}
+                    {% set footer_state = validated ? 'validated' : (this.isEditing ? 'editing' : 'draft') %}
+                    {# id encodant l'état : au changement d'état, morphdom REMPLACE
+                       ce bloc (et démonte proprement toute modale ouverte) au lieu
+                       de le morpher — sinon la <dialog> ouverte « déteignait »
+                       sur la modale de l'état suivant. #}
+                    <div id="ai-widget-footer-{{ footer_state }}"
+                         class="flex shrink-0 items-center justify-between gap-3 border-t border-slate-100 px-4 py-3">
 
                         {% if validated %}
-                            {# ── État : rapport figé ─────────────────────────────────── #}
-                            <div class="flex items-start justify-between gap-4">
-                                <p class="flex items-start gap-2 text-xs leading-relaxed text-slate-600">
-                                    {{ ux_icon('lucide:shield-check', { class: 'size-4 shrink-0 mt-px text-emerald-600', 'aria-hidden': 'true' }) }}
-                                    <span>
-                                        <span class="font-medium text-slate-800">Rapport figé &middot; version&nbsp;{{ validated.version }}</span><br>
-                                        <span class="text-slate-500">Le {{ validated.validatedAt|date('d/m/Y à H:i') }} par {{ validated.validatedByName }}</span>
-                                    </span>
-                                </p>
+                            {# ── Validé : constat + « Réviser » ── #}
+                            <p class="flex min-w-0 items-center gap-1.5 text-xs text-slate-500">
+                                {{ ux_icon('lucide:check', { class: 'size-3.5 shrink-0 text-emerald-600', 'aria-hidden': 'true' }) }}
+                                <span class="truncate">Validée le {{ validated.validatedAt|date('d/m/Y') }} par {{ validated.validatedByName }} &middot; v{{ validated.version }}</span>
+                            </p>
 
-                                <twig:Dialog id="revoke_meeting_report">
-                                    <twig:Dialog:Trigger>
-                                        <twig:Button variant="outline" size="sm" {{ ...dialog_trigger_attrs }}>
-                                            {{ ux_icon('lucide:pencil', { class: 'size-3.5', 'aria-hidden': 'true' }) }}
-                                            Réviser
+                            <twig:Dialog id="revoke_meeting_report">
+                                <twig:Dialog:Trigger>
+                                    <twig:Button variant="ghost" size="sm" class="shrink-0 px-1 text-slate-500 hover:text-slate-900" {{ ...dialog_trigger_attrs }}>Réviser</twig:Button>
+                                </twig:Dialog:Trigger>
+                                <twig:Dialog:Content>
+                                    <twig:Dialog:Header>
+                                        <twig:Dialog:Title class="text-slate-900">Réviser la synthèse</twig:Dialog:Title>
+                                        <twig:Dialog:Description class="mt-2 text-slate-500">
+                                            La version&nbsp;{{ validated.version }} sera révoquée : elle reste archivée dans la piste d'audit mais cesse d'être en vigueur. Vous pourrez ensuite valider une version corrigée.
+                                        </twig:Dialog:Description>
+                                    </twig:Dialog:Header>
+                                    <div class="my-4">
+                                        <label for="revoke_reason" class="mb-1.5 block text-xs font-medium text-slate-700">
+                                            Motif <span class="font-normal text-slate-400">— obligatoire</span>
+                                        </label>
+                                        <textarea id="revoke_reason" name="revoke_reason" rows="3" data-model="revokeReason"
+                                                  aria-required="true" aria-describedby="revoke_reason_hint"
+                                                  class="block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-4 focus:ring-blue-500/10"
+                                                  placeholder="Ex : profil de risque erroné, objectifs du client incomplets…"></textarea>
+                                        <p id="revoke_reason_hint" class="mt-1.5 text-xs text-slate-400">Consigné dans la piste d'audit LCB-FT du dossier.</p>
+                                    </div>
+                                    <twig:Dialog:Footer>
+                                        <twig:Dialog:Close>
+                                            <twig:Button variant="outline" size="sm" {{ ...dialog_close_attrs }}>Annuler</twig:Button>
+                                        </twig:Dialog:Close>
+                                        <twig:Button type="button" variant="destructive" size="sm"
+                                                     data-action="live#action" data-live-action-param="revokeReport"
+                                                     data-loading="action(revokeReport)|addAttribute(disabled)">
+                                            <span data-loading="action(revokeReport)|hide">Révoquer la version&nbsp;{{ validated.version }}</span>
+                                            <span data-loading="action(revokeReport)|show" class="hidden items-center gap-2">
+                                                {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin', 'aria-hidden': 'true' }) }} Révocation…
+                                            </span>
                                         </twig:Button>
-                                    </twig:Dialog:Trigger>
+                                    </twig:Dialog:Footer>
+                                </twig:Dialog:Content>
+                            </twig:Dialog>
 
-                                    <twig:Dialog:Content>
-                                        <twig:Dialog:Header>
-                                            <twig:Dialog:Title class="text-slate-900">Réviser le rapport validé</twig:Dialog:Title>
-                                            <twig:Dialog:Description class="mt-2 text-slate-500">
-                                                La version&nbsp;{{ validated.version }} sera révoquée : elle reste archivée et consultable dans la piste d'audit, mais cesse d'être la version en vigueur. Vous pourrez ensuite valider une nouvelle version corrigée.
-                                            </twig:Dialog:Description>
-                                        </twig:Dialog:Header>
-
-                                        <div class="my-4">
-                                            <label for="revoke_reason" class="mb-1.5 block text-xs font-medium text-slate-700">
-                                                Motif de la révision <span class="font-normal text-slate-400">— obligatoire</span>
-                                            </label>
-                                            <textarea id="revoke_reason" name="revoke_reason" rows="3"
-                                                      data-model="revokeReason"
-                                                      aria-required="true" aria-describedby="revoke_reason_hint"
-                                                      class="block w-full rounded-md border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus-visible:border-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-200"
-                                                      placeholder="Ex : profil de risque erroné, objectifs du client incomplets…"></textarea>
-                                            <p id="revoke_reason_hint" class="mt-1.5 text-xs text-slate-400">
-                                                Ce motif est consigné dans la piste d'audit LCB-FT du dossier.
-                                            </p>
-                                        </div>
-
-                                        <twig:Dialog:Footer>
-                                            <twig:Dialog:Close>
-                                                <twig:Button variant="outline" size="sm" {{ ...dialog_close_attrs }}>Annuler</twig:Button>
-                                            </twig:Dialog:Close>
-
-                                            <twig:Button type="button" variant="destructive" size="sm"
-                                                         data-action="live#action"
-                                                         data-live-action-param="revokeReport"
-                                                         data-loading="action(revokeReport)|addAttribute(disabled)">
-                                                <span data-loading="action(revokeReport)|hide" class="inline-flex items-center gap-1.5">
-                                                    {{ ux_icon('lucide:rotate-ccw', { class: 'size-3.5', 'aria-hidden': 'true' }) }}
-                                                    Révoquer la version&nbsp;{{ validated.version }}
-                                                </span>
-                                                <span data-loading="action(revokeReport)|show" class="hidden items-center gap-1.5">
-                                                    {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin', 'aria-hidden': 'true' }) }}
-                                                    Révocation…
-                                                </span>
-                                            </twig:Button>
-                                        </twig:Dialog:Footer>
-                                    </twig:Dialog:Content>
-                                </twig:Dialog>
-                            </div>
+                        {% elseif this.isEditing %}
+                            {# ── En édition : rien d'autre que « Valider » (Annuler est dans le corps) ── #}
+                            <span></span>
+                            <twig:Button type="button" variant="primary" size="sm" class="shrink-0"
+                                         data-action="live#action" data-live-action-param="validateReport"
+                                         data-loading="action(validateReport)|addAttribute(disabled)">
+                                <span data-loading="action(validateReport)|hide">Valider la synthèse</span>
+                                <span data-loading="action(validateReport)|show" class="hidden items-center gap-2">
+                                    {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin', 'aria-hidden': 'true' }) }} Validation…
+                                </span>
+                            </twig:Button>
 
                         {% else %}
-                            {# ── État : brouillon prêt à valider ─────────────────────── #}
-                            <div class="flex flex-col gap-2.5">
-                                <p class="text-xs text-slate-500">
-                                    Brouillon généré par l'IA. Le valider le fige définitivement : plus aucune modification ne sera possible ensuite.
-                                </p>
-
-                                <div class="flex items-center justify-between gap-3">
-                                    {# Action destructive — discrète, à gauche #}
-                                    <twig:Dialog id="delete_meetings_record">
-                                        <twig:Dialog:Trigger>
-                                            <twig:Button variant="ghost" size="sm" class="text-slate-500 hover:bg-red-50 hover:text-red-700" {{ ...dialog_trigger_attrs }}>
-                                                {{ ux_icon('lucide:trash-2', { class: 'size-3.5', 'aria-hidden': 'true' }) }}
-                                                Supprimer
-                                            </twig:Button>
-                                        </twig:Dialog:Trigger>
-
-                                        <twig:Dialog:Content>
-                                            <twig:Dialog:Header>
-                                                <twig:Dialog:Title class="text-slate-900">Supprimer la synthèse IA</twig:Dialog:Title>
-                                                <twig:Dialog:Description class="mt-2 text-slate-500">
-                                                    Cette action est irréversible.
-                                                </twig:Dialog:Description>
-                                            </twig:Dialog:Header>
-
-                                            <ul class="my-4 space-y-2 text-xs text-slate-600">
-                                                <li class="flex items-start gap-2">
-                                                    {{ ux_icon('lucide:dot', { class: 'size-4 shrink-0 text-slate-400', 'aria-hidden': 'true' }) }}
-                                                    <span>Le texte généré par l'IA et vos corrections seront définitivement effacés.</span>
-                                                </li>
-                                                <li class="flex items-start gap-2">
-                                                    {{ ux_icon('lucide:dot', { class: 'size-4 shrink-0 text-slate-400', 'aria-hidden': 'true' }) }}
-                                                    <span>L'enregistrement audio source sera également supprimé, s'il existe encore.</span>
-                                                </li>
-                                                <li class="flex items-start gap-2">
-                                                    {{ ux_icon('lucide:dot', { class: 'size-4 shrink-0 text-slate-400', 'aria-hidden': 'true' }) }}
-                                                    <span>L'opération est consignée dans la piste d'audit LCB-FT du dossier.</span>
-                                                </li>
-                                            </ul>
-
-                                            <twig:Dialog:Footer>
-                                                <twig:Dialog:Close>
-                                                    <twig:Button variant="outline" size="sm" {{ ...dialog_close_attrs }}>Annuler</twig:Button>
-                                                </twig:Dialog:Close>
-
-                                                <twig:Button type="button" variant="destructive" size="sm"
-                                                             data-action="live#action"
-                                                             data-live-action-param="deleteMeetingReport"
-                                                             data-loading="action(deleteMeetingReport)|addAttribute(disabled)">
-                                                    <span data-loading="action(deleteMeetingReport)|hide" class="inline-flex items-center gap-1.5">
-                                                        {{ ux_icon('lucide:trash-2', { class: 'size-3.5', 'aria-hidden': 'true' }) }}
-                                                        Supprimer définitivement
-                                                    </span>
-                                                    <span data-loading="action(deleteMeetingReport)|show" class="hidden items-center gap-1.5">
-                                                        {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin', 'aria-hidden': 'true' }) }}
-                                                        Suppression…
-                                                    </span>
-                                                </twig:Button>
-                                            </twig:Dialog:Footer>
-                                        </twig:Dialog:Content>
-                                    </twig:Dialog>
-
-                                    {# Flux principal — à droite : ajuster puis valider #}
-                                    <div class="flex items-center gap-1.5">
-                                        <twig:Button type="button" variant="ghost" size="sm" class="text-slate-600 hover:text-slate-900">
-                                            {{ ux_icon('lucide:pencil', { class: 'size-3.5', 'aria-hidden': 'true' }) }}
-                                            Ajuster le texte
-                                        </twig:Button>
-
-                                        <twig:Button type="button" variant="primary" size="sm"
-                                                     data-action="live#action"
-                                                     data-live-action-param="validateReport"
-                                                     data-loading="action(validateReport)|addAttribute(disabled)">
-                                            <span data-loading="action(validateReport)|hide" class="inline-flex items-center gap-1.5">
-                                                {{ ux_icon('lucide:shield-check', { class: 'size-3.5', 'aria-hidden': 'true' }) }}
-                                                Valider le rapport
-                                            </span>
-                                            <span data-loading="action(validateReport)|show" class="hidden items-center gap-1.5">
-                                                {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin', 'aria-hidden': 'true' }) }}
-                                                Validation…
+                            {# ── Brouillon : « Supprimer » (discret) + « Valider » (primaire) ── #}
+                            <twig:Dialog id="delete_meetings_record">
+                                <twig:Dialog:Trigger>
+                                    <twig:Button variant="ghost" size="sm" class="shrink-0 px-1 text-slate-400 hover:text-red-600" {{ ...dialog_trigger_attrs }}>Supprimer</twig:Button>
+                                </twig:Dialog:Trigger>
+                                <twig:Dialog:Content>
+                                    <twig:Dialog:Header>
+                                        <twig:Dialog:Title class="text-slate-900">Supprimer la synthèse</twig:Dialog:Title>
+                                        <twig:Dialog:Description class="mt-2 text-slate-500">
+                                            Le texte de l'IA, vos corrections et l'audio source seront effacés. L'opération est consignée dans la piste d'audit. Cette action est irréversible.
+                                        </twig:Dialog:Description>
+                                    </twig:Dialog:Header>
+                                    <twig:Dialog:Footer>
+                                        <twig:Dialog:Close>
+                                            <twig:Button variant="outline" size="sm" {{ ...dialog_close_attrs }}>Annuler</twig:Button>
+                                        </twig:Dialog:Close>
+                                        <twig:Button type="button" variant="destructive" size="sm"
+                                                     data-action="live#action" data-live-action-param="deleteMeetingReport"
+                                                     data-loading="action(deleteMeetingReport)|addAttribute(disabled)">
+                                            <span data-loading="action(deleteMeetingReport)|hide">Supprimer</span>
+                                            <span data-loading="action(deleteMeetingReport)|show" class="hidden items-center gap-2">
+                                                {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin', 'aria-hidden': 'true' }) }} Suppression…
                                             </span>
                                         </twig:Button>
-                                    </div>
-                                </div>
-                            </div>
+                                    </twig:Dialog:Footer>
+                                </twig:Dialog:Content>
+                            </twig:Dialog>
+
+                            <twig:Button type="button" variant="primary" size="sm" class="shrink-0"
+                                         data-action="live#action" data-live-action-param="validateReport"
+                                         data-loading="action(validateReport)|addAttribute(disabled)">
+                                <span data-loading="action(validateReport)|hide">Valider la synthèse</span>
+                                <span data-loading="action(validateReport)|show" class="hidden items-center gap-2">
+                                    {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin', 'aria-hidden': 'true' }) }} Validation…
+                                </span>
+                            </twig:Button>
                         {% endif %}
-
                     </div>
                 {% endif %}
             </div>
