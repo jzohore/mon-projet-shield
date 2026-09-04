@@ -1,0 +1,23 @@
+{% extends 'app/der/_base.html.twig' %}
+
+{% block title %}Refus enregistré{% endblock %}
+
+{% block content %}
+    <div class="rounded-xl border border-slate-200 border-l-4 border-l-red-500 bg-white shadow-sm px-6 py-6">
+        <div class="flex items-start gap-3">
+            <twig:ux:icon name="lucide:x-circle" class="mt-0.5 size-5 text-red-600 shrink-0" aria-hidden="true" />
+            <div>
+                <h1 class="text-lg font-semibold text-slate-900">Refus enregistré</h1>
+                <p class="mt-1 text-sm text-slate-600">
+                    Vous avez déclaré ne pas reconnaître ce Document d'Entrée en Relation.
+                    Votre conseiller en a été informé et reprendra contact avec vous.
+                </p>
+                {% if reason %}
+                    <p class="mt-3 text-sm text-slate-500">
+                        Motif transmis : <span class="text-slate-700">{{ reason }}</span>
+                    </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

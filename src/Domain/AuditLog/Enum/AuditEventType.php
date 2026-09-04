@@ -65,6 +65,8 @@ enum AuditEventType: string
     /** @deprecated conservé pour l'historique — signature DocuSeal abandonnée, cf. DER_ACKNOWLEDGED. */
     case DER_SIGNED = 'der.signed';
     case DER_ACKNOWLEDGED = 'der.acknowledged';
+    case DER_ACKNOWLEDGEMENT_REVOKED = 'der.acknowledgement_revoked';
+    case DER_DECLINED = 'der.declined';
     case SIGNATURE_UPDATED = 'der.signature_updated';
 
     case ACCEPTED_RECORDING = 'ac.recording';
@@ -139,6 +141,8 @@ enum AuditEventType: string
             self::DER_OPENED => 'Consultation du DER par le client',
             self::DER_SIGNED => 'Signature électronique du DER',
             self::DER_ACKNOWLEDGED => 'Accusé de réception du DER par le client',
+            self::DER_ACKNOWLEDGEMENT_REVOKED => 'Révocation de l\'accusé de réception du DER',
+            self::DER_DECLINED => 'Refus du DER par le client',
             self::SIGNATURE_UPDATED => 'Mise à jour des paramètres de signature',
             self::ACCEPTED_RECORDING => 'Accord pour enregistrer l\'entretien',
             self::MEETING_REPORT_VALIDATED => 'Validation du rapport d\'entretien IA',
@@ -207,6 +211,8 @@ enum AuditEventType: string
             self::DER_OPENED,
             self::DER_SIGNED,
             self::DER_ACKNOWLEDGED,
+            self::DER_ACKNOWLEDGEMENT_REVOKED,
+            self::DER_DECLINED,
             self::ACCEPTED_RECORDING,
             self::MEETING_REPORT_VALIDATED,
             self::MEETING_REPORT_REVOKED,
@@ -239,6 +245,8 @@ enum AuditEventType: string
             self::ORIAS_CHECK_FAILED,
             self::SIRET_CHECK_FAILED,
             self::MEETING_REPORT_REVOKED,
+            self::DER_ACKNOWLEDGEMENT_REVOKED,
+            self::DER_DECLINED,
             self::SUBSCRIPTION_CANCELED => 'bg-rose-50 text-rose-700 border-rose-200',
 
             self::ADMIN_IMPERSONATION_START,
@@ -264,7 +272,9 @@ enum AuditEventType: string
             self::ORIAS_CHECK_FAILED,
             self::SIRET_CHECK_FAILED,
             self::KYC_FOLDER_REJECTED,
-            self::MEETING_REPORT_REVOKED => true,
+            self::MEETING_REPORT_REVOKED,
+            self::DER_ACKNOWLEDGEMENT_REVOKED,
+            self::DER_DECLINED => true,
             default => false,
         };
     }

@@ -5,13 +5,16 @@ declare(strict_types=1);
 namespace App\Infrastructure\Compliance\Controller;
 
 use App\Application\Compliance\DTO\Request\AcknowledgeDerRequest;
+use App\Application\Compliance\DTO\Request\DeclineDerRequest;
 use App\Application\Compliance\UseCase\ComplianceDocument\DER\AcknowledgeDerUseCase;
+use App\Application\Compliance\UseCase\ComplianceDocument\DER\DeclineDerUseCase;
 use App\Application\Compliance\UseCase\ComplianceDocument\DER\ResolveDerAcknowledgementLinkUseCase;
 use App\Domain\Compliance\Entity\DerAcknowledgement;
 use App\Domain\Compliance\Exception\AcknowledgementLinkException;
 use App\Domain\Compliance\ValueObject\DerStatement;
 use App\Domain\Port\DocumentStorageInterface;
 use App\Infrastructure\Compliance\Form\DerAcknowledgementType;
+use App\Infrastructure\Compliance\Form\DerDeclineType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -30,9 +33,17 @@ final class DerAcknowledgementController extends AbstractController
     public function __construct(
         private readonly ResolveDerAcknowledgementLinkUseCase $resolveLink,
         private readonly AcknowledgeDerUseCase $acknowledgeDer,
+        private readonly DeclineDerUseCase $declineDer,
         private readonly DocumentStorageInterface $storage,
         private readonly RateLimiterFactory $derAcknowledgementLimiter,
     ) {
+    }
+
+    private function enforceRateLimit(Request $request): void
+    {
+        if (!$this->derAcknowledgementLimiter->create($request->getClientIp() ?? 'unknown')->consume()->isAccepted()) {
+            throw new TooManyRequestsHttpException(message: 'Trop de tentatives. Merci de réessayer plus tard.');
+        }
     }
 
     #[Route(
@@ -57,15 +68,17 @@ final class DerAcknowledgementController extends AbstractController
             ]);
         }
 
+        if ($document->isDerDeclined()) {
+            return $this->render('app/der/declined.html.twig', ['reason' => $document->derDeclineReason]);
+        }
+
         $acknowledgeRequest = new AcknowledgeDerRequest();
         $acknowledgeRequest->token = $token;
         $form = $this->createForm(DerAcknowledgementType::class, $acknowledgeRequest);
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            if (!$this->derAcknowledgementLimiter->create($request->getClientIp() ?? 'unknown')->consume()->isAccepted()) {
-                throw new TooManyRequestsHttpException(message: 'Trop de tentatives. Merci de réessayer plus tard.');
-            }
+            $this->enforceRateLimit($request);
 
             $acknowledgeRequest->ipAddress = $request->getClientIp();
             $userAgent = (string) $request->headers->get('User-Agent', '');
@@ -83,9 +96,44 @@ final class DerAcknowledgementController extends AbstractController
 
         return $this->render('app/der/acknowledge.html.twig', [
             'form' => $form,
+            'decline_form' => $this->createForm(DerDeclineType::class, new DeclineDerRequest(), [
+                'action' => $this->generateUrl('app_der_decline', ['token' => $token]),
+            ])->createView(),
             'statement' => DerStatement::current(),
             'pdf_url' => $this->generateUrl('app_der_pdf', ['token' => $token]),
         ]);
+    }
+
+    #[Route(
+        path: '/der/{token}/decline',
+        name: 'app_der_decline',
+        requirements: ['token' => self::TOKEN_REQUIREMENT],
+        methods: ['POST'],
+    )]
+    public function decline(Request $request, string $token): Response
+    {
+        try {
+            ($this->resolveLink)($token);
+        } catch (AcknowledgementLinkException $exception) {
+            return $this->render('app/der/invalid.html.twig', ['reason' => $exception->reason], new Response('', Response::HTTP_GONE));
+        }
+
+        $declineRequest = new DeclineDerRequest();
+        $declineRequest->token = $token;
+        $form = $this->createForm(DerDeclineType::class, $declineRequest);
+        $form->handleRequest($request);
+
+        if ($form->isSubmitted() && $form->isValid()) {
+            $this->enforceRateLimit($request);
+
+            try {
+                ($this->declineDer)($token, $declineRequest->reason);
+            } catch (\DomainException $exception) {
+                $this->addFlash('error', $exception->getMessage());
+            }
+        }
+
+        return $this->redirectToRoute('app_der_acknowledge', ['token' => $token]);
     }
 
     #[Route(

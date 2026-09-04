@@ -40,6 +40,7 @@ enum ErrorCode: string
     // Documents
     case COMPLIANCE_DOCUMENT_ALREADY_EXISTS = 'COMPLIANCE_DOCUMENT_ALREADY_EXISTS';
     case COMPLIANCE_DOCUMENT_NOT_FOUND = 'COMPLIANCE_DOCUMENT_NOT_FOUND';
+    case DER_ACKNOWLEDGEMENT_NOT_FOUND = 'DER_ACKNOWLEDGEMENT_NOT_FOUND';
     case COMPLIANCE_DOCUMENT_INVALID_FOLDER = 'COMPLIANCE_DOCUMENT_INVALID_FOLDER';
     case COMPLIANCE_DOCUMENT_MANDATORY_DELETION = 'COMPLIANCE_DOCUMENT_MANDATORY_DELETION';
 
@@ -90,6 +91,7 @@ enum ErrorCode: string
             // Pièces & Documents
             self::COMPLIANCE_DOCUMENT_ALREADY_EXISTS => 'Cette pièce justificative a déjà été ajoutée au dossier.',
             self::COMPLIANCE_DOCUMENT_NOT_FOUND => 'Le document spécifié est introuvable.',
+            self::DER_ACKNOWLEDGEMENT_NOT_FOUND => 'L\'accusé de réception du DER est introuvable.',
             self::COMPLIANCE_DOCUMENT_INVALID_FOLDER => 'Le document spécifié n\'est pas rattaché à ce dossier de conformité.',
             self::COMPLIANCE_DOCUMENT_MANDATORY_DELETION => 'Suppression impossible : ce document est exigé par la réglementation.',
 

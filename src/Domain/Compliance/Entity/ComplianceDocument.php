@@ -124,6 +124,13 @@ class ComplianceDocument
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     public private(set) ?\DateTimeImmutable $derLinkSentAt = null;
 
+    /** Le client a refusé de reconnaître le DER (« Je ne reconnais pas ce document »). */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    public private(set) ?\DateTimeImmutable $derDeclinedAt = null;
+
+    #[ORM\Column(type: 'text', nullable: true)]
+    public private(set) ?string $derDeclineReason = null;
+
     /**
      * Historique des accusés de réception du DER. Au plus un « en vigueur »
      * (non révoqué) à la fois — garanti par l'index unique partiel côté BDD.
@@ -297,6 +304,26 @@ class ComplianceDocument
     public function isAcknowledgementLinkSent(): bool
     {
         return $this->derLinkSentAt instanceof \DateTimeImmutable;
+    }
+
+    /**
+     * Le client déclare ne pas reconnaître le DER. Idempotent : seule la
+     * première déclaration est horodatée.
+     */
+    public function markDerDeclined(?string $reason): void
+    {
+        if ($this->derDeclinedAt instanceof \DateTimeImmutable) {
+            return;
+        }
+
+        $reason = null !== $reason ? trim($reason) : null;
+        $this->derDeclinedAt = now();
+        $this->derDeclineReason = '' !== (string) $reason ? $reason : null;
+    }
+
+    public function isDerDeclined(): bool
+    {
+        return $this->derDeclinedAt instanceof \DateTimeImmutable;
     }
 
     public function hasAcknowledgementInForce(): bool

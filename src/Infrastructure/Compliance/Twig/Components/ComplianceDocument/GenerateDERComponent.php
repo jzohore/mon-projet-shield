@@ -7,13 +7,16 @@ namespace App\Infrastructure\Compliance\Twig\Components\ComplianceDocument;
 use App\Application\Compliance\DTO\Response\ComplianceFolderShowResponse;
 use App\Application\Compliance\UseCase\ComplianceDocument\AddDocumentUseCase;
 use App\Application\Compliance\UseCase\ComplianceDocument\DER\GenerateDerUseCase;
+use App\Application\Compliance\UseCase\ComplianceDocument\DER\RevokeDerAcknowledgementUseCase;
 use App\Application\Compliance\UseCase\ComplianceFolder\ComplianceFolderShowAssembler;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Entity\DerAcknowledgement;
 use App\Domain\Compliance\Enum\DocumentType;
 use App\Domain\Compliance\Repository\ComplianceDocumentRepositoryInterface;
 use App\Domain\Shared\Exception\AbstractDomainException;
+use App\Infrastructure\Compliance\Voter\RevokeDerAcknowledgementVoter;
 use Psr\Log\LoggerInterface;
+use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
@@ -37,6 +40,9 @@ class GenerateDERComponent
     #[LiveProp]
     public bool $isGenerating = false;
 
+    #[LiveProp(writable: true)]
+    public string $revokeReason = '';
+
     public function __construct(
         private readonly AddDocumentUseCase $addDocumentUseCase,
         private readonly GenerateDerUseCase $generateDerUseCase,
@@ -44,7 +50,42 @@ class GenerateDERComponent
         private readonly RequestStack $stack,
         private readonly LoggerInterface $logger,
         private readonly ComplianceFolderShowAssembler $complianceFolderShowAssembler,
+        private readonly RevokeDerAcknowledgementUseCase $revokeDerAcknowledgementUseCase,
+        private readonly Security $security,
     ) {
+    }
+
+    /**
+     * Le CGP administrateur révoque l'accusé de réception (motif obligatoire).
+     */
+    #[LiveAction]
+    public function revokeAcknowledgement(): void
+    {
+        if (!$this->complianceFolder instanceof ComplianceFolder) {
+            return;
+        }
+
+        $acknowledgement = $this->getAcknowledgement();
+
+        /** @var FlashBagAwareSessionInterface $session */
+        $session = $this->stack->getSession();
+
+        if (!$acknowledgement instanceof DerAcknowledgement) {
+            return;
+        }
+
+        if (!$this->security->isGranted(RevokeDerAcknowledgementVoter::REVOKE, $this->complianceFolder)) {
+            $session->getFlashBag()->add('error', 'La révocation d\'un accusé de réception est réservée aux administrateurs du cabinet.');
+
+            return;
+        }
+
+        try {
+            ($this->revokeDerAcknowledgementUseCase)($acknowledgement->slugId, $this->revokeReason);
+            $this->revokeReason = '';
+        } catch (\DomainException $exception) {
+            $session->getFlashBag()->add('error', $exception->getMessage());
+        }
     }
 
     public function isStepDerVisible(): bool

@@ -358,12 +358,32 @@ abstract class ComplianceFolder
     {
         $this->status = ComplianceFolderStatus::DER_REJECTED;
 
-        // Un refus n'est pas juste un "rejet", c'est une suspension de la procédure KYC
+        // Un refus n'est pas juste un "rejet", c'est une suspension de la procédure KYC.
         $this->saveHistory(
             $this->status->getLabel(),
-            sprintf('La signature a été refusée par le client le %s pour la raison suivant %s. Le processus d\'entrée en relation est suspendu.',
+            sprintf(
+                'Le client a déclaré ne pas reconnaître le DER le %s%s. Le processus d\'entrée en relation est suspendu.',
                 $date,
-                $declineReason,
+                null !== $declineReason && '' !== trim($declineReason) ? sprintf(' (motif : %s)', trim($declineReason)) : '',
+            )
+        );
+    }
+
+    /**
+     * Un accusé de réception du DER a été révoqué par un administrateur du
+     * cabinet : un nouveau DER doit être émis.
+     */
+    public function recordDerAcknowledgementRevoked(string $date, string $revokedByName, string $reason): void
+    {
+        $this->status = ComplianceFolderStatus::DER_REJECTED;
+
+        $this->saveHistory(
+            $this->status->getLabel(),
+            sprintf(
+                'L\'accusé de réception du DER a été révoqué par %s le %s. Motif : %s. Un nouveau DER doit être émis.',
+                $revokedByName,
+                $date,
+                $reason,
             )
         );
     }
