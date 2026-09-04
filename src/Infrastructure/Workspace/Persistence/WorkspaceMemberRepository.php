@@ -115,9 +115,9 @@ final readonly class WorkspaceMemberRepository implements WorkspaceMemberReposit
      */
     public function findMembersAdmin(Workspace $workspace): array
     {
-        /** @var list<User> $users */
-        $users = $this->repository->createQueryBuilder('wm')
-            ->select('u')
+        /** @var list<WorkspaceMember> $members */
+        $members = $this->repository->createQueryBuilder('wm')
+            ->addSelect('u')
             ->join('wm.user', 'u')
             ->where('wm.workspace = :workspace')
             ->andWhere('wm.role = :role')
@@ -126,7 +126,7 @@ final readonly class WorkspaceMemberRepository implements WorkspaceMemberReposit
             ->getQuery()
             ->getResult();
 
-        return $users;
+        return array_map(static fn (WorkspaceMember $member): User => $member->user, $members);
     }
 
     public function getMembersActive(string $workspaceSlugId): array
