@@ -15,8 +15,7 @@ services:
       DATABASE_URL: '${DATABASE_URL}'
       MESSENGER_TRANSPORT_DSN: '${MESSENGER_TRANSPORT_DSN}'
       MAILER_DSN: 'smtp://mailpit-staging:1025'
-      GOTENBERG_URL: 'http://gotenberg-staging:3000'
-      DOCUSEAL_URL: 'http://docuseal-staging:3000'
+      GOTENBERG_URL: 'http://gotenberg-staging:3000/forms/chromium/convert/html'
     depends_on:
       database-staging:
         condition: service_healthy
@@ -37,8 +36,7 @@ services:
       DATABASE_URL: '${DATABASE_URL}'
       MESSENGER_TRANSPORT_DSN: '${MESSENGER_TRANSPORT_DSN}'
       MAILER_DSN: 'smtp://mailpit-staging:1025'
-      GOTENBERG_URL: 'http://gotenberg-staging:3000'
-      DOCUSEAL_URL: 'http://docuseal-staging:3000'
+      GOTENBERG_URL: 'http://gotenberg-staging:3000/forms/chromium/convert/html'
     depends_on:
       database-staging:
         condition: service_healthy
@@ -92,20 +90,6 @@ services:
       - "traefik.enable=true"
       - "traefik.http.services.mailpit-staging.loadbalancer.server.port=8025"
 
-  docuseal-staging:
-    image: 'docuseal/docuseal:latest'
-    container_name: kysure_docuseal_staging
-    restart: unless-stopped
-    # 🛡️ FIX : Coolify réinjecte DATABASE_URL au niveau du conteneur même
-    # quand le compose déclare explicitement une valeur vide pour ce service
-    # (comportement confirmé empiriquement, contraire à la doc "compose =
-    # source de vérité"). On neutralise donc la variable directement dans
-    # l'environnement du process au démarrage, quelle que soit son origine,
-    # pour forcer DocuSeal à retomber sur SQLite dans /data.
-    entrypoint: ["sh", "-c", "unset DATABASE_URL; exec /app/bin/bundle exec puma -C /app/config/puma.rb --dir /app"]
-    volumes:
-      - 'docuseal_staging_data:/data'
-
   gotenberg-staging:
     image: 'gotenberg/gotenberg:8'
     container_name: kysure_gotenberg_staging
@@ -114,5 +98,4 @@ services:
 volumes:
   postgres_staging_data: null
   rabbitmq_staging_data: null
-  docuseal_staging_data: null
   mailpit_staging_data: null

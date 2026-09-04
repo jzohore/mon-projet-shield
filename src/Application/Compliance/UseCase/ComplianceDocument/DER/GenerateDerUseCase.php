@@ -49,6 +49,9 @@ readonly class GenerateDerUseCase
         }
 
         $document->markAsPending($actorEmail);
+        // Nouveau cycle : un DER régénéré après révocation ou refus client doit
+        // pouvoir repartir en circulation (nouveau lien, nouveau jeton).
+        $document->reopenAcknowledgementCircuit();
         $folder->markAsDerGenerated();
 
         $this->transactionManager->transactional(function () use ($document, $folder): void {
@@ -56,7 +59,6 @@ readonly class GenerateDerUseCase
             $this->folderRepository->save($folder);
         });
 
-        $this->repository->save($document);
         $this->messageBus->dispatch(new GenerateDerPdfMessage($documentId, $document->storagePath));
 
         if ($user instanceof \App\Domain\User\Entity\User) {

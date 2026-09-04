@@ -19,16 +19,17 @@ final class ComplianceDocumentAcknowledgementTest extends TestCase
 
     /**
      * @param list<DerAcknowledgement> $acknowledgements
+     * @param array<string, mixed>     $overrides
      */
-    private function document(array $acknowledgements = []): ComplianceDocument
+    private function document(array $acknowledgements = [], array $overrides = []): ComplianceDocument
     {
         $folder = $this->createEntityState(BusinessFolder::class, ['slugId' => 'comp_fol_1', 'history' => []]);
 
-        return $this->createEntityState(ComplianceDocument::class, [
+        return $this->createEntityState(ComplianceDocument::class, array_merge([
             'slugId' => 'comp_doc_1',
             'folder' => $folder,
             'acknowledgements' => new ArrayCollection($acknowledgements),
-        ]);
+        ], $overrides));
     }
 
     private function acknowledgement(ComplianceDocument $document): DerAcknowledgement
@@ -108,5 +109,53 @@ final class ComplianceDocumentAcknowledgementTest extends TestCase
 
         $this->expectException(\DomainException::class);
         $document->issueAcknowledgementToken();
+    }
+
+    public function testReopenAcknowledgementCircuitResetsSendAndDeclineState(): void
+    {
+        $document = $this->document([], [
+            'derSendRequestedAt' => new \DateTimeImmutable('-2 days'),
+            'derLinkSentAt' => new \DateTimeImmutable('-1 day'),
+            'derDeclinedAt' => new \DateTimeImmutable('-1 hour'),
+            'derDeclineReason' => 'Ce n\'est pas mon cabinet',
+        ]);
+
+        $document->reopenAcknowledgementCircuit();
+
+        self::assertNull($document->derSendRequestedAt);
+        self::assertNull($document->derLinkSentAt);
+        self::assertNull($document->derDeclinedAt);
+        self::assertNull($document->derDeclineReason);
+    }
+
+    public function testLastRevokedAcknowledgementReturnsTheMostRecentRevokedOne(): void
+    {
+        $document = $this->document();
+        $inForce = $this->acknowledgement($document);
+        // ⚠️ On hydrate directement acknowledgedAt/revokedAt (plutôt que
+        // record()+revoke()) pour maîtriser précisément l'ordonnancement,
+        // sans dépendre de la résolution temporelle entre deux appels à now().
+        $olderRevoked = $this->createEntityState(DerAcknowledgement::class, [
+            'acknowledgedAt' => new \DateTimeImmutable('-2 days'),
+            'revokedAt' => new \DateTimeImmutable('-1 day'),
+        ]);
+        $mostRecentRevoked = $this->createEntityState(DerAcknowledgement::class, [
+            'acknowledgedAt' => new \DateTimeImmutable('-1 hour'),
+            'revokedAt' => new \DateTimeImmutable('-30 minutes'),
+        ]);
+
+        $document->acknowledgements->add($inForce);
+        $document->acknowledgements->add($olderRevoked);
+        $document->acknowledgements->add($mostRecentRevoked);
+
+        self::assertSame($mostRecentRevoked, $document->lastRevokedAcknowledgement());
+    }
+
+    public function testLastRevokedAcknowledgementReturnsNullWhenNoneRevoked(): void
+    {
+        $document = $this->document();
+        $document->acknowledgements->add($this->acknowledgement($document));
+
+        self::assertNull($document->lastRevokedAcknowledgement());
     }
 }

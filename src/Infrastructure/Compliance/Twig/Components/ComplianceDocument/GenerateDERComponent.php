@@ -15,10 +15,9 @@ use App\Domain\Compliance\Enum\DocumentType;
 use App\Domain\Compliance\Repository\ComplianceDocumentRepositoryInterface;
 use App\Domain\Shared\Exception\AbstractDomainException;
 use App\Infrastructure\Compliance\Voter\RevokeDerAcknowledgementVoter;
+use App\Infrastructure\Shared\Component\LiveFlashTrait;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
-use Symfony\Component\HttpFoundation\RequestStack;
-use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveListener;
@@ -33,6 +32,7 @@ use Webmozart\Assert\Assert;
 class GenerateDERComponent
 {
     use DefaultActionTrait;
+    use LiveFlashTrait;
 
     #[LiveProp(writable: false)]
     public ?ComplianceFolder $complianceFolder = null;
@@ -47,7 +47,6 @@ class GenerateDERComponent
         private readonly AddDocumentUseCase $addDocumentUseCase,
         private readonly GenerateDerUseCase $generateDerUseCase,
         private readonly ComplianceDocumentRepositoryInterface $documentRepository,
-        private readonly RequestStack $stack,
         private readonly LoggerInterface $logger,
         private readonly ComplianceFolderShowAssembler $complianceFolderShowAssembler,
         private readonly RevokeDerAcknowledgementUseCase $revokeDerAcknowledgementUseCase,
@@ -61,21 +60,26 @@ class GenerateDERComponent
     #[LiveAction]
     public function revokeAcknowledgement(): void
     {
+        $this->clearLiveFlash();
+
         if (!$this->complianceFolder instanceof ComplianceFolder) {
             return;
         }
 
         $acknowledgement = $this->getAcknowledgement();
 
-        /** @var FlashBagAwareSessionInterface $session */
-        $session = $this->stack->getSession();
-
         if (!$acknowledgement instanceof DerAcknowledgement) {
             return;
         }
 
         if (!$this->security->isGranted(RevokeDerAcknowledgementVoter::REVOKE, $this->complianceFolder)) {
-            $session->getFlashBag()->add('error', 'La révocation d\'un accusé de réception est réservée aux administrateurs du cabinet.');
+            $this->addLiveFlash('error', 'La révocation d\'un accusé de réception est réservée aux administrateurs du cabinet.');
+
+            return;
+        }
+
+        if ('' === trim($this->revokeReason)) {
+            $this->addLiveFlash('error', 'Un motif est obligatoire pour révoquer un accusé de réception.');
 
             return;
         }
@@ -83,8 +87,9 @@ class GenerateDERComponent
         try {
             ($this->revokeDerAcknowledgementUseCase)($acknowledgement->slugId, $this->revokeReason);
             $this->revokeReason = '';
+            $this->addLiveFlash('success', 'L\'accusé de réception a été révoqué. Un nouveau DER peut être généré.');
         } catch (\DomainException $exception) {
-            $session->getFlashBag()->add('error', $exception->getMessage());
+            $this->addLiveFlash('error', $exception->getMessage());
         }
     }
 
@@ -114,71 +119,64 @@ class GenerateDERComponent
     #[LiveAction]
     public function generateDer(): void
     {
+        $this->clearLiveFlash();
+
         // 🛡️ Guard absolu : Si le front appelle cette action sans dossier, on bloque.
         Assert::notNull($this->complianceFolder, 'Action impossible : le dossier est introuvable.');
+        $folder = $this->complianceFolder;
 
         $this->isGenerating = true;
 
         if (!$this->isProfileValid()) {
             $this->isGenerating = false;
-
-            /** @var FlashBagAwareSessionInterface $session */
-            $session = $this->stack->getSession();
-            $session->getFlashBag()->add(
-                type: 'error',
-                message: 'Impossible de générer le DER : votre profil réglementaire est incomplet.'
-            );
+            $this->addLiveFlash('error', 'Impossible de générer le DER : votre profil réglementaire est incomplet.');
 
             return;
         }
 
         try {
             // 3. Récupération ou création du document
-            $document = $this->documentRepository->findDerByFolder($this->complianceFolder);
+            $document = $this->documentRepository->findDerByFolder($folder);
+            $isRegeneration = $document instanceof \App\Domain\Compliance\Entity\ComplianceDocument;
 
-            if (!$document instanceof \App\Domain\Compliance\Entity\ComplianceDocument) {
-                $document = ($this->addDocumentUseCase)(DocumentType::DER, $this->complianceFolder);
+            if (!$isRegeneration) {
+                $document = ($this->addDocumentUseCase)(DocumentType::DER, $folder);
             }
 
             Assert::notNull($document->id, 'L\'ID du document ne peut pas être nul.');
 
-            // 4. Lancement de la génération (Asynchrone via Messenger)
-            ($this->generateDerUseCase)(documentId: $document->id->toString(), folder: $this->complianceFolder);
+            // 4. Lancement de la génération (asynchrone via Messenger)
+            ($this->generateDerUseCase)(documentId: $document->id->toString(), folder: $folder);
+
+            $this->addLiveFlash(
+                'success',
+                $isRegeneration ? 'Nouveau DER généré, prêt à être envoyé.' : 'DER en cours de génération.',
+            );
 
             // Audit Trail
             $this->logger->info('Demande de génération de DER envoyée à Messenger avec succès', [
-                'folder_id' => $this->complianceFolder->slugId,
+                'folder_id' => $folder->slugId,
                 'document_id' => $document->id->toString(),
             ]);
         } catch (AbstractDomainException $e) {
             $this->isGenerating = false;
 
             $this->logger->error('Erreur métier lors de la génération du DER', [
-                'folder_id' => $this->complianceFolder->slugId,
+                'folder_id' => $folder->slugId,
                 'error' => $e->getMessage(),
             ]);
 
-            /** @var FlashBagAwareSessionInterface $session */
-            $session = $this->stack->getSession();
-            $session->getFlashBag()->add(
-                type: 'error',
-                message: $e->getMessage(),
-            );
+            $this->addLiveFlash('error', $e->getMessage());
         } catch (\Exception $e) {
             $this->isGenerating = false;
 
             $this->logger->critical('Crash système lors de la génération du DER', [
-                'folder_id' => $this->complianceFolder->slugId,
+                'folder_id' => $folder->slugId,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            /** @var FlashBagAwareSessionInterface $session */
-            $session = $this->stack->getSession();
-            $session->getFlashBag()->add(
-                type: 'error',
-                message: 'Une erreur inattendue est survenue lors de la génération.',
-            );
+            $this->addLiveFlash('error', 'Une erreur inattendue est survenue lors de la génération.');
         }
     }
 
@@ -211,6 +209,15 @@ class GenerateDERComponent
     public function getAcknowledgement(): ?DerAcknowledgement
     {
         return $this->getDerDocument()?->acknowledgementInForce();
+    }
+
+    /**
+     * Le dernier accusé révoqué pour ce DER, le cas échéant — consultable par
+     * le cabinet même après révocation (preuve archivée, jamais supprimée).
+     */
+    public function getLastRevokedAcknowledgement(): ?DerAcknowledgement
+    {
+        return $this->getDerDocument()?->lastRevokedAcknowledgement();
     }
 
     public function isDocumentReady(): bool

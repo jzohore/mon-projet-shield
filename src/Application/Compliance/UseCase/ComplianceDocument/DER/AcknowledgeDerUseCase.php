@@ -64,6 +64,12 @@ readonly class AcknowledgeDerUseCase
             throw new \DomainException('Le DER n\'est pas encore disponible.');
         }
 
+        // 🛡️ Un document déjà refusé ne peut pas être acquitté par ce même lien :
+        // la correction passe par la régénération d'un nouveau DER (nouveau jeton).
+        if ($document->isDerDeclined()) {
+            throw new \DomainException('Vous avez déclaré ne pas reconnaître ce document. Contactez votre conseiller.');
+        }
+
         // 🛡️ Idempotence : un rechargement de la page ou un double envoi ne crée
         // qu'un seul accusé. On renvoie celui déjà en vigueur, sans événement.
         $existing = $document->acknowledgementInForce();
@@ -75,11 +81,15 @@ readonly class AcknowledgeDerUseCase
             throw new \DomainException('Vous devez confirmer avoir reçu et pris connaissance du document.');
         }
 
-        // SHA calculé sur les octets réellement servis au client, au moment de l'accusé.
-        $pdfSha256 = hash('sha256', $this->storage->getContents($document->storagePath));
-
         $folder = $document->folder;
         $recipientEmail = $this->folderShowAssembler->assemble($folder)->contactEmail ?? '';
+
+        if ('' === $recipientEmail) {
+            throw new \DomainException('Adresse e-mail de contact introuvable pour ce dossier. Contactez votre conseiller.');
+        }
+
+        // SHA calculé sur les octets réellement servis au client, au moment de l'accusé.
+        $pdfSha256 = hash('sha256', $this->storage->getContents($document->storagePath));
 
         $acknowledgement = DerAcknowledgement::record(
             document: $document,

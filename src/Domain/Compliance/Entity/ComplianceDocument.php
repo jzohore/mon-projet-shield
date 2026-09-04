@@ -343,6 +343,42 @@ class ComplianceDocument
     }
 
     /**
+     * Le dernier accusé révoqué de ce DER, le cas échéant (consultation par le
+     * cabinet — la preuve reste archivée après révocation).
+     */
+    public function lastRevokedAcknowledgement(): ?DerAcknowledgement
+    {
+        $lastRevoked = null;
+        foreach ($this->acknowledgements as $acknowledgement) {
+            if (!$acknowledgement->isRevoked()) {
+                continue;
+            }
+
+            if (!$lastRevoked instanceof DerAcknowledgement || $acknowledgement->acknowledgedAt > $lastRevoked->acknowledgedAt) {
+                $lastRevoked = $acknowledgement;
+            }
+        }
+
+        return $lastRevoked;
+    }
+
+    /**
+     * Réouvre le circuit d'accusé de réception pour un nouveau cycle : à
+     * appeler après régénération d'un DER dont le précédent cycle s'est
+     * terminé par une révocation ou un refus client. Sans cela, le lien
+     * précédemment envoyé au client resterait considéré comme « déjà
+     * envoyé » et {@see \App\Infrastructure\Compliance\Listener\DER\SendDerAcknowledgementLinkListener}
+     * ne renverrait jamais de nouveau lien.
+     */
+    public function reopenAcknowledgementCircuit(): void
+    {
+        $this->derSendRequestedAt = null;
+        $this->derLinkSentAt = null;
+        $this->derDeclinedAt = null;
+        $this->derDeclineReason = null;
+    }
+
+    /**
      * Interdit toute mutation destructive d'un DER figé (signé ou acquitté) : la
      * preuve porte sur un PDF précis ; une correction passe par une révocation
      * motivée puis régénération.

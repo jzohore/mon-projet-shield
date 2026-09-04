@@ -1,0 +1,18 @@
+{% extends 'app/der/_base.html.twig' %}
+
+{% block title %}Trop de tentatives{% endblock %}
+
+{% block content %}
+    <div class="rounded-xl border border-slate-200 border-l-4 border-l-amber-500 bg-white shadow-sm px-6 py-6">
+        <div class="flex items-start gap-3">
+            <twig:ux:icon name="lucide:hourglass" class="mt-0.5 size-5 text-amber-600 shrink-0" aria-hidden="true" />
+            <div>
+                <h1 class="text-lg font-semibold text-slate-900">Merci de patienter un instant</h1>
+                <p class="mt-1 text-sm text-slate-600">
+                    Trop de tentatives ont été enregistrées depuis votre connexion. Réessayez dans
+                    quelques minutes — vos informations n'ont pas été perdues.
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

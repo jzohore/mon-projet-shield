@@ -4,8 +4,14 @@
     'data-controller': 'mercure-sync',
     'data-mercure-sync-topic-value': mercure('folder_' ~ this.complianceFolder.slugId)
 }) }}>
+    {% include 'components/partials/_live_alerts.html.twig' with {
+        message: this.actionMessage|default(null),
+        type: this.actionMessageType|default('success')
+    } %}
+
     {% set acknowledgement = this.acknowledgement %}
     {% set der_document = this.derDocument %}
+    {% set last_revoked = this.lastRevokedAcknowledgement %}
     {% set compliance_folder_status_value = this.complianceDTO.statusValue %}
     {% if this.isStepDerVisible %}
         <section class="bg-white rounded-xl border border-slate-200 p-6 sm:p-8 shadow-sm">
@@ -64,14 +70,26 @@
                             {% if acknowledgement %}
                                 <div class="sm:col-span-2 mt-1">
                                     <dt class="text-xs font-medium uppercase tracking-wider text-slate-500">Empreinte du document (SHA-256)</dt>
-                                    <dd class="mt-1 font-mono text-[11px] break-all text-slate-500">{{ acknowledgement.pdfSha256 }}</dd>
+                                    <dd class="mt-1 flex items-center gap-1.5" data-controller="copy-to-clipboard">
+                                        <span data-copy-to-clipboard-target="source" class="font-mono text-[11px] break-all text-slate-500">{{ acknowledgement.pdfSha256 }}</span>
+                                        <button type="button" data-action="copy-to-clipboard#copy" aria-label="Copier l'empreinte du document"
+                                                class="shrink-0 rounded p-0.5 text-slate-400 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-indigo-500">
+                                            <twig:ux:icon name="lucide:copy" data-copy-to-clipboard-target="icon" class="size-3" aria-hidden="true" />
+                                        </button>
+                                    </dd>
                                 </div>
                             {% endif %}
 
                             {% if acknowledgement and acknowledgement.certificateSha256 %}
                                 <div class="sm:col-span-2">
                                     <dt class="text-xs font-medium uppercase tracking-wider text-slate-500">Empreinte de l'attestation (SHA-256)</dt>
-                                    <dd class="mt-1 font-mono text-[11px] break-all text-slate-500">{{ acknowledgement.certificateSha256 }}</dd>
+                                    <dd class="mt-1 flex items-center gap-1.5" data-controller="copy-to-clipboard">
+                                        <span data-copy-to-clipboard-target="source" class="font-mono text-[11px] break-all text-slate-500">{{ acknowledgement.certificateSha256 }}</span>
+                                        <button type="button" data-action="copy-to-clipboard#copy" aria-label="Copier l'empreinte de l'attestation"
+                                                class="shrink-0 rounded p-0.5 text-slate-400 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-indigo-500">
+                                            <twig:ux:icon name="lucide:copy" data-copy-to-clipboard-target="icon" class="size-3" aria-hidden="true" />
+                                        </button>
+                                    </dd>
                                 </div>
                             {% endif %}
 
@@ -91,11 +109,17 @@
                                 {% endif %}
 
                                 {% if acknowledgement %}
-                                    <details class="ml-auto text-sm">
-                                        <summary class="cursor-pointer text-slate-400 hover:text-red-600">Révoquer l'accusé</summary>
+                                    <details class="group ml-auto text-sm">
+                                        <summary class="flex cursor-pointer items-center gap-1 text-slate-400 hover:text-red-600 focus-visible:ring-2 focus-visible:ring-red-500 rounded">
+                                            <twig:ux:icon name="lucide:chevron-down" class="size-3.5 transition-transform group-open:rotate-180" aria-hidden="true" />
+                                            Révoquer l'accusé
+                                        </summary>
                                         <div class="mt-2 w-72 rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+                                            <p class="text-xs text-slate-500 mb-2">
+                                                Action irréversible : le dossier repasse en attente et le client devra accuser réception d'un nouveau DER.
+                                            </p>
                                             <label for="der-revoke-reason" class="block text-xs font-medium text-slate-600">Motif de révocation (obligatoire)</label>
-                                            <textarea id="der-revoke-reason" rows="2" data-model="revokeReason"
+                                            <textarea id="der-revoke-reason" rows="2" required data-model="revokeReason"
                                                       class="mt-1 block w-full rounded-md border border-slate-300 px-2 py-1.5 text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-red-500 focus:outline-none"></textarea>
                                             <twig:Button type="button" variant="destructive" size="sm" class="mt-2 w-full"
                                                          data-action="live#action" data-live-action-param="revokeAcknowledgement">
@@ -110,25 +134,52 @@
                 </div>
 
                 {# ========================================== #}
-                {# 3.5 ÉTAT : DER REFUSÉ PAR LE CLIENT        #}
+                {# 3.5 ÉTAT : REFUS CLIENT OU RÉVOCATION CABINET #}
                 {# ========================================== #}
             {% elseif compliance_folder_status_value == 'der_rejected' %}
                 {% set der_document = this.derDocument %}
+                {% set is_revocation = last_revoked and not (der_document and der_document.derDeclinedAt) %}
                 <div class="animate-fade-in overflow-hidden rounded-lg border border-red-200 bg-white shadow-sm mt-4">
                     <div class="border-b border-red-100 bg-red-50/50 px-4 py-3 sm:px-6 flex items-center gap-2">
                         <twig:ux:icon name="tabler:shield-x" class="size-5 text-red-600" />
-                        <h4 class="text-sm font-semibold text-red-900">DER refusé par le client</h4>
+                        <h4 class="text-sm font-semibold text-red-900">
+                            {{ is_revocation ? 'Accusé de réception révoqué' : 'DER refusé par le client' }}
+                        </h4>
                     </div>
                     <div class="px-4 py-4 sm:px-6">
-                        <p class="text-sm text-slate-700">
-                            Le client a déclaré ne pas reconnaître le document
-                            {% if der_document and der_document.derDeclinedAt %}
-                                le {{ der_document.derDeclinedAt|date('d/m/Y à H:i') }}
-                            {% endif %}.
-                            Le processus d'entrée en relation est suspendu.
-                        </p>
-                        {% if der_document and der_document.derDeclineReason %}
-                            <p class="mt-2 text-sm font-semibold text-red-700">Motif : {{ der_document.derDeclineReason }}</p>
+                        {% if is_revocation %}
+                            {# Preuve archivée : consultable même après révocation, jamais supprimée. #}
+                            <p class="text-sm text-slate-700">
+                                Vous avez révoqué l'accusé de réception signé par
+                                <strong>{{ last_revoked.declaredName }}</strong>
+                                le {{ last_revoked.revokedAt|date('d/m/Y à H:i') }}.
+                            </p>
+                            <p class="mt-2 text-sm font-semibold text-red-700">Motif : {{ last_revoked.revokeReason }}</p>
+                            <dl class="mt-3 grid grid-cols-1 gap-y-2 rounded-md bg-slate-50 border border-slate-200 p-3 sm:grid-cols-2 sm:gap-x-4">
+                                <div>
+                                    <dt class="text-[11px] font-medium uppercase tracking-wider text-slate-500">Accusé archivé le</dt>
+                                    <dd class="text-xs text-slate-700">{{ last_revoked.acknowledgedAt|date('d/m/Y à H:i') }}</dd>
+                                </div>
+                                <div>
+                                    <dt class="text-[11px] font-medium uppercase tracking-wider text-slate-500">Révoqué par</dt>
+                                    <dd class="text-xs text-slate-700">{{ last_revoked.revokedByName }}</dd>
+                                </div>
+                                <div class="sm:col-span-2">
+                                    <dt class="text-[11px] font-medium uppercase tracking-wider text-slate-500">Empreinte du document archivé (SHA-256)</dt>
+                                    <dd class="font-mono text-[11px] break-all text-slate-500">{{ last_revoked.pdfSha256 }}</dd>
+                                </div>
+                            </dl>
+                        {% else %}
+                            <p class="text-sm text-slate-700">
+                                Le client a déclaré ne pas reconnaître le document
+                                {% if der_document and der_document.derDeclinedAt %}
+                                    le {{ der_document.derDeclinedAt|date('d/m/Y à H:i') }}
+                                {% endif %}.
+                                Le processus d'entrée en relation est suspendu.
+                            </p>
+                            {% if der_document and der_document.derDeclineReason %}
+                                <p class="mt-2 text-sm font-semibold text-red-700">Motif : {{ der_document.derDeclineReason }}</p>
+                            {% endif %}
                         {% endif %}
                         <div class="mt-4 border-t border-slate-100 pt-4">
                             <twig:Button type="button" variant="outline" size="sm"

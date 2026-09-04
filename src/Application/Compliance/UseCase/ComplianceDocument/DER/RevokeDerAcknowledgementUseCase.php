@@ -9,6 +9,7 @@ use App\Domain\Compliance\Exception\DerAcknowledgementNotFoundException;
 use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
 use App\Domain\Compliance\Repository\DerAcknowledgementRepositoryInterface;
 use App\Domain\Database\TransactionManagerInterface;
+use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 
 use function Symfony\Component\Clock\now;
@@ -25,6 +26,7 @@ readonly class RevokeDerAcknowledgementUseCase
     public function __construct(
         private DerAcknowledgementRepositoryInterface $acknowledgementRepository,
         private ComplianceFolderRepositoryInterface $folderRepository,
+        private WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
         private CurrentUserProvider $currentUserProvider,
         private TransactionManagerInterface $transactionManager,
         private EventDispatcherInterface $eventDispatcher,
@@ -40,12 +42,21 @@ readonly class RevokeDerAcknowledgementUseCase
         }
 
         $user = $this->currentUserProvider->getUser();
+        $folder = $acknowledgement->document->folder;
+
+        // 🛡️ Autorisation portée par le use case lui-même (pas seulement par
+        // l'UI) : révoquer une pièce de preuve est réservé aux administrateurs
+        // du cabinet ayant accès à ce dossier. Reprend la règle de
+        // {@see \App\Infrastructure\Compliance\Voter\RevokeDerAcknowledgementVoter}.
+        if (!$this->workspaceMemberRepository->isUserAdminOfWorkspace($user, $folder->workspace) || !$folder->canBeViewedBy($user)) {
+            throw new \DomainException('La révocation d\'un accusé de réception est réservée aux administrateurs du cabinet ayant accès à ce dossier.');
+        }
+
         $reason = trim($reason);
 
         // Gardes (motif obligatoire, double révocation) portées par l'entité.
         $acknowledgement->revoke($user, $reason);
 
-        $folder = $acknowledgement->document->folder;
         $folder->recordDerAcknowledgementRevoked(now()->format('d/m/y H:i'), $user->getFullName(), $reason);
 
         $this->transactionManager->transactional(function () use ($acknowledgement, $folder): void {

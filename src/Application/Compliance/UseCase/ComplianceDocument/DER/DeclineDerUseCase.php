@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Compliance\UseCase\ComplianceDocument\DER;
 
 use App\Domain\Compliance\Entity\ComplianceDocument;
+use App\Domain\Compliance\Enum\DocumentType;
 use App\Domain\Compliance\Event\DerDeclinedEvent;
 use App\Domain\Compliance\Repository\ComplianceDocumentRepositoryInterface;
 use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
@@ -34,6 +35,14 @@ readonly class DeclineDerUseCase
 
         if (!$document instanceof ComplianceDocument) {
             throw new \DomainException('Lien invalide.');
+        }
+
+        if (DocumentType::DER !== $document->type) {
+            throw new \DomainException('Ce lien ne correspond pas à un DER.');
+        }
+
+        if ($document->isAcknowledgementTokenExpired()) {
+            throw new \DomainException('Ce lien a expiré. Le cabinet doit vous renvoyer le document.');
         }
 
         if ($document->hasAcknowledgementInForce()) {

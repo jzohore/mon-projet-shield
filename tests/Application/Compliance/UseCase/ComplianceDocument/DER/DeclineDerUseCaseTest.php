@@ -9,6 +9,7 @@ use App\Domain\Compliance\Entity\BusinessFolder;
 use App\Domain\Compliance\Entity\ComplianceDocument;
 use App\Domain\Compliance\Entity\DerAcknowledgement;
 use App\Domain\Compliance\Enum\ComplianceFolderStatus;
+use App\Domain\Compliance\Enum\DocumentType;
 use App\Domain\Compliance\Event\DerDeclinedEvent;
 use App\Domain\Compliance\Repository\ComplianceDocumentRepositoryInterface;
 use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
@@ -62,8 +63,10 @@ final class DeclineDerUseCaseTest extends TestCase
 
         return $this->createEntityState(ComplianceDocument::class, array_merge([
             'id' => Uuid::v7(),
+            'type' => DocumentType::DER,
             'folder' => $folder,
             'acknowledgements' => new ArrayCollection(),
+            'acknowledgementTokenExpiresAt' => new \DateTimeImmutable('+20 days'),
         ], $overrides));
     }
 
@@ -119,6 +122,30 @@ final class DeclineDerUseCaseTest extends TestCase
     public function testThrowsWhenTheTokenIsUnknown(): void
     {
         $this->documentRepository->method('findOneByAcknowledgementTokenHash')->willReturn(null);
+
+        $this->expectException(\DomainException::class);
+        ($this->useCase)(self::TOKEN, null);
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testThrowsWhenTheDocumentIsNotADer(): void
+    {
+        $document = $this->document(['type' => DocumentType::ID_CARD]);
+        $this->documentRepository->method('findOneByAcknowledgementTokenHash')->willReturn($document);
+
+        $this->eventDispatcher->expects($this->never())->method('dispatch');
+
+        $this->expectException(\DomainException::class);
+        ($this->useCase)(self::TOKEN, null);
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testThrowsWhenTheTokenIsExpired(): void
+    {
+        $document = $this->document(['acknowledgementTokenExpiresAt' => new \DateTimeImmutable('-1 day')]);
+        $this->documentRepository->method('findOneByAcknowledgementTokenHash')->willReturn($document);
+
+        $this->eventDispatcher->expects($this->never())->method('dispatch');
 
         $this->expectException(\DomainException::class);
         ($this->useCase)(self::TOKEN, null);

@@ -16,6 +16,8 @@ use App\Domain\Compliance\Repository\DerAcknowledgementRepositoryInterface;
 use App\Domain\Compliance\ValueObject\DerStatement;
 use App\Domain\Database\TransactionManagerInterface;
 use App\Domain\User\Entity\User;
+use App\Domain\Workspace\Entity\Workspace;
+use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Tests\Application\ReflectionHelperTrait;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -32,6 +34,7 @@ final class RevokeDerAcknowledgementUseCaseTest extends TestCase
 
     private DerAcknowledgementRepositoryInterface&Stub $acknowledgementRepository;
     private ComplianceFolderRepositoryInterface&MockObject $folderRepository;
+    private WorkspaceMemberRepositoryInterface&Stub $workspaceMemberRepository;
     private EventDispatcherInterface&MockObject $eventDispatcher;
     private RevokeDerAcknowledgementUseCase $useCase;
 
@@ -40,6 +43,9 @@ final class RevokeDerAcknowledgementUseCaseTest extends TestCase
         $this->acknowledgementRepository = $this->createStub(DerAcknowledgementRepositoryInterface::class);
         $this->folderRepository = $this->createMock(ComplianceFolderRepositoryInterface::class);
         $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
+
+        $this->workspaceMemberRepository = $this->createStub(WorkspaceMemberRepositoryInterface::class);
+        $this->workspaceMemberRepository->method('isUserAdminOfWorkspace')->willReturn(true);
 
         $userProvider = $this->createStub(CurrentUserProvider::class);
         $userProvider->method('getUser')->willReturn(
@@ -54,6 +60,7 @@ final class RevokeDerAcknowledgementUseCaseTest extends TestCase
         $this->useCase = new RevokeDerAcknowledgementUseCase(
             $this->acknowledgementRepository,
             $this->folderRepository,
+            $this->workspaceMemberRepository,
             $userProvider,
             $transactionManager,
             $this->eventDispatcher,
@@ -62,7 +69,8 @@ final class RevokeDerAcknowledgementUseCaseTest extends TestCase
 
     private function acknowledgement(): DerAcknowledgement
     {
-        $folder = $this->createEntityState(BusinessFolder::class, ['slugId' => 'comp_fol_1', 'history' => []]);
+        $workspace = $this->createEntityState(Workspace::class, ['slugId' => 'wrk_1', 'name' => 'Cabinet']);
+        $folder = $this->createEntityState(BusinessFolder::class, ['slugId' => 'comp_fol_1', 'workspace' => $workspace, 'history' => []]);
         $document = $this->createEntityState(ComplianceDocument::class, [
             'id' => Uuid::v7(),
             'folder' => $folder,
@@ -113,5 +121,39 @@ final class RevokeDerAcknowledgementUseCaseTest extends TestCase
 
         $this->expectException(\DomainException::class);
         ($this->useCase)('der_ack_1', '   ');
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testThrowsWhenTheUserIsNotAuthorized(): void
+    {
+        $this->workspaceMemberRepository = $this->createStub(WorkspaceMemberRepositoryInterface::class);
+        $this->workspaceMemberRepository->method('isUserAdminOfWorkspace')->willReturn(false);
+
+        $userProvider = $this->createStub(CurrentUserProvider::class);
+        $userProvider->method('getUser')->willReturn(
+            $this->createEntityState(User::class, ['firstName' => 'Marie', 'lastName' => 'Curie'])
+        );
+
+        $transactionManager = $this->createStub(TransactionManagerInterface::class);
+        $transactionManager->method('transactional')->willReturnCallback(
+            static fn (callable $operation): mixed => $operation()
+        );
+
+        $this->useCase = new RevokeDerAcknowledgementUseCase(
+            $this->acknowledgementRepository,
+            $this->folderRepository,
+            $this->workspaceMemberRepository,
+            $userProvider,
+            $transactionManager,
+            $this->eventDispatcher,
+        );
+
+        $this->acknowledgementRepository->method('findBySlugId')->willReturn($this->acknowledgement());
+
+        $this->folderRepository->expects($this->never())->method('save');
+        $this->eventDispatcher->expects($this->never())->method('dispatch');
+
+        $this->expectException(\DomainException::class);
+        ($this->useCase)('der_ack_1', 'motif');
     }
 }

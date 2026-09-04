@@ -113,6 +113,7 @@ services:
     App\Infrastructure\Compliance\Controller\DerAcknowledgementController:
         arguments:
             $derAcknowledgementLimiter: '@limiter.der_acknowledgement'
+            $derAcknowledgementReadLimiter: '@limiter.der_acknowledgement_read'
     App\Domain\Workspace\Service\CurrentWorkspaceProvider:
         tags:
             - { name: 'kernel.reset', method: 'reset' }

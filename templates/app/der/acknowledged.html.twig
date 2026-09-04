@@ -3,7 +3,7 @@
 {% block title %}Réception confirmée{% endblock %}
 
 {% block content %}
-    <div class="rounded-xl border border-slate-200 border-l-4 border-l-emerald-500 bg-white shadow-sm px-6 py-6">
+    <div class="animate-fade-in rounded-xl border border-slate-200 border-l-4 border-l-emerald-500 bg-white shadow-sm px-6 py-6">
         <div class="flex items-start gap-3">
             <twig:ux:icon name="lucide:check-circle" class="mt-0.5 size-5 text-emerald-600 shrink-0" aria-hidden="true" />
             <div>
@@ -22,6 +22,11 @@
                 <twig:ux:icon name="lucide:file-text" class="size-4 text-slate-400" aria-hidden="true" />
                 Consulter le DER
             </a>
+            <a href="{{ pdf_url }}" download target="_blank" rel="noopener"
+               class="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-500">
+                <twig:ux:icon name="lucide:download" class="size-4 text-slate-400" aria-hidden="true" />
+                Télécharger une copie
+            </a>
             {% if acknowledgement.hasCertificate %}
                 <a href="{{ path('app_der_certificate', {token: token}) }}" target="_blank" rel="noopener"
                    class="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-500">
@@ -31,8 +36,17 @@
             {% endif %}
         </div>
 
-        <p class="mt-5 text-xs text-slate-400">
-            Empreinte du document (SHA-256) : <span class="font-mono break-all">{{ acknowledgement.pdfSha256 }}</span>
+        <p class="mt-5 flex items-center gap-2 text-xs text-slate-400">
+            <span>Empreinte du document (SHA-256) :</span>
+            <span data-controller="copy-to-clipboard" class="inline-flex items-center gap-1.5">
+                <span data-copy-to-clipboard-target="source" class="font-mono break-all">{{ acknowledgement.pdfSha256 }}</span>
+                <button type="button" data-action="copy-to-clipboard#copy"
+                        class="inline-flex items-center gap-1 rounded px-1 py-0.5 text-slate-400 hover:text-slate-700 focus-visible:ring-2 focus-visible:ring-indigo-500"
+                        aria-label="Copier l'empreinte du document">
+                    <twig:ux:icon name="lucide:copy" data-copy-to-clipboard-target="icon" class="size-3.5" aria-hidden="true" />
+                    <span data-copy-to-clipboard-target="label">Copier</span>
+                </button>
+            </span>
         </p>
     </div>
 {% endblock %}

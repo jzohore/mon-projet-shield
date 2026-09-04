@@ -1,7 +1,14 @@
 framework:
     rate_limiter:
         # Anti-abus du lien public d'accusé de réception du DER (par IP).
+        # Actions qui mutent l'état (accuser réception, refuser) : strict.
         der_acknowledgement:
             policy: 'sliding_window'
             limit: 10
+            interval: '1 hour'
+        # Simple consultation (page, PDF, attestation) : plus large, mais bornée
+        # quand même — chaque hit sur /pdf ou /certificate coûte un GET S3 complet.
+        der_acknowledgement_read:
+            policy: 'sliding_window'
+            limit: 60
             interval: '1 hour'
