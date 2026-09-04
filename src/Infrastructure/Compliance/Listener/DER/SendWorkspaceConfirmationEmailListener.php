@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Compliance\Listener\DER;
 
 use App\Domain\Compliance\Entity\IndividualFolder;
-use App\Domain\Compliance\Event\DerSignedEvent;
+use App\Domain\Compliance\Event\DerAcknowledgedEvent;
 use App\Domain\Compliance\Repository\ComplianceDocumentRepositoryInterface;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use App\Infrastructure\Compliance\Message\DispatchNotifyDerSigned;
@@ -27,9 +27,9 @@ readonly class SendWorkspaceConfirmationEmailListener
     ) {
     }
 
-    public function __invoke(DerSignedEvent $event): void
+    public function __invoke(DerAcknowledgedEvent $event): void
     {
-        $document = $this->complianceDocumentRepository->findBySubmissionId($event->getSubmissionId());
+        $document = $this->complianceDocumentRepository->findById($event->getDocumentId());
 
         Assert::notNull($document);
 
@@ -63,7 +63,7 @@ readonly class SendWorkspaceConfirmationEmailListener
             $this->messageBus->dispatch(new DispatchNotifyDerSigned(
                 folderUrl: $url,
                 folderId: $folder->id->toString(),
-                signedAt: $event->getCompletedAt()->format('d-m-Y'),
+                signedAt: $event->getAcknowledgedAt()->format('d-m-Y'),
                 ownerEmail: $member->email,
             ));
         }

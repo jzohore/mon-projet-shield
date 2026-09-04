@@ -84,6 +84,11 @@ class ComplianceDocumentRepository implements ComplianceDocumentRepositoryInterf
         return $this->repository->findOneBy(['docuSealSubmissionId' => $submissionId]);
     }
 
+    public function findOneByAcknowledgementTokenHash(string $tokenHash): ?ComplianceDocument
+    {
+        return $this->repository->findOneBy(['acknowledgementTokenHash' => $tokenHash]);
+    }
+
     public function countPendingForClient(Client $client): int
     {
         $qb = $this->repository->createQueryBuilder('cd');

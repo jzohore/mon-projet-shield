@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Compliance\Listener\DER;
 
-use App\Domain\Compliance\Event\DerSignedEvent;
+use App\Domain\Compliance\Event\DerAcknowledgedEvent;
 use App\Domain\Compliance\Repository\ComplianceDocumentRepositoryInterface;
 use App\Infrastructure\Compliance\Message\SendClientDerConfirmationMessage;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
@@ -22,9 +22,9 @@ readonly class SendClientConfirmationEmailListener
     ) {
     }
 
-    public function __invoke(DerSignedEvent $event): void
+    public function __invoke(DerAcknowledgedEvent $event): void
     {
-        $document = $this->complianceDocumentRepository->findBySubmissionId($event->getSubmissionId());
+        $document = $this->complianceDocumentRepository->findById($event->getDocumentId());
 
         Assert::notNull($document);
 
