@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Infrastructure\Compliance\Handler;
 
 use App\Application\Compliance\UseCase\ComplianceFolder\ComplianceFolderShowAssembler;
+use App\Domain\Compliance\Event\DerPdfGeneratedEvent;
 use App\Domain\Compliance\Repository\ComplianceDocumentRepositoryInterface;
 use App\Domain\Port\DocumentStorageInterface;
 use App\Domain\Shared\Port\RealTimeNotifierInterface;
 use App\Infrastructure\Compliance\Message\GenerateDerPdfMessage;
 use App\Infrastructure\Pdf\PdfGeneratorInterface;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Uid\Uuid;
@@ -26,6 +28,7 @@ readonly class GenerateDerPdfHandler
         private DocumentStorageInterface $storage,
         private RealTimeNotifierInterface $notifier,
         private ComplianceFolderShowAssembler $complianceFolderShowAssembler,
+        private EventDispatcherInterface $eventDispatcher,
     ) {
     }
 
@@ -76,6 +79,9 @@ readonly class GenerateDerPdfHandler
 
             $document->markAsGenerated($finalStoragePath);
             $this->documentRepository->save($document);
+
+            Assert::notNull($document->id);
+            $this->eventDispatcher->dispatch(new DerPdfGeneratedEvent($document->id->toString()));
         } catch (\Throwable $e) {
             $document->markAsFailed();
             $this->documentRepository->save($document);

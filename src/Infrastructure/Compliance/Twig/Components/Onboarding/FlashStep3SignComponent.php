@@ -6,9 +6,7 @@ namespace App\Infrastructure\Compliance\Twig\Components\Onboarding;
 
 use App\Application\Compliance\DTO\Response\ComplianceFolderShowResponse;
 use App\Application\Compliance\UseCase\ComplianceDocument\AddDocumentUseCase;
-use App\Application\Compliance\UseCase\ComplianceDocument\DER\CreateDocusealSignatureRequestUseCase;
 use App\Application\Compliance\UseCase\ComplianceDocument\DER\GenerateDerUseCase;
-use App\Application\Compliance\UseCase\ComplianceDocument\DER\SaveDocuSealUrlUseCase;
 use App\Application\Compliance\UseCase\ComplianceDocument\DER\SendDerToClientUseCase;
 use App\Application\Compliance\UseCase\ComplianceFolder\ComplianceFolderShowAssembler;
 use App\Domain\Compliance\Entity\ComplianceFolder;
@@ -18,7 +16,6 @@ use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
 use App\Domain\Shared\Exception\AbstractDomainException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -53,8 +50,6 @@ final class FlashStep3SignComponent extends AbstractController
         private readonly AddDocumentUseCase $addDocumentUseCase,
         private readonly ComplianceDocumentRepositoryInterface $complianceDocumentRepository,
         private readonly SendDerToClientUseCase $sendDerToClientUseCase,
-        private readonly CreateDocusealSignatureRequestUseCase $createDocusealSignatureRequestUseCase,
-        private readonly SaveDocuSealUrlUseCase $saveDocuSealUrlUseCase,
         private readonly LiveResponder $responder,
     ) {
     }
@@ -100,45 +95,28 @@ final class FlashStep3SignComponent extends AbstractController
     }
 
     #[LiveAction]
-    public function confirmAndSign(): ?RedirectResponse
+    public function confirmAndSign(): void
     {
-        $this->loadFolderFromSession();
-        try {
-            Assert::notNull($this->complianceFolder, 'Dossier introuvable.');
-
-            $document = $this->complianceDocumentRepository->findDerByFolder($this->complianceFolder);
-            if (!$document instanceof \App\Domain\Compliance\Entity\ComplianceDocument) {
-                $document = ($this->addDocumentUseCase)(DocumentType::DER, $this->complianceFolder);
-            }
-            Assert::notNull($document->id);
-
-            ($this->generateDerUseCase)(documentId: (string) $document->id, folder: $this->complianceFolder);
-
-            // 🪄 Utilisation du nouveau UseCase isolé !
-            $docuSealInfo = ($this->createDocusealSignatureRequestUseCase)($this->complianceFolder);
-
-            ($this->saveDocuSealUrlUseCase)($document, $docuSealInfo['url'], (int) $docuSealInfo['id']);
-            $this->requestStack->getSession()->remove('flash_draft_folder_id');
-
-            return new RedirectResponse($docuSealInfo['url']);
-        } catch (AbstractDomainException $e) {
-            $this->addFlash('error', $e->getMessage());
-
-            return null;
-        } catch (\Exception $e) {
-            $this->logger->critical('Crash Flash Step 3', ['error' => $e->getMessage()]);
-            $this->addFlash('error', 'Erreur technique lors de la préparation.');
-
-            return null;
-        }
+        $this->sendDerForAcknowledgement();
     }
 
     #[LiveAction]
     public function confirmAndSendLater(): void
     {
+        $this->sendDerForAcknowledgement();
+    }
+
+    /**
+     * Génère le DER et déclenche l'envoi au client du lien d'accusé de réception
+     * (le lien part par e-mail dès que le PDF est prêt).
+     */
+    private function sendDerForAcknowledgement(): void
+    {
         $this->loadFolderFromSession();
+
         try {
-            Assert::notNull($this->complianceFolder);
+            Assert::notNull($this->complianceFolder, 'Dossier introuvable.');
+
             $document = $this->complianceDocumentRepository->findDerByFolder($this->complianceFolder);
             if (!$document instanceof \App\Domain\Compliance\Entity\ComplianceDocument) {
                 $document = ($this->addDocumentUseCase)(DocumentType::DER, $this->complianceFolder);
@@ -150,8 +128,11 @@ final class FlashStep3SignComponent extends AbstractController
 
             $this->requestStack->getSession()->remove('flash_draft_folder_id');
             $this->isFinished = true;
-        } catch (\Exception) {
-            $this->addFlash('error', 'Erreur lors de la validation asynchrone.');
+        } catch (AbstractDomainException $e) {
+            $this->addFlash('error', $e->getMessage());
+        } catch (\Exception $e) {
+            $this->logger->critical('Crash Flash Step 3', ['error' => $e->getMessage()]);
+            $this->addFlash('error', 'Erreur technique lors de la préparation.');
         }
     }
 }

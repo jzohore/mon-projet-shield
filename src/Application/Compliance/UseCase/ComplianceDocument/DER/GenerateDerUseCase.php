@@ -40,9 +40,15 @@ readonly class GenerateDerUseCase
             throw InvalidDocumentFolderException::forDocument($documentId, $folder->slugId);
         }
 
-        $user = $this->currentUserProvider->getUser();
+        // Contexte dual : CGP connecté OU parcours flash public (aucun utilisateur).
+        $user = null;
+        $actorEmail = 'onboarding-flash@kysure.local';
+        if ($this->currentUserProvider->isAuthenticated()) {
+            $user = $this->currentUserProvider->getUser();
+            $actorEmail = $user->email;
+        }
 
-        $document->markAsPending($user->email);
+        $document->markAsPending($actorEmail);
         $folder->markAsDerGenerated();
 
         $this->transactionManager->transactional(function () use ($document, $folder): void {
@@ -52,6 +58,9 @@ readonly class GenerateDerUseCase
 
         $this->repository->save($document);
         $this->messageBus->dispatch(new GenerateDerPdfMessage($documentId, $document->storagePath));
-        $this->eventDispatcher->dispatch(new DerGenerationRequestedEvent($document, $user));
+
+        if ($user instanceof \App\Domain\User\Entity\User) {
+            $this->eventDispatcher->dispatch(new DerGenerationRequestedEvent($document, $user));
+        }
     }
 }

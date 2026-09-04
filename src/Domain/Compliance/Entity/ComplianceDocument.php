@@ -116,6 +116,14 @@ class ComplianceDocument
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     public private(set) ?\DateTimeImmutable $acknowledgementTokenExpiresAt = null;
 
+    /** Le CGP a demandé l'envoi du DER au client (le lien part dès que le PDF est prêt). */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    public private(set) ?\DateTimeImmutable $derSendRequestedAt = null;
+
+    /** Le lien d'accusé de réception a été envoyé au client par e-mail. */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    public private(set) ?\DateTimeImmutable $derLinkSentAt = null;
+
     /**
      * Historique des accusés de réception du DER. Au plus un « en vigueur »
      * (non révoqué) à la fois — garanti par l'index unique partiel côté BDD.
@@ -316,6 +324,31 @@ class ComplianceDocument
     {
         return !$this->acknowledgementTokenExpiresAt instanceof \DateTimeImmutable
             || $this->acknowledgementTokenExpiresAt < now();
+    }
+
+    /**
+     * Le CGP demande la transmission du DER au client. Le lien d'accusé de
+     * réception ne partira qu'une fois le PDF généré.
+     */
+    public function requestAcknowledgementSend(): void
+    {
+        $this->guardNotSealed();
+        $this->derSendRequestedAt ??= now();
+    }
+
+    public function markAcknowledgementLinkSent(): void
+    {
+        $this->derLinkSentAt = now();
+    }
+
+    public function isAcknowledgementSendRequested(): bool
+    {
+        return $this->derSendRequestedAt instanceof \DateTimeImmutable;
+    }
+
+    public function isAcknowledgementLinkSent(): bool
+    {
+        return $this->derLinkSentAt instanceof \DateTimeImmutable;
     }
 
     public function hasAcknowledgementInForce(): bool

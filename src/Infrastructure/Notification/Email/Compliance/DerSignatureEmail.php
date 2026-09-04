@@ -15,7 +15,7 @@ class DerSignatureEmail extends TemplatedEmail
 
         $this
             ->to(new Address($email))
-            ->subject('Signature requise : Votre Document d\'Entrée en Relation')
+            ->subject('Votre Document d\'Entrée en Relation')
             ->htmlTemplate('emails/compliance/der_signature.html.twig')
             ->context([
                 'client_name' => $clientName,

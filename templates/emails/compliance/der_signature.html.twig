@@ -1,23 +1,24 @@
 {% extends 'emails/base.html.twig' %}
 
-{% block title %}Signature de votre DER{% endblock %}
+{% block title %}Votre Document d'Entrée en Relation{% endblock %}
 
 {% block content %}
     <h1>Document d'Entrée en Relation</h1>
 
     <p>Bonjour {{ client_name }},</p>
-    <p>Dans le cadre de notre entrée en relation et pour nous conformer à la réglementation en vigueur (KYC), nous vous invitons à signer électroniquement votre Document d'Entrée en Relation (DER).</p>
+    <p>Dans le cadre de notre entrée en relation et pour nous conformer à la réglementation en vigueur (KYC / LCB-FT), nous vous transmettons votre Document d'Entrée en Relation (DER).</p>
+    <p>Merci d'en prendre connaissance, puis de confirmer sa réception via le bouton ci-dessous.</p>
 
     <div class="btn-container">
-        <a href="{{ action_url }}" class="btn">Signer mon document</a>
+        <a href="{{ action_url }}" class="btn">Consulter et accuser réception</a>
     </div>
 
     <p style="font-size: 13px; color: #64748b; margin-top: 20px;">
-        La signature s'effectue de manière sécurisée et ne prendra que quelques minutes.
+        L'opération est sécurisée et ne prend que quelques instants.
     </p>
 
     <p style="font-size: 12px; color: #94a3b8; word-break: break-all;">
-        Si le bouton ne fonctionne pas, copiez et collez cette URL dans votre navigateur :<br>
+        Si le bouton ne fonctionne pas, copiez et collez cette adresse dans votre navigateur :<br>
         <a href="{{ action_url }}" style="color: #64748b;">{{ action_url }}</a>
     </p>
 {% endblock %}
