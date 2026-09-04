@@ -82,11 +82,25 @@
                                 </div>
                             {% endif %}
 
+                            {% if acknowledgement and acknowledgement.certificateSha256 %}
+                                <div class="sm:col-span-2">
+                                    <dt class="text-xs font-medium uppercase tracking-wider text-slate-500">Empreinte de l'attestation (SHA-256)</dt>
+                                    <dd class="mt-1 font-mono text-[11px] break-all text-slate-500">{{ acknowledgement.certificateSha256 }}</dd>
+                                </div>
+                            {% endif %}
+
                             <div class="sm:col-span-2 mt-2 flex flex-wrap items-center gap-3 border-t border-slate-100 pt-4">
                                 {% if this.derPdfPath %}
                                     <twig:Button as="a" href="{{ this.derPdfPath|private_url }}" target="_blank" rel="noopener noreferrer" variant="outline" size="sm">
                                         <twig:ux:icon name="tabler:file-download" />
-                                        Télécharger le document
+                                        Télécharger le DER
+                                    </twig:Button>
+                                {% endif %}
+
+                                {% if acknowledgement and acknowledgement.certificateStoragePath %}
+                                    <twig:Button as="a" href="{{ acknowledgement.certificateStoragePath|private_url }}" target="_blank" rel="noopener noreferrer" variant="secondary" size="sm">
+                                        <twig:ux:icon name="tabler:certificate" class="text-emerald-600" />
+                                        Attestation d'accusé de réception
                                     </twig:Button>
                                 {% endif %}
 
@@ -110,9 +124,54 @@
                 </div>
 
                 {# ========================================== #}
+                {# 3.5 ÉTAT : DER REFUSÉ PAR LE CLIENT        #}
+                {# ========================================== #}
+            {% elseif compliance_folder_status_value == 'der_rejected' %}
+                {% set der_document = this.derDocument %}
+                <div class="animate-fade-in overflow-hidden rounded-lg border border-red-200 bg-white shadow-sm mt-4">
+                    <div class="border-b border-red-100 bg-red-50/50 px-4 py-3 sm:px-6 flex items-center gap-2">
+                        <twig:ux:icon name="tabler:shield-x" class="size-5 text-red-600" />
+                        <h4 class="text-sm font-semibold text-red-900">DER refusé par le client</h4>
+                    </div>
+                    <div class="px-4 py-4 sm:px-6">
+                        <p class="text-sm text-slate-700">
+                            Le client a déclaré ne pas reconnaître le document
+                            {% if der_document and der_document.derDeclinedAt %}
+                                le {{ der_document.derDeclinedAt|date('d/m/Y à H:i') }}
+                            {% endif %}.
+                            Le processus d'entrée en relation est suspendu.
+                        </p>
+                        {% if der_document and der_document.derDeclineReason %}
+                            <p class="mt-2 text-sm font-semibold text-red-700">Motif : {{ der_document.derDeclineReason }}</p>
+                        {% endif %}
+                        <div class="mt-4 border-t border-slate-100 pt-4">
+                            <twig:Button type="button" variant="outline" size="sm"
+                                         data-action="live#action" data-live-action-param="generateDer"
+                                         data-loading="action(generateDer)|addAttribute(disabled)">
+                                <twig:ux:icon name="tabler:refresh" data-loading="action(generateDer)|hide" />
+                                <span data-loading="action(generateDer)|hide">Générer un nouveau DER</span>
+                                <span data-loading="action(generateDer)|show" class="hidden text-indigo-500">Génération…</span>
+                            </twig:Button>
+                        </div>
+                    </div>
+                </div>
+
+                {# ========================================== #}
                 {# 4. ÉTAT : GÉNÉRATION & ACTIONS             #}
                 {# ========================================== #}
             {% else %}
+                {% set der_document = this.derDocument %}
+                {% if der_document and der_document.derLinkSentAt %}
+                    <div class="mb-4 rounded-lg border-l-4 border-l-amber-400 bg-amber-50 px-4 py-3 flex items-start gap-2.5">
+                        <twig:ux:icon name="tabler:mail-forward" class="size-4 text-amber-600 mt-0.5 shrink-0" />
+                        <div>
+                            <h5 class="text-xs font-semibold text-amber-900">Lien envoyé au client</h5>
+                            <p class="text-[11px] text-amber-700 mt-0.5">
+                                Transmis le {{ der_document.derLinkSentAt|date('d/m/Y à H:i') }}. En attente de son accusé de réception.
+                            </p>
+                        </div>
+                    </div>
+                {% endif %}
                 <div class="max-w-lg mx-auto animate-fade-in mt-2">
 
                     {# Encart Métadonnées Cabinet #}

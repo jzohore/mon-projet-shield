@@ -56,6 +56,13 @@ class DerAcknowledgement
     #[ORM\Column(type: Types::STRING, length: 20)]
     public private(set) string $statementVersion;
 
+    /** Attestation PDF générée après l'accusé (certificat téléchargeable par le cabinet). */
+    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    public private(set) ?string $certificateStoragePath = null;
+
+    #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
+    public private(set) ?string $certificateSha256 = null;
+
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     public private(set) ?string $userAgent = null;
 
@@ -155,6 +162,25 @@ class DerAcknowledgement
         $this->revokedAt = now();
         $this->revokedByName = $revokedBy->getFullName();
         $this->revokeReason = $reason;
+    }
+
+    /**
+     * Rattache l'attestation PDF générée après coup. Idempotent : une attestation
+     * déjà rattachée n'est pas écrasée (empreinte figée).
+     */
+    public function attachCertificate(string $storagePath, string $sha256): void
+    {
+        if (null !== $this->certificateStoragePath) {
+            return;
+        }
+
+        $this->certificateStoragePath = $storagePath;
+        $this->certificateSha256 = $sha256;
+    }
+
+    public function hasCertificate(): bool
+    {
+        return null !== $this->certificateStoragePath;
     }
 
     public function isInForce(): bool

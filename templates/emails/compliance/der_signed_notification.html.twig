@@ -1,20 +1,19 @@
-{# templates/emails/workspace/der_signed_notification.html.twig #}
 {% extends 'emails/base.html.twig' %}
 
-{% block title %}DER Signé - {{ client_name }}{% endblock %}
+{% block title %}DER accusé en réception - {{ client_name }}{% endblock %}
 
 {% block content %}
-    <h1>Signature validée : {{ client_name }}</h1>
+    <h1>Accusé de réception : {{ client_name }}</h1>
 
     <p>Bonjour {{ workspace_name }},</p>
 
-    <p>Le Document d'Entrée en Relation (DER) a été signé électroniquement par <strong>{{ client_name }}</strong>. Le document officiel et son journal d'audit ont été automatiquement sauvegardés.</p>
+    <p><strong>{{ client_name }}</strong> a accusé réception par voie électronique de son Document d'Entrée en Relation (DER). Une attestation d'accusé de réception a été générée et est disponible depuis le dossier.</p>
 
     <div style="background-color: #f8fafc; padding: 15px; border-radius: 6px; margin: 20px 0;">
         <ul style="list-style-type: none; padding: 0; margin: 0; font-size: 14px; color: #334155;">
-            <li style="margin-bottom: 8px;"><strong>Date de signature :</strong> {{ signed_at }}</li>
+            <li style="margin-bottom: 8px;"><strong>Date de l'accusé :</strong> {{ signed_at }}</li>
             <li style="margin-bottom: 8px;"><strong>Dossier :</strong> #{{ folder_reference }}</li>
-            <li><strong>Statut :</strong> <span style="color: #10b981; font-weight: bold;">Validé et sécurisé</span></li>
+            <li><strong>Statut :</strong> <span style="color: #10b981; font-weight: bold;">Reçu et confirmé</span></li>
         </ul>
     </div>
 
@@ -25,7 +24,7 @@
     </div>
 
     <p style="font-size: 12px; color: #94a3b8; word-break: break-all; margin-top: 20px;">
-        Si le bouton ne fonctionne pas, copiez et collez cette URL dans votre navigateur :<br>
+        Si le bouton ne fonctionne pas, copiez et collez cette adresse dans votre navigateur :<br>
         <a href="{{ folder_url }}" style="color: #64748b;">{{ folder_url }}</a>
     </p>
 {% endblock %}

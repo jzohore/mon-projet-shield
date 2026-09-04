@@ -64,6 +64,7 @@ final class DerAcknowledgementController extends AbstractController
         if ($inForce instanceof DerAcknowledgement) {
             return $this->render('app/der/acknowledged.html.twig', [
                 'acknowledgement' => $inForce,
+                'token' => $token,
                 'pdf_url' => $this->generateUrl('app_der_pdf', ['token' => $token]),
             ]);
         }
@@ -157,6 +158,33 @@ final class DerAcknowledgementController extends AbstractController
         return new Response($this->storage->getContents($document->storagePath), Response::HTTP_OK, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="document-entree-en-relation.pdf"',
+            'Cache-Control' => 'private, no-store',
+            'X-Robots-Tag' => 'noindex, nofollow',
+        ]);
+    }
+
+    #[Route(
+        path: '/der/{token}/certificate',
+        name: 'app_der_certificate',
+        requirements: ['token' => self::TOKEN_REQUIREMENT],
+        methods: ['GET'],
+    )]
+    public function certificate(string $token): Response
+    {
+        try {
+            $document = ($this->resolveLink)($token);
+        } catch (AcknowledgementLinkException) {
+            throw $this->createNotFoundException();
+        }
+
+        $acknowledgement = $document->acknowledgementInForce();
+        if (!$acknowledgement instanceof DerAcknowledgement || null === $acknowledgement->certificateStoragePath) {
+            throw $this->createNotFoundException();
+        }
+
+        return new Response($this->storage->getContents($acknowledgement->certificateStoragePath), Response::HTTP_OK, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="attestation-accuse-reception-der.pdf"',
             'Cache-Control' => 'private, no-store',
             'X-Robots-Tag' => 'noindex, nofollow',
         ]);

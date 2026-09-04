@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Attestation d'accusé de réception du DER</title>
+    <style>
+        * { box-sizing: border-box; }
+        @page { size: A4 portrait; margin: 20mm 18mm; }
+        html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 11px;
+            line-height: 1.55;
+            color: #0f172a;
+            margin: 0;
+        }
+        .kicker {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #475569;
+        }
+        h1 {
+            margin: 4px 0 24px;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+        }
+        .intro { margin-bottom: 20px; }
+        dl {
+            margin: 0 0 22px;
+            border: 1px solid #e2e8f0;
+        }
+        .row {
+            display: flex;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .row:last-child { border-bottom: none; }
+        dt {
+            width: 42%;
+            padding: 8px 12px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #475569;
+            background: #f8fafc;
+        }
+        dd {
+            width: 58%;
+            margin: 0;
+            padding: 8px 12px;
+            font-weight: 600;
+        }
+        .hash { font-family: "Courier New", monospace; font-size: 9px; font-weight: 400; word-break: break-all; }
+        .statement {
+            border-left: 3px solid #0f172a;
+            padding: 6px 12px;
+            margin: 0 0 24px;
+            font-style: italic;
+            color: #1e293b;
+        }
+        .footer {
+            margin-top: 32px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 8.5px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+{% set workspace = acknowledgement.document.folder.workspace %}
+
+<span class="kicker">{{ workspace.legalName ?: workspace.name }}</span>
+<h1>Attestation d'accusé de réception</h1>
+
+<p class="intro">
+    Le présent document atteste que le client identifié ci-dessous a reçu, consulté
+    et accusé réception par voie électronique de son Document d'Entrée en Relation (DER),
+    conformément aux obligations d'information précontractuelle applicables.
+</p>
+
+<dl>
+    <div class="row"><dt>Cabinet</dt><dd>{{ workspace.legalName ?: workspace.name }} — SIRET {{ workspace.siret }}</dd></div>
+    <div class="row"><dt>Référence dossier</dt><dd>{{ acknowledgement.document.folder.reference }}</dd></div>
+    <div class="row"><dt>Déclaré par</dt><dd>{{ acknowledgement.declaredName }}</dd></div>
+    <div class="row"><dt>Adresse e-mail destinataire</dt><dd>{{ acknowledgement.recipientEmail }}</dd></div>
+    <div class="row"><dt>Date et heure de l'accusé</dt><dd>{{ acknowledgement.acknowledgedAt|date('d/m/Y à H:i:s') }}</dd></div>
+    <div class="row"><dt>Adresse IP</dt><dd>{{ acknowledgement.ipAddress ?: 'non communiquée' }}</dd></div>
+    <div class="row"><dt>Empreinte SHA-256 du DER</dt><dd class="hash">{{ acknowledgement.pdfSha256 }}</dd></div>
+    <div class="row"><dt>Identifiant de l'accusé</dt><dd>{{ acknowledgement.slugId }}</dd></div>
+</dl>
+
+<p class="kicker">Déclaration acceptée</p>
+<p class="statement">« {{ acknowledgement.statementText }} »</p>
+
+<p class="footer">
+    Attestation générée automatiquement par KYSURE le {{ "now"|date('d/m/Y à H:i') }}.
+    Preuve d'accusé de réception électronique (niveau de signature simple au sens eIDAS).
+    L'intégrité du DER acquitté est garantie par l'empreinte SHA-256 ci-dessus.
+</p>
+</body>
+</html>

@@ -20,8 +20,15 @@
             <a href="{{ pdf_url }}" target="_blank" rel="noopener"
                class="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-500">
                 <twig:ux:icon name="lucide:file-text" class="size-4 text-slate-400" aria-hidden="true" />
-                Consulter le document
+                Consulter le DER
             </a>
+            {% if acknowledgement.hasCertificate %}
+                <a href="{{ path('app_der_certificate', {token: token}) }}" target="_blank" rel="noopener"
+                   class="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-500">
+                    <twig:ux:icon name="lucide:badge-check" class="size-4 text-emerald-600" aria-hidden="true" />
+                    Télécharger l'attestation
+                </a>
+            {% endif %}
         </div>
 
         <p class="mt-5 text-xs text-slate-400">

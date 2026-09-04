@@ -62,6 +62,7 @@ framework:
             'App\Infrastructure\Billing\Message\SendSubscriptionCanceledEmailMessage': async_main
             'App\Infrastructure\Compliance\Message\AnalyzeCompleteMeetingMessage': async_main
             'App\Infrastructure\Compliance\Message\DeleteAudioFileMessage': async_main
+            'App\Infrastructure\Compliance\Message\GenerateDerAcknowledgementCertificateMessage': async_main
 
             # --- OCR (Lourd, bloque le thread longtemps) ---
             'App\Infrastructure\Ocr\Message\ProcessOcrMessage': async_heavy

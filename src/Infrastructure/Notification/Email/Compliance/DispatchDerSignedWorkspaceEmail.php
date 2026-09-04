@@ -15,7 +15,7 @@ class DispatchDerSignedWorkspaceEmail extends TemplatedEmail
 
         $this
             ->to(new Address($email))
-            ->subject('DER Signé - ' . $clientName)
+            ->subject('DER accusé en réception - ' . $clientName)
             ->htmlTemplate('emails/compliance/der_signed_notification.html.twig')
             ->context([
                 'client_name' => $clientName,

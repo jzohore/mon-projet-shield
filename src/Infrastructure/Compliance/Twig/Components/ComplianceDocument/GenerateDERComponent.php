@@ -196,16 +196,21 @@ class GenerateDERComponent
         return $document?->storagePath;
     }
 
-    /**
-     * L'accusé de réception du DER en vigueur pour ce dossier, le cas échéant.
-     */
-    public function getAcknowledgement(): ?DerAcknowledgement
+    public function getDerDocument(): ?\App\Domain\Compliance\Entity\ComplianceDocument
     {
         if (!$this->complianceFolder instanceof ComplianceFolder) {
             return null;
         }
 
-        return $this->documentRepository->findDerByFolder($this->complianceFolder)?->acknowledgementInForce();
+        return $this->documentRepository->findDerByFolder($this->complianceFolder);
+    }
+
+    /**
+     * L'accusé de réception du DER en vigueur pour ce dossier, le cas échéant.
+     */
+    public function getAcknowledgement(): ?DerAcknowledgement
+    {
+        return $this->getDerDocument()?->acknowledgementInForce();
     }
 
     public function isDocumentReady(): bool

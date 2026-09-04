@@ -1,6 +1,7 @@
 {% extends 'app/der/_base.html.twig' %}
 
 {% block title %}Accuser réception du DER{% endblock %}
+{% block width %}max-w-4xl{% endblock %}
 
 {% block content %}
     <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
@@ -15,7 +16,7 @@
             <iframe
                 src="{{ pdf_url }}"
                 title="Document d'Entrée en Relation"
-                class="w-full h-[60vh] rounded-lg border border-slate-200 bg-slate-100"
+                class="w-full h-[80vh] min-h-[520px] rounded-lg border border-slate-200 bg-slate-100"
             ></iframe>
             <p class="mt-2 text-xs text-slate-500">
                 Le document ne s'affiche pas ?
