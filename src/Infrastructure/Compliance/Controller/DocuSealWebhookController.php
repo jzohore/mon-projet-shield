@@ -8,130 +8,154 @@ use App\Application\Compliance\UseCase\ComplianceDocument\DER\MarkDerAsOpenedUse
 use App\Application\Compliance\UseCase\ComplianceDocument\DER\MarkDerAsRejectedUseCase;
 use App\Application\Compliance\UseCase\ComplianceDocument\DER\MarkDerAsSignedUseCase;
 use App\Domain\Shared\Exception\AbstractDomainException;
+use App\Infrastructure\DocuSeal\DocuSealSignatureVerifier;
 use Psr\Log\LoggerInterface;
-use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Attribute\Route;
-use Webmozart\Assert\Assert;
 
-class DocuSealWebhookController extends AbstractController
+#[AsController]
+#[Route('/api/docuseal/webhook', name: 'api_docuseal_webhook', methods: ['POST'])]
+readonly class DocuSealWebhookController
 {
     public function __construct(
-        private readonly MarkDerAsOpenedUseCase $markDerAsOpenedUseCase,
-        private readonly MarkDerAsSignedUseCase $markDerAsSignedUseCase,
-        private readonly MarkDerAsRejectedUseCase $markDerAsRejectedUseCase,
-        private readonly LoggerInterface $logger,
+        private DocuSealSignatureVerifier $signatureVerifier,
+        private MarkDerAsOpenedUseCase $markDerAsOpenedUseCase,
+        private MarkDerAsSignedUseCase $markDerAsSignedUseCase,
+        private MarkDerAsRejectedUseCase $markDerAsRejectedUseCase,
+        private LoggerInterface $logger,
     ) {
     }
 
-    #[Route('/api/docuseal/webhook', name: 'api_docuseal_webhook', methods: ['POST'])]
     public function __invoke(Request $request): Response
     {
-        try {
-            // Fail Fast : Si le JSON est invalide, ça pète tout de suite
-            $payload = json_decode($request->getContent(), true, 512, \JSON_THROW_ON_ERROR);
+        // Les octets bruts servent à la fois à la vérification de signature et au
+        // décodage JSON — on les lit une seule fois pour ne pas signer A et traiter B.
+        $rawPayload = $request->getContent();
 
-            // 🛡️ Guard : Garantir au runtime et à PHPStan que le JSON décodé est bien un dictionnaire (array)
-            Assert::isArray($payload, 'Le payload DocuSeal doit être un objet JSON valide.');
-        } catch (\JsonException $e) {
-            $this->logger->error('Webhook DocuSeal : JSON invalide reçu', ['error' => $e->getMessage()]);
+        // 1. Authentification de l'origine du webhook. Sans ça, n'importe qui peut
+        //    faire constater par KYSURE la signature d'un DER.
+        if (!$this->signatureVerifier->verify(
+            $rawPayload,
+            $request->headers->get('X-Docuseal-Signature'),
+            $request->headers->get('X-Kysure-Webhook-Token'),
+        )) {
+            $this->logger->warning('Webhook DocuSeal : signature invalide, requête rejetée.', [
+                'remote_ip' => $request->getClientIp(),
+            ]);
 
-            return new Response('Invalid Payload', Response::HTTP_BAD_REQUEST);
-        } catch (\InvalidArgumentException $e) {
-            $this->logger->error('Webhook DocuSeal : Format du payload inattendu', ['error' => $e->getMessage()]);
-
-            return new Response('Invalid Payload Format', Response::HTTP_BAD_REQUEST);
+            return new Response('Invalid signature', Response::HTTP_UNAUTHORIZED);
         }
 
-        // On récupère les identifiants de base
-        $eventType = $payload['event_type'] ?? null;
-        $submissionId = $payload['data']['submission_id'] ?? $payload['data']['id'] ?? null;
+        // 2. Décodage — la signature est valide, mais le corps peut être inexploitable.
+        try {
+            $payload = json_decode($rawPayload, true, 512, \JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            $this->logger->warning('Webhook DocuSeal : JSON invalide reçu.');
 
-        if (null === $submissionId) {
-            $this->logger->warning('Webhook DocuSeal : Submission ID manquant');
-
-            return new Response('OK', Response::HTTP_OK); // On répond 200 pour que DocuSeal ne retry pas en boucle
+            return new Response('Invalid payload', Response::HTTP_BAD_REQUEST);
         }
 
+        if (!is_array($payload)) {
+            $this->logger->warning('Webhook DocuSeal : payload JSON inattendu (pas un objet).');
+
+            return new Response('Invalid payload', Response::HTTP_BAD_REQUEST);
+        }
+
+        $eventType = is_string($payload['event_type'] ?? null) ? $payload['event_type'] : null;
+        $data = is_array($payload['data'] ?? null) ? $payload['data'] : [];
+
+        // `submission.*` : l'identifiant est `data.id`. `form.*` : c'est `data.submission_id`.
+        $rawSubmissionId = str_starts_with((string) $eventType, 'submission.')
+            ? ($data['id'] ?? null)
+            : ($data['submission_id'] ?? $data['id'] ?? null);
+
+        if (!is_numeric($rawSubmissionId)) {
+            $this->logger->warning('Webhook DocuSeal : identifiant de soumission absent ou invalide.', [
+                'event_type' => $eventType,
+            ]);
+
+            // 200 : rejouer ne changera rien.
+            return new Response('OK', Response::HTTP_OK);
+        }
+
+        $submissionId = (string) (int) $rawSubmissionId;
+
         try {
-            // Aiguillage selon le type d'événement
             if ('form.viewed' === $eventType) {
-                $this->handleFormViewed((string) $submissionId, $payload);
+                $this->handleFormViewed($submissionId, $data);
             } elseif ('form.declined' === $eventType) {
-                $this->handleFormDeclined((string) $submissionId, $payload);
-            } elseif (($payload['data']['status'] ?? null) === 'completed') {
-                $this->handleFormCompleted((string) $submissionId, $payload);
+                $this->handleFormDeclined($submissionId, $data);
+            } elseif ('completed' === ($data['status'] ?? null)) {
+                $this->handleFormCompleted($submissionId, $data);
             } else {
-                $this->logger->info('Webhook DocuSeal : Événement ignoré', ['event_type' => $eventType]);
+                $this->logger->info('Webhook DocuSeal : événement ignoré.', ['event_type' => $eventType]);
             }
         } catch (AbstractDomainException $exception) {
-            $this->logger->warning('Dossier introuvable ou erreur domaine sur webhook', [
-                'submissionId' => $submissionId,
-                'exception' => $exception->getMessage(),
+            // Erreur métier attendue (document introuvable…) : inutile de faire retenter DocuSeal.
+            $this->logger->warning('Webhook DocuSeal : erreur domaine.', [
+                'submission_id' => $submissionId,
+                'exception' => $exception::class,
             ]);
-        } catch (\Exception $exception) {
-            $this->logger->critical('Erreur inattendue lors du webhook DocuSeal', [
-                'submissionId' => $submissionId,
-                'exception' => $exception->getMessage(),
+        } catch (\Throwable $exception) {
+            // Erreur inattendue : on veut que DocuSeal rejoue — une signature à
+            // valeur juridique ne doit pas être perdue en silence.
+            $this->logger->critical('Webhook DocuSeal : erreur inattendue.', [
+                'submission_id' => $submissionId,
+                'exception' => $exception::class,
             ]);
+
+            return new Response('Internal error', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
-        // Toujours répondre 200 OK en fin de traitement (Idempotence asynchrone)
         return new Response('OK', Response::HTTP_OK);
     }
 
     /**
-     * Traite l'ouverture du document par le client.
-     *
-     * @param array<string, mixed> $payload
-     *
-     * @throws \DateMalformedStringException
+     * @param array<string, mixed> $data
      */
-    private function handleFormViewed(string $submissionId, array $payload): void
+    private function handleFormViewed(string $submissionId, array $data): void
     {
-        $openedAtString = $payload['data']['opened_at'] ?? null;
-        $openedAt = is_string($openedAtString) ? new \DateTimeImmutable($openedAtString) : new \DateTimeImmutable();
-
-        ($this->markDerAsOpenedUseCase)($submissionId, openedAt: $openedAt);
+        ($this->markDerAsOpenedUseCase)($submissionId, openedAt: $this->readDate($data['opened_at'] ?? null));
     }
 
     /**
-     * Traite le refus de signature du document.
-     *
-     * @param array<string, mixed> $payload
-     *
-     * @throws \DateMalformedStringException
+     * @param array<string, mixed> $data
      */
-    private function handleFormDeclined(string $submissionId, array $payload): void
+    private function handleFormDeclined(string $submissionId, array $data): void
     {
-        $declinedAtString = $payload['data']['declined_at'] ?? null;
-        $declinedAt = is_string($declinedAtString) ? new \DateTimeImmutable($declinedAtString) : new \DateTimeImmutable();
+        $declineReason = is_string($data['decline_reason'] ?? null) ? $data['decline_reason'] : null;
 
-        $declineReason = is_string($payload['data']['decline_reason'] ?? null) ? $payload['data']['decline_reason'] : null;
-        ($this->markDerAsRejectedUseCase)($submissionId, $declinedAt, $declineReason);
+        ($this->markDerAsRejectedUseCase)($submissionId, $this->readDate($data['declined_at'] ?? null), $declineReason);
     }
 
     /**
-     * Traite la signature finale du document.
-     *
-     * @param array<string, mixed> $payload
-     *
-     * @throws \DateMalformedStringException
+     * @param array<string, mixed> $data
      */
-    private function handleFormCompleted(string $submissionId, array $payload): void
+    private function handleFormCompleted(string $submissionId, array $data): void
     {
-        $completedAtString = $payload['data']['completed_at'] ?? null;
-        $completedAt = is_string($completedAtString) ? new \DateTimeImmutable($completedAtString) : new \DateTimeImmutable();
-
-        $documentUrl = $payload['data']['documents'][0]['url'] ?? null;
-        $auditLogUrl = $payload['data']['audit_log_url'] ?? null;
+        $documentUrl = $data['documents'][0]['url'] ?? null;
+        $auditLogUrl = $data['audit_log_url'] ?? null;
 
         ($this->markDerAsSignedUseCase)(
             $submissionId,
-            documentUrl: (string) $documentUrl,
-            auditLogUrl: (string) $auditLogUrl,
-            completedAt: $completedAt
+            documentUrl: is_string($documentUrl) ? $documentUrl : '',
+            auditLogUrl: is_string($auditLogUrl) ? $auditLogUrl : '',
+            completedAt: $this->readDate($data['completed_at'] ?? null),
         );
+    }
+
+    private function readDate(mixed $value): \DateTimeImmutable
+    {
+        if (is_string($value) && '' !== $value) {
+            try {
+                return new \DateTimeImmutable($value);
+            } catch (\DateMalformedStringException) {
+                // On retombe sur « maintenant » plutôt que de faire échouer le webhook.
+            }
+        }
+
+        return new \DateTimeImmutable();
     }
 }

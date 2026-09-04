@@ -8,6 +8,7 @@ use App\Application\Compliance\UseCase\ComplianceFolder\ComplianceFolderShowAsse
 use App\Domain\Compliance\Entity\ComplianceDocument;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Event\DerSentEvent;
+use App\Domain\Compliance\Exception\DerCannotBeSentException;
 use App\Domain\Compliance\Repository\ComplianceDocumentRepositoryInterface;
 use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
 use App\Domain\Database\TransactionManagerInterface;
@@ -51,6 +52,15 @@ readonly class SendDerToClientUseCase
         $currentUser = $this->currentUserProvider->getUser();
         $triggeredByUserId = $currentUser?->id?->toString() ?? 'SYSTEM_FLASH_ONBOARDING';
 
+        // 🛡️ Guard : charger le document ET vérifier l'idempotence AVANT tout appel
+        // à DocuSeal — un double-clic ne doit pas créer deux soumissions.
+        $document = $this->complianceDocumentRepository->findDerByFolder(folder: $complianceFolder);
+        Assert::isInstanceOf($document, ComplianceDocument::class, 'Le document DER est introuvable pour ce dossier.');
+
+        if (!$document->canRequestSignature()) {
+            throw DerCannotBeSentException::alreadySent();
+        }
+
         $result = $this->docuSealClient->createSignatureRequest(
             $clientEmail,
             $clientName,
@@ -58,16 +68,11 @@ readonly class SendDerToClientUseCase
 
         $complianceFolder->markAsDerSent();
 
-        // 🛡️ Guard : Validation de l'existence du document AVANT mutation
-        $document = $this->complianceDocumentRepository->findDerByFolder(folder: $complianceFolder);
-        Assert::isInstanceOf($document, ComplianceDocument::class, 'Le document DER est introuvable pour ce dossier.');
-
-        // Optionnel mais robuste : vérifier le retour de l'API externe
+        // Vérifier le retour de l'API externe
         Assert::stringNotEmpty($result['id'] ?? '', 'DocuSeal n\'a pas renvoyé d\'ID de soumission.');
         Assert::stringNotEmpty($result['url'] ?? '', 'DocuSeal n\'a pas renvoyé d\'URL de signature.');
 
-        $document->setDocuSealSubmissionId((int) $result['id']);
-        $document->setDocuSealSignatureUrl($result['url']);
+        $document->markAsSentForSignature((int) $result['id'], $result['url']);
 
         $this->transactionManager->transactional(function () use ($document, $complianceFolder): void {
             $this->complianceDocumentRepository->save($document);

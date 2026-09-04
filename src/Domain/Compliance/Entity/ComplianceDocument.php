@@ -19,6 +19,7 @@ use Symfony\Component\Uid\Uuid;
 #[ORM\Entity()]
 #[ORM\Table(name: 'compliance_documents')]
 #[ORM\Index(name: 'idx_doc_client_status', columns: ['status'])]
+#[ORM\UniqueConstraint(name: 'uniq_doc_docuseal_submission', columns: ['docu_seal_submission_id'])]
 class ComplianceDocument
 {
     use GenerateSlugPrefixedTrait;
@@ -73,14 +74,22 @@ class ComplianceDocument
     #[ORM\Column(nullable: true)]
     public ?int $size = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(nullable: true)]
     public private(set) ?int $docuSealSubmissionId = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     public private(set) ?string $docuSealDocumentUrl = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     public private(set) ?\DateTimeImmutable $docuSealSignedAt = null;
+
+    /** Première consultation du DER par le client (garde d'idempotence `form.viewed`). */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    public private(set) ?\DateTimeImmutable $docuSealOpenedAt = null;
+
+    /** Refus de signature par le client (garde d'idempotence `form.declined`). */
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    public private(set) ?\DateTimeImmutable $docuSealDeclinedAt = null;
 
     #[ORM\Column(length: 255, nullable: true)]
     public private(set) ?string $docuSealAuditLogUrl = null;
@@ -156,6 +165,7 @@ class ComplianceDocument
 
     public function markAsGenerated(string $pdfPath): void
     {
+        $this->guardNotSealed();
         $this->status = DocumentStatus::GENERATED;
         $this->storagePath = $pdfPath;
     }
@@ -194,33 +204,78 @@ class ComplianceDocument
         $this->isAskToClient = $ask;
     }
 
-    public function setDocuSealSubmissionId(?int $id): void
+    /**
+     * Le DER a été transmis à DocuSeal pour signature électronique.
+     */
+    public function markAsSentForSignature(int $submissionId, string $signatureUrl): void
     {
-        $this->docuSealSubmissionId = $id;
+        $this->guardNotSealed();
+        $this->docuSealSubmissionId = $submissionId;
+        $this->docuSealSignatureUrl = $signatureUrl;
     }
 
-    public function setDocuSealDocumentUrl(?string $url): void
+    /**
+     * Le client a consulté le DER pour la première fois.
+     */
+    public function markDerOpened(\DateTimeImmutable $openedAt): void
     {
-        $this->docuSealDocumentUrl = $url;
+        // Idempotent : seule la première consultation est horodatée.
+        $this->docuSealOpenedAt ??= $openedAt;
     }
 
-    public function setDocuSealSignedAt(?\DateTimeImmutable $signedAt): void
+    /**
+     * Le client a signé le DER. Fige les références DocuSeal (setter unique :
+     * impossible de laisser le document à moitié signé).
+     */
+    public function markAsDocuSealSigned(string $documentUrl, string $auditLogUrl, \DateTimeImmutable $signedAt): void
     {
+        $this->docuSealDocumentUrl = $documentUrl;
+        $this->docuSealAuditLogUrl = $auditLogUrl;
         $this->docuSealSignedAt = $signedAt;
     }
 
-    public function setDocuSealAuditLogUrl(?string $auditLogUrl): void
-    {
-        $this->docuSealAuditLogUrl = $auditLogUrl;
-    }
-
-    public function setDocuSealRejectedReason(?string $reason): void
+    /**
+     * Le client a refusé de signer le DER.
+     */
+    public function markDerDeclined(?string $reason, \DateTimeImmutable $declinedAt): void
     {
         $this->docuSealRejectedReason = $reason;
+        $this->docuSealDeclinedAt ??= $declinedAt;
     }
 
-    public function setDocuSealSignatureUrl(?string $signatureUrl): void
+    public function isDocuSealSigned(): bool
     {
-        $this->docuSealSignatureUrl = $signatureUrl;
+        return $this->docuSealSignedAt instanceof \DateTimeImmutable;
+    }
+
+    public function isDocuSealOpened(): bool
+    {
+        return $this->docuSealOpenedAt instanceof \DateTimeImmutable;
+    }
+
+    public function isDocuSealDeclined(): bool
+    {
+        return $this->docuSealDeclinedAt instanceof \DateTimeImmutable;
+    }
+
+    /**
+     * Une demande de signature peut être (r)envoyée si aucune soumission n'existe
+     * encore, ou si la précédente a été refusée par le client (on repart alors
+     * sur un nouveau DER versionné).
+     */
+    public function canRequestSignature(): bool
+    {
+        return null === $this->docuSealSubmissionId || $this->isDocuSealDeclined();
+    }
+
+    /**
+     * Interdit toute mutation destructive d'un DER déjà signé : la preuve est
+     * figée, une correction passe par une révocation motivée + nouvelle version.
+     */
+    private function guardNotSealed(): void
+    {
+        if ($this->isDocuSealSigned()) {
+            throw new \DomainException('Le DER est signé : sa régénération est interdite, passer par une révocation motivée.');
+        }
     }
 }

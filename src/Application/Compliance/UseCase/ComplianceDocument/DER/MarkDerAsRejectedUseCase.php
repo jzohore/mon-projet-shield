@@ -25,7 +25,14 @@ readonly class MarkDerAsRejectedUseCase
         if (!$document instanceof ComplianceDocument) {
             throw DocumentNotFoundException::withId($submissionId);
         }
-        $document->setDocuSealRejectedReason($declineReason);
+
+        // 🛡️ Idempotence : un rejeu du webhook `form.declined` ne rejoue ni
+        // l'historique du dossier ni l'événement.
+        if ($document->isDocuSealDeclined()) {
+            return;
+        }
+
+        $document->markDerDeclined($declineReason, $declinedAt);
         $document->folder->markAsDerRejected($declinedAt->format('d/m/y H:i'), $declineReason);
 
         $this->complianceDocumentRepository->save($document);

@@ -118,6 +118,8 @@ security:
         # Routes publiques absolues
         - { path: ^/portal/login, roles: PUBLIC_ACCESS }
         - { path: ^/api/stripe/webhook, roles: PUBLIC_ACCESS }
+        # Auth applicative par signature HMAC (cf. DocuSealSignatureVerifier), pas par le firewall.
+        - { path: ^/api/docuseal/webhook, roles: PUBLIC_ACCESS }
         - { path: ^/api/track, roles: PUBLIC_ACCESS }
         - { path: ^/login, roles: PUBLIC_ACCESS }
 

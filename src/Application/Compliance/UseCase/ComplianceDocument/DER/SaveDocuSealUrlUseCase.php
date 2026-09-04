@@ -16,8 +16,7 @@ readonly class SaveDocuSealUrlUseCase
 
     public function __invoke(ComplianceDocument $document, string $docuSealUrl, int $submissionId): void
     {
-        $document->setDocuSealSignatureUrl($docuSealUrl);
-        $document->setDocuSealSubmissionId($submissionId);
+        $document->markAsSentForSignature($submissionId, $docuSealUrl);
         $this->documentRepository->save($document);
     }
 }
