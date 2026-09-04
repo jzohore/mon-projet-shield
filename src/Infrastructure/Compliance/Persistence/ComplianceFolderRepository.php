@@ -141,11 +141,6 @@ class ComplianceFolderRepository implements ComplianceFolderRepositoryInterface
             ->getOneOrNullResult();
     }
 
-    public function findBySubmissionId(string $submissionId): ?ComplianceFolder
-    {
-        return $this->repository->findOneBy(['docuSealSubmissionId' => $submissionId]);
-    }
-
     /**
      * @return list<ComplianceFolder>
      */

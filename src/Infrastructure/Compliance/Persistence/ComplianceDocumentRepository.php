@@ -79,11 +79,6 @@ class ComplianceDocumentRepository implements ComplianceDocumentRepositoryInterf
             ->getOneOrNullResult();
     }
 
-    public function findBySubmissionId(string $submissionId): ?ComplianceDocument
-    {
-        return $this->repository->findOneBy(['docuSealSubmissionId' => $submissionId]);
-    }
-
     public function findOneByAcknowledgementTokenHash(string $tokenHash): ?ComplianceDocument
     {
         return $this->repository->findOneBy(['acknowledgementTokenHash' => $tokenHash]);

@@ -242,67 +242,15 @@ class ComplianceDocument
     }
 
     /**
-     * Le DER a été transmis à DocuSeal pour signature électronique.
+     * Un DER a-t-il été signé via l'ancien circuit DocuSeal ? Les colonnes
+     * `docu_seal_*` sont conservées comme preuve légale des DER déjà signés
+     * avant la bascule vers l'accusé de réception interne.
+     *
+     * @deprecated circuit DocuSeal retiré — cf. {@see self::hasAcknowledgementInForce()}
      */
-    public function markAsSentForSignature(int $submissionId, string $signatureUrl): void
-    {
-        $this->guardNotSealed();
-        $this->docuSealSubmissionId = $submissionId;
-        $this->docuSealSignatureUrl = $signatureUrl;
-    }
-
-    /**
-     * Le client a consulté le DER pour la première fois.
-     */
-    public function markDerOpened(\DateTimeImmutable $openedAt): void
-    {
-        // Idempotent : seule la première consultation est horodatée.
-        $this->docuSealOpenedAt ??= $openedAt;
-    }
-
-    /**
-     * Le client a signé le DER. Fige les références DocuSeal (setter unique :
-     * impossible de laisser le document à moitié signé).
-     */
-    public function markAsDocuSealSigned(string $documentUrl, string $auditLogUrl, \DateTimeImmutable $signedAt): void
-    {
-        $this->docuSealDocumentUrl = $documentUrl;
-        $this->docuSealAuditLogUrl = $auditLogUrl;
-        $this->docuSealSignedAt = $signedAt;
-    }
-
-    /**
-     * Le client a refusé de signer le DER.
-     */
-    public function markDerDeclined(?string $reason, \DateTimeImmutable $declinedAt): void
-    {
-        $this->docuSealRejectedReason = $reason;
-        $this->docuSealDeclinedAt ??= $declinedAt;
-    }
-
     public function isDocuSealSigned(): bool
     {
         return $this->docuSealSignedAt instanceof \DateTimeImmutable;
-    }
-
-    public function isDocuSealOpened(): bool
-    {
-        return $this->docuSealOpenedAt instanceof \DateTimeImmutable;
-    }
-
-    public function isDocuSealDeclined(): bool
-    {
-        return $this->docuSealDeclinedAt instanceof \DateTimeImmutable;
-    }
-
-    /**
-     * Une demande de signature peut être (r)envoyée si aucune soumission n'existe
-     * encore, ou si la précédente a été refusée par le client (on repart alors
-     * sur un nouveau DER versionné).
-     */
-    public function canRequestSignature(): bool
-    {
-        return null === $this->docuSealSubmissionId || $this->isDocuSealDeclined();
     }
 
     /**

@@ -38,8 +38,6 @@ interface ComplianceDocumentRepositoryInterface
 
     public function findDerByFolder(ComplianceFolder $folder): ?ComplianceDocument;
 
-    public function findBySubmissionId(string $submissionId): ?ComplianceDocument;
-
     /**
      * Résout le DER ciblé par un lien d'accusé de réception à partir du SHA-256
      * du jeton (le clair n'est jamais stocké).

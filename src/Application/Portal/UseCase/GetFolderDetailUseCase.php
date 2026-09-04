@@ -31,7 +31,7 @@ readonly class GetFolderDetailUseCase
 
         // 2. Récupération des documents liés
         $documents = $this->documentRepository->findByFolder($folder);
-        // $docuSeal = DocuSealInfo::fromEntity($folder);
+
         // 3. Mapping des documents vers le sous-DTO
         $documentDtos = array_map(static fn (\App\Domain\Compliance\Entity\ComplianceDocument $doc): DocumentItemDto => new DocumentItemDto(
             id: $doc->slugId,
@@ -39,7 +39,6 @@ readonly class GetFolderDetailUseCase
             status: $doc->status,
             uploadedAtFormatted: $doc->uploadedAt?->format('d/m/Y à H:i'),
             rejectionReason: $doc->rejectionReason,
-            // docuSealInfo: $docuSeal,
         ), $documents);
 
         // 4. Assemblage final

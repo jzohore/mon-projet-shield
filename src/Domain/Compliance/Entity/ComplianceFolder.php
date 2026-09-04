@@ -340,30 +340,9 @@ abstract class ComplianceFolder
         );
     }
 
-    public function markAsDerOpened(string $date): void
-    {
-        $this->status = ComplianceFolderStatus::DER_OPENED;
-
-        $this->saveHistory(
-            $this->status->getLabel(),
-            sprintf('Le document a été consulté par le client depuis son espace sécurisé le %s.', $date)
-        );
-    }
-
-    public function markAsDerApproved(string $date): void
-    {
-        $this->status = ComplianceFolderStatus::DER_SIGNED;
-
-        // On renforce le côté légal de l'action
-        $this->saveHistory(
-            $this->status->getLabel(),
-            sprintf('Le DER a été signé électroniquement. Certificat d\'audit scellé le %s.', $date)
-        );
-    }
-
     /**
-     * Le client a accusé réception du DER (accusé de réception électronique, en
-     * remplacement de la signature DocuSeal). Statut inchangé : DER_SIGNED.
+     * Le client a accusé réception du DER (accusé de réception électronique).
+     * Statut : DER_SIGNED.
      */
     public function markAsDerAcknowledged(string $date): void
     {

@@ -52,14 +52,6 @@ services:
       - "1025:1025" # SMTP
       - "8025:8025" # Web UI
 
-  docuseal:
-    image: docuseal/docuseal
-    ports:
-      - "3000:3000"
-    volumes:
-      - docuseal_data:/data
-    environment:
-      - PORT=3000
 # Mercure is installed as a Caddy module, prevent the Flex recipe from installing another service
 ###> symfony/mercure-bundle ###
 ###< symfony/mercure-bundle ###
@@ -96,7 +88,6 @@ volumes:
   caddy_data:
   caddy_config:
   db_data:
-  docuseal_data:
 ###> symfony/mercure-bundle ###
 ###< symfony/mercure-bundle ###
 

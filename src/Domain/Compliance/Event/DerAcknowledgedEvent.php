@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Compliance\Event;
 
 /**
- * Le client a accusé réception du DER (remplace {@see DerSignedEvent}, lié à
- * DocuSeal). Scalaires uniquement : rejouable, sérialisable.
+ * Le client a accusé réception du DER. Scalaires uniquement : rejouable, sérialisable.
  */
 final readonly class DerAcknowledgedEvent
 {

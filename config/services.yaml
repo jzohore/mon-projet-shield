@@ -107,16 +107,6 @@ services:
         arguments:
             $baseUploadDirectory: '%app.kyc_upload_directory%'
 
-    App\Infrastructure\DocuSeal\DocuSealClient:
-        arguments:
-            $docusealApiKey: '%env(DOCUSEAL_API_KEY)%'
-            $docusealBaseUrl: '%env(DOCUSEAL_BASE_URL)%'
-            $derTemplateId: '%env(DOCUSEAL_DER_TEMPLATE_ID)%'
-    App\Infrastructure\DocuSeal\DocuSealSignatureVerifier:
-        arguments:
-            $secrets: '%env(DOCUSEAL_WEBHOOK_SECRET)%'
-            $sharedToken: '%env(DOCUSEAL_WEBHOOK_TOKEN)%'
-            $requireSignature: '%env(bool:DOCUSEAL_WEBHOOK_REQUIRE_SIGNATURE)%'
     App\Infrastructure\Billing\Controller\StripeWebhookController:
         arguments:
             $stripeWebhookSecret: '%env(STRIPE_WEBHOOK_SECRET)%'

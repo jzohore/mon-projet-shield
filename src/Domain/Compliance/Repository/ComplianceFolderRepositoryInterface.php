@@ -49,8 +49,6 @@ interface ComplianceFolderRepositoryInterface
 
     public function findOneLastDraftIndividuals(string $method, Workspace $workspace): ?ComplianceFolder;
 
-    public function findBySubmissionId(string $submissionId): ?ComplianceFolder;
-
     public function findActiveForClient(Client $client): ?ComplianceFolder;
 
     /**

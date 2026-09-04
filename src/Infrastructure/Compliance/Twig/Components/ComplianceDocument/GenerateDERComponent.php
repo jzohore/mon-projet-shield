@@ -4,13 +4,12 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Compliance\Twig\Components\ComplianceDocument;
 
-use App\Application\Compliance\DTO\Request\DocuSealInfo;
 use App\Application\Compliance\DTO\Response\ComplianceFolderShowResponse;
 use App\Application\Compliance\UseCase\ComplianceDocument\AddDocumentUseCase;
-use App\Application\Compliance\UseCase\ComplianceDocument\DER\DocuSealInfoUseCase;
 use App\Application\Compliance\UseCase\ComplianceDocument\DER\GenerateDerUseCase;
 use App\Application\Compliance\UseCase\ComplianceFolder\ComplianceFolderShowAssembler;
 use App\Domain\Compliance\Entity\ComplianceFolder;
+use App\Domain\Compliance\Entity\DerAcknowledgement;
 use App\Domain\Compliance\Enum\DocumentType;
 use App\Domain\Compliance\Repository\ComplianceDocumentRepositoryInterface;
 use App\Domain\Shared\Exception\AbstractDomainException;
@@ -44,7 +43,6 @@ class GenerateDERComponent
         private readonly ComplianceDocumentRepositoryInterface $documentRepository,
         private readonly RequestStack $stack,
         private readonly LoggerInterface $logger,
-        private readonly DocuSealInfoUseCase $docuSealInfoUseCase,
         private readonly ComplianceFolderShowAssembler $complianceFolderShowAssembler,
     ) {
     }
@@ -157,13 +155,16 @@ class GenerateDERComponent
         return $document?->storagePath;
     }
 
-    public function getDocuSealInfo(): ?DocuSealInfo
+    /**
+     * L'accusé de réception du DER en vigueur pour ce dossier, le cas échéant.
+     */
+    public function getAcknowledgement(): ?DerAcknowledgement
     {
         if (!$this->complianceFolder instanceof ComplianceFolder) {
             return null;
         }
 
-        return ($this->docuSealInfoUseCase)($this->complianceFolder);
+        return $this->documentRepository->findDerByFolder($this->complianceFolder)?->acknowledgementInForce();
     }
 
     public function isDocumentReady(): bool
