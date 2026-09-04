@@ -18,10 +18,11 @@
 
     {% set folder = this.folder %}
     {% set status = this.processingStatus %}
+    {% set status_value = status ? status.value : null %}
     {% set meeting = this.meetingReport %}
     {% set validated = this.validatedReport %}
     {% set is_ready = not this.isListening
-        and status.value not in ['finalizing', 'analyzing']
+        and status_value not in ['finalizing', 'analyzing']
         and meeting is not empty and meeting.isExplorable
         and not this.isDeleted %}
 
@@ -42,8 +43,8 @@
 
                     <h3 data-ai-widget-target="headerText" class="truncate text-[13px] font-semibold text-slate-900">
                         {% if this.isListening %}Écoute en cours
-                        {% elseif status.value == 'finalizing' %}Sécurisation…
-                        {% elseif status.value == 'analyzing' %}Analyse en cours
+                        {% elseif status_value == 'finalizing' %}Sécurisation…
+                        {% elseif status_value == 'analyzing' %}Analyse en cours
                         {% elseif validated %}Synthèse validée
                         {% else %}Synthèse d'entretien
                         {% endif %}
@@ -71,10 +72,10 @@
                             <span class="text-xs text-slate-400">Audio chiffré. Cliquez sur Stop pour analyser.</span>
                         </div>
 
-                    {% elseif status.value == 'finalizing' or status.value == 'analyzing' %}
+                    {% elseif status_value == 'finalizing' or status_value == 'analyzing' %}
                         <div class="flex items-center justify-center gap-2.5 px-8 py-12">
                             {{ ux_icon('lucide:loader-2', { class: 'size-4 shrink-0 text-slate-400 animate-spin', 'aria-hidden': 'true' }) }}
-                            <span class="text-sm font-medium text-slate-600">{{ status.value == 'finalizing' ? 'Sécurisation du fichier…' : 'Analyse du discours…' }}</span>
+                            <span class="text-sm font-medium text-slate-600">{{ status_value == 'finalizing' ? 'Sécurisation du fichier…' : 'Analyse du discours…' }}</span>
                         </div>
 
                     {% elseif this.isDeleted %}
