@@ -5,8 +5,8 @@
     'data-mercure-sync-topic-value': mercure('folder_' ~ this.complianceFolder.slugId)
 }) }}>
     {% set acknowledgement = this.acknowledgement %}
+    {% set der_document = this.derDocument %}
     {% set compliance_folder_status_value = this.complianceDTO.statusValue %}
-
     {% if this.isStepDerVisible %}
         <section class="bg-white rounded-xl border border-slate-200 p-6 sm:p-8 shadow-sm">
 
@@ -33,26 +33,12 @@
             </header>
 
             {# ========================================== #}
-            {# 2. ÉTAT : PROFIL INCOMPLET (BLOQUANT)      #}
+            {# 3. ÉTAT : DER ACQUITTÉ (PREUVE LÉGALE)      #}
             {# ========================================== #}
-            {% if not this.profileValid %}
-                <div class="rounded-lg bg-amber-50 ring-1 ring-inset ring-amber-200 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left animate-fade-in">
-                    <div class="flex items-center gap-3 text-amber-800">
-                        <twig:ux:icon name="tabler:alert-triangle-filled" class="size-5 text-amber-500 shrink-0" />
-                        <span class="text-sm font-medium">Les informations réglementaires de votre cabinet (ex: ORIAS) sont incomplètes.</span>
-                    </div>
-
-                    {# Utilisation de ton variant="warning" #}
-                    <twig:Button as="a" href="{{ path('app_settings_regulatory_profile') }}" target="_blank" variant="warning" size="sm">
-                        <twig:ux:icon name="tabler:external-link" class="size-3.5 mr-1" />
-                        Compléter mon profil
-                    </twig:Button>
-                </div>
-
-                {# ========================================== #}
-                {# 3. ÉTAT : DER SIGNÉ (PREUVE LÉGALE)        #}
-                {# ========================================== #}
-            {% elseif compliance_folder_status_value == 'der_signed' %}
+            {# Clé sur l'accusé lui-même : le dossier a déjà avancé à AWAITING_CLIENT
+               (cf. AcknowledgeDerUseCase), le statut du dossier ne vaut donc plus
+               "der_signed" au moment où le CGP consulte l'écran. #}
+            {% if acknowledgement %}
                 <div class="animate-fade-in overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm mt-4">
                     <div class="border-b border-slate-100 bg-slate-50/50 px-4 py-3 sm:px-6 flex items-center gap-2">
                         <twig:ux:icon name="tabler:shield-check-filled" class="size-5 text-emerald-600" />
@@ -157,6 +143,23 @@
                 </div>
 
                 {# ========================================== #}
+                {# 3.6 ÉTAT : PROFIL INCOMPLET (BLOQUANT)     #}
+                {# ========================================== #}
+            {% elseif not this.profileValid %}
+                <div class="rounded-lg bg-amber-50 ring-1 ring-inset ring-amber-200 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left animate-fade-in">
+                    <div class="flex items-center gap-3 text-amber-800">
+                        <twig:ux:icon name="tabler:alert-triangle-filled" class="size-5 text-amber-500 shrink-0" />
+                        <span class="text-sm font-medium">Les informations réglementaires de votre cabinet (ex: ORIAS) sont incomplètes.</span>
+                    </div>
+
+                    {# Utilisation de ton variant="warning" #}
+                    <twig:Button as="a" href="{{ path('app_settings_regulatory_profile') }}" target="_blank" variant="warning" size="sm">
+                        <twig:ux:icon name="tabler:external-link" class="size-3.5 mr-1" />
+                        Compléter mon profil
+                    </twig:Button>
+                </div>
+
+                {# ========================================== #}
                 {# 4. ÉTAT : GÉNÉRATION & ACTIONS             #}
                 {# ========================================== #}
             {% else %}
@@ -198,25 +201,6 @@
                     <div data-controller="actions-panel" class="space-y-4">
                         {% if this.derPdfPath %}
                             <div data-loading="action(generateDer)|hide" class="space-y-3">
-
-                                {% if compliance_folder_status_value == 'der_sent' %}
-                                    <div class="rounded-lg ring-1 ring-inset ring-amber-200 bg-amber-50 p-3 flex items-start gap-2.5">
-                                        <twig:ux:icon name="tabler:clock-hour-4" class="size-4 text-amber-600 mt-0.5 animate-pulse shrink-0" />
-                                        <div>
-                                            <h5 class="text-xs font-semibold text-amber-900">En attente de signature client</h5>
-                                            <p class="text-[11px] text-amber-700 mt-0.5">Le lien a été envoyé. Le statut s'actualisera automatiquement dès la signature.</p>
-                                        </div>
-                                    </div>
-                                {% endif %}
-                                {% if compliance_folder_status_value == 'der_opened' %}
-                                    <div class="rounded-lg ring-1 ring-inset ring-amber-200 bg-amber-50 p-3 flex items-start gap-2.5">
-                                        <twig:ux:icon name="tabler:clock-hour-4" class="size-4 text-amber-600 mt-0.5 animate-pulse shrink-0" />
-                                        <div>
-                                            <h5 class="text-xs font-semibold text-amber-900">Document consulté par le client</h5>
-                                            <p class="text-[11px] text-amber-700 mt-0.5">Le DER a été ouvert. En attente de signature électronique.</p>
-                                        </div>
-                                    </div>
-                                {% endif %}
 
                                 {# Utilisation de ton variant="outline" pour les actions secondaires #}
                                 <twig:Button as="a" href="{{ this.derPdfPath|private_url }}" target="_blank" variant="outline" class="w-full">
