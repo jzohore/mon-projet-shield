@@ -1,0 +1,16 @@
+title = "KYSURE — config gitleaks"
+
+[extend]
+useDefault = true
+
+# 🛡️ KYSURE SEC — Exceptions gitleaks (faux positifs uniquement)
+#
+# Règle : on n'allowlist QUE une valeur précise et documentée (jamais un
+# chemin entier ni une règle générique) — sinon un vrai secret committé par
+# erreur dans un test passerait inaperçu à l'avenir.
+
+[allowlist]
+description = "Jeton DER factice (64 hex fixes) utilisé dans les tests unitaires du circuit d'accusé de réception — jamais une valeur réelle. Si la fixture change, mettre à jour cette regex."
+regexes = [
+    '''a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2''',
+]
