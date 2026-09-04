@@ -1,0 +1,25 @@
+{% extends 'app/der/_base.html.twig' %}
+
+{% block title %}Lien indisponible{% endblock %}
+
+{% block content %}
+    <div class="rounded-xl border border-slate-200 border-l-4 border-l-amber-500 bg-white shadow-sm px-6 py-6">
+        <div class="flex items-start gap-3">
+            <twig:ux:icon name="lucide:alert-triangle" class="mt-0.5 size-5 text-amber-600 shrink-0" aria-hidden="true" />
+            <div>
+                <h1 class="text-lg font-semibold text-slate-900">
+                    {% if reason == 'expired' %}Ce lien a expiré{% else %}Lien indisponible{% endif %}
+                </h1>
+                <p class="mt-1 text-sm text-slate-600">
+                    {% if reason == 'expired' %}
+                        Le lien de réception du document n'est plus valide. Contactez votre conseiller
+                        pour qu'il vous renvoie le Document d'Entrée en Relation.
+                    {% else %}
+                        Ce lien est incorrect ou n'est plus actif. Vérifiez l'adresse reçue par e-mail,
+                        ou contactez votre conseiller.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

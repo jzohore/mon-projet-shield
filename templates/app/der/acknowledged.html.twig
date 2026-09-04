@@ -1,0 +1,31 @@
+{% extends 'app/der/_base.html.twig' %}
+
+{% block title %}Réception confirmée{% endblock %}
+
+{% block content %}
+    <div class="rounded-xl border border-slate-200 border-l-4 border-l-emerald-500 bg-white shadow-sm px-6 py-6">
+        <div class="flex items-start gap-3">
+            <twig:ux:icon name="lucide:check-circle" class="mt-0.5 size-5 text-emerald-600 shrink-0" aria-hidden="true" />
+            <div>
+                <h1 class="text-lg font-semibold text-slate-900">Réception confirmée</h1>
+                <p class="mt-1 text-sm text-slate-600">
+                    Vous avez accusé réception du Document d'Entrée en Relation
+                    le <strong>{{ acknowledgement.acknowledgedAt|date('d/m/Y à H:i') }}</strong>,
+                    au nom de <strong>{{ acknowledgement.declaredName }}</strong>.
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-5 flex flex-wrap gap-3">
+            <a href="{{ pdf_url }}" target="_blank" rel="noopener"
+               class="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 focus-visible:ring-2 focus-visible:ring-indigo-500">
+                <twig:ux:icon name="lucide:file-text" class="size-4 text-slate-400" aria-hidden="true" />
+                Consulter le document
+            </a>
+        </div>
+
+        <p class="mt-5 text-xs text-slate-400">
+            Empreinte du document (SHA-256) : <span class="font-mono break-all">{{ acknowledgement.pdfSha256 }}</span>
+        </p>
+    </div>
+{% endblock %}

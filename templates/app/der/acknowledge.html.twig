@@ -1,0 +1,50 @@
+{% extends 'app/der/_base.html.twig' %}
+
+{% block title %}Accuser réception du DER{% endblock %}
+
+{% block content %}
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div class="border-b border-slate-200 px-6 py-5">
+            <h1 class="text-lg font-semibold text-slate-900">Document d'Entrée en Relation</h1>
+            <p class="mt-1 text-sm text-slate-600">
+                Merci de prendre connaissance du document ci-dessous, puis de confirmer sa réception.
+            </p>
+        </div>
+
+        <div class="px-6 py-5">
+            <iframe
+                src="{{ pdf_url }}"
+                title="Document d'Entrée en Relation"
+                class="w-full h-[60vh] rounded-lg border border-slate-200 bg-slate-100"
+            ></iframe>
+            <p class="mt-2 text-xs text-slate-500">
+                Le document ne s'affiche pas ?
+                <a href="{{ pdf_url }}" target="_blank" rel="noopener" class="font-medium text-indigo-600 underline focus-visible:ring-2 focus-visible:ring-indigo-500 rounded">
+                    Ouvrir dans un nouvel onglet
+                </a>
+            </p>
+        </div>
+
+        <div class="border-t border-slate-200 bg-slate-50 px-6 py-5">
+            {{ form_start(form) }}
+                <div class="space-y-4">
+                    <div>
+                        {{ form_label(form.declaredName, null, {label_attr: {class: 'block text-sm font-medium text-slate-700'}}) }}
+                        {{ form_widget(form.declaredName, {attr: {class: 'mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm shadow-sm focus-visible:ring-2 focus-visible:ring-indigo-500 focus:outline-none'}}) }}
+                        {{ form_errors(form.declaredName) }}
+                    </div>
+
+                    <label class="flex items-start gap-3 text-sm text-slate-700">
+                        {{ form_widget(form.accepted, {attr: {class: 'mt-0.5 size-4 rounded border-slate-300 text-indigo-600 focus-visible:ring-2 focus-visible:ring-indigo-500'}}) }}
+                        <span>{{ statement.text }}</span>
+                    </label>
+                    {{ form_errors(form.accepted) }}
+
+                    <button type="submit" class="w-full rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                        Confirmer la réception
+                    </button>
+                </div>
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}
