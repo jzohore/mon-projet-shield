@@ -60,8 +60,11 @@ enum AuditEventType: string
 
     // --- CONFORMITÉ DER & SIGNATURE ÉLECTRONIQUE ---
     case DER_GENERATED = 'der.generated';
+    /** @deprecated conservé pour l'historique — l'accusé de réception (DER_ACKNOWLEDGED) l'a remplacé. */
     case DER_OPENED = 'der.opened';
+    /** @deprecated conservé pour l'historique — signature DocuSeal abandonnée, cf. DER_ACKNOWLEDGED. */
     case DER_SIGNED = 'der.signed';
+    case DER_ACKNOWLEDGED = 'der.acknowledged';
     case SIGNATURE_UPDATED = 'der.signature_updated';
 
     case ACCEPTED_RECORDING = 'ac.recording';
@@ -135,6 +138,7 @@ enum AuditEventType: string
             self::DER_GENERATED => 'Génération du Document d\'Entrée en Relation (DER)',
             self::DER_OPENED => 'Consultation du DER par le client',
             self::DER_SIGNED => 'Signature électronique du DER',
+            self::DER_ACKNOWLEDGED => 'Accusé de réception du DER par le client',
             self::SIGNATURE_UPDATED => 'Mise à jour des paramètres de signature',
             self::ACCEPTED_RECORDING => 'Accord pour enregistrer l\'entretien',
             self::MEETING_REPORT_VALIDATED => 'Validation du rapport d\'entretien IA',
@@ -202,6 +206,7 @@ enum AuditEventType: string
             self::DER_GENERATED,
             self::DER_OPENED,
             self::DER_SIGNED,
+            self::DER_ACKNOWLEDGED,
             self::ACCEPTED_RECORDING,
             self::MEETING_REPORT_VALIDATED,
             self::MEETING_REPORT_REVOKED,
@@ -221,6 +226,7 @@ enum AuditEventType: string
         return match ($this) {
             self::KYC_FOLDER_APPROVED,
             self::DER_SIGNED,
+            self::DER_ACKNOWLEDGED,
             self::MEETING_REPORT_VALIDATED,
             self::ORIAS_CHECK_SUCCESS,
             self::SIRET_CHECK_SUCCESS,

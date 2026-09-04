@@ -361,6 +361,20 @@ abstract class ComplianceFolder
         );
     }
 
+    /**
+     * Le client a accusé réception du DER (accusé de réception électronique, en
+     * remplacement de la signature DocuSeal). Statut inchangé : DER_SIGNED.
+     */
+    public function markAsDerAcknowledged(string $date): void
+    {
+        $this->status = ComplianceFolderStatus::DER_SIGNED;
+
+        $this->saveHistory(
+            $this->status->getLabel(),
+            sprintf('Le DER a été acquitté par le client (accusé de réception électronique) le %s.', $date)
+        );
+    }
+
     public function markAsDerRejected(string $date, ?string $declineReason): void
     {
         $this->status = ComplianceFolderStatus::DER_REJECTED;

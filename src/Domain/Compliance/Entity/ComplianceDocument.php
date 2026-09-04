@@ -8,6 +8,8 @@ use App\Domain\Compliance\Enum\DocumentType;
 use App\Domain\Kyc\Entity\Stakeholder;
 use App\Domain\Kyc\Enum\DocumentStatus;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
@@ -23,6 +25,9 @@ use Symfony\Component\Uid\Uuid;
 class ComplianceDocument
 {
     use GenerateSlugPrefixedTrait;
+
+    /** Durée de validité du lien d'accusé de réception envoyé au client (jours). */
+    private const int ACKNOWLEDGEMENT_TOKEN_TTL_DAYS = 30;
 
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
@@ -100,6 +105,26 @@ class ComplianceDocument
     #[ORM\Column(length: 255, nullable: true)]
     public private(set) ?string $docuSealRejectedReason = null;
 
+    /**
+     * Jeton d'accès nominatif à la page d'accusé de réception du DER : le client
+     * n'a pas encore de compte à ce stade. Seul le SHA-256 est stocké, la valeur
+     * en clair n'est jamais persistée.
+     */
+    #[ORM\Column(type: 'string', length: 64, unique: true, nullable: true)]
+    public private(set) ?string $acknowledgementTokenHash = null;
+
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    public private(set) ?\DateTimeImmutable $acknowledgementTokenExpiresAt = null;
+
+    /**
+     * Historique des accusés de réception du DER. Au plus un « en vigueur »
+     * (non révoqué) à la fois — garanti par l'index unique partiel côté BDD.
+     *
+     * @var Collection<int, DerAcknowledgement>
+     */
+    #[ORM\OneToMany(targetEntity: DerAcknowledgement::class, mappedBy: 'document')]
+    public private(set) Collection $acknowledgements;
+
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
     public ?\DateTimeImmutable $uploadedAt = null;
 
@@ -110,6 +135,7 @@ class ComplianceDocument
         public bool $isMandatory)
     {
         $this->slugId = $this->generate_ulid_prefixed('comp_doc_');
+        $this->acknowledgements = new ArrayCollection();
     }
 
     public static function createExpected(ComplianceFolder $folder, DocumentType $type, bool $isMandatory = true): self
@@ -147,6 +173,9 @@ class ComplianceDocument
 
     public function markAsPending(string $email): void
     {
+        // Point d'entrée réel de la (re)génération : on bloque ici, avant que
+        // GenerateDerPdfHandler ne supprime le PDF précédent.
+        $this->guardNotSealed();
         $this->status = DocumentStatus::PENDING;
         $this->folder->saveHistory(
             'DER Généré',
@@ -269,13 +298,55 @@ class ComplianceDocument
     }
 
     /**
-     * Interdit toute mutation destructive d'un DER déjà signé : la preuve est
-     * figée, une correction passe par une révocation motivée + nouvelle version.
+     * Émet un jeton d'accès à la page d'accusé de réception et retourne sa valeur
+     * en clair — la seule occasion de la lire. Seul le SHA-256 est conservé.
+     */
+    public function issueAcknowledgementToken(): string
+    {
+        $this->guardNotSealed();
+
+        $clearToken = bin2hex(random_bytes(32));
+        $this->acknowledgementTokenHash = hash('sha256', $clearToken);
+        $this->acknowledgementTokenExpiresAt = now()->modify(sprintf('+%d days', self::ACKNOWLEDGEMENT_TOKEN_TTL_DAYS));
+
+        return $clearToken;
+    }
+
+    public function isAcknowledgementTokenExpired(): bool
+    {
+        return !$this->acknowledgementTokenExpiresAt instanceof \DateTimeImmutable
+            || $this->acknowledgementTokenExpiresAt < now();
+    }
+
+    public function hasAcknowledgementInForce(): bool
+    {
+        return $this->acknowledgementInForce() instanceof DerAcknowledgement;
+    }
+
+    public function acknowledgementInForce(): ?DerAcknowledgement
+    {
+        foreach ($this->acknowledgements as $acknowledgement) {
+            if ($acknowledgement->isInForce()) {
+                return $acknowledgement;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Interdit toute mutation destructive d'un DER figé (signé ou acquitté) : la
+     * preuve porte sur un PDF précis ; une correction passe par une révocation
+     * motivée puis régénération.
      */
     private function guardNotSealed(): void
     {
         if ($this->isDocuSealSigned()) {
             throw new \DomainException('Le DER est signé : sa régénération est interdite, passer par une révocation motivée.');
+        }
+
+        if ($this->hasAcknowledgementInForce()) {
+            throw new \DomainException('Le DER a été acquitté par le client : sa régénération est interdite, passer par une révocation motivée de l\'accusé.');
         }
     }
 }
