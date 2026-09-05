@@ -39,15 +39,15 @@ readonly class GetClientDashboardUseCase
         // 3. Traduction de l'état du domaine (CGP) vers l'état UI (Client)
         $portalStatus = ClientPortalStatus::fromFolderStatus($activeFolder->status);
 
-        // 4. Optimisation I/O : On ne compte les documents que si une action est requise
-        $pendingDocs = 0;
-        if (ClientPortalStatus::ACTION_REQUIRED === $portalStatus) {
-            $pendingDocs = $this->documentRepository->countPendingForClient($client);
-        }
+        // 4. Compteur de pièces en attente (toujours calculé : sinon le texte du
+        //    dashboard affirme « tout est validé » dès qu'on n'est pas en
+        //    ACTION_REQUIRED, y compris pendant l'analyse du cabinet).
+        $pendingDocs = $this->documentRepository->countPendingForClient($client);
 
         // 5. Gestion sécurisée de la collection Workspaces (Multi-CGP)
         $firstWorkspace = $client->workspaces->first();
         $cabinetName = (false !== $firstWorkspace) ? $firstWorkspace->name : 'Votre Cabinet';
+        $cabinetContactEmail = (false !== $firstWorkspace) ? $firstWorkspace->email : null;
 
         // 6. Création du Sous-DTO représentant le dossier
         $activeFolderDto = new ActiveFolderDto(
@@ -65,6 +65,7 @@ readonly class GetClientDashboardUseCase
             portalStatus: $portalStatus,
             pendingDocumentsCount: $pendingDocs,
             activeFolder: $activeFolderDto, // 🚨 Injection de l'agrégat
+            cabinetContactEmail: $cabinetContactEmail,
         );
     }
 }

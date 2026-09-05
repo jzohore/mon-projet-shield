@@ -29,8 +29,11 @@ final class FolderDetailController extends AbstractController
 
         $folderDetailDto = ($this->getFolderDetailUseCase)($client, $id);
 
+        $workspace = $client->workspaces->first();
+
         return $this->render('@app/client/folder_detail.html.twig', [
             'folder' => $folderDetailDto,
+            'company_name' => false !== $workspace ? $workspace->name : 'KYSURE',
         ]);
     }
 }

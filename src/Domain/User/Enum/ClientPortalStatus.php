@@ -37,12 +37,37 @@ enum ClientPortalStatus: string
         };
     }
 
-    public function getColorTheme(): string
+    /**
+     * Classes Tailwind **littérales** du badge de statut. Ne jamais reconstruire
+     * ces classes par interpolation dans un template : le scanner Tailwind ne les
+     * verrait pas et le badge sortirait sans fond en prod.
+     */
+    public function badgeClasses(): string
     {
         return match ($this) {
-            self::UP_TO_DATE => 'emerald',
-            self::ACTION_REQUIRED => 'amber',
-            self::UNDER_REVIEW => 'blue',
+            self::UP_TO_DATE => 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+            self::ACTION_REQUIRED => 'bg-amber-50 text-amber-700 ring-amber-600/20',
+            self::UNDER_REVIEW => 'bg-slate-100 text-slate-700 ring-slate-600/20',
+        };
+    }
+
+    /** Classe de bordure d'accent (carte dossier). Littérale — cf. {@see self::badgeClasses()}. */
+    public function accentBorderClass(): string
+    {
+        return match ($this) {
+            self::UP_TO_DATE => 'border-l-emerald-500',
+            self::ACTION_REQUIRED => 'border-l-amber-500',
+            self::UNDER_REVIEW => 'border-l-slate-300',
+        };
+    }
+
+    /** Classes de la pastille d'icône (carte dossier). Littérales — cf. {@see self::badgeClasses()}. */
+    public function iconWrapClasses(): string
+    {
+        return match ($this) {
+            self::UP_TO_DATE => 'bg-emerald-50 text-emerald-600 ring-emerald-500/20',
+            self::ACTION_REQUIRED => 'bg-amber-50 text-amber-600 ring-amber-500/20',
+            self::UNDER_REVIEW => 'bg-slate-50 text-slate-500 ring-slate-500/20',
         };
     }
 }

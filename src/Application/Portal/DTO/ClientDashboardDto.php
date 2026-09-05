@@ -14,6 +14,8 @@ readonly class ClientDashboardDto
         public ClientPortalStatus $portalStatus,
         public int $pendingDocumentsCount,
         public ?ActiveFolderDto $activeFolder = null,
+        /** E-mail de contact du cabinet, ou null si indisponible (on n'affiche alors aucun lien). */
+        public ?string $cabinetContactEmail = null,
     ) {
     }
 }

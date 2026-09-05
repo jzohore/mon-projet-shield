@@ -34,6 +34,7 @@ final class ClientDashboardController extends AbstractController
 
         return $this->render('@app/client/dashboard.html.twig', [
             'dashboard' => $dashboardDto,
+            'company_name' => $dashboardDto->cabinetName,
             'folders' => ($this->getClientFoldersUseCase)($client),
         ]);
     }

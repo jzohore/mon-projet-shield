@@ -28,12 +28,12 @@
                                             {{ folder.workspaceName }}
                                         </span>
                                     </div>
-                                    <p class="text-sm text-slate-500 mt-1 font-mono">Ouvert le {{ folder.openedAtFormatted }}</p>
+                                    <p class="text-sm text-slate-500 mt-1">Ouvert le {{ folder.openedAtFormatted }}</p>
                                 </div>
 
                                 <div class="flex items-center gap-4">
                                     {# Badge de statut dynamique #}
-                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-{{ folder.status.colorTheme }}-50 text-{{ folder.status.colorTheme }}-700 ring-1 ring-inset ring-{{ folder.status.colorTheme }}-600/20">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ring-1 ring-inset {{ folder.status.badgeClasses }}">
                                         {{ folder.status.label }}
                                     </span>
                                     <twig:ux:icon name="tabler:chevron-right" class="size-5 text-slate-400 group-hover:text-slate-900 transition-colors" />

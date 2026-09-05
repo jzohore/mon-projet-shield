@@ -27,8 +27,11 @@ final class ClientFoldersController extends AbstractController
         /** @var Client $client */
         $client = $this->getUser();
 
+        $workspace = $client->workspaces->first();
+
         return $this->render('@app/client/folders.html.twig', [
             'folders' => ($this->getClientFoldersUseCase)($client),
+            'company_name' => false !== $workspace ? $workspace->name : 'KYSURE',
         ]);
     }
 }
