@@ -61,6 +61,20 @@ class ComplianceDocument
     public private(set) ?array $ocrData = null;
 
     /**
+     * Points de vigilance relevés par l'analyse automatique (OCR + contrôles
+     * `DocumentValidator`). Ce ne sont que des signalements : seul un humain
+     * (le CGP) décide d'un rejet. Jamais affiché au client final.
+     *
+     * @var list<string>|null
+     */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    public private(set) ?array $ocrFindings = null;
+
+    /** Version des règles de contrôle ayant produit {@see self::$ocrFindings}. */
+    #[ORM\Column(length: 20, nullable: true)]
+    public private(set) ?string $ocrValidatorVersion = null;
+
+    /**
      * Si le type est "OTHER", on utilise ce label pour afficher au client
      * ex: "Attestation de provenance des fonds".
      */
@@ -205,6 +219,42 @@ class ComplianceDocument
     {
         $this->status = DocumentStatus::PROCESSING;
         $this->rejectionReason = null;
+    }
+
+    /**
+     * Enregistre le résultat de l'analyse automatique (OCR + contrôles). L'analyse
+     * ne décide jamais d'un rejet : elle extrait les données et liste des points
+     * de vigilance que le CGP tranchera. Le document reste en attente de revue
+     * humaine ({@see DocumentStatus::PROCESSING}, jamais actionnable par le client).
+     *
+     * @param array<string, mixed>|null $extractedData
+     * @param list<string>              $findings
+     */
+    public function attachOcrAnalysis(?array $extractedData, array $findings, ?string $validatorVersion = null): void
+    {
+        $this->ocrData = $extractedData;
+        $this->ocrFindings = [] === $findings ? null : $findings;
+        $this->ocrValidatorVersion = $validatorVersion;
+        // Le document reste « reçu / à vérifier » : l'analyse ne le fait pas
+        // avancer, elle éclaire la revue humaine. Jamais actionnable par le client.
+        $this->status = DocumentStatus::UPLOADED;
+        $this->rejectionReason = null;
+
+        $subject = $this->stakeholder instanceof Stakeholder
+            ? sprintf('%s %s', $this->stakeholder->firstName, $this->stakeholder->lastName)
+            : 'la société';
+
+        $this->folder->saveHistory(
+            'Analyse automatique du document',
+            sprintf(
+                'Le document "%s" concernant %s a été analysé automatiquement : %s. En attente de vérification par le conseiller.',
+                $this->type->getLabel(),
+                $subject,
+                [] === $findings
+                    ? 'aucun point de vigilance'
+                    : sprintf('%d point(s) de vigilance', count($findings)),
+            )
+        );
     }
 
     public function markAsGenerated(string $pdfPath): void

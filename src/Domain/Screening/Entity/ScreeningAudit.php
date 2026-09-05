@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Screening\Entity;
 
+use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Screening\Enum\ScreeningStatus;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
@@ -60,6 +61,15 @@ class ScreeningAudit
         public private(set) array $results,
         #[ORM\Column(type: Types::INTEGER)]
         public private(set) int $totalMatches,
+        /**
+         * Dossier de conformité à l'origine du screening, le cas échéant. Nul
+         * pour un screening ad hoc (recherche libre hors dossier). Sans ce
+         * rattachement, impossible de prouver « ce screening a été fait pour ce
+         * dossier, sur cette personne ».
+         */
+        #[ORM\ManyToOne(targetEntity: ComplianceFolder::class)]
+        #[ORM\JoinColumn(nullable: true, onDelete: 'SET NULL')]
+        public private(set) ?ComplianceFolder $complianceFolder = null,
     ) {
         $this->createdAt = now();
         $this->slugId = $this->generate_ulid_prefixed('scr_aud_');
@@ -70,9 +80,9 @@ class ScreeningAudit
      *
      * @throws \Exception
      */
-    public static function create(Workspace $workspace, User $ower, string $query, array $results, int $totalMatches): self
+    public static function create(Workspace $workspace, User $ower, string $query, array $results, int $totalMatches, ?ComplianceFolder $complianceFolder = null): self
     {
-        return new self($workspace, $ower, $query, $results, $totalMatches);
+        return new self($workspace, $ower, $query, $results, $totalMatches, $complianceFolder);
     }
 
     public function markAsProcessed(): void

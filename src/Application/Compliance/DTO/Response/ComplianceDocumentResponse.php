@@ -8,6 +8,7 @@ readonly class ComplianceDocumentResponse
 {
     /**
      * @param array<string, mixed>|null $ocrData
+     * @param list<string>|null         $ocrFindings points de vigilance de l'analyse auto, à trancher par le CGP
      */
     public function __construct(
         public string $id,
@@ -17,6 +18,7 @@ readonly class ComplianceDocumentResponse
         public ?string $storagePath,
         public ?string $rejectionReason,
         public ?array $ocrData, // Les données de la macro Twig
+        public ?array $ocrFindings,
         public ?string $stakeholderSlug,
         public ?string $filename,
         public ?string $mimeType,

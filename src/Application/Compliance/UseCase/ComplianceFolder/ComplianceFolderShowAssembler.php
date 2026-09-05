@@ -68,6 +68,7 @@ class ComplianceFolderShowAssembler
                 storagePath: $doc->storagePath,
                 rejectionReason: $doc->rejectionReason ?? null,
                 ocrData: $doc->ocrData, // Si c'est un tableau
+                ocrFindings: $doc->ocrFindings,
                 stakeholderSlug: $doc->stakeholderSlug ?? null,
                 filename: $doc->filename,
                 mimeType: $doc->mimeType,

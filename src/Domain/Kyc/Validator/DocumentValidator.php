@@ -10,8 +10,12 @@ use Webmozart\Assert\Assert;
 
 class DocumentValidator
 {
+    /** Version des règles de contrôle — à incrémenter à chaque évolution des règles ci-dessous. */
+    public const string VERSION = '2026-09-01';
+
     /**
-     * @return array<string> Liste des raisons de rejet. Si vide, le document est valide.
+     * @return list<string> Points de vigilance détectés. Si vide, aucun signalement.
+     *                      Ce n'est jamais une décision de rejet : seul le CGP tranche.
      */
     public function validate(ComplianceDocument $document): array
     {
