@@ -3,3 +3,13 @@ live_component:
     prefix: '/_components'
     # adjust prefix to add localization to your components
     #prefix: '/{_locale}/_components'
+
+# Composants du portail client authentifié (ROLE_CLIENT). Servis sous /portal
+# pour que la requête AJAX de la LiveAction passe par le firewall `portal` :
+# sinon elle tombe sur le firewall `main` (pattern ^/), où le client n'a pas de
+# session → AccessDenied → redirection vers la page de login.
+# Les composants concernés déclarent `route: 'portal_ux_live_component'`.
+live_component_portal:
+    resource: '@LiveComponentBundle/config/routes.php'
+    prefix: '/portal/_components'
+    name_prefix: 'portal_'

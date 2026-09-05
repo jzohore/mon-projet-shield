@@ -25,6 +25,8 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 #[AsLiveComponent(
     name: 'ClientProfileFormComponent',
     template: 'components/User/Client/ClientProfileFormComponent.html.twig',
+    // Servi sous /portal pour rester dans le firewall `portal` (cf. config/routes/ux_live_component.yaml).
+    route: 'portal_ux_live_component',
 )]
 class ClientProfileFormComponent extends AbstractController
 {

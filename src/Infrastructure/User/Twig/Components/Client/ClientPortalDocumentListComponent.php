@@ -18,6 +18,9 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 #[AsLiveComponent(
     name: 'ClientPortalDocumentListComponent',
     template: 'components/User/Client/ClientPortalDocumentListComponent.html.twig',
+    // Servi sous /portal pour rester dans le firewall `portal` (cf. config/routes/ux_live_component.yaml) :
+    // les LiveActions de ce composant étaient jusqu'ici jouables anonymement via /_components.
+    route: 'portal_ux_live_component',
 )]
 final class ClientPortalDocumentListComponent extends AbstractController
 {
