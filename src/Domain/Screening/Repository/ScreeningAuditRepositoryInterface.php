@@ -27,4 +27,12 @@ interface ScreeningAuditRepositoryInterface
     public function countSearchesSince(Workspace $workspace, \DateTimeImmutable $since): int;
 
     public function countAll(): int;
+
+    /**
+     * Audits dont les résultats bruts sont minimisables : créés avant
+     * `$createdBefore`, avec au moins une correspondance, pas encore minimisés.
+     *
+     * @return list<ScreeningAudit>
+     */
+    public function findMinimizableResults(\DateTimeImmutable $createdBefore, int $limit): array;
 }

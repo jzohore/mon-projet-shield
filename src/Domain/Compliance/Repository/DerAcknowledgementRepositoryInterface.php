@@ -26,4 +26,12 @@ interface DerAcknowledgementRepositoryInterface
      * L'accusé actuellement en vigueur (non révoqué) pour ce DER, ou `null`.
      */
     public function findInForceByDocument(ComplianceDocument $document): ?DerAcknowledgement;
+
+    /**
+     * Accusés dont l'IP / le user-agent sont purgeables : acquittés avant
+     * `$acknowledgedBefore`, encore porteurs d'une donnée technique, pas encore purgés.
+     *
+     * @return list<DerAcknowledgement>
+     */
+    public function findPurgeableTechnicalData(\DateTimeImmutable $acknowledgedBefore, int $limit): array;
 }

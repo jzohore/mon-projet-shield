@@ -56,4 +56,20 @@ readonly class DerAcknowledgementRepository implements DerAcknowledgementReposit
             ->getQuery()
             ->getOneOrNullResult();
     }
+
+    public function findPurgeableTechnicalData(\DateTimeImmutable $acknowledgedBefore, int $limit): array
+    {
+        /** @var list<DerAcknowledgement> $result */
+        $result = $this->repository->createQueryBuilder('a')
+            ->andWhere('a.acknowledgedAt < :before')
+            ->andWhere('a.technicalDataPurgedAt IS NULL')
+            ->andWhere('(a.ipAddress IS NOT NULL OR a.userAgent IS NOT NULL)')
+            ->setParameter('before', $acknowledgedBefore)
+            ->orderBy('a.acknowledgedAt', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+
+        return $result;
+    }
 }

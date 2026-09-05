@@ -99,6 +99,22 @@ readonly class DoctrineScreeningAuditRepository implements ScreeningAuditReposit
             ->getSingleScalarResult();
     }
 
+    public function findMinimizableResults(\DateTimeImmutable $createdBefore, int $limit): array
+    {
+        /** @var list<ScreeningAudit> $result */
+        $result = $this->repository->createQueryBuilder('s')
+            ->andWhere('s.createdAt < :before')
+            ->andWhere('s.resultsMinimizedAt IS NULL')
+            ->andWhere('s.totalMatches > 0')
+            ->setParameter('before', $createdBefore)
+            ->orderBy('s.createdAt', 'ASC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+
+        return $result;
+    }
+
     public function getById(Uuid|string $id): ScreeningAudit
     {
         $audit = $this->repository->find($id);

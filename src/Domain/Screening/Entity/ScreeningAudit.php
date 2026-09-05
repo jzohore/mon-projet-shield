@@ -23,6 +23,13 @@ class ScreeningAudit
 {
     use GenerateSlugPrefixedTrait;
 
+    /**
+     * Délai au-delà duquel les données brutes des correspondances (`raw_data`,
+     * dump Open Sanctions contenant des PII de tiers homonymes) sont retirées.
+     * On conserve le résumé exploitable + une empreinte d'intégrité.
+     */
+    public const int RESULTS_RETENTION_DAYS = 30;
+
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
@@ -42,6 +49,13 @@ class ScreeningAudit
 
     #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
     public private(set) ?string $pdfPath = null;
+
+    /** Empreinte SHA-256 des résultats d'origine, posée au moment de leur minimisation. */
+    #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
+    public private(set) ?string $resultsDigest = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $resultsMinimizedAt = null;
 
     /**
      * @param array<int, array<string, mixed>> $results
@@ -99,5 +113,36 @@ class ScreeningAudit
     public function markAsFailed(): void
     {
         $this->status = ScreeningStatus::FAILED;
+    }
+
+    /**
+     * Minimisation RGPD : retire le `raw_data` de chaque correspondance (dump
+     * Open Sanctions complet, PII de tiers) tout en conservant le résumé
+     * exploitable et une empreinte d'intégrité des résultats d'origine.
+     * Idempotent.
+     */
+    public function minimizeResults(): void
+    {
+        if ($this->resultsMinimizedAt instanceof \DateTimeImmutable) {
+            return;
+        }
+
+        $this->resultsDigest = hash('sha256', json_encode($this->results, \JSON_THROW_ON_ERROR));
+
+        $this->results = array_map(
+            static function (array $alert): array {
+                unset($alert['raw_data']);
+
+                return $alert;
+            },
+            $this->results,
+        );
+
+        $this->resultsMinimizedAt = now();
+    }
+
+    public function areResultsMinimized(): bool
+    {
+        return $this->resultsMinimizedAt instanceof \DateTimeImmutable;
     }
 }

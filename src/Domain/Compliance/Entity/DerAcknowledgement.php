@@ -37,6 +37,14 @@ class DerAcknowledgement
 {
     use GenerateSlugPrefixedTrait;
 
+    /**
+     * Durée de conservation de l'IP et du user-agent : finalité strictement
+     * probatoire d'un acte ponctuel (pas de la relation d'affaires). Au-delà,
+     * ils sont effacés ; l'accusé reste valide (pdfSha256 + declaredName +
+     * acknowledgedAt portent la preuve).
+     */
+    public const int TECHNICAL_DATA_RETENTION_MONTHS = 12;
+
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
@@ -74,6 +82,10 @@ class DerAcknowledgement
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     public private(set) ?string $revokeReason = null;
+
+    /** Horodatage de l'effacement de l'IP / du user-agent (cf. {@see self::purgeTechnicalData()}). */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $technicalDataPurgedAt = null;
 
     private function __construct(
         #[ORM\ManyToOne(targetEntity: ComplianceDocument::class, inversedBy: 'acknowledgements')]
@@ -181,6 +193,28 @@ class DerAcknowledgement
     public function hasCertificate(): bool
     {
         return null !== $this->certificateStoragePath;
+    }
+
+    /**
+     * Minimisation RGPD : efface l'IP et le user-agent (finalité probatoire
+     * épuisée). L'horodatage garde la trace qu'ils ont existé et ont été
+     * purgés — sans laisser croire qu'ils n'ont jamais été collectés.
+     * Idempotent.
+     */
+    public function purgeTechnicalData(): void
+    {
+        if ($this->technicalDataPurgedAt instanceof \DateTimeImmutable) {
+            return;
+        }
+
+        $this->ipAddress = null;
+        $this->userAgent = null;
+        $this->technicalDataPurgedAt = now();
+    }
+
+    public function isTechnicalDataPurged(): bool
+    {
+        return $this->technicalDataPurgedAt instanceof \DateTimeImmutable;
     }
 
     public function isInForce(): bool
