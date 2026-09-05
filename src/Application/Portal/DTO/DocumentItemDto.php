@@ -11,9 +11,11 @@ readonly class DocumentItemDto
     public function __construct(
         public string $id,
         public string $name, // Ex: "Carte d'identité"
-        public DocumentStatus $status, // Ex: PENDING, VALIDATED, REJECTED
+        public DocumentStatus $status, // Ex: PENDING, VALID, REJECTED
         public ?string $uploadedAtFormatted = null,
         public ?string $rejectionReason = null,
+        /** Chemin S3 de la pièce transmise, à passer à `private_url` (null tant que rien n'est déposé). */
+        public ?string $storagePath = null,
     ) {
     }
 }

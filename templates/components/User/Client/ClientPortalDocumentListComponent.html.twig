@@ -1,5 +1,3 @@
-{# 1. SÉPARATION DES MONDES (Le Filtre Magique) #}
-{% set derDocument = this.folder.documents|filter(d => d.type.value == 'der')|first %}
 {% set kycDocuments = this.folder.documents|filter(d => d.type.value != 'der') %}
 
 <div {{ attributes }}
@@ -8,60 +6,19 @@
     class="relative space-y-6">
 
     <div data-loading class="absolute inset-0 bg-slate-50/50 backdrop-blur-[1px] z-10 hidden rounded-2xl flex items-center justify-center">
-        <twig:ux:icon name="tabler:loader" class="size-8 text-[#0B261C] animate-spin" />
+        <twig:ux:icon name="tabler:loader" class="size-8 text-[#0B261C] animate-spin" aria-hidden="true" />
+        <span class="sr-only" role="status">Mise à jour en cours…</span>
     </div>
 
     {# ==================================================================== #}
-    {# 2. LE COFFRE-FORT LÉGAL (Piloté par l'existence du document DER)     #}
-    {# ==================================================================== #}
-    {# ==================================================================== #}
-    {# 1. LE COFFRE-FORT LÉGAL (Piloté par le document DER)                 #}
-    {# ==================================================================== #}
-
-    {% if derDocument and derDocument.docuSealSignedAt and derDocument.docuSealDocumentUrl %}
-        <section class="bg-white rounded-xl shadow-sm border border-emerald-100 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div class="flex items-center gap-4">
-                {# 🚨 CORRECTIF : Utilisation de "tabler:signature" à la place de "tabler:file-signature" #}
-                <div class="p-2.5 bg-emerald-50 rounded-lg ring-1 ring-inset ring-emerald-500/20 shrink-0">
-                    <twig:ux:icon name="tabler:signature" class="size-6 text-emerald-600" aria-hidden="true" />
-                </div>
-                <div>
-                    <h3 class="text-base font-semibold text-slate-900">
-                        {{ derDocument.type.label|default("Document d'Entrée en Relation (DER)") }}
-                    </h3>
-                    <p class="text-sm text-slate-500 mt-0.5 flex items-center gap-1.5">
-                        <twig:ux:icon name="tabler:lock" class="size-3.5 text-emerald-500" />
-                        Signé électroniquement le {{ derDocument.docuSealSignedAt|date('d/m/Y à H:i') }}
-                    </p>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-2 shrink-0">
-                <a href="{{ derDocument.docuSealDocumentUrl }}" target="_blank" rel="noopener noreferrer"
-                   class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 hover:text-slate-900 px-3 py-2 rounded-lg transition-colors shadow-sm focus:ring-2 focus:ring-slate-200">
-                    <twig:ux:icon name="tabler:download" class="size-4 text-slate-400" />
-                    Contrat
-                </a>
-
-                {% if derDocument.docuSealAuditLogUrl %}
-                    <a href="{{ derDocument.docuSealAuditLogUrl }}" target="_blank" rel="noopener noreferrer" title="Certificat d'audit de signature"
-                       class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 bg-slate-50 border border-slate-200 hover:bg-slate-100 hover:text-slate-700 px-3 py-2 rounded-lg transition-colors shadow-sm focus:ring-2 focus:ring-slate-200">
-                        <twig:ux:icon name="tabler:shield-check" class="size-4" />
-                        <span class="sr-only sm:not-sr-only">Audit</span>
-                    </a>
-                {% endif %}
-            </div>
-        </section>
-    {% endif %}
-
-    {# ==================================================================== #}
-    {# 3. LA TO-DO LIST OPÉRATIONNELLE (Exclusivement les KYC)              #}
+    {# LA LISTE DES PIÈCES : chaque ligne indique si elle est déjà          #}
+    {# transmise/validée ou s'il reste au client à la déposer.             #}
     {# ==================================================================== #}
     <section class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
 
         {# 📱 FIX 1 : Header flex-col sur mobile, flex-row sur desktop, padding réduit #}
         <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 class="text-xs sm:text-sm font-semibold text-slate-900 uppercase tracking-wider">Pièces requises par votre cabinet</h2>
+            <h2 class="text-xs sm:text-sm font-semibold text-slate-900 uppercase tracking-wider">Vos pièces justificatives</h2>
             <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wide w-fit">
                 Niveau {{ this.folder.diligenceLevel.label|default('Standard') }}
             </span>
@@ -79,7 +36,7 @@
                         <div class="flex items-start gap-3 sm:gap-4 flex-1 min-w-0">
 
                             {# Icônes d'état (inchangées) #}
-                            {% if doc.status.value == 'validated' %}
+                            {% if doc.status.value == 'valid' %}
                                 <div class="mt-0.5 p-2 bg-emerald-50 rounded-full ring-1 ring-emerald-500/20 shrink-0">
                                     <twig:ux:icon name="tabler:check" class="size-4 sm:size-5 text-emerald-600" aria-hidden="true" />
                                 </div>
@@ -109,7 +66,7 @@
                                     {% endif %}
                                 </div>
 
-                                {% if doc.storagePath and doc.status.value in ['uploaded', 'validated'] %}
+                                {% if doc.storagePath and doc.status.value in ['uploaded', 'valid'] %}
                                     {# 📱 FIX 4 : Troncature sécurisée du nom de fichier #}
                                     <div class="flex items-center gap-2 bg-slate-100/80 ring-1 ring-slate-900/5 rounded-lg pl-2 pr-1 py-1 mt-2.5 text-xs max-w-full w-fit">
                                         <twig:ux:icon name="tabler:file-check" class="size-3.5 text-emerald-600 shrink-0" aria-hidden="true" />
@@ -143,7 +100,7 @@
 
                         {# Actions #}
                         <div class="shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
-                            {% if doc.status.value == 'validated' %}
+                            {% if doc.status.value == 'valid' %}
                                 <span class="text-sm font-medium text-emerald-600 flex items-center justify-center sm:justify-end gap-1.5 px-4 py-2 bg-emerald-50 sm:bg-transparent rounded-lg sm:rounded-none">
                                     <twig:ux:icon name="tabler:shield-check" class="size-4" />
                                     Conforme

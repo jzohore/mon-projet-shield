@@ -1,21 +1,17 @@
-{# 🚨 On étend désormais le LAYOUT CLIENT, pas le base_portal #}
 {% extends '@app/client/layout_client.html.twig' %}
 
 {% block title %}Détail du dossier | {{ company_name|default('KYSURE') }}{% endblock %}
 
-{# On injecte le contenu dans le bloc client_main prévu par le layout #}
 {% block client_main %}
     <div class="mb-8">
-        <a href="{{ path('app_portal_folders') }}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors mb-4 focus:outline-none focus:ring-2 focus:ring-[#0B261C] rounded-md">
+        <a href="{{ path('app_portal_folders') }}" class="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors mb-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300 rounded-md">
             <twig:ux:icon name="tabler:arrow-left" class="size-4" aria-hidden="true" />
             Retour
         </a>
 
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
-                    {{ folder.title }}
-                </h1>
+                <h1 class="text-2xl font-bold text-slate-900 tracking-tight">{{ folder.title }}</h1>
                 <p class="text-sm text-slate-500 mt-1">Réf: {{ folder.reference }} • Ouvert le {{ folder.openedAtFormatted }}</p>
             </div>
 
@@ -25,6 +21,60 @@
         </div>
     </div>
 
+    {# ============================================================= #}
+    {# CE QUE VOUS AVEZ DÉJÀ FAIT                                     #}
+    {# ============================================================= #}
+    {% if folder.der %}
+        <section class="mb-8">
+            <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <twig:ux:icon name="tabler:circle-check" class="size-4 text-emerald-600" aria-hidden="true" />
+                Ce que vous avez déjà fait
+            </h2>
 
-    <twig:ClientPortalDocumentListComponent folderId="{{ folder.id }}"></twig:ClientPortalDocumentListComponent>
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="flex items-start gap-4 min-w-0">
+                    <div class="p-2.5 bg-emerald-50 rounded-lg ring-1 ring-inset ring-emerald-500/20 shrink-0">
+                        <twig:ux:icon name="tabler:signature" class="size-6 text-emerald-600" aria-hidden="true" />
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="text-base font-semibold text-slate-900">Document d'Entrée en Relation</h3>
+                        <p class="text-sm text-slate-500 mt-0.5 flex items-center gap-1.5">
+                            <twig:ux:icon name="tabler:lock" class="size-3.5 text-emerald-500" aria-hidden="true" />
+                            Accusé de réception le {{ folder.der.acknowledgedAtFormatted }}
+                        </p>
+                        <p class="text-[11px] text-slate-400 font-mono mt-1 truncate" title="{{ folder.der.pdfSha256 }}">
+                            Empreinte : {{ folder.der.pdfSha256 }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 shrink-0">
+                    <a href="{{ folder.der.pdfStoragePath|private_url }}" target="_blank" rel="noopener noreferrer"
+                       class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 px-3 py-2 rounded-lg transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300">
+                        <twig:ux:icon name="tabler:download" class="size-4 text-slate-400" aria-hidden="true" />
+                        Le DER
+                    </a>
+                    {% if folder.der.certificateStoragePath %}
+                        <a href="{{ folder.der.certificateStoragePath|private_url }}" target="_blank" rel="noopener noreferrer"
+                           class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-500 bg-slate-50 border border-slate-200 hover:bg-slate-100 px-3 py-2 rounded-lg transition-colors shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300">
+                            <twig:ux:icon name="tabler:shield-check" class="size-4" aria-hidden="true" />
+                            <span class="sr-only sm:not-sr-only">Attestation</span>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+    {% endif %}
+
+    {# ============================================================= #}
+    {# CE QU'IL VOUS RESTE À FAIRE (liste des pièces + soumission)   #}
+    {# ============================================================= #}
+    <section>
+        <h2 class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+            <twig:ux:icon name="tabler:list-check" class="size-4 text-amber-600" aria-hidden="true" />
+            Ce qu'il vous reste à faire
+        </h2>
+
+        <twig:ClientPortalDocumentListComponent folderId="{{ folder.id }}" />
+    </section>
 {% endblock %}

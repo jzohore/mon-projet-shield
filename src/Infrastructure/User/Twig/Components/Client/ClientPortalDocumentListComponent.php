@@ -65,7 +65,10 @@ final class ClientPortalDocumentListComponent extends AbstractController
         // Sécurité : On revérifie la condition métier côté serveur
         if (!$this->getFolder()->canBeSubmitted()) {
             $this->addFlash('error', 'Le dossier ne peut pas être soumis dans son état actuel.');
+
+            return $this->redirectToRoute('app_portal_folder_detail', ['id' => $this->getFolder()->slugId]);
         }
+
         try {
             ($this->useCase)($this->getFolder());
             $this->addFlash('success', 'Votre dossier a été soumis pour analyse.');

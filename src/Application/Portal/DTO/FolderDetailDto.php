@@ -16,6 +16,8 @@ readonly class FolderDetailDto
         public ClientPortalStatus $status,
         /** @var array<DocumentItemDto> */
         public array $documents,
+        /** Accusé de réception du DER, une fois signé par le client. Null sinon. */
+        public ?DerSummaryDto $der = null,
     ) {
     }
 }
