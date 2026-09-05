@@ -1,0 +1,46 @@
+<div {{ attributes }}>
+    {% include 'components/partials/_live_alerts.html.twig' with {
+        message: this.actionMessage|default(null),
+        type: this.actionMessageType|default('success')
+    } %}
+
+    <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden"
+         data-controller="form-dirty"
+         data-action="input->form-dirty#check change->form-dirty#check">
+
+        {{ form_start(form, {
+            attr: {
+                novalidate: true,
+                'data-action': 'live#action:prevent',
+                'data-live-action-param': 'save',
+            }
+        }) }}
+
+        <div class="p-6 space-y-6">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div class="space-y-1.5">{{ form_row(form.firstName) }}</div>
+                <div class="space-y-1.5">{{ form_row(form.lastName) }}</div>
+            </div>
+
+            <div class="h-px bg-slate-100 w-full"></div>
+
+            <div class="space-y-1.5 max-w-sm">{{ form_row(form.phoneNumber) }}</div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 p-6 bg-slate-50/50 border-t border-slate-100">
+            <twig:Button as="button"
+                         type="submit"
+                         variant="dark"
+                         class="w-full sm:w-auto px-8"
+                         data-form-dirty-target="submitButton">
+                <span data-loading="action(save)|hide">Enregistrer</span>
+                <span data-loading="action(save)|show" class="hidden items-center gap-2" role="status">
+                    <twig:ux:icon name="tabler:loader" class="size-4 animate-spin" aria-hidden="true" />
+                    Enregistrement…
+                </span>
+            </twig:Button>
+        </div>
+
+        {{ form_end(form) }}
+    </div>
+</div>
