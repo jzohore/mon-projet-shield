@@ -224,8 +224,8 @@ class ComplianceDocument
     /**
      * Enregistre le résultat de l'analyse automatique (OCR + contrôles). L'analyse
      * ne décide jamais d'un rejet : elle extrait les données et liste des points
-     * de vigilance que le CGP tranchera. Le document reste en attente de revue
-     * humaine ({@see DocumentStatus::PROCESSING}, jamais actionnable par le client).
+     * de vigilance que le CGP tranchera. Le document reste « reçu / à vérifier »
+     * ({@see DocumentStatus::UPLOADED}, jamais actionnable par le client).
      *
      * @param array<string, mixed>|null $extractedData
      * @param list<string>              $findings
