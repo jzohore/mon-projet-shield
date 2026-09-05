@@ -84,9 +84,14 @@ class Client implements UserInterface, TwoFactorInterface
     /**
      * L'historique de tous les dossiers de conformité du client.
      *
+     * ⚠️ Pas de cascade `remove` : supprimer un compte client ne doit JAMAIS
+     * détruire ses dossiers de conformité (preuve LCB-FT à conserver 5 ans,
+     * art. L.561-12 CMF). Le compte se neutralise, les dossiers restent au
+     * responsable de traitement (le cabinet).
+     *
      * @var Collection<int, ComplianceFolder>
      */
-    #[ORM\OneToMany(targetEntity: ComplianceFolder::class, mappedBy: 'client', cascade: ['persist', 'remove'])]
+    #[ORM\OneToMany(targetEntity: ComplianceFolder::class, mappedBy: 'client', cascade: ['persist'])]
     public private(set) Collection $complianceFolders;
 
     private function __construct(#[ORM\Column(type: Types::STRING, length: 180, unique: true)]
