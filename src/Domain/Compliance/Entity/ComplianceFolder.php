@@ -32,6 +32,9 @@ abstract class ComplianceFolder
 {
     use GenerateSlugPrefixedTrait;
 
+    /** Durée de conservation LCB-FT après la fin de la relation d'affaires (art. L.561-12 CMF). */
+    public const int RETENTION_YEARS = 5;
+
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
     #[ORM\GeneratedValue(strategy: 'CUSTOM')]
@@ -75,6 +78,36 @@ abstract class ComplianceFolder
 
     #[ORM\Column(type: Types::BOOLEAN)]
     public private(set) bool $isCertified = false; // ✅ Ajouté
+
+    /**
+     * Cycle de vie « rétention » (LCB-FT, art. L.561-12 CMF).
+     * `relationshipEndedAt` : fin de la relation d'affaires pour CE dossier,
+     * posée explicitement par le cabinet. C'est le point de départ du délai de
+     * conservation. Tant qu'elle est nulle, rien n'est purgeable.
+     * `purgeDueAt` = `relationshipEndedAt` + {@see self::RETENTION_YEARS} ans.
+     */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $relationshipEndedAt = null;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    public private(set) ?string $relationshipEndReason = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $purgeDueAt = null;
+
+    /**
+     * Verrou de litige : contentieux en cours, signalement Tracfin, demande
+     * d'une autorité… Neutralise toute purge, y compris automatique, tant qu'il
+     * n'est pas levé — même si `purgeDueAt` est dépassé.
+     */
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    public private(set) bool $isUnderLegalHold = false;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    public private(set) ?string $legalHoldReason = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $legalHoldPlacedAt = null;
 
     #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'folders')]
     #[ORM\JoinColumn(nullable: true, onDelete: 'CASCADE')]
@@ -272,6 +305,87 @@ abstract class ComplianceFolder
     {
         $this->status = ComplianceFolderStatus::ARCHIVED;
         $this->saveHistory('Dossier archivé', 'Le dossier à été mis en archive par : ' . $email);
+    }
+
+    /**
+     * Le cabinet acte la fin de la relation d'affaires pour ce dossier : le
+     * délai de conservation LCB-FT ({@see self::RETENTION_YEARS} ans) démarre.
+     * Irréversible, non rejouable.
+     */
+    public function endBusinessRelationship(string $reason, string $actorName): void
+    {
+        if ($this->relationshipEndedAt instanceof \DateTimeImmutable) {
+            throw new \DomainException('La fin de la relation d\'affaires a déjà été actée pour ce dossier.');
+        }
+
+        $reason = trim($reason);
+        if ('' === $reason) {
+            throw new \DomainException('Un motif est obligatoire pour clôturer la relation d\'affaires.');
+        }
+
+        if ($this->isDraft()) {
+            throw new \DomainException('Un dossier au statut brouillon n\'a pas de relation d\'affaires à clôturer.');
+        }
+
+        $endedAt = now();
+        $this->relationshipEndedAt = $endedAt;
+        $this->relationshipEndReason = $reason;
+        $this->purgeDueAt = $endedAt->modify(sprintf('+%d years', self::RETENTION_YEARS));
+
+        $this->saveHistory(
+            'Fin de la relation d\'affaires',
+            sprintf(
+                'Actée par %s. Motif : %s. Conservation LCB-FT jusqu\'au %s.',
+                $actorName,
+                $reason,
+                $this->purgeDueAt->format('d/m/Y'),
+            ),
+        );
+    }
+
+    /** Pose un verrou de litige : bloque toute purge tant qu'il n'est pas levé. */
+    public function placeLegalHold(string $reason, string $actorName): void
+    {
+        $reason = trim($reason);
+        if ('' === $reason) {
+            throw new \DomainException('Un motif est obligatoire pour poser un verrou de litige.');
+        }
+
+        if ($this->isUnderLegalHold) {
+            throw new \DomainException('Un verrou de litige est déjà en place sur ce dossier.');
+        }
+
+        $this->isUnderLegalHold = true;
+        $this->legalHoldReason = $reason;
+        $this->legalHoldPlacedAt = now();
+
+        $this->saveHistory('Verrou de litige posé', sprintf('Par %s. Motif : %s.', $actorName, $reason));
+    }
+
+    public function liftLegalHold(string $actorName): void
+    {
+        if (!$this->isUnderLegalHold) {
+            throw new \DomainException('Aucun verrou de litige n\'est en place sur ce dossier.');
+        }
+
+        $this->isUnderLegalHold = false;
+        $this->legalHoldReason = null;
+        $this->legalHoldPlacedAt = null;
+
+        $this->saveHistory('Verrou de litige levé', sprintf('Par %s.', $actorName));
+    }
+
+    /**
+     * Le dossier a-t-il atteint son échéance de purge ? Un verrou de litige
+     * bloque toujours, même échéance dépassée.
+     */
+    public function isPurgeDue(): bool
+    {
+        if ($this->isUnderLegalHold) {
+            return false;
+        }
+
+        return $this->purgeDueAt instanceof \DateTimeImmutable && $this->purgeDueAt <= now();
     }
 
     public function markAsDeleted(): void

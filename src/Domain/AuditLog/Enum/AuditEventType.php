@@ -44,6 +44,9 @@ enum AuditEventType: string
     case KYC_FOLDER_REJECTED = 'kyc.folder_rejected';
     case KYC_FOLDER_ARCHIVED = 'kyc.folder_archived';
     case KYC_FOLDER_DELETED = 'kyc.folder_deleted';
+    case KYC_RELATIONSHIP_ENDED = 'kyc.relationship_ended';
+    case KYC_LEGAL_HOLD_PLACED = 'kyc.legal_hold_placed';
+    case KYC_LEGAL_HOLD_LIFTED = 'kyc.legal_hold_lifted';
 
     // --- INTERVENANTS KYC (STAKEHOLDERS / UBO) ---
     case KYC_STAKEHOLDER_ADDED = 'kyc.stakeholder_added';
@@ -122,6 +125,9 @@ enum AuditEventType: string
             self::KYC_FOLDER_REJECTED => 'Rejet du dossier LCB-FT',
             self::KYC_FOLDER_ARCHIVED => 'Archivage du dossier LCB-FT',
             self::KYC_FOLDER_DELETED => 'Suppression du dossier LCB-FT',
+            self::KYC_RELATIONSHIP_ENDED => 'Fin de la relation d\'affaires',
+            self::KYC_LEGAL_HOLD_PLACED => 'Pose d\'un verrou de litige',
+            self::KYC_LEGAL_HOLD_LIFTED => 'Levée du verrou de litige',
 
             // Stakeholders
             self::KYC_STAKEHOLDER_ADDED => 'Ajout d\'un bénéficiaire effectif (UBO)',
@@ -205,6 +211,9 @@ enum AuditEventType: string
             self::KYC_DOCUMENT_EXPIRED,
             self::KYC_FOLDER_ARCHIVED,
             self::KYC_FOLDER_DELETED,
+            self::KYC_RELATIONSHIP_ENDED,
+            self::KYC_LEGAL_HOLD_PLACED,
+            self::KYC_LEGAL_HOLD_LIFTED,
             self::DOCUMENT_SHARED => 'Dossiers LCB-FT',
 
             self::DER_GENERATED,
@@ -274,7 +283,8 @@ enum AuditEventType: string
             self::KYC_FOLDER_REJECTED,
             self::MEETING_REPORT_REVOKED,
             self::DER_ACKNOWLEDGEMENT_REVOKED,
-            self::DER_DECLINED => true,
+            self::DER_DECLINED,
+            self::KYC_LEGAL_HOLD_PLACED => true,
             default => false,
         };
     }
