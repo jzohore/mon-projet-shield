@@ -48,6 +48,12 @@ enum AuditEventType: string
     case KYC_LEGAL_HOLD_PLACED = 'kyc.legal_hold_placed';
     case KYC_LEGAL_HOLD_LIFTED = 'kyc.legal_hold_lifted';
 
+    // --- PORTEFEUILLE CLIENT ---
+    case CLIENT_CREATED = 'client.created';
+    case CLIENT_ATTACHED_TO_WORKSPACE = 'client.attached_to_workspace';
+    case CLIENT_DETACHED_FROM_WORKSPACE = 'client.detached_from_workspace';
+    case CLIENT_RELATIONSHIP_ENDED = 'client.relationship_ended';
+
     // --- INTERVENANTS KYC (STAKEHOLDERS / UBO) ---
     case KYC_STAKEHOLDER_ADDED = 'kyc.stakeholder_added';
     case KYC_STAKEHOLDER_REMOVED = 'kyc.stakeholder_removed';
@@ -128,6 +134,11 @@ enum AuditEventType: string
             self::KYC_RELATIONSHIP_ENDED => 'Fin de la relation d\'affaires',
             self::KYC_LEGAL_HOLD_PLACED => 'Pose d\'un verrou de litige',
             self::KYC_LEGAL_HOLD_LIFTED => 'Levée du verrou de litige',
+
+            self::CLIENT_CREATED => 'Création d\'un client',
+            self::CLIENT_ATTACHED_TO_WORKSPACE => 'Rattachement d\'un client au cabinet',
+            self::CLIENT_DETACHED_FROM_WORKSPACE => 'Retrait d\'un client du cabinet',
+            self::CLIENT_RELATIONSHIP_ENDED => 'Clôture de la relation d\'affaires (client)',
 
             // Stakeholders
             self::KYC_STAKEHOLDER_ADDED => 'Ajout d\'un bénéficiaire effectif (UBO)',
@@ -215,6 +226,11 @@ enum AuditEventType: string
             self::KYC_LEGAL_HOLD_PLACED,
             self::KYC_LEGAL_HOLD_LIFTED,
             self::DOCUMENT_SHARED => 'Dossiers LCB-FT',
+
+            self::CLIENT_CREATED,
+            self::CLIENT_ATTACHED_TO_WORKSPACE,
+            self::CLIENT_DETACHED_FROM_WORKSPACE,
+            self::CLIENT_RELATIONSHIP_ENDED => 'Clients',
 
             self::DER_GENERATED,
             self::DER_OPENED,

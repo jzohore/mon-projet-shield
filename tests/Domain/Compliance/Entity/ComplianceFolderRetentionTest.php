@@ -8,6 +8,7 @@ use App\Domain\Compliance\Entity\BusinessFolder;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Enum\ComplianceFolderStatus;
 use App\Tests\Application\ReflectionHelperTrait;
+use Doctrine\Common\Collections\ArrayCollection;
 use PHPUnit\Framework\TestCase;
 
 final class ComplianceFolderRetentionTest extends TestCase
@@ -25,6 +26,8 @@ final class ComplianceFolderRetentionTest extends TestCase
             'status' => $status,
             'history' => [],
             'isUnderLegalHold' => false,
+            'documents' => new ArrayCollection(),
+            'meetingRecordings' => new ArrayCollection(),
             ...$overrides,
         ]);
     }

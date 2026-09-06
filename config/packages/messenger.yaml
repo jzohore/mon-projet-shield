@@ -52,6 +52,7 @@ framework:
             'App\Infrastructure\Compliance\Message\SendClientDerConfirmationMessage': async_priority
             'App\Infrastructure\Compliance\Message\DispatchNotifyDerSigned': async_priority
             'App\Infrastructure\Compliance\Message\DispatchNotifyDerRejected': async_priority
+            'App\Infrastructure\Compliance\Message\SendClientRelationshipEndedMessage': async_priority
 
             # --- WORKFLOW KYC & S3 (Peut prendre 1 ou 2 secondes) ---
             'App\Infrastructure\KYC\Message\SendSubmittedKycFolderMessage': async_main

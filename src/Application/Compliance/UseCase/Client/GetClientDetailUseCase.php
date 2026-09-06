@@ -1,0 +1,127 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Application\Compliance\UseCase\Client;
+
+use App\Application\Compliance\DTO\Response\ClientDetailDto;
+use App\Application\Compliance\DTO\Response\ClientFolderSummaryDto;
+use App\Domain\Compliance\Entity\BusinessFolder;
+use App\Domain\Compliance\Entity\ComplianceDocument;
+use App\Domain\Compliance\Entity\ComplianceFolder;
+use App\Domain\Compliance\Enum\ComplianceFolderStatus;
+use App\Domain\Compliance\Enum\DocumentType;
+use App\Domain\Kyc\Enum\DocumentStatus;
+use App\Domain\User\Entity\Client;
+use App\Domain\User\Exception\ClientNotFoundException;
+use App\Domain\User\Repository\ClientRepositoryInterface;
+use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
+
+readonly class GetClientDetailUseCase
+{
+    public function __construct(
+        private ClientRepositoryInterface $clientRepository,
+        private CurrentWorkspaceProvider $workspaceProvider,
+    ) {
+    }
+
+    public function __invoke(string $clientSlugId): ClientDetailDto
+    {
+        $workspace = $this->workspaceProvider->getWorkspace();
+
+        $client = $this->clientRepository->findOneBySlugIdAndWorkspace($clientSlugId, $workspace);
+        if (!$client instanceof Client) {
+            throw ClientNotFoundException::withEmail($clientSlugId);
+        }
+
+        $folders = [];
+        foreach ($client->complianceFolders as $folder) {
+            if ($folder->workspace !== $workspace || ComplianceFolderStatus::DELETED === $folder->status) {
+                continue;
+            }
+            $folders[] = $folder;
+        }
+
+        usort($folders, static fn (ComplianceFolder $a, ComplianceFolder $b): int => $b->createdAt <=> $a->createdAt);
+
+        $summaries = array_map($this->summarize(...), $folders);
+
+        // Retrait possible : aucun dossier ne porte de preuve, aucun verrou.
+        $blockedReason = null;
+        foreach ($folders as $folder) {
+            if ($folder->isUnderLegalHold) {
+                $blockedReason = 'Un verrou de litige est posé sur un dossier de ce client.';
+                break;
+            }
+            if ($folder->carriesEvidence()) {
+                $blockedReason = 'Ce client a au moins un dossier engagé (DER ou pièce transmise) : vous pouvez clôturer la relation, pas le retirer.';
+                break;
+            }
+        }
+        $canBeRemoved = null === $blockedReason;
+
+        $canCloseRelationship = false;
+        foreach ($folders as $folder) {
+            if (null === $folder->relationshipEndedAt && $folder->carriesEvidence()) {
+                $canCloseRelationship = true;
+                break;
+            }
+        }
+
+        $firstEngaged = null;
+        foreach (array_reverse($folders) as $folder) {
+            if ($folder->carriesEvidence()) {
+                $firstEngaged = $folder->createdAt;
+                break;
+            }
+        }
+
+        return new ClientDetailDto(
+            slugId: $client->slugId,
+            fullName: $client->getFullName(),
+            email: $client->email,
+            phoneNumber: $client->phoneNumber,
+            createdAtFormatted: $client->createdAt->format('d/m/Y'),
+            clientSinceFormatted: $firstEngaged?->format('d/m/Y'),
+            folders: $summaries,
+            canBeRemoved: $canBeRemoved,
+            canCloseRelationship: $canCloseRelationship,
+            removalBlockedReason: $blockedReason,
+        );
+    }
+
+    private function summarize(ComplianceFolder $folder): ClientFolderSummaryDto
+    {
+        $derDocument = null;
+        $documentCount = 0;
+        $validatedCount = 0;
+
+        foreach ($folder->documents as $document) {
+            if (DocumentType::DER === $document->type) {
+                $derDocument = $document;
+
+                continue;
+            }
+            ++$documentCount;
+            if (DocumentStatus::VALID === $document->status) {
+                ++$validatedCount;
+            }
+        }
+
+        return new ClientFolderSummaryDto(
+            slugId: $folder->slugId,
+            reference: $folder->reference,
+            type: $folder instanceof BusinessFolder ? 'business' : 'individual',
+            statusValue: $folder->status->value,
+            statusLabel: $folder->status->getLabel(),
+            openedAtFormatted: $folder->createdAt->format('d/m/Y'),
+            documentCount: $documentCount,
+            validatedDocumentCount: $validatedCount,
+            hasDer: $derDocument instanceof ComplianceDocument,
+            derAcknowledged: $derDocument instanceof ComplianceDocument && $derDocument->hasAcknowledgementInForce(),
+            relationshipEnded: $folder->relationshipEndedAt instanceof \DateTimeImmutable,
+            purgeDueAtFormatted: $folder->purgeDueAt?->format('d/m/Y'),
+            underLegalHold: $folder->isUnderLegalHold,
+        );
+    }
+}

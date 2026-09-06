@@ -401,6 +401,11 @@ class Workspace
         }
     }
 
+    public function removeClient(Client $client): void
+    {
+        $this->clients->removeElement($client);
+    }
+
     /**
      * Seul le UseCase est autorisé à modifier ces données via cette méthode métier.
      */

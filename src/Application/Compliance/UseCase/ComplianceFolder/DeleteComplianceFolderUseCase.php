@@ -28,7 +28,7 @@ readonly class DeleteComplianceFolderUseCase
 
         $user = $this->userProvider->getUser();
 
-        $complianceFolder->markAsDeleted();
+        $complianceFolder->markAsDeleted('Suppression du brouillon par le cabinet.', $user->slugId);
         $this->complianceFolderRepository->save($complianceFolder);
 
         $this->eventDispatcher->dispatch(new DeleteComplianceEvent(

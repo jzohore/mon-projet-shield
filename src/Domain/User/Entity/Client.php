@@ -210,6 +210,18 @@ class Client implements UserInterface, TwoFactorInterface
         }
     }
 
+    /**
+     * Retire le rattachement à CE cabinet. Le compte global (identifiant de
+     * connexion, historique) n'est pas supprimé : il peut appartenir à un autre
+     * cabinet et sert de clé de jointure aux journaux d'audit.
+     */
+    public function detachFromWorkspace(Workspace $workspace): void
+    {
+        if ($this->workspaces->removeElement($workspace)) {
+            $workspace->removeClient($this);
+        }
+    }
+
     public function getNormalizedFirstName(): string
     {
         return ucfirst(strtoupper(trim($this->firstName)));

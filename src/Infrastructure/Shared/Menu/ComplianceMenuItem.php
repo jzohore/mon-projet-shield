@@ -7,6 +7,7 @@ namespace App\Infrastructure\Shared\Menu;
 enum ComplianceMenuItem: string
 {
     case DASHBOARD = 'dashboard';
+    case CLIENTS = 'clients';
     case DOSSIERS = 'folders';
     case ADVISORY = 'advisory';
     case SCREENING = 'screening';
@@ -17,6 +18,7 @@ enum ComplianceMenuItem: string
     {
         return match ($this) {
             self::DASHBOARD => 'Tableau de Bord',
+            self::CLIENTS => 'Mes clients',
             self::DOSSIERS => 'Dossiers',
             self::ADVISORY => 'Rapports Advisory',
             self::SCREENING => 'Criblage LCB-FT',
@@ -29,6 +31,7 @@ enum ComplianceMenuItem: string
     {
         return match ($this) {
             self::DASHBOARD => 'lucide:layout-dashboard',
+            self::CLIENTS => 'lucide:users-round',
             self::DOSSIERS => 'lucide:shield-check',
             self::ADVISORY => 'lucide:sparkles',
             self::SCREENING => 'lucide:user-round-search',
@@ -41,6 +44,7 @@ enum ComplianceMenuItem: string
     {
         return match ($this) {
             self::DASHBOARD => 'app_dashboard',
+            self::CLIENTS => 'app_clients_list',
             self::DOSSIERS => 'app_compliance_list',
             self::ADVISORY => 'app_employees_list', // À ajuster vers app_advisory_list plus tard
             self::SCREENING => 'app_screening_list',

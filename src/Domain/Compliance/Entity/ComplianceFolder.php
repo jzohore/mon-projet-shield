@@ -323,8 +323,8 @@ abstract class ComplianceFolder
             throw new \DomainException('Un motif est obligatoire pour clôturer la relation d\'affaires.');
         }
 
-        if ($this->isDraft()) {
-            throw new \DomainException('Un dossier au statut brouillon n\'a pas de relation d\'affaires à clôturer.');
+        if (!$this->carriesEvidence()) {
+            throw new \DomainException('Ce dossier ne porte aucune preuve : il n\'y a pas de relation d\'affaires à clôturer.');
         }
 
         $endedAt = now();
@@ -388,9 +388,47 @@ abstract class ComplianceFolder
         return $this->purgeDueAt instanceof \DateTimeImmutable && $this->purgeDueAt <= now();
     }
 
-    public function markAsDeleted(): void
+    public function markAsDeleted(string $reason, string $actorName): void
     {
+        $reason = trim($reason);
+        if ('' === $reason) {
+            throw new \DomainException('Un motif est obligatoire pour supprimer un dossier.');
+        }
+
         $this->status = ComplianceFolderStatus::DELETED;
+        $this->saveHistory('Dossier supprimé', sprintf('Par %s. Motif : %s.', $actorName, $reason));
+    }
+
+    /**
+     * Le dossier porte-t-il une trace de vigilance (relation d'affaires réputée
+     * engagée) ? Un dossier vierge peut être retiré ; dès qu'il porte une preuve,
+     * il se clôture (et se conserve 5 ans), il ne se supprime pas.
+     *
+     * Vrai dès que le dossier a quitté le statut brouillon, ou — brouillon avec
+     * du contenu — qu'il porte un DER, une pièce déposée, un entretien ou a été
+     * soumis.
+     */
+    public function carriesEvidence(): bool
+    {
+        if (ComplianceFolderStatus::DRAFT !== $this->status) {
+            return true;
+        }
+
+        if ($this->submittedAt instanceof \DateTimeImmutable) {
+            return true;
+        }
+
+        if (!$this->meetingRecordings->isEmpty()) {
+            return true;
+        }
+
+        foreach ($this->documents as $document) {
+            if (DocumentType::DER === $document->type || null !== $document->storagePath) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

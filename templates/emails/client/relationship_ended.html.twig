@@ -1,0 +1,32 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block title %}Fin de votre relation avec {{ workspace_name }}{% endblock %}
+
+{% block content %}
+    <h1>Fin de votre relation d'affaires</h1>
+
+    <p>Bonjour {{ client_name }},</p>
+
+    <p>
+        Le cabinet <strong>{{ workspace_name }}</strong> a mis fin à votre relation d'affaires.
+        Votre accès à l'espace en ligne de ce cabinet est désormais clos.
+    </p>
+
+    <p style="font-size: 13px; color: #64748b; margin-top: 30px; padding: 15px; background-color: #f8fafc; border-radius: 6px; border-left: 4px solid #3b82f6;">
+        Conformément à ses obligations de lutte contre le blanchiment de capitaux et le
+        financement du terrorisme (art. L.561-12 du code monétaire et financier), le cabinet
+        conserve votre dossier{% if purge_due_at %} jusqu'au <strong>{{ purge_due_at }}</strong>, date à laquelle il sera effacé{% endif %}.
+    </p>
+
+    {% if workspace_contact_email %}
+        <p style="margin-top: 20px;">
+            Pour toute question, ou pour exercer vos droits sur vos données, contactez le cabinet à
+            l'adresse <a href="mailto:{{ workspace_contact_email }}">{{ workspace_contact_email }}</a>.
+        </p>
+    {% endif %}
+
+    <p style="margin-top: 30px;">
+        Cordialement,<br>
+        <strong>L'équipe {{ workspace_name }}</strong>
+    </p>
+{% endblock %}
