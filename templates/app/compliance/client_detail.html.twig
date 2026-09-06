@@ -26,7 +26,7 @@
                         </span>
                     {% else %}
                         <span class="inline-flex items-center gap-1.5 rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-500 ring-1 ring-inset ring-slate-500/20">
-                            <twig:ux:icon name="tabler:circle-x" class="size-3.5" aria-hidden="true" /> Inactif
+                            <twig:ux:icon name="tabler:x" class="size-3.5" aria-hidden="true" /> Inactif
                         </span>
                     {% endif %}
                 </div>
@@ -126,11 +126,11 @@
                         {# Indicateurs de contenu #}
                         <div class="mt-4 flex flex-wrap gap-2">
                             <span class="inline-flex items-center gap-1.5 rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
-                                <twig:ux:icon name="{{ folder.derAcknowledged ? 'tabler:signature' : (folder.hasDer ? 'tabler:file-check' : 'tabler:file-dashed') }}" class="size-3.5 {{ folder.derAcknowledged ? 'text-emerald-600' : 'text-slate-400' }}" aria-hidden="true" />
+                                <twig:ux:icon name="{{ folder.derAcknowledged ? 'tabler:signature' : (folder.hasDer ? 'tabler:file-check' : 'tabler:file-off') }}" class="size-3.5 {{ folder.derAcknowledged ? 'text-emerald-600' : 'text-slate-400' }}" aria-hidden="true" />
                                 DER : {{ folder.derAcknowledged ? 'accusé de réception' : (folder.hasDer ? 'émis' : 'non émis') }}
                             </span>
                             <span class="inline-flex items-center gap-1.5 rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
-                                <twig:ux:icon name="tabler:files" class="size-3.5 text-slate-400" aria-hidden="true" />
+                                <twig:ux:icon name="tabler:file-text" class="size-3.5 text-slate-400" aria-hidden="true" />
                                 Pièces : {{ folder.validatedDocumentCount }} / {{ folder.documentCount }} validées
                             </span>
                             {% if folder.relationshipEnded %}
@@ -188,7 +188,7 @@
                 {# --- Retrait / suppression --- #}
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                     <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                        <twig:ux:icon name="tabler:user-minus" class="size-4" aria-hidden="true" />
+                        <twig:ux:icon name="tabler:trash" class="size-4" aria-hidden="true" />
                         {{ client.removalDeletesAccount ? 'Supprimer le client' : 'Retirer du portefeuille' }}
                     </h2>
                     {% if client.canBeRemoved %}
