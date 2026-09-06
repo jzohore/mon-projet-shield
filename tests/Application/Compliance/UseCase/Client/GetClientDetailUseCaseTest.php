@@ -29,8 +29,8 @@ final class GetClientDetailUseCaseTest extends TestCase
     {
         $this->clientRepository = $this->createStub(ClientRepositoryInterface::class);
 
-        $this->workspace = $this->createEntityState(Workspace::class, ['slugId' => 'wrk_1', 'name' => 'Cabinet']);
-        $this->otherWorkspace = $this->createEntityState(Workspace::class, ['slugId' => 'wrk_2', 'name' => 'Autre']);
+        $this->workspace = $this->createEntityState(Workspace::class, ['slugId' => 'wrk_1', 'name' => 'Cabinet', 'clients' => new ArrayCollection()]);
+        $this->otherWorkspace = $this->createEntityState(Workspace::class, ['slugId' => 'wrk_2', 'name' => 'Autre', 'clients' => new ArrayCollection()]);
 
         $workspaceProvider = $this->createStub(CurrentWorkspaceProvider::class);
         $workspaceProvider->method('getWorkspace')->willReturn($this->workspace);
@@ -62,17 +62,21 @@ final class GetClientDetailUseCaseTest extends TestCase
 
     private function client(BusinessFolder ...$folders): Client
     {
-        return $this->createEntityState(Client::class, [
+        $client = $this->createEntityState(Client::class, [
             'slugId' => 'cli_1',
             'email' => 'jean@example.com',
             'firstName' => 'Jean',
             'lastName' => 'Dupont',
             'phoneNumber' => '+33600000000',
-            'isActif' => true,
+            'isActif' => false,
             'createdAt' => new \DateTimeImmutable('2025-01-10'),
-            'workspaces' => new ArrayCollection([$this->workspace]),
+            'workspaces' => new ArrayCollection(),
+            'relations' => new ArrayCollection(),
             'complianceFolders' => new ArrayCollection($folders),
         ]);
+        $client->attachToWorkspace($this->workspace);
+
+        return $client;
     }
 
     public function testThrowsWhenClientNotFoundInWorkspace(): void

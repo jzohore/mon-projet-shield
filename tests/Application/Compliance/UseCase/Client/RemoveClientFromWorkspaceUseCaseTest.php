@@ -110,15 +110,22 @@ final class RemoveClientFromWorkspaceUseCaseTest extends TestCase
      */
     private function client(array $workspaces, array $folders = []): Client
     {
-        return $this->createEntityState(Client::class, [
+        $client = $this->createEntityState(Client::class, [
             'slugId' => 'cli_1',
             'email' => 'jean@example.com',
             'firstName' => 'Jean',
             'lastName' => 'Dupont',
+            'isActif' => false,
             'createdAt' => new \DateTimeImmutable('2025-01-01'),
-            'workspaces' => new ArrayCollection($workspaces),
+            'workspaces' => new ArrayCollection(),
+            'relations' => new ArrayCollection(),
             'complianceFolders' => new ArrayCollection($folders),
         ]);
+        foreach ($workspaces as $ws) {
+            $client->attachToWorkspace($ws);
+        }
+
+        return $client;
     }
 
     public function testDeletesTheAccountWhenClientHasNoFolderAndOnlyThisWorkspace(): void

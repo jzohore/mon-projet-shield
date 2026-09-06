@@ -64,9 +64,10 @@ readonly class ClientRepository implements ClientRepositoryInterface
 
     public function findAllByWorkspace(Workspace $workspace, ?string $search = null, string $sort = 'recent', ?bool $onlyActive = null): Pagerfanta
     {
+        // La relation (client, cabinet) porte l'état par cabinet : on joint
+        // dessus plutôt que sur le simple lien ManyToMany.
         $qb = $this->repository->createQueryBuilder('c')
-            ->innerJoin('c.workspaces', 'w')
-            ->andWhere('w = :workspace')
+            ->innerJoin('c.relations', 'rel', 'WITH', 'rel.workspace = :workspace')
             ->setParameter('workspace', $workspace);
 
         if (null !== $search && '' !== trim($search)) {
@@ -74,13 +75,16 @@ readonly class ClientRepository implements ClientRepositoryInterface
                 ->setParameter('s', '%' . mb_strtolower(trim($search)) . '%');
         }
 
-        if (null !== $onlyActive) {
-            $qb->andWhere('c.isActif = :active')->setParameter('active', $onlyActive);
+        if (true === $onlyActive) {
+            $qb->andWhere('rel.endedAt IS NULL');
+        } elseif (false === $onlyActive) {
+            $qb->andWhere('rel.endedAt IS NOT NULL');
         }
 
         match ($sort) {
             'name' => $qb->orderBy('c.lastName', 'ASC')->addOrderBy('c.firstName', 'ASC'),
-            'status' => $qb->orderBy('c.isActif', 'DESC')->addOrderBy('c.createdAt', 'DESC'),
+            // endedAt DESC → NULLs (relations actives) en tête sous PostgreSQL.
+            'status' => $qb->orderBy('rel.endedAt', 'DESC')->addOrderBy('c.createdAt', 'DESC'),
             default => $qb->orderBy('c.createdAt', 'DESC'),
         };
 

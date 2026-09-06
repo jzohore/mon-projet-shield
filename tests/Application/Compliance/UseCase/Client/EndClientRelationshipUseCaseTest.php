@@ -103,15 +103,19 @@ final class EndClientRelationshipUseCaseTest extends TestCase
 
     private function client(BusinessFolder ...$folders): Client
     {
-        return $this->createEntityState(Client::class, [
+        $client = $this->createEntityState(Client::class, [
             'slugId' => 'cli_1',
             'email' => 'jean@example.com',
             'firstName' => 'Jean',
             'lastName' => 'Dupont',
-            'isActif' => true,
-            'workspaces' => new ArrayCollection([$this->workspace]),
+            'isActif' => false,
+            'workspaces' => new ArrayCollection(),
+            'relations' => new ArrayCollection(),
             'complianceFolders' => new ArrayCollection($folders),
         ]);
+        $client->attachToWorkspace($this->workspace);
+
+        return $client;
     }
 
     /**
@@ -151,7 +155,8 @@ final class EndClientRelationshipUseCaseTest extends TestCase
 
         self::assertNotNull($engaged->relationshipEndedAt);
         self::assertSame(ComplianceFolderStatus::DELETED, $emptyDraft->status);
-        self::assertFalse($client->isActif, 'le compte client est suspendu (cabinet unique)');
+        self::assertFalse($client->isActiveFor($this->workspace), 'la relation avec CE cabinet est clôturée');
+        self::assertSame(RelationshipEndReason::DEPART_CLIENT, $client->relationWith($this->workspace)->endReason);
 
         self::assertInstanceOf(BusinessRelationshipEndedEvent::class, $events[0]);
         self::assertSame('comp_fol_engaged', $events[0]->folderSlugId);

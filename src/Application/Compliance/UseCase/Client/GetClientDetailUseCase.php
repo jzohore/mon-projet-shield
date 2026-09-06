@@ -98,7 +98,7 @@ readonly class GetClientDetailUseCase
             fullName: $client->getFullName(),
             email: $client->email,
             phoneNumber: $client->phoneNumber,
-            isActif: $client->isActif,
+            isActif: $client->isActiveFor($workspace),
             createdAtFormatted: $client->createdAt->format('d/m/Y'),
             clientSinceFormatted: $firstEngaged?->format('d/m/Y'),
             folders: $summaries,

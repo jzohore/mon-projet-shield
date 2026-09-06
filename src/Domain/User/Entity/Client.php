@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\User\Entity;
 
 use App\Domain\Compliance\Entity\ComplianceFolder;
+use App\Domain\Compliance\Enum\RelationshipEndReason;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -82,6 +83,16 @@ class Client implements UserInterface, TwoFactorInterface
     public private(set) Collection $workspaces;
 
     /**
+     * L'état de la relation d'affaires, cabinet par cabinet (active / clôturée,
+     * depuis quand, motif). C'est la source de vérité par cabinet ;
+     * {@see self::$isActif} n'est qu'un cache « actif quelque part ».
+     *
+     * @var Collection<int, ClientWorkspaceRelation>
+     */
+    #[ORM\OneToMany(targetEntity: ClientWorkspaceRelation::class, mappedBy: 'client', cascade: ['persist', 'remove'], orphanRemoval: true)]
+    public private(set) Collection $relations;
+
+    /**
      * L'historique de tous les dossiers de conformité du client.
      *
      * ⚠️ Pas de cascade `remove` : supprimer un compte client ne doit JAMAIS
@@ -104,6 +115,7 @@ class Client implements UserInterface, TwoFactorInterface
         // Initialisation du slug (selon comment ton Trait fonctionne)
         $this->slugId = $this->generate_ulid_prefixed('cli_');
         $this->workspaces = new ArrayCollection();
+        $this->relations = new ArrayCollection();
         $this->complianceFolders = new ArrayCollection();
     }
 
@@ -144,21 +156,51 @@ class Client implements UserInterface, TwoFactorInterface
     }
 
     /**
-     * Réactive le compte client (nouvelle mise en relation avec un cabinet).
+     * Recale le cache global `isActif` sur l'état réel : le client est « actif »
+     * dès qu'une relation avec un cabinet l'est. Sert au firewall du portail
+     * (accès coupé seulement si plus AUCUN cabinet).
      */
-    public function activate(): void
+    private function syncActiveFlag(): void
     {
-        $this->isActif = true;
+        $this->isActif = $this->hasAnyActiveRelation();
+    }
+
+    public function hasAnyActiveRelation(): bool
+    {
+        foreach ($this->relations as $relation) {
+            if ($relation->isActive()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public function relationWith(Workspace $workspace): ?ClientWorkspaceRelation
+    {
+        foreach ($this->relations as $relation) {
+            if ($relation->workspace === $workspace) {
+                return $relation;
+            }
+        }
+
+        return null;
+    }
+
+    public function isActiveFor(Workspace $workspace): bool
+    {
+        return $this->relationWith($workspace)?->isActive() ?? false;
     }
 
     /**
-     * Désactive le compte client : la relation d'affaires est suspendue/clôturée.
-     * Le compte n'est pas supprimé (obligation de conservation LCB-FT), mais
-     * l'accès à l'espace client est coupé.
+     * Clôture la relation d'affaires avec CE cabinet (les autres ne sont pas
+     * touchés). Le rattachement est conservé : le cabinet garde l'accès en
+     * lecture à la relation clôturée et aux dossiers (conservation LCB-FT).
      */
-    public function deactivate(): void
+    public function endRelationWith(Workspace $workspace, RelationshipEndReason $reason): void
     {
-        $this->isActif = false;
+        $this->relationWith($workspace)?->end($reason);
+        $this->syncActiveFlag();
     }
 
     public function setIsTotpVerified(bool $isTotpVerified): void
@@ -219,25 +261,45 @@ class Client implements UserInterface, TwoFactorInterface
         $this->magicLinkTokenExpiresAt = null;
     }
 
+    /**
+     * Rattache le client à CE cabinet et ouvre (ou rouvre) sa relation d'affaires.
+     * Idempotent.
+     */
     public function attachToWorkspace(Workspace $workspace): void
     {
         if (!$this->workspaces->contains($workspace)) {
             $this->workspaces->add($workspace);
-
             $workspace->addClient($this);
         }
+
+        $relation = $this->relationWith($workspace);
+        if (!$relation instanceof ClientWorkspaceRelation) {
+            $this->relations->add(ClientWorkspaceRelation::start($this, $workspace));
+        } elseif (!$relation->isActive()) {
+            $relation->reopen();
+        }
+
+        $this->syncActiveFlag();
     }
 
     /**
-     * Retire le rattachement à CE cabinet. Le compte global (identifiant de
-     * connexion, historique) n'est pas supprimé : il peut appartenir à un autre
-     * cabinet et sert de clé de jointure aux journaux d'audit.
+     * Retire le rattachement à CE cabinet et supprime la relation correspondante.
+     * Le compte global (identifiant de connexion, historique) n'est pas supprimé :
+     * il peut appartenir à un autre cabinet et sert de clé de jointure aux
+     * journaux d'audit.
      */
     public function detachFromWorkspace(Workspace $workspace): void
     {
         if ($this->workspaces->removeElement($workspace)) {
             $workspace->removeClient($this);
         }
+
+        $relation = $this->relationWith($workspace);
+        if ($relation instanceof ClientWorkspaceRelation) {
+            $this->relations->removeElement($relation);
+        }
+
+        $this->syncActiveFlag();
     }
 
     public function getNormalizedFirstName(): string

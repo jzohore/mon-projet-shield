@@ -7,6 +7,7 @@ namespace App\Application\Compliance\UseCase\Client;
 use App\Application\Compliance\DTO\Request\CreateClientRequest;
 use App\Domain\Compliance\Event\ClientAddedToWorkspaceEvent;
 use App\Domain\User\Entity\Client;
+use App\Domain\User\Entity\ClientWorkspaceRelation;
 use App\Domain\User\Repository\ClientRepositoryInterface;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
@@ -42,16 +43,13 @@ readonly class CreateOrAttachClientUseCase
             $wasCreated = true;
         }
 
-        if ($client->workspaces->contains($workspace)) {
-            return $client; // déjà dans le portefeuille : no-op idempotent
+        $relation = $client->relationWith($workspace);
+        if ($relation instanceof ClientWorkspaceRelation && $relation->isActive()) {
+            return $client; // déjà actif dans ce portefeuille : no-op idempotent
         }
 
-        // Client existant mais désactivé (relation clôturée ailleurs, ou par nous
-        // dans le passé) : une nouvelle mise en relation le réactive.
-        if (!$client->isActif) {
-            $client->activate();
-        }
-
+        // Nouveau client, ou client déjà connu dont la relation avec CE cabinet
+        // n'existe pas / a été clôturée : on l'ouvre (ou on la rouvre).
         $client->attachToWorkspace($workspace);
 
         try {
