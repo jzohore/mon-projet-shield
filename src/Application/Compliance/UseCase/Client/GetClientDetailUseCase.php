@@ -15,6 +15,8 @@ use App\Domain\Kyc\Enum\DocumentStatus;
 use App\Domain\User\Entity\Client;
 use App\Domain\User\Exception\ClientNotFoundException;
 use App\Domain\User\Repository\ClientRepositoryInterface;
+use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
+use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 
 readonly class GetClientDetailUseCase
@@ -22,6 +24,8 @@ readonly class GetClientDetailUseCase
     public function __construct(
         private ClientRepositoryInterface $clientRepository,
         private CurrentWorkspaceProvider $workspaceProvider,
+        private CurrentUserProvider $userProvider,
+        private WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
     ) {
     }
 
@@ -93,6 +97,14 @@ readonly class GetClientDetailUseCase
             && $client->complianceFolders->isEmpty()
             && 1 === $client->workspaces->count();
 
+        // Autorisation « admin du cabinet » : le rôle Symfony n'est pas fiable
+        // (le fondateur du cabinet ne l'a pas dans User::$roles) — on interroge
+        // l'appartenance réelle, comme le font les use cases d'écriture.
+        $isWorkspaceAdmin = $this->workspaceMemberRepository->isUserAdminOfWorkspace(
+            $this->userProvider->getUser(),
+            $workspace,
+        );
+
         return new ClientDetailDto(
             slugId: $client->slugId,
             fullName: $client->getFullName(),
@@ -104,6 +116,7 @@ readonly class GetClientDetailUseCase
             folders: $summaries,
             activeFolderCount: $activeCount,
             closedFolderCount: $closedCount,
+            isWorkspaceAdmin: $isWorkspaceAdmin,
             canBeRemoved: $canBeRemoved,
             removalDeletesAccount: $removalDeletesAccount,
             canCloseRelationship: $canCloseRelationship,

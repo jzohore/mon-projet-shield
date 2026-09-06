@@ -17,7 +17,9 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[AsController]
-#[IsGranted('ROLE_WORKSPACE_ADMIN')]
+// L'autorisation « admin du cabinet » est portée par le use case
+// (isUserAdminOfWorkspace) : le rôle Symfony n'est pas fiable pour le fondateur.
+#[IsGranted('ROLE_USER')]
 #[Route(path: '/app/clients/{slugId}/end-relationship', name: 'app_clients_end_relationship', requirements: ['slugId' => '[A-Za-z0-9_]+'], methods: ['POST'])]
 final class EndClientRelationshipController extends AbstractController
 {

@@ -184,7 +184,7 @@
 
         {# ===== Colonne latérale : actions ===== #}
         <div class="space-y-6">
-            {% if is_granted('ROLE_WORKSPACE_ADMIN') %}
+            {% if client.isWorkspaceAdmin %}
                 {# --- Retrait / suppression --- #}
                 <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
                     <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 flex items-center gap-1.5">

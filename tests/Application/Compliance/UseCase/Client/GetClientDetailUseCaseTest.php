@@ -8,9 +8,12 @@ use App\Application\Compliance\UseCase\Client\GetClientDetailUseCase;
 use App\Domain\Compliance\Entity\BusinessFolder;
 use App\Domain\Compliance\Enum\ComplianceFolderStatus;
 use App\Domain\User\Entity\Client;
+use App\Domain\User\Entity\User;
 use App\Domain\User\Exception\ClientNotFoundException;
 use App\Domain\User\Repository\ClientRepositoryInterface;
 use App\Domain\Workspace\Entity\Workspace;
+use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
+use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use App\Tests\Application\ReflectionHelperTrait;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -23,6 +26,7 @@ final class GetClientDetailUseCaseTest extends TestCase
     private ClientRepositoryInterface $clientRepository;
     private Workspace $workspace;
     private Workspace $otherWorkspace;
+    private bool $isAdmin = true;
     private GetClientDetailUseCase $useCase;
 
     protected function setUp(): void
@@ -35,7 +39,20 @@ final class GetClientDetailUseCaseTest extends TestCase
         $workspaceProvider = $this->createStub(CurrentWorkspaceProvider::class);
         $workspaceProvider->method('getWorkspace')->willReturn($this->workspace);
 
-        $this->useCase = new GetClientDetailUseCase($this->clientRepository, $workspaceProvider);
+        $userProvider = $this->createStub(CurrentUserProvider::class);
+        $userProvider->method('getUser')->willReturn(
+            $this->createEntityState(User::class, ['slugId' => 'usr_1', 'firstName' => 'Marie', 'lastName' => 'Curie'])
+        );
+
+        $memberRepository = $this->createStub(WorkspaceMemberRepositoryInterface::class);
+        $memberRepository->method('isUserAdminOfWorkspace')->willReturnCallback(fn (): bool => $this->isAdmin);
+
+        $this->useCase = new GetClientDetailUseCase(
+            $this->clientRepository,
+            $workspaceProvider,
+            $userProvider,
+            $memberRepository,
+        );
     }
 
     /**
@@ -101,6 +118,16 @@ final class GetClientDetailUseCaseTest extends TestCase
         self::assertFalse($dto->canCloseRelationship);
         self::assertNull($dto->clientSinceFormatted);
         self::assertFalse($dto->folders[0]->hasDer);
+        self::assertTrue($dto->isWorkspaceAdmin);
+    }
+
+    public function testReflectsWhenTheCurrentUserIsNotWorkspaceAdmin(): void
+    {
+        $this->isAdmin = false;
+        $this->clientRepository->method('findOneBySlugIdAndWorkspace')
+            ->willReturn($this->client($this->folder('comp_fol_1', new \DateTimeImmutable('2025-02-01'))));
+
+        self::assertFalse(($this->useCase)('cli_1')->isWorkspaceAdmin);
     }
 
     public function testAnEngagedFolderBlocksRemovalAndEnablesClosureWithSeniority(): void

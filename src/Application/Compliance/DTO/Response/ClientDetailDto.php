@@ -20,6 +20,8 @@ readonly class ClientDetailDto
         public array $folders,
         public int $activeFolderCount,
         public int $closedFolderCount,
+        /** L'utilisateur courant est admin de ce cabinet (retrait / clôture autorisés). */
+        public bool $isWorkspaceAdmin,
         /** Aucune preuve nulle part : le client peut être retiré du portefeuille. */
         public bool $canBeRemoved,
         /** Le retrait supprimera définitivement le compte (aucun dossier nulle part). */
