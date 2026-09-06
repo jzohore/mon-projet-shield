@@ -225,20 +225,46 @@
                                 de votre cabinet ; son compte est conservé (il travaille avec un autre cabinet).
                             </p>
                         {% endif %}
-                        <form method="post" action="{{ path('app_clients_remove', {slugId: client.slugId}) }}"
-                              onsubmit="return confirm('{{ client.removalDeletesAccount ? ('Supprimer définitivement le compte de ' ~ client.fullName ~ ' ?')|e('js') : ('Retirer ' ~ client.fullName ~ ' de votre portefeuille ?')|e('js') }}');">
-                            <input type="hidden" name="_token" value="{{ csrf_token('client_remove_' ~ client.slugId) }}">
-                            <label for="remove_reason" class="block text-xs font-medium text-slate-600 mb-1">Motif</label>
-                            <select id="remove_reason" name="reason" required
-                                    class="w-full mb-3 rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500">
-                                {% for r in removal_reasons %}
-                                    <option value="{{ r.value }}">{{ r.label }}</option>
-                                {% endfor %}
-                            </select>
-                            <twig:Button type="submit" variant="{{ client.removalDeletesAccount ? 'destructive' : 'outline' }}" class="w-full">
-                                {{ client.removalDeletesAccount ? 'Supprimer le compte' : 'Retirer du portefeuille' }}
-                            </twig:Button>
-                        </form>
+
+                        <twig:AlertDialog id="remove-client">
+                            <twig:AlertDialog:Trigger>
+                                <twig:Button variant="{{ client.removalDeletesAccount ? 'destructive' : 'outline' }}" class="w-full" {{ ...trigger_attrs }}>
+                                    {{ client.removalDeletesAccount ? 'Supprimer le compte' : 'Retirer du portefeuille' }}
+                                </twig:Button>
+                            </twig:AlertDialog:Trigger>
+                            <twig:AlertDialog:Content>
+                                <form method="post" action="{{ path('app_clients_remove', {slugId: client.slugId}) }}" class="grid gap-4">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('client_remove_' ~ client.slugId) }}">
+                                    <twig:AlertDialog:Header>
+                                        <twig:AlertDialog:Title>
+                                            {{ client.removalDeletesAccount ? 'Supprimer définitivement ce compte ?' : ('Retirer ' ~ client.fullName ~ ' du portefeuille ?') }}
+                                        </twig:AlertDialog:Title>
+                                        <twig:AlertDialog:Description>
+                                            {% if client.removalDeletesAccount %}
+                                                Le compte de {{ client.fullName }} sera supprimé et cette action est irréversible.
+                                            {% else %}
+                                                Ses dossiers brouillons seront supprimés et le client détaché de votre cabinet. Son compte est conservé.
+                                            {% endif %}
+                                        </twig:AlertDialog:Description>
+                                    </twig:AlertDialog:Header>
+                                    <div>
+                                        <label for="remove_reason" class="block text-xs font-medium text-slate-600 mb-1">Motif</label>
+                                        <select id="remove_reason" name="reason" required
+                                                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-500">
+                                            {% for r in removal_reasons %}
+                                                <option value="{{ r.value }}">{{ r.label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <twig:AlertDialog:Footer>
+                                        <twig:AlertDialog:Cancel>Annuler</twig:AlertDialog:Cancel>
+                                        <twig:AlertDialog:Action type="submit" variant="{{ client.removalDeletesAccount ? 'destructive' : 'dark' }}">
+                                            {{ client.removalDeletesAccount ? 'Supprimer' : 'Retirer' }}
+                                        </twig:AlertDialog:Action>
+                                    </twig:AlertDialog:Footer>
+                                </form>
+                            </twig:AlertDialog:Content>
+                        </twig:AlertDialog>
                     {% else %}
                         <p class="text-xs text-slate-500 mb-2">{{ client.removalBlockedReason }}</p>
                         <twig:Button type="button" disabled variant="outline" class="w-full opacity-60 cursor-not-allowed">
@@ -258,21 +284,42 @@
                             <strong>Irréversible.</strong> Chaque dossier engagé sera clôturé et conservé 5 ans (art. L.561-12 CMF).
                             Le client recevra un e-mail. La rupture pour soupçon LCB-FT n'exonère pas de l'obligation déclarative Tracfin.
                         </p>
-                        <form method="post" action="{{ path('app_clients_end_relationship', {slugId: client.slugId}) }}"
-                              onsubmit="return confirm('Clôturer définitivement la relation avec {{ client.fullName|e('js') }} ?');">
-                            <input type="hidden" name="_token" value="{{ csrf_token('client_end_relationship_' ~ client.slugId) }}">
-                            <label for="end_reason" class="block text-xs font-medium text-slate-600 mb-1">Motif</label>
-                            <select id="end_reason" name="reason" required
-                                    class="w-full mb-3 rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
-                                {% for r in end_reasons %}
-                                    <option value="{{ r.value }}">{{ r.label }}</option>
-                                {% endfor %}
-                            </select>
-                            <label for="confirm_name" class="block text-xs font-medium text-slate-600 mb-1">Retapez le nom du client pour confirmer</label>
-                            <input id="confirm_name" type="text" name="confirm_name" required autocomplete="off" placeholder="{{ client.fullName }}"
-                                   class="w-full mb-3 rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
-                            <twig:Button type="submit" variant="destructive" class="w-full">Clôturer la relation</twig:Button>
-                        </form>
+
+                        <twig:AlertDialog id="end-relationship">
+                            <twig:AlertDialog:Trigger>
+                                <twig:Button variant="destructive" class="w-full" {{ ...trigger_attrs }}>Clôturer la relation</twig:Button>
+                            </twig:AlertDialog:Trigger>
+                            <twig:AlertDialog:Content>
+                                <form method="post" action="{{ path('app_clients_end_relationship', {slugId: client.slugId}) }}" class="grid gap-4">
+                                    <input type="hidden" name="_token" value="{{ csrf_token('client_end_relationship_' ~ client.slugId) }}">
+                                    <twig:AlertDialog:Header>
+                                        <twig:AlertDialog:Title>Clôturer la relation avec {{ client.fullName }} ?</twig:AlertDialog:Title>
+                                        <twig:AlertDialog:Description>
+                                            Action irréversible. Les dossiers engagés passent en fin de relation (conservation 5 ans),
+                                            les brouillons vierges sont supprimés, et le client reçoit un e-mail.
+                                        </twig:AlertDialog:Description>
+                                    </twig:AlertDialog:Header>
+                                    <div>
+                                        <label for="end_reason" class="block text-xs font-medium text-slate-600 mb-1">Motif</label>
+                                        <select id="end_reason" name="reason" required
+                                                class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                                            {% for r in end_reasons %}
+                                                <option value="{{ r.value }}">{{ r.label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label for="confirm_name" class="block text-xs font-medium text-slate-600 mb-1">Retapez le nom du client pour confirmer</label>
+                                        <input id="confirm_name" type="text" name="confirm_name" required autocomplete="off" placeholder="{{ client.fullName }}"
+                                               class="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500">
+                                    </div>
+                                    <twig:AlertDialog:Footer>
+                                        <twig:AlertDialog:Cancel>Annuler</twig:AlertDialog:Cancel>
+                                        <twig:AlertDialog:Action type="submit" variant="destructive">Clôturer la relation</twig:AlertDialog:Action>
+                                    </twig:AlertDialog:Footer>
+                                </form>
+                            </twig:AlertDialog:Content>
+                        </twig:AlertDialog>
                     </div>
                 {% endif %}
             {% endif %}
