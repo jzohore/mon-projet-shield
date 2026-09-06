@@ -29,6 +29,10 @@ readonly class ProvisionClientForFolderUseCase
     public function __invoke(ComplianceFolder $folder): Client
     {
         if ($folder->client instanceof Client) {
+            // L'accusé de réception du DER vaut confirmation de la relation
+            // d'affaires : le cabinet voit désormais les coordonnées maîtres.
+            $folder->client->confirmRelationWith($folder->workspace);
+
             return $folder->client;
         }
 
@@ -50,6 +54,7 @@ readonly class ProvisionClientForFolderUseCase
         }
 
         $folder->attachClient($client);
+        $client->confirmRelationWith($folder->workspace);
 
         return $client;
     }

@@ -20,7 +20,11 @@
             <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
                     <h1 class="text-xl font-bold text-slate-900 tracking-tight">{{ client.fullName }}</h1>
-                    {% if client.isActif %}
+                    {% if client.pendingConfirmation %}
+                        <span class="inline-flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                            <twig:ux:icon name="tabler:clock" class="size-3.5" aria-hidden="true" /> En attente de confirmation
+                        </span>
+                    {% elseif client.isActif %}
                         <span class="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
                             <twig:ux:icon name="tabler:circle-check-filled" class="size-3.5" aria-hidden="true" /> Actif
                         </span>
@@ -30,22 +34,26 @@
                         </span>
                     {% endif %}
                 </div>
-                <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
-                    <span class="inline-flex items-center gap-1.5">
-                        <twig:ux:icon name="tabler:mail" class="size-4 text-slate-400" aria-hidden="true" />
-                        <span class="break-all">{{ client.email }}</span>
-                    </span>
-                    {% if client.phoneNumber %}
+                {% if not client.pendingConfirmation %}
+                    <div class="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
                         <span class="inline-flex items-center gap-1.5">
-                            <twig:ux:icon name="tabler:phone" class="size-4 text-slate-400" aria-hidden="true" />
-                            {{ client.phoneNumber }}
+                            <twig:ux:icon name="tabler:mail" class="size-4 text-slate-400" aria-hidden="true" />
+                            <span class="break-all">{{ client.email }}</span>
                         </span>
-                    {% endif %}
-                    <span class="inline-flex items-center gap-1.5">
-                        <twig:ux:icon name="tabler:calendar" class="size-4 text-slate-400" aria-hidden="true" />
-                        {% if client.clientSinceFormatted %}Client depuis le {{ client.clientSinceFormatted }}{% else %}Compte créé le {{ client.createdAtFormatted }}{% endif %}
-                    </span>
-                </div>
+                        {% if client.phoneNumber %}
+                            <span class="inline-flex items-center gap-1.5">
+                                <twig:ux:icon name="tabler:phone" class="size-4 text-slate-400" aria-hidden="true" />
+                                {{ client.phoneNumber }}
+                            </span>
+                        {% endif %}
+                        <span class="inline-flex items-center gap-1.5">
+                            <twig:ux:icon name="tabler:calendar" class="size-4 text-slate-400" aria-hidden="true" />
+                            {% if client.clientSinceFormatted %}Client depuis le {{ client.clientSinceFormatted }}{% else %}Compte créé le {{ client.createdAtFormatted }}{% endif %}
+                        </span>
+                    </div>
+                {% else %}
+                    <p class="mt-1 text-sm text-slate-500">Nom saisi lors de l'ajout. Les coordonnées complètes s'afficheront à la confirmation.</p>
+                {% endif %}
             </div>
 
             {# Action primaire : nouveau dossier (choix du type) #}
@@ -96,6 +104,20 @@
             </div>
         {% endif %}
     </div>
+
+    {% if client.pendingConfirmation %}
+        <div class="bg-amber-50/70 border border-amber-200 rounded-2xl p-5 mb-6 flex items-start gap-3">
+            <twig:ux:icon name="tabler:clock" class="size-5 text-amber-600 shrink-0 mt-0.5" aria-hidden="true" />
+            <div class="text-sm text-amber-900">
+                <p class="font-semibold">Relation à confirmer</p>
+                <p class="text-amber-800 mt-1">
+                    Ce client a été ajouté à votre portefeuille. Ses coordonnées complètes (e-mail, téléphone)
+                    s'afficheront dès qu'il aura accusé réception de son premier document. Créez-lui un dossier
+                    et envoyez-lui son DER pour lancer la démarche.
+                </p>
+            </div>
+        </div>
+    {% endif %}
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {# ===== Colonne principale : dossiers ===== #}
@@ -256,14 +278,16 @@
             {% endif %}
 
             {# --- Récapitulatif coordonnées --- #}
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3 text-sm">
-                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest">Coordonnées</h2>
-                <div class="flex justify-between gap-4"><span class="text-slate-500">E-mail</span><span class="font-medium text-slate-900 text-right break-all">{{ client.email }}</span></div>
-                {% if client.phoneNumber %}
-                    <div class="flex justify-between"><span class="text-slate-500">Téléphone</span><span class="font-medium text-slate-900">{{ client.phoneNumber }}</span></div>
-                {% endif %}
-                <div class="flex justify-between"><span class="text-slate-500">Compte créé</span><span class="font-medium text-slate-900">{{ client.createdAtFormatted }}</span></div>
-            </div>
+            {% if not client.pendingConfirmation %}
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 space-y-3 text-sm">
+                    <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest">Coordonnées</h2>
+                    <div class="flex justify-between gap-4"><span class="text-slate-500">E-mail</span><span class="font-medium text-slate-900 text-right break-all">{{ client.email }}</span></div>
+                    {% if client.phoneNumber %}
+                        <div class="flex justify-between"><span class="text-slate-500">Téléphone</span><span class="font-medium text-slate-900">{{ client.phoneNumber }}</span></div>
+                    {% endif %}
+                    <div class="flex justify-between"><span class="text-slate-500">Compte créé</span><span class="font-medium text-slate-900">{{ client.createdAtFormatted }}</span></div>
+                </div>
+            {% endif %}
         </div>
     </div>
 {% endblock %}

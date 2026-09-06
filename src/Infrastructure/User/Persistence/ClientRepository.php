@@ -76,15 +76,15 @@ readonly class ClientRepository implements ClientRepositoryInterface
         }
 
         if (true === $onlyActive) {
-            $qb->andWhere('rel.endedAt IS NULL');
+            $qb->andWhere('rel.confirmedAt IS NOT NULL AND rel.endedAt IS NULL');
         } elseif (false === $onlyActive) {
             $qb->andWhere('rel.endedAt IS NOT NULL');
         }
 
         match ($sort) {
             'name' => $qb->orderBy('c.lastName', 'ASC')->addOrderBy('c.firstName', 'ASC'),
-            // endedAt DESC → NULLs (relations actives) en tête sous PostgreSQL.
-            'status' => $qb->orderBy('rel.endedAt', 'DESC')->addOrderBy('c.createdAt', 'DESC'),
+            // confirmées d'abord, puis en attente, puis clôturées.
+            'status' => $qb->orderBy('rel.endedAt', 'DESC')->addOrderBy('rel.confirmedAt', 'DESC')->addOrderBy('c.createdAt', 'DESC'),
             default => $qb->orderBy('c.createdAt', 'DESC'),
         };
 

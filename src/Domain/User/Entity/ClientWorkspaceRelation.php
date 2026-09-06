@@ -18,10 +18,15 @@ use Symfony\Component\Uid\Uuid;
  * État de la relation d'affaires entre UN client et UN cabinet.
  *
  * Le compte {@see Client} est mutualisé entre cabinets (un particulier peut être
- * suivi par plusieurs CGP). Ce qui est propre à chaque cabinet — la relation est
- * active ou clôturée, depuis quand, pour quel motif — vit ici, pas sur le
- * compte. `Client::$isActif` n'est qu'un cache « actif pour au moins un
- * cabinet », entretenu par ces transitions.
+ * suivi par plusieurs CGP). Ce qui est propre à chaque cabinet — la relation
+ * est en attente / active / clôturée, depuis quand, pour quel motif — vit ici,
+ * pas sur le compte. `Client::$isActif` n'est qu'un cache « actif pour au moins
+ * un cabinet », entretenu par ces transitions.
+ *
+ * Cycle : `PENDING` (le cabinet a ajouté le client mais la relation n'est pas
+ * confirmée — tant qu'aucun DER n'a été accusé, le cabinet ne voit QUE le nom
+ * qu'il a saisi, jamais les coordonnées maîtres du compte) → `ACTIVE`
+ * (`confirmedAt` posé au 1er accusé de réception de DER) → `ENDED` (`endedAt`).
  */
 #[ORM\Entity]
 #[ORM\Table(name: 'client_workspace_relations')]
@@ -40,6 +45,9 @@ class ClientWorkspaceRelation
     public private(set) \DateTimeImmutable $startedAt;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $confirmedAt = null;
+
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     public private(set) ?\DateTimeImmutable $endedAt = null;
 
     #[ORM\Column(type: Types::STRING, length: 40, nullable: true, enumType: RelationshipEndReason::class)]
@@ -52,18 +60,57 @@ class ClientWorkspaceRelation
         #[ORM\ManyToOne(targetEntity: Workspace::class)]
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
         public private(set) Workspace $workspace,
+        /**
+         * Identité saisie par CE cabinet à l'ajout. Seule chose visible tant que la
+         * relation n'est pas confirmée — jamais les champs maîtres du compte, qui
+         * peuvent appartenir à un autre cabinet.
+         */
+        #[ORM\Column(type: Types::STRING, length: 100)]
+        public private(set) string $invitedFirstName,
+        #[ORM\Column(type: Types::STRING, length: 100)]
+        public private(set) string $invitedLastName,
     ) {
         $this->startedAt = now();
     }
 
-    public static function start(Client $client, Workspace $workspace): self
+    public static function start(Client $client, Workspace $workspace, string $invitedFirstName, string $invitedLastName): self
     {
-        return new self($client, $workspace);
+        return new self($client, $workspace, $invitedFirstName, $invitedLastName);
     }
 
+    /** Relation confirmée et non clôturée : le client compte comme actif pour ce cabinet. */
     public function isActive(): bool
     {
-        return !$this->endedAt instanceof \DateTimeImmutable;
+        return $this->confirmedAt instanceof \DateTimeImmutable && !$this->endedAt instanceof \DateTimeImmutable;
+    }
+
+    /** Ajoutée mais pas encore confirmée (aucun DER accusé) : coordonnées maîtres masquées. */
+    public function isPending(): bool
+    {
+        return !$this->confirmedAt instanceof \DateTimeImmutable && !$this->endedAt instanceof \DateTimeImmutable;
+    }
+
+    public function isEnded(): bool
+    {
+        return $this->endedAt instanceof \DateTimeImmutable;
+    }
+
+    public function invitedFullName(): string
+    {
+        return trim(sprintf('%s %s', ucfirst(mb_strtolower($this->invitedFirstName)), mb_strtoupper($this->invitedLastName)));
+    }
+
+    /**
+     * Confirme la relation (1er accusé de réception de DER). Idempotent ; sans
+     * effet sur une relation déjà clôturée.
+     */
+    public function confirm(): void
+    {
+        if ($this->confirmedAt instanceof \DateTimeImmutable || $this->endedAt instanceof \DateTimeImmutable) {
+            return;
+        }
+
+        $this->confirmedAt = now();
     }
 
     /**
@@ -80,12 +127,16 @@ class ClientWorkspaceRelation
     }
 
     /**
-     * Rouvre la relation (nouvelle mise en relation avec ce cabinet).
+     * Rouvre la relation (nouvelle mise en relation avec ce cabinet). Repart en
+     * attente de confirmation.
      */
-    public function reopen(): void
+    public function reopen(string $invitedFirstName, string $invitedLastName): void
     {
+        $this->invitedFirstName = $invitedFirstName;
+        $this->invitedLastName = $invitedLastName;
+        $this->startedAt = now();
+        $this->confirmedAt = null;
         $this->endedAt = null;
         $this->endReason = null;
-        $this->startedAt = now();
     }
 }

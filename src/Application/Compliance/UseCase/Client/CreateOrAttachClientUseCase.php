@@ -44,13 +44,15 @@ readonly class CreateOrAttachClientUseCase
         }
 
         $relation = $client->relationWith($workspace);
-        if ($relation instanceof ClientWorkspaceRelation && $relation->isActive()) {
-            return $client; // déjà actif dans ce portefeuille : no-op idempotent
+        if ($relation instanceof ClientWorkspaceRelation && !$relation->isEnded()) {
+            return $client; // relation déjà en cours (en attente ou active) : no-op idempotent
         }
 
         // Nouveau client, ou client déjà connu dont la relation avec CE cabinet
-        // n'existe pas / a été clôturée : on l'ouvre (ou on la rouvre).
-        $client->attachToWorkspace($workspace);
+        // n'existe pas / a été clôturée. La relation part EN ATTENTE : tant
+        // qu'aucun DER n'est accusé, ce cabinet ne voit que le nom qu'il saisit,
+        // jamais les coordonnées maîtres du compte (anti-énumération d'e-mails).
+        $client->attachToWorkspace($workspace, trim($request->firstName), trim($request->lastName));
 
         try {
             $this->clientRepository->save($client);

@@ -15,6 +15,8 @@ readonly class ClientDetailDto
         public string $email,
         public ?string $phoneNumber,
         public bool $isActif,
+        /** Relation ajoutée mais pas encore confirmée (aucun DER accusé) : coordonnées maîtres masquées. */
+        public bool $pendingConfirmation,
         public string $createdAtFormatted,
         public ?string $clientSinceFormatted,
         public array $folders,

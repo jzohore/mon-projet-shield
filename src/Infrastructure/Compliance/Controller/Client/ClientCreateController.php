@@ -6,11 +6,13 @@ namespace App\Infrastructure\Compliance\Controller\Client;
 
 use App\Application\Compliance\DTO\Request\CreateClientRequest;
 use App\Application\Compliance\UseCase\Client\CreateOrAttachClientUseCase;
+use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Infrastructure\Compliance\Form\CreateClientType;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
@@ -21,6 +23,8 @@ final class ClientCreateController extends AbstractController
 {
     public function __construct(
         private readonly CreateOrAttachClientUseCase $createOrAttachClient,
+        private readonly CurrentUserProvider $userProvider,
+        private readonly RateLimiterFactory $clientCreationLimiter,
     ) {
     }
 
@@ -32,6 +36,13 @@ final class ClientCreateController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             /** @var CreateClientRequest $dto */
             $dto = $form->getData();
+
+            // Anti-énumération d'e-mails : borne le débit d'ajouts par cabinet.
+            if (!$this->clientCreationLimiter->create($this->userProvider->getUser()->slugId)->consume()->isAccepted()) {
+                $this->addFlash('error', 'Trop d\'ajouts de clients en peu de temps. Réessayez plus tard.');
+
+                return $this->redirectToRoute('app_clients_new');
+            }
 
             try {
                 $client = ($this->createOrAttachClient)($dto);

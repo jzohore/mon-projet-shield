@@ -88,7 +88,9 @@ final class CreateOrAttachClientUseCaseTest extends TestCase
         self::assertSame('jean.dupont@example.com', $client->email);
         self::assertSame('Jean', $client->firstName);
         self::assertSame('Dupont', $client->lastName);
-        self::assertTrue($client->isActif);
+        // La relation démarre EN ATTENTE : le client n'est pas encore « actif ».
+        self::assertFalse($client->isActif);
+        self::assertTrue($client->isPendingFor($this->workspace));
         self::assertTrue($this->workspace->clients->contains($client));
 
         self::assertInstanceOf(ClientAddedToWorkspaceEvent::class, $captured);

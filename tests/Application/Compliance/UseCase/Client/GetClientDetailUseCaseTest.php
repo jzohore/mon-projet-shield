@@ -92,6 +92,27 @@ final class GetClientDetailUseCaseTest extends TestCase
             'complianceFolders' => new ArrayCollection($folders),
         ]);
         $client->attachToWorkspace($this->workspace);
+        $client->confirmRelationWith($this->workspace);
+
+        return $client;
+    }
+
+    private function pendingClient(): Client
+    {
+        $client = $this->createEntityState(Client::class, [
+            'slugId' => 'cli_1',
+            'email' => 'jean@example.com',
+            'firstName' => 'Jean-Baptiste',
+            'lastName' => 'Dupond',
+            'phoneNumber' => '+33600000000',
+            'isActif' => false,
+            'createdAt' => new \DateTimeImmutable('2024-01-01'),
+            'workspaces' => new ArrayCollection(),
+            'relations' => new ArrayCollection(),
+            'complianceFolders' => new ArrayCollection(),
+        ]);
+        // Le cabinet a saisi « Jean Dupont », le compte maître dit « Jean-Baptiste Dupond ».
+        $client->attachToWorkspace($this->workspace, 'Jean', 'Dupont');
 
         return $client;
     }
@@ -119,6 +140,20 @@ final class GetClientDetailUseCaseTest extends TestCase
         self::assertNull($dto->clientSinceFormatted);
         self::assertFalse($dto->folders[0]->hasDer);
         self::assertTrue($dto->isWorkspaceAdmin);
+    }
+
+    public function testRedactsMasterDataWhileTheRelationIsPending(): void
+    {
+        $this->clientRepository->method('findOneBySlugIdAndWorkspace')->willReturn($this->pendingClient());
+
+        $dto = ($this->useCase)('cli_1');
+
+        self::assertTrue($dto->pendingConfirmation);
+        self::assertFalse($dto->isActif);
+        self::assertSame('Jean DUPONT', $dto->fullName, 'seul le nom saisi par ce cabinet');
+        self::assertSame('', $dto->email, 'e-mail maître masqué');
+        self::assertNull($dto->phoneNumber);
+        self::assertSame('', $dto->createdAtFormatted);
     }
 
     public function testReflectsWhenTheCurrentUserIsNotWorkspaceAdmin(): void

@@ -114,6 +114,7 @@ final class EndClientRelationshipUseCaseTest extends TestCase
             'complianceFolders' => new ArrayCollection($folders),
         ]);
         $client->attachToWorkspace($this->workspace);
+        $client->confirmRelationWith($this->workspace);
 
         return $client;
     }

@@ -12,3 +12,9 @@ framework:
             policy: 'sliding_window'
             limit: 60
             interval: '1 hour'
+        # Ajout de clients au portefeuille (par utilisateur CGP). Borne
+        # l'énumération d'e-mails : un usage normal reste très en dessous.
+        client_creation:
+            policy: 'sliding_window'
+            limit: 30
+            interval: '1 hour'

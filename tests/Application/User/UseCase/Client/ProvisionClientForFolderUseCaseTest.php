@@ -15,6 +15,7 @@ use App\Domain\User\Entity\Client;
 use App\Domain\User\Exception\ClientNotFoundException;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Tests\Application\ReflectionHelperTrait;
+use Doctrine\Common\Collections\ArrayCollection;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\MockObject\Stub;
 use PHPUnit\Framework\TestCase;
@@ -49,7 +50,12 @@ final class ProvisionClientForFolderUseCaseTest extends TestCase
 
     private function client(): Client
     {
-        return $this->createEntityState(Client::class, ['email' => 'client@acme.test']);
+        return $this->createEntityState(Client::class, [
+            'email' => 'client@acme.test',
+            'firstName' => 'Alice',
+            'lastName' => 'Martin',
+            'relations' => new ArrayCollection(),
+        ]);
     }
 
     private function assemblerReturns(): void

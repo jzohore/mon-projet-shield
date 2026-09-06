@@ -12,8 +12,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use PHPUnit\Framework\TestCase;
 
 /**
- * L'axe actif/clôturé de la relation d'affaires est propre à chaque cabinet ;
- * le compte {@see Client} reste mutualisé.
+ * L'axe en attente / active / clôturée de la relation d'affaires est propre à
+ * chaque cabinet ; le compte {@see Client} reste mutualisé.
  */
 final class ClientWorkspaceRelationTest extends TestCase
 {
@@ -42,17 +42,32 @@ final class ClientWorkspaceRelationTest extends TestCase
         ]);
     }
 
-    public function testAttachOpensAnActiveRelationForThatWorkspaceOnly(): void
+    public function testAttachOpensAPendingRelationNotAnActiveOne(): void
+    {
+        $client = $this->client();
+        $cabinetA = $this->workspace('wrk_a');
+
+        $client->attachToWorkspace($cabinetA, 'Jean', 'Dupont');
+
+        self::assertTrue($client->isPendingFor($cabinetA));
+        self::assertFalse($client->isActiveFor($cabinetA));
+        self::assertFalse($client->isActif, 'une relation en attente ne rend pas le compte actif');
+        self::assertSame('Jean DUPONT', $client->relationWith($cabinetA)->invitedFullName());
+    }
+
+    public function testConfirmationActivatesTheRelationForThatCabinetOnly(): void
     {
         $client = $this->client();
         $cabinetA = $this->workspace('wrk_a');
         $cabinetB = $this->workspace('wrk_b');
-
         $client->attachToWorkspace($cabinetA);
+        $client->attachToWorkspace($cabinetB);
+
+        $client->confirmRelationWith($cabinetA);
 
         self::assertTrue($client->isActiveFor($cabinetA));
-        self::assertFalse($client->isActiveFor($cabinetB));
-        self::assertTrue($client->isActif, 'cache global : actif quelque part');
+        self::assertTrue($client->isPendingFor($cabinetB));
+        self::assertTrue($client->isActif);
     }
 
     public function testEndingWithOneCabinetLeavesTheOtherRelationUntouched(): void
@@ -61,7 +76,9 @@ final class ClientWorkspaceRelationTest extends TestCase
         $cabinetA = $this->workspace('wrk_a');
         $cabinetB = $this->workspace('wrk_b');
         $client->attachToWorkspace($cabinetA);
+        $client->confirmRelationWith($cabinetA);
         $client->attachToWorkspace($cabinetB);
+        $client->confirmRelationWith($cabinetB);
 
         $client->endRelationWith($cabinetA, RelationshipEndReason::FIN_DE_MANDAT);
 
@@ -76,6 +93,7 @@ final class ClientWorkspaceRelationTest extends TestCase
         $client = $this->client();
         $cabinetA = $this->workspace('wrk_a');
         $client->attachToWorkspace($cabinetA);
+        $client->confirmRelationWith($cabinetA);
 
         $client->endRelationWith($cabinetA, RelationshipEndReason::DEPART_CLIENT);
 
@@ -83,17 +101,19 @@ final class ClientWorkspaceRelationTest extends TestCase
         self::assertFalse($client->hasAnyActiveRelation());
     }
 
-    public function testReattachingAfterAClosureReopensTheSameRelation(): void
+    public function testReattachingAfterAClosureReopensTheSameRelationAsPending(): void
     {
         $client = $this->client();
         $cabinetA = $this->workspace('wrk_a');
         $client->attachToWorkspace($cabinetA);
+        $client->confirmRelationWith($cabinetA);
         $client->endRelationWith($cabinetA, RelationshipEndReason::NON_REPONSE_PROLONGEE);
 
-        $client->attachToWorkspace($cabinetA);
+        $client->attachToWorkspace($cabinetA, 'Jean', 'Dupont');
 
-        self::assertTrue($client->isActiveFor($cabinetA));
+        self::assertTrue($client->isPendingFor($cabinetA));
         self::assertNull($client->relationWith($cabinetA)->endReason);
+        self::assertNull($client->relationWith($cabinetA)->confirmedAt);
         self::assertCount(1, $client->relations, 'pas de doublon de relation');
     }
 
@@ -112,17 +132,19 @@ final class ClientWorkspaceRelationTest extends TestCase
         self::assertFalse($client->workspaces->contains($cabinetA));
     }
 
-    public function testEndingAnAlreadyEndedRelationIsANoOp(): void
+    public function testConfirmationIsIdempotentAndNeverRevivesAnEndedRelation(): void
     {
         $client = $this->client();
         $cabinetA = $this->workspace('wrk_a');
         $client->attachToWorkspace($cabinetA);
+        $client->confirmRelationWith($cabinetA);
+        $firstConfirmedAt = $client->relationWith($cabinetA)->confirmedAt;
+
+        $client->confirmRelationWith($cabinetA);
+        self::assertSame($firstConfirmedAt, $client->relationWith($cabinetA)->confirmedAt);
+
         $client->endRelationWith($cabinetA, RelationshipEndReason::DEMANDE_CLIENT);
-        $firstEndedAt = $client->relationWith($cabinetA)->endedAt;
-
-        $client->endRelationWith($cabinetA, RelationshipEndReason::RISQUE_LCBFT);
-
-        self::assertSame($firstEndedAt, $client->relationWith($cabinetA)->endedAt);
-        self::assertSame(RelationshipEndReason::DEMANDE_CLIENT, $client->relationWith($cabinetA)->endReason);
+        $client->confirmRelationWith($cabinetA);
+        self::assertFalse($client->isActiveFor($cabinetA), 'confirmer ne ressuscite pas une relation clôturée');
     }
 }

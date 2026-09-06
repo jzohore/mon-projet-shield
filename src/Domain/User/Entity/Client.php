@@ -192,6 +192,21 @@ class Client implements UserInterface, TwoFactorInterface
         return $this->relationWith($workspace)?->isActive() ?? false;
     }
 
+    public function isPendingFor(Workspace $workspace): bool
+    {
+        return $this->relationWith($workspace)?->isPending() ?? false;
+    }
+
+    /**
+     * Confirme la relation avec CE cabinet (1er accusé de réception de DER).
+     * À partir de là, le cabinet voit les coordonnées maîtres du compte.
+     */
+    public function confirmRelationWith(Workspace $workspace): void
+    {
+        $this->relationWith($workspace)?->confirm();
+        $this->syncActiveFlag();
+    }
+
     /**
      * Clôture la relation d'affaires avec CE cabinet (les autres ne sont pas
      * touchés). Le rattachement est conservé : le cabinet garde l'accès en
@@ -262,21 +277,27 @@ class Client implements UserInterface, TwoFactorInterface
     }
 
     /**
-     * Rattache le client à CE cabinet et ouvre (ou rouvre) sa relation d'affaires.
-     * Idempotent.
+     * Rattache le client à CE cabinet et ouvre (ou rouvre) sa relation d'affaires,
+     * en attente de confirmation. Les noms fournis sont ceux que le cabinet
+     * connaît ; à défaut, on retombe sur les champs maîtres du compte.
+     * Idempotent : une relation déjà en cours (en attente ou active) n'est pas
+     * réinitialisée.
      */
-    public function attachToWorkspace(Workspace $workspace): void
+    public function attachToWorkspace(Workspace $workspace, ?string $invitedFirstName = null, ?string $invitedLastName = null): void
     {
         if (!$this->workspaces->contains($workspace)) {
             $this->workspaces->add($workspace);
             $workspace->addClient($this);
         }
 
+        $firstName = '' !== (string) $invitedFirstName ? (string) $invitedFirstName : $this->firstName;
+        $lastName = '' !== (string) $invitedLastName ? (string) $invitedLastName : $this->lastName;
+
         $relation = $this->relationWith($workspace);
         if (!$relation instanceof ClientWorkspaceRelation) {
-            $this->relations->add(ClientWorkspaceRelation::start($this, $workspace));
-        } elseif (!$relation->isActive()) {
-            $relation->reopen();
+            $this->relations->add(ClientWorkspaceRelation::start($this, $workspace, $firstName, $lastName));
+        } elseif ($relation->isEnded()) {
+            $relation->reopen($firstName, $lastName);
         }
 
         $this->syncActiveFlag();

@@ -124,6 +124,9 @@ services:
     App\Infrastructure\Compliance\Controller\DerCertificateController:
         arguments:
             $readRateLimiter: '@limiter.der_acknowledgement_read'
+    App\Infrastructure\Compliance\Controller\Client\ClientCreateController:
+        arguments:
+            $clientCreationLimiter: '@limiter.client_creation'
     App\Domain\Workspace\Service\CurrentWorkspaceProvider:
         tags:
             - { name: 'kernel.reset', method: 'reset' }

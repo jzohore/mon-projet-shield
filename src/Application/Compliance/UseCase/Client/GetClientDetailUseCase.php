@@ -13,6 +13,7 @@ use App\Domain\Compliance\Enum\ComplianceFolderStatus;
 use App\Domain\Compliance\Enum\DocumentType;
 use App\Domain\Kyc\Enum\DocumentStatus;
 use App\Domain\User\Entity\Client;
+use App\Domain\User\Entity\ClientWorkspaceRelation;
 use App\Domain\User\Exception\ClientNotFoundException;
 use App\Domain\User\Repository\ClientRepositoryInterface;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
@@ -105,13 +106,21 @@ readonly class GetClientDetailUseCase
             $workspace,
         );
 
+        // Relation non confirmée (aucun DER accusé) : on n'expose QUE le nom
+        // saisi par ce cabinet. Jamais l'e-mail, le téléphone ni l'ancienneté du
+        // compte, qui peuvent appartenir à un autre cabinet.
+        $relation = $client->relationWith($workspace);
+        $pendingRelation = $relation instanceof ClientWorkspaceRelation && $relation->isPending() ? $relation : null;
+        $isPending = $pendingRelation instanceof ClientWorkspaceRelation;
+
         return new ClientDetailDto(
             slugId: $client->slugId,
-            fullName: $client->getFullName(),
-            email: $client->email,
-            phoneNumber: $client->phoneNumber,
+            fullName: $pendingRelation instanceof ClientWorkspaceRelation ? $pendingRelation->invitedFullName() : $client->getFullName(),
+            email: $isPending ? '' : $client->email,
+            phoneNumber: $isPending ? null : $client->phoneNumber,
             isActif: $client->isActiveFor($workspace),
-            createdAtFormatted: $client->createdAt->format('d/m/Y'),
+            pendingConfirmation: $isPending,
+            createdAtFormatted: $isPending ? '' : $client->createdAt->format('d/m/Y'),
             clientSinceFormatted: $firstEngaged?->format('d/m/Y'),
             folders: $summaries,
             activeFolderCount: $activeCount,

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Compliance\Twig\Components;
 
 use App\Domain\User\Entity\Client;
+use App\Domain\User\Entity\ClientWorkspaceRelation;
 use App\Domain\User\Repository\ClientRepositoryInterface;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use Pagerfanta\Pagerfanta;
@@ -101,5 +102,18 @@ class WorkspaceClientListComponent
         }
 
         return $this->folderCounts[(string) $client->id] ?? 0;
+    }
+
+    /** 'active' | 'pending' | 'inactive' — état de la relation pour CE cabinet. */
+    public function relationStatusFor(Client $client): string
+    {
+        $relation = $client->relationWith($this->workspaceProvider->getWorkspace());
+
+        return match (true) {
+            !$relation instanceof ClientWorkspaceRelation => 'inactive',
+            $relation->isPending() => 'pending',
+            $relation->isActive() => 'active',
+            default => 'inactive',
+        };
     }
 }
