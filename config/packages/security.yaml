@@ -62,6 +62,7 @@ security:
             pattern: ^/portal
             provider: app_client_provider
             lazy: true
+            user_checker: App\Infrastructure\Security\ClientStatusChecker
             custom_authenticator:
                 - App\Infrastructure\Security\MagicClientLinkAuthenticator
             form_login:

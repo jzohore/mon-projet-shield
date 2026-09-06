@@ -134,8 +134,18 @@ abstract class ComplianceFolder
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public private(set) \DateTimeImmutable $createdAt;
 
+    /**
+     * Nullable le temps du brouillon (le client est greffé plus tard), non-null
+     * dès qu'une relation est engagée.
+     *
+     * ⚠️ Ne JAMAIS ajouter `onDelete: 'SET NULL'` ni `onDelete: 'CASCADE'` sur ce
+     * JoinColumn : sans action FK (NO ACTION), une tentative de suppression d'un
+     * `Client` encore lié à un dossier échoue en base — c'est la ceinture qui
+     * empêche de détruire une preuve LCB-FT (art. L.561-12 CMF). SET NULL
+     * créerait des dossiers de conformité orphelins, sans client identifiable.
+     */
     #[ORM\ManyToOne(targetEntity: Client::class, inversedBy: 'complianceFolders')]
-    #[ORM\JoinColumn(nullable: true)] // Un dossier appartient obligatoirement à un client
+    #[ORM\JoinColumn(nullable: true)]
     public private(set) ?Client $client = null;
 
     /**

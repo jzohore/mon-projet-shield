@@ -10,6 +10,7 @@ use App\Domain\User\Entity\Client;
 use App\Domain\User\Repository\ClientRepositoryInterface;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 /**
@@ -52,7 +53,15 @@ readonly class CreateOrAttachClientUseCase
         }
 
         $client->attachToWorkspace($workspace);
-        $this->clientRepository->save($client);
+
+        try {
+            $this->clientRepository->save($client);
+        } catch (UniqueConstraintViolationException) {
+            // Course : un autre membre a créé ce même e-mail entre notre lecture
+            // et notre écriture. L'EntityManager est fermé — on redemande un
+            // simple réessai, la seconde tentative trouvera le client existant.
+            throw new \DomainException('Ce client vient d\'être ajouté par un autre membre du cabinet. Rechargez la page.');
+        }
 
         $this->eventDispatcher->dispatch(new ClientAddedToWorkspaceEvent(
             clientSlugId: $client->slugId,

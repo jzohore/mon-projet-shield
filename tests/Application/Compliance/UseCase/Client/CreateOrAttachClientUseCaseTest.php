@@ -15,6 +15,8 @@ use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use App\Tests\Application\ReflectionHelperTrait;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -128,5 +130,20 @@ final class CreateOrAttachClientUseCaseTest extends TestCase
         $client = ($this->useCase)($this->request());
 
         self::assertSame($existing, $client);
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testTurnsAConcurrentCreationRaceIntoARetryableDomainException(): void
+    {
+        // Deux membres créent le même e-mail en même temps : notre findByEmail
+        // renvoie null, mais le save heurte la contrainte unique.
+        $this->clientRepository->method('findByEmail')->willReturn(null);
+        $this->clientRepository->method('save')
+            ->willThrowException($this->createStub(UniqueConstraintViolationException::class));
+
+        $this->eventDispatcher->expects($this->never())->method('dispatch');
+
+        $this->expectException(\DomainException::class);
+        ($this->useCase)($this->request());
     }
 }
