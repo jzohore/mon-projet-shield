@@ -6,6 +6,7 @@ namespace App\Infrastructure\Compliance\Controller\Client;
 
 use App\Application\Compliance\UseCase\Client\GetClientDetailUseCase;
 use App\Domain\Compliance\Enum\RelationshipEndReason;
+use App\Domain\User\Enum\ClientRemovalReason;
 use App\Domain\User\Exception\ClientNotFoundException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
@@ -35,6 +36,7 @@ final class ClientDetailController extends AbstractController
             'page_title' => $client->fullName,
             'client' => $client,
             'end_reasons' => RelationshipEndReason::cases(),
+            'removal_reasons' => ClientRemovalReason::cases(),
         ]);
     }
 }

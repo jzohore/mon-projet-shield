@@ -53,6 +53,7 @@ enum AuditEventType: string
     case CLIENT_ATTACHED_TO_WORKSPACE = 'client.attached_to_workspace';
     case CLIENT_DETACHED_FROM_WORKSPACE = 'client.detached_from_workspace';
     case CLIENT_RELATIONSHIP_ENDED = 'client.relationship_ended';
+    case CLIENT_ACCOUNT_DELETED = 'client.account_deleted';
 
     // --- INTERVENANTS KYC (STAKEHOLDERS / UBO) ---
     case KYC_STAKEHOLDER_ADDED = 'kyc.stakeholder_added';
@@ -139,6 +140,7 @@ enum AuditEventType: string
             self::CLIENT_ATTACHED_TO_WORKSPACE => 'Rattachement d\'un client au cabinet',
             self::CLIENT_DETACHED_FROM_WORKSPACE => 'Retrait d\'un client du cabinet',
             self::CLIENT_RELATIONSHIP_ENDED => 'Clôture de la relation d\'affaires (client)',
+            self::CLIENT_ACCOUNT_DELETED => 'Suppression d\'un compte client',
 
             // Stakeholders
             self::KYC_STAKEHOLDER_ADDED => 'Ajout d\'un bénéficiaire effectif (UBO)',
@@ -230,7 +232,8 @@ enum AuditEventType: string
             self::CLIENT_CREATED,
             self::CLIENT_ATTACHED_TO_WORKSPACE,
             self::CLIENT_DETACHED_FROM_WORKSPACE,
-            self::CLIENT_RELATIONSHIP_ENDED => 'Clients',
+            self::CLIENT_RELATIONSHIP_ENDED,
+            self::CLIENT_ACCOUNT_DELETED => 'Clients',
 
             self::DER_GENERATED,
             self::DER_OPENED,
@@ -300,7 +303,8 @@ enum AuditEventType: string
             self::MEETING_REPORT_REVOKED,
             self::DER_ACKNOWLEDGEMENT_REVOKED,
             self::DER_DECLINED,
-            self::KYC_LEGAL_HOLD_PLACED => true,
+            self::KYC_LEGAL_HOLD_PLACED,
+            self::CLIENT_ACCOUNT_DELETED => true,
             default => false,
         };
     }

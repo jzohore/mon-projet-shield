@@ -91,6 +91,15 @@ readonly class EndClientRelationshipUseCase
             return;
         }
 
+        // Suspension du compte : uniquement si ce cabinet est le seul lié au
+        // client. Un client multi-cabinets garde son accès tant qu'une autre
+        // relation est active (la suspension par cabinet sera portée plus tard
+        // par une entité de jointure dédiée).
+        if ($client->isActif && 1 === $client->workspaces->count()) {
+            $client->deactivate();
+            $this->clientRepository->save($client);
+        }
+
         $endedFolderSlugIds = [];
         $latestPurgeDueAt = null;
         foreach ($ended as $item) {

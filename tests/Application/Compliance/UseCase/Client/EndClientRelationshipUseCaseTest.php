@@ -108,6 +108,7 @@ final class EndClientRelationshipUseCaseTest extends TestCase
             'email' => 'jean@example.com',
             'firstName' => 'Jean',
             'lastName' => 'Dupont',
+            'isActif' => true,
             'workspaces' => new ArrayCollection([$this->workspace]),
             'complianceFolders' => new ArrayCollection($folders),
         ]);
@@ -135,8 +136,8 @@ final class EndClientRelationshipUseCaseTest extends TestCase
     {
         $engaged = $this->folder('comp_fol_engaged', ['status' => ComplianceFolderStatus::APPROVED]);
         $emptyDraft = $this->folder('comp_fol_draft');
-        $this->clientRepository->method('findOneBySlugIdAndWorkspace')
-            ->willReturn($this->client($engaged, $emptyDraft));
+        $client = $this->client($engaged, $emptyDraft);
+        $this->clientRepository->method('findOneBySlugIdAndWorkspace')->willReturn($client);
 
         $events = [];
         $this->eventDispatcher->expects($this->exactly(2))->method('dispatch')
@@ -150,6 +151,7 @@ final class EndClientRelationshipUseCaseTest extends TestCase
 
         self::assertNotNull($engaged->relationshipEndedAt);
         self::assertSame(ComplianceFolderStatus::DELETED, $emptyDraft->status);
+        self::assertFalse($client->isActif, 'le compte client est suspendu (cabinet unique)');
 
         self::assertInstanceOf(BusinessRelationshipEndedEvent::class, $events[0]);
         self::assertSame('comp_fol_engaged', $events[0]->folderSlugId);

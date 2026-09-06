@@ -1,8 +1,8 @@
 <div {{ attributes }} class="space-y-5">
     {% set items = this.items %}
 
-    <div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-        <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+    <div class="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+        <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
             <div class="relative w-full sm:w-72">
                 <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none" aria-hidden="true">
                     <twig:ux:icon name="tabler:search" class="size-4 text-slate-400" />
@@ -12,12 +12,22 @@
                        data-model="query" value="{{ query }}"
                        class="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg bg-white placeholder-slate-400 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400 shadow-sm" />
             </div>
+
+            <select data-model="statusFilter" aria-label="Filtrer par statut"
+                    class="w-full sm:w-40 py-2 px-3 border border-slate-200 rounded-lg bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 shadow-sm cursor-pointer">
+                <option value="" {{ statusFilter == '' ? 'selected' }}>Tous les statuts</option>
+                <option value="active" {{ statusFilter == 'active' ? 'selected' }}>Actifs</option>
+                <option value="inactive" {{ statusFilter == 'inactive' ? 'selected' }}>Inactifs</option>
+            </select>
+
             <select data-model="sort" aria-label="Trier"
                     class="w-full sm:w-44 py-2 px-3 border border-slate-200 rounded-lg bg-white text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 shadow-sm cursor-pointer">
                 <option value="recent" {{ sort == 'recent' ? 'selected' }}>Plus récents</option>
                 <option value="name" {{ sort == 'name' ? 'selected' }}>Nom (A → Z)</option>
+                <option value="status" {{ sort == 'status' ? 'selected' }}>Statut (actifs d'abord)</option>
             </select>
         </div>
+
         <div class="text-sm font-medium text-slate-500 bg-white px-3 py-1.5 rounded-md shadow-sm border border-slate-200 text-center" aria-live="polite">
             <span class="text-slate-900 font-bold">{{ items.nbResults }}</span> client(s)
         </div>
@@ -26,8 +36,8 @@
     {% if items is empty %}
         <div class="bg-white rounded-2xl border border-dashed border-slate-200 py-14 text-center">
             <twig:ux:icon name="tabler:users" class="size-8 text-slate-300 mx-auto mb-3" aria-hidden="true" />
-            <p class="text-sm font-medium text-slate-600">Aucun client dans votre portefeuille</p>
-            <p class="text-xs text-slate-400 mt-1">Créez un client, ou il apparaîtra ici dès son premier DER.</p>
+            <p class="text-sm font-medium text-slate-600">Aucun client à afficher</p>
+            <p class="text-xs text-slate-400 mt-1">Ajustez vos filtres, créez un client, ou il apparaîtra ici dès son premier DER.</p>
         </div>
     {% else %}
         <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
@@ -35,9 +45,9 @@
                 <thead class="bg-slate-50/70 text-[11px] uppercase tracking-wider text-slate-500">
                     <tr>
                         <th class="text-left font-semibold px-5 py-3">Client</th>
-                        <th class="text-left font-semibold px-5 py-3 hidden sm:table-cell">E-mail</th>
+                        <th class="text-left font-semibold px-5 py-3">Statut</th>
                         <th class="text-left font-semibold px-5 py-3">Dossiers</th>
-                        <th class="px-5 py-3"></th>
+                        <th class="px-5 py-3"><span class="sr-only">Actions</span></th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -45,21 +55,47 @@
                         {% set count = this.folderCountFor(client) %}
                         <tr class="hover:bg-slate-50/60 transition-colors">
                             <td class="px-5 py-3">
-                                <a href="{{ path('app_clients_show', {slugId: client.slugId}) }}" class="font-semibold text-slate-900 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded">
-                                    {{ client.fullName }}
-                                </a>
+                                <div class="flex items-center gap-3">
+                                    <span class="size-9 shrink-0 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-[11px] font-bold text-slate-500" aria-hidden="true">
+                                        {{ client.firstName|first|upper }}{{ client.lastName|first|upper }}
+                                    </span>
+                                    <div class="min-w-0">
+                                        <a href="{{ path('app_clients_show', {slugId: client.slugId}) }}"
+                                           class="font-semibold text-slate-900 hover:text-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded">
+                                            {{ client.fullName }}
+                                        </a>
+                                        <p class="text-xs text-slate-500 truncate">{{ client.email }}</p>
+                                    </div>
+                                </div>
                             </td>
-                            <td class="px-5 py-3 text-slate-500 hidden sm:table-cell">{{ client.email }}</td>
+                            <td class="px-5 py-3">
+                                {% if client.isActif %}
+                                    <span class="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                                        <twig:ux:icon name="tabler:circle-check-filled" class="size-3.5" aria-hidden="true" />
+                                        Actif
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center gap-1.5 rounded-md bg-slate-50 px-2 py-1 text-xs font-medium text-slate-500 ring-1 ring-inset ring-slate-500/20">
+                                        <twig:ux:icon name="tabler:circle-x" class="size-3.5" aria-hidden="true" />
+                                        Inactif
+                                    </span>
+                                {% endif %}
+                            </td>
                             <td class="px-5 py-3">
                                 {% if count > 0 %}
-                                    <span class="inline-flex items-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-700">{{ count }}</span>
+                                    <span class="inline-flex items-center gap-1.5 text-slate-700">
+                                        <twig:ux:icon name="tabler:folder" class="size-4 text-slate-400" aria-hidden="true" />
+                                        {{ count }}
+                                    </span>
                                 {% else %}
-                                    <span class="text-xs text-slate-400">—</span>
+                                    <span class="text-xs text-slate-400">Aucun</span>
                                 {% endif %}
                             </td>
                             <td class="px-5 py-3 text-right">
-                                <a href="{{ path('app_clients_show', {slugId: client.slugId}) }}" class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-900">
-                                    Voir <twig:ux:icon name="tabler:chevron-right" class="size-4" aria-hidden="true" />
+                                <a href="{{ path('app_clients_show', {slugId: client.slugId}) }}"
+                                   class="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-slate-900">
+                                    Voir la fiche
+                                    <twig:ux:icon name="tabler:chevron-right" class="size-4" aria-hidden="true" />
                                 </a>
                             </td>
                         </tr>

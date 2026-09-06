@@ -27,9 +27,13 @@ class WorkspaceClientListComponent
     #[LiveProp(writable: true, url: false)]
     public int $page = 1;
 
-    /** 'recent' | 'name' */
+    /** 'recent' | 'name' | 'status' */
     #[LiveProp(writable: true, url: false)]
     public string $sort = 'recent';
+
+    /** '' (tous) | 'active' | 'inactive' */
+    #[LiveProp(writable: true, url: false)]
+    public string $statusFilter = '';
 
     public function __construct(
         private readonly CurrentWorkspaceProvider $workspaceProvider,
@@ -56,8 +60,24 @@ class WorkspaceClientListComponent
      */
     public function getItems(): Pagerfanta
     {
-        $sort = 'name' === $this->sort ? 'name' : 'recent';
-        $items = $this->clientRepository->findAllByWorkspace($this->workspaceProvider->getWorkspace(), $this->query, $sort);
+        $sort = match ($this->sort) {
+            'name' => 'name',
+            'status' => 'status',
+            default => 'recent',
+        };
+
+        $onlyActive = match ($this->statusFilter) {
+            'active' => true,
+            'inactive' => false,
+            default => null,
+        };
+
+        $items = $this->clientRepository->findAllByWorkspace(
+            $this->workspaceProvider->getWorkspace(),
+            $this->query,
+            $sort,
+            $onlyActive,
+        );
         $items->setMaxPerPage(10);
         $items->setCurrentPage(max(1, $this->page));
 

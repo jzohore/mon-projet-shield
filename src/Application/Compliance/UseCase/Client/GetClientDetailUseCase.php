@@ -76,15 +76,36 @@ readonly class GetClientDetailUseCase
             }
         }
 
+        $activeCount = 0;
+        $closedCount = 0;
+        foreach ($folders as $folder) {
+            if ($folder->relationshipEndedAt instanceof \DateTimeImmutable || ComplianceFolderStatus::ARCHIVED === $folder->status) {
+                ++$closedCount;
+            } else {
+                ++$activeCount;
+            }
+        }
+
+        // Suppression réelle du compte : possible uniquement si le client n'a
+        // AUCUN dossier nulle part (aucun cabinet, statut supprimé inclus) et
+        // n'est rattaché qu'à ce seul cabinet.
+        $removalDeletesAccount = $canBeRemoved
+            && $client->complianceFolders->isEmpty()
+            && 1 === $client->workspaces->count();
+
         return new ClientDetailDto(
             slugId: $client->slugId,
             fullName: $client->getFullName(),
             email: $client->email,
             phoneNumber: $client->phoneNumber,
+            isActif: $client->isActif,
             createdAtFormatted: $client->createdAt->format('d/m/Y'),
             clientSinceFormatted: $firstEngaged?->format('d/m/Y'),
             folders: $summaries,
+            activeFolderCount: $activeCount,
+            closedFolderCount: $closedCount,
             canBeRemoved: $canBeRemoved,
+            removalDeletesAccount: $removalDeletesAccount,
             canCloseRelationship: $canCloseRelationship,
             removalBlockedReason: $blockedReason,
         );
@@ -122,6 +143,52 @@ readonly class GetClientDetailUseCase
             relationshipEnded: $folder->relationshipEndedAt instanceof \DateTimeImmutable,
             purgeDueAtFormatted: $folder->purgeDueAt?->format('d/m/Y'),
             underLegalHold: $folder->isUnderLegalHold,
+            isDraft: $folder->isDraft(),
+            recentEvents: $this->recentEvents($folder),
         );
+    }
+
+    /**
+     * Les derniers événements du dossier (source « système » du suivi), les plus
+     * récents d'abord.
+     *
+     * @return list<array{title: string, description: string, at: string}>
+     */
+    private function recentEvents(ComplianceFolder $folder): array
+    {
+        $events = [];
+        foreach (array_reverse($folder->history) as $entry) {
+            if (!is_array($entry)) {
+                continue;
+            }
+
+            $saveAt = $entry['saveAt'] ?? null;
+            $at = '';
+            if ($saveAt instanceof \DateTimeInterface) {
+                $at = $saveAt->format('d/m/Y H:i');
+            } elseif (is_array($saveAt) && isset($saveAt['date']) && is_string($saveAt['date'])) {
+                try {
+                    $at = new \DateTimeImmutable($saveAt['date'])->format('d/m/Y H:i');
+                } catch (\Exception) {
+                }
+            } elseif (is_string($saveAt)) {
+                try {
+                    $at = new \DateTimeImmutable($saveAt)->format('d/m/Y H:i');
+                } catch (\Exception) {
+                }
+            }
+
+            $events[] = [
+                'title' => (string) ($entry['title'] ?? 'Évènement'),
+                'description' => (string) ($entry['description'] ?? ''),
+                'at' => $at,
+            ];
+
+            if (6 === count($events)) {
+                break;
+            }
+        }
+
+        return $events;
     }
 }

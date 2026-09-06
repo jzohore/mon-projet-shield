@@ -143,6 +143,24 @@ class Client implements UserInterface, TwoFactorInterface
         $this->phoneNumber = $phoneNumber;
     }
 
+    /**
+     * Réactive le compte client (nouvelle mise en relation avec un cabinet).
+     */
+    public function activate(): void
+    {
+        $this->isActif = true;
+    }
+
+    /**
+     * Désactive le compte client : la relation d'affaires est suspendue/clôturée.
+     * Le compte n'est pas supprimé (obligation de conservation LCB-FT), mais
+     * l'accès à l'espace client est coupé.
+     */
+    public function deactivate(): void
+    {
+        $this->isActif = false;
+    }
+
     public function setIsTotpVerified(bool $isTotpVerified): void
     {
         $this->isTotpVerified = $isTotpVerified;

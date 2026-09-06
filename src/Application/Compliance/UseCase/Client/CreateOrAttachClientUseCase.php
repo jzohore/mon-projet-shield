@@ -45,6 +45,12 @@ readonly class CreateOrAttachClientUseCase
             return $client; // déjà dans le portefeuille : no-op idempotent
         }
 
+        // Client existant mais désactivé (relation clôturée ailleurs, ou par nous
+        // dans le passé) : une nouvelle mise en relation le réactive.
+        if (!$client->isActif) {
+            $client->activate();
+        }
+
         $client->attachToWorkspace($workspace);
         $this->clientRepository->save($client);
 

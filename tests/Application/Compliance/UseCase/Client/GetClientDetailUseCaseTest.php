@@ -68,6 +68,7 @@ final class GetClientDetailUseCaseTest extends TestCase
             'firstName' => 'Jean',
             'lastName' => 'Dupont',
             'phoneNumber' => '+33600000000',
+            'isActif' => true,
             'createdAt' => new \DateTimeImmutable('2025-01-10'),
             'workspaces' => new ArrayCollection([$this->workspace]),
             'complianceFolders' => new ArrayCollection($folders),

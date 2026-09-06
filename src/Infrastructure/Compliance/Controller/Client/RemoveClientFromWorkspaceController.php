@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Compliance\Controller\Client;
 
 use App\Application\Compliance\UseCase\Client\RemoveClientFromWorkspaceUseCase;
+use App\Domain\User\Enum\ClientRemovalReason;
 use App\Domain\User\Exception\ClientNotFoundException;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -33,8 +34,10 @@ final class RemoveClientFromWorkspaceController extends AbstractController
             return $this->redirectToRoute('app_clients_show', ['slugId' => $slugId]);
         }
 
+        $reason = ClientRemovalReason::tryFrom((string) $request->request->get('reason', '')) ?? ClientRemovalReason::AUTRE;
+
         try {
-            ($this->removeClient)($slugId);
+            ($this->removeClient)($slugId, $reason);
             $this->addFlash('success', 'Client retiré de votre portefeuille.');
 
             return $this->redirectToRoute('app_clients_list');

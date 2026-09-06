@@ -19,16 +19,24 @@ interface ClientRepositoryInterface
      */
     public function save(Client $client, bool $flush = true): void;
 
+    /**
+     * Supprime définitivement le compte client. Réservé aux comptes sans aucune
+     * obligation de conservation (aucun dossier nulle part).
+     */
+    public function remove(Client $client, bool $flush = true): void;
+
     public function findByMagicLink(string $magicLink): ?Client;
 
     /**
-     * Clients rattachés à ce cabinet, filtrés par recherche (nom, prénom, email).
+     * Clients rattachés à ce cabinet, filtrés par recherche (nom, prénom, email)
+     * et par statut d'activité.
      *
-     * @param 'recent'|'name' $sort
+     * @param 'recent'|'name'|'status' $sort
+     * @param bool|null                $onlyActive null = tous, true = actifs, false = inactifs
      *
      * @return Pagerfanta<Client>
      */
-    public function findAllByWorkspace(Workspace $workspace, ?string $search = null, string $sort = 'recent'): Pagerfanta;
+    public function findAllByWorkspace(Workspace $workspace, ?string $search = null, string $sort = 'recent', ?bool $onlyActive = null): Pagerfanta;
 
     public function findOneBySlugIdAndWorkspace(string $slugId, Workspace $workspace): ?Client;
 

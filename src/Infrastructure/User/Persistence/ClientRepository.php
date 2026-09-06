@@ -49,12 +49,20 @@ readonly class ClientRepository implements ClientRepositoryInterface
         }
     }
 
+    public function remove(Client $client, bool $flush = true): void
+    {
+        $this->entityManager->remove($client);
+        if ($flush) {
+            $this->entityManager->flush();
+        }
+    }
+
     public function findByMagicLink(string $magicLink): ?Client
     {
         return $this->repository->findOneBy(['magicLinkToken' => $magicLink]);
     }
 
-    public function findAllByWorkspace(Workspace $workspace, ?string $search = null, string $sort = 'recent'): Pagerfanta
+    public function findAllByWorkspace(Workspace $workspace, ?string $search = null, string $sort = 'recent', ?bool $onlyActive = null): Pagerfanta
     {
         $qb = $this->repository->createQueryBuilder('c')
             ->innerJoin('c.workspaces', 'w')
@@ -66,11 +74,15 @@ readonly class ClientRepository implements ClientRepositoryInterface
                 ->setParameter('s', '%' . mb_strtolower(trim($search)) . '%');
         }
 
-        if ('name' === $sort) {
-            $qb->orderBy('c.lastName', 'ASC')->addOrderBy('c.firstName', 'ASC');
-        } else {
-            $qb->orderBy('c.createdAt', 'DESC');
+        if (null !== $onlyActive) {
+            $qb->andWhere('c.isActif = :active')->setParameter('active', $onlyActive);
         }
+
+        match ($sort) {
+            'name' => $qb->orderBy('c.lastName', 'ASC')->addOrderBy('c.firstName', 'ASC'),
+            'status' => $qb->orderBy('c.isActif', 'DESC')->addOrderBy('c.createdAt', 'DESC'),
+            default => $qb->orderBy('c.createdAt', 'DESC'),
+        };
 
         return new Pagerfanta(new QueryAdapter($qb));
     }

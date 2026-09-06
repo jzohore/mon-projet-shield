@@ -6,6 +6,9 @@ namespace App\Application\Compliance\DTO\Response;
 
 readonly class ClientFolderSummaryDto
 {
+    /**
+     * @param list<array{title: string, description: string, at: string}> $recentEvents
+     */
     public function __construct(
         public string $slugId,
         public string $reference,
@@ -20,6 +23,8 @@ readonly class ClientFolderSummaryDto
         public bool $relationshipEnded,
         public ?string $purgeDueAtFormatted,
         public bool $underLegalHold,
+        public bool $isDraft,
+        public array $recentEvents = [],
     ) {
     }
 }
