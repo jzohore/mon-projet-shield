@@ -52,21 +52,46 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
           echo '✅ [KYSURE BDD] Connexion établie.'
        fi
 
-#       if [ "$(find ./migrations -iname '*.php' -print -quit)" ]; then
-#          echo "📦 [KYSURE BDD] Préparation de l'environnement de base de données..."
-#
-#          # 1. IDEMPOTENCE : S'assure que la table d'historique des migrations existe
-#          php bin/console doctrine:migrations:sync-metadata-storage --no-interaction
-#
-#          echo "🚀 [KYSURE BDD] Exécution transactionnelle des nouvelles migrations..."
-#
-#          # 2. SECOPS : Exécute uniquement les nouvelles migrations.
-#          # --allow-no-migration : Ne crashe pas s'il n'y a pas de nouvelle migration.
-#          # --all-or-nothing : Si une requête SQL plante, toute la migration fait un ROLLBACK (zéro corruption).
-#          php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --all-or-nothing
-#       else
-#          echo "ℹ️ [KYSURE BDD] Aucun fichier de migration trouvé, étape ignorée."
-#       fi
+       # ----------------------------------------------------------
+       # MIGRATIONS DOCTRINE
+       #  - PROD / STAGING uniquement : en dev tu maîtrises tes migrations
+       #    WIP à la main (et l'historique local peut diverger). Pour activer
+       #    en dev, retire le test sur APP_ENV ci-dessous.
+       #  - Conteneur WEB uniquement (KYSURE_ROLE != worker) : web et worker
+       #    démarrent en parallèle (cf. compose.staging.yaml) ; sans ce garde,
+       #    deux « migrate » concurrents corrompent l'historique. Le conteneur
+       #    web est nommé (container_name) → il n'y en a qu'un seul.
+       # ----------------------------------------------------------
+       if { [ "$APP_ENV" = 'prod' ] || [ "$APP_ENV" = 'staging' ]; } \
+          && [ "$KYSURE_ROLE" != 'worker' ] \
+          && [ -n "$(find ./migrations -maxdepth 1 -iname 'Version*.php' -print -quit)" ]; then
+
+          echo "📦 [KYSURE BDD] Synchronisation de la table d'historique des migrations..."
+          # Idempotent : crée / met à niveau la table de suivi si besoin.
+          php bin/console doctrine:migrations:sync-metadata-storage --no-interaction
+
+          echo "🚀 [KYSURE BDD] Application des migrations en attente (transaction atomique)..."
+          # --allow-no-migration : sortie 0 s'il n'y a rien de nouveau.
+          # --all-or-nothing     : tout le lot dans UNE transaction → rollback
+          #                        total si une requête plante (zéro schéma à moitié appliqué).
+          #   ⚠️ incompatible avec une migration non transactionnelle
+          #      (CREATE INDEX CONCURRENTLY, ALTER TYPE ... ADD VALUE, VACUUM) :
+          #      une telle migration doit déclarer isTransactional(): false,
+          #      et alors il faut retirer --all-or-nothing pour ce déploiement.
+          if ! php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --all-or-nothing; then
+             echo "❌ [KYSURE BDD FATAL] Migration échouée — déploiement interrompu (Coolify va rollback)."
+             echo "   Diagnostic          : bin/console doctrine:migrations:list"
+             echo "   Historique désynchro (schéma déjà appliqué à la main) — marquer SANS exécuter :"
+             echo "   bin/console doctrine:migrations:version --add 'DoctrineMigrations\\VersionXXXXXXXXXXXXXX' --no-interaction"
+             exit 1
+          fi
+          echo "✅ [KYSURE BDD] Schéma à jour."
+
+       elif [ "$KYSURE_ROLE" = 'worker' ]; then
+          echo "ℹ️ [KYSURE BDD] Rôle worker : migrations pilotées par le conteneur web, étape ignorée."
+       else
+          echo "ℹ️ [KYSURE BDD] Migrations non exécutées ici (env dev, ou aucun fichier de migration)."
+       fi
     fi
 
     # ---------------------------------------------------------
