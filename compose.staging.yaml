@@ -1,3 +1,23 @@
+# -----------------------------------------------------------------------------
+# Rotation des logs Docker : sans ça, /var/lib/docker/containers/*/*-json.log
+# grossit sans limite (Symfony prod logue en JSON sur php://stderr + accès
+# FrankenPHP) → disque plein en ~1 j sur un petit serveur → Postgres ne peut
+# plus écrire → tout s'arrête sans trace applicative.
+# -----------------------------------------------------------------------------
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+# -----------------------------------------------------------------------------
+# Limites mémoire : hypothèse serveur = 4 Go (cf. commentaires Caddyfile /
+# conf.d). Objectif : borner chaque service pour qu'une fuite lente ne fasse
+# plus tuer un conteneur au hasard par l'OOM killer du noyau (sans trace).
+# Un dépassement de limite → OOMKilled visible dans `docker inspect` +
+# redémarrage propre par Docker. Ajuste si le serveur n'a pas 4 Go.
+# -----------------------------------------------------------------------------
+
 services:
   php-staging:
     build:
@@ -11,11 +31,19 @@ services:
       TRUSTED_PROXIES: '${TRUSTED_PROXIES}'
       APP_ENV: staging
       KYSURE_ROLE: web
+      # Borne le pool de threads FrankenPHP (sinon = nb de vCPU, chacun jusqu'à
+      # memory_limit=512M → OOM sur un serveur chargé).
+      FRANKENPHP_NUM_THREADS: '2'
       SOPS_AGE_KEY: '${SOPS_AGE_KEY}'
       DATABASE_URL: '${DATABASE_URL}'
       MESSENGER_TRANSPORT_DSN: '${MESSENGER_TRANSPORT_DSN}'
       MAILER_DSN: 'smtp://mailpit-staging:1025'
       GOTENBERG_URL: 'http://gotenberg-staging:3000/forms/chromium/convert/html'
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
     depends_on:
       database-staging:
         condition: service_healthy
@@ -37,6 +65,11 @@ services:
       MESSENGER_TRANSPORT_DSN: '${MESSENGER_TRANSPORT_DSN}'
       MAILER_DSN: 'smtp://mailpit-staging:1025'
       GOTENBERG_URL: 'http://gotenberg-staging:3000/forms/chromium/convert/html'
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 384M
     depends_on:
       database-staging:
         condition: service_healthy
@@ -53,6 +86,11 @@ services:
       POSTGRES_PASSWORD: '${POSTGRES_PASSWORD}'
     volumes:
       - 'postgres_staging_data:/var/lib/postgresql/data'
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -d ${POSTGRES_DB} -U ${POSTGRES_USER}"]
       interval: 5s
@@ -66,8 +104,17 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: '${RABBITMQ_USER}'
       RABBITMQ_DEFAULT_PASS: '${RABBITMQ_PASSWORD}'
+      # Sous cette part de la RAM du conteneur, RabbitMQ bloque les publishers
+      # au lieu de se faire OOM-killer (l'app hang alors sur dispatch() — au
+      # moins c'est diagnosticable).
+      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: '0.5'
     volumes:
       - 'rabbitmq_staging_data:/var/lib/rabbitmq'
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     healthcheck:
       test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 10s
@@ -86,6 +133,11 @@ services:
       MP_UI_BIND_ADDR: '0.0.0.0:8025'
     volumes:
       - 'mailpit_staging_data:/data'
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 128M
     labels:
       - "traefik.enable=true"
       - "traefik.http.services.mailpit-staging.loadbalancer.server.port=8025"
@@ -94,6 +146,15 @@ services:
     image: 'gotenberg/gotenberg:8'
     container_name: kysure_gotenberg_staging
     restart: unless-stopped
+    # Chromium fuit / laisse des zombies si une conversion plante : la limite
+    # mémoire borne le rayon de blast (OOMKilled visible + redémarrage propre).
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        # Décommente si ta version de Coolify/compose le supporte :
+        # pids: 256
 
 volumes:
   postgres_staging_data: null

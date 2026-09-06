@@ -1,8 +1,17 @@
 ---
+# Rotation des logs Docker (json-file par défaut = croissance illimitée).
+# S'applique en local, et en prod via `-f compose.yaml -f compose.prod.yaml`.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
   php:
     image: ${IMAGES_PREFIX:-}app-php
     restart: unless-stopped
+    logging: *default-logging
     environment:
       SERVER_NAME: ${SERVER_NAME:-localhost}, php:80
       DEFAULT_URI: https://${SERVER_NAME:-localhost}:${HTTPS_PORT:-443}
@@ -39,6 +48,7 @@ services:
 
   rabbitmq:
     image: rabbitmq:4.3-management-alpine
+    logging: *default-logging
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-guest}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-guest}
@@ -48,6 +58,7 @@ services:
 
   mailpit:
     image: axllent/mailpit
+    logging: *default-logging
     ports:
       - "1025:1025" # SMTP
       - "8025:8025" # Web UI
@@ -59,6 +70,7 @@ services:
 ###> doctrine/doctrine-bundle ###
   database:
     image: postgres:${POSTGRES_VERSION:-18}-alpine
+    logging: *default-logging
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -82,6 +94,7 @@ services:
 ###> sensiolabs/gotenberg-bundle ###
   gotenberg:
     image: 'gotenberg/gotenberg:8'
+    logging: *default-logging
 ###< sensiolabs/gotenberg-bundle ###
 
 volumes:
