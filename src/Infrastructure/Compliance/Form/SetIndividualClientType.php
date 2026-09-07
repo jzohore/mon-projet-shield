@@ -34,7 +34,7 @@ class SetIndividualClientType extends AbstractType
             ])
             ->add('address', TextareaType::class, [
                 'label' => 'Adresse postale',
-                'required' => false,
+                'required' => true,
                 'attr' => [
                     'placeholder' => "12 rue de la Paix\n69002 Lyon",
                     'rows' => 2,
