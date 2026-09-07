@@ -85,6 +85,7 @@ class ManualIndividualStepOneComponent extends AbstractController
             $request->firstName = $this->complianceFolder->firstName ?? '';
             $request->lastName = $this->complianceFolder->lastName ?? '';
             $request->email = $this->complianceFolder->email ?? '';
+            $request->address = $this->complianceFolder->address;
         }
 
         return $this->createForm(SetIndividualClientType::class, $request);

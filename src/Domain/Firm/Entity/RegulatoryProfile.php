@@ -52,6 +52,14 @@ class RegulatoryProfile
     #[ORM\Column(type: Types::BOOLEAN, options: ['default' => true])]
     public private(set) bool $isIndependent = true;
 
+    /** Nom du conseiller signataire, imprimé sur le DER (« Pour le cabinet »). */
+    #[ORM\Column(type: Types::STRING, length: 150, nullable: true)]
+    public private(set) ?string $signatoryName = null;
+
+    /** Ville portée par la mention « Fait à … » du DER. */
+    #[ORM\Column(type: Types::STRING, length: 120, nullable: true)]
+    public private(set) ?string $signatoryCity = null;
+
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     public private(set) ?string $signatureBase64 = null;
 
@@ -89,6 +97,8 @@ class RegulatoryProfile
         ?string $rcProPolicyNumber,
         bool $isIndependent,
         array $partners,
+        ?string $signatoryName = null,
+        ?string $signatoryCity = null,
     ): void {
         $this->oriasNumber = $oriasNumber;
         $this->professionalAssociation = $professionalAssociation;
@@ -96,6 +106,8 @@ class RegulatoryProfile
         $this->rcProPolicyNumber = $rcProPolicyNumber;
         $this->isIndependent = $isIndependent;
         $this->partners = $partners;
+        $this->signatoryName = null !== $signatoryName ? trim($signatoryName) ?: null : null;
+        $this->signatoryCity = null !== $signatoryCity ? trim($signatoryCity) ?: null : null;
         $this->lastCheckOrias = now();
     }
 

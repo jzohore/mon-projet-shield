@@ -271,15 +271,15 @@
         <span class="label">LE CABINET</span>
         <div class="body">
             {{ workspace.legalName ?: workspace.name }}<br>
-            {{ workspace.address }}<br>
-            SIRET : {{ workspace.siret }}
+            {{ workspace.address|default('Adresse à compléter dans les Réglages') }}<br>
+            SIRET : {{ workspace.siret|default('à compléter dans les Réglages') }}
         </div>
     </div>
     <div class="info-box">
         <span class="label">LE CLIENT</span>
         <div class="body">
             {{ folder.contactFirstName }} {{ folder.contactLastName }}<br>
-            {{ folder.address|default('Adresse non renseignée') }}<br>
+            {{ folder.contactAddress ? folder.contactAddress|nl2br : 'Adresse non communiquée' }}<br>
             Email : {{ folder.contactEmail }}
         </div>
     </div>
@@ -351,8 +351,8 @@
     <div class="sig-card sig-card--firm">
         <div class="sig-title">POUR LE CABINET</div>
 
-        <div class="row"><strong>Conseiller :</strong></div>
-        <div class="row"><strong>Fait à :</strong> {{ workspace.city|default('....................') }}</div>
+        <div class="row"><strong>Conseiller :</strong> {{ profile.signatoryName|default('Le représentant légal du cabinet') }}</div>
+        <div class="row"><strong>Fait à :</strong> {{ profile.signatoryCity|default('....................') }}</div>
         <div class="row"><strong>Le :</strong> {{ "now"|date("d/m/Y") }}</div>
 
         {% if profile.signatureBase64 %}
@@ -371,10 +371,22 @@
         <div class="sig-title">LE CLIENT</div>
 
         <div class="row"><strong>Nom et prénom :</strong> {{ folder.contactFirstName }} {{ folder.contactLastName }}</div>
-        <div class="row"><strong>Lu et approuvé, le :</strong> ....................</div>
 
-        {# Zone de signature du DER (mise en page). Le DER n'est plus signé via un tiers : le client en accuse réception depuis son espace. #}
-        <div style="height: 85px;"></div>
+        {# Le DER n'est pas signé de façon manuscrite : le client en accuse
+           réception par voie électronique depuis son espace. La date, le nom
+           déclaré et l'empreinte SHA-256 figurent sur l'attestation associée
+           (elle ne peut pas être portée ici sans invalider l'empreinte du DER). #}
+        <div class="row" style="margin-top: 8px; line-height: 1.5;">
+            Ce document fait l'objet d'un <strong>accusé de réception électronique</strong> par le client
+            (signature électronique simple, règlement eIDAS n°&nbsp;910/2014).
+        </div>
+        <div class="row" style="line-height: 1.5;">
+            L'<strong>attestation d'accusé de réception</strong> associée — horodatée et scellée par
+            empreinte SHA-256 — en constitue la preuve.
+        </div>
+        <div class="row" style="margin-top: 10px; color: #94a3b8;">
+            Signature manuscrite (le cas échéant) : ______________________
+        </div>
     </div>
 </div>
 

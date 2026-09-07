@@ -49,6 +49,17 @@ class RegulatoryProfileType extends AbstractType
                 'label' => 'Numéro de police RC Pro',
                 'required' => true,
             ])
+            ->add('signatoryName', TextType::class, [
+                'label' => 'Conseiller signataire',
+                'required' => false,
+                'attr' => ['placeholder' => 'ex: Marie Curie', 'maxlength' => 150],
+                'help' => 'Nom imprimé sur le DER, bloc « Pour le cabinet ».',
+            ])
+            ->add('signatoryCity', TextType::class, [
+                'label' => 'Ville (mention « Fait à »)',
+                'required' => false,
+                'attr' => ['placeholder' => 'ex: Lyon', 'maxlength' => 120],
+            ])
             ->add('isIndependent', CheckboxType::class, [
                 'label' => 'Je déclare que le capital du cabinet est indépendant',
                 'required' => false, // false car une case non cochée est valide en HTML

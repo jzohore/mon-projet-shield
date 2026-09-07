@@ -33,6 +33,12 @@ class UpdateRegulatoryProfileRequest
     #[Assert\NotNull]
     public bool $isIndependent = true;
 
+    #[Assert\Length(max: 150)]
+    public ?string $signatoryName = null;
+
+    #[Assert\Length(max: 120)]
+    public ?string $signatoryCity = null;
+
     /**
      * @var PartnerDTO[]
      */

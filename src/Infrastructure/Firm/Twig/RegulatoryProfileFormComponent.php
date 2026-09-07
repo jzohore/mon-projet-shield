@@ -58,6 +58,8 @@ class RegulatoryProfileFormComponent
         $dto->professionalAssociation = $profile->professionalAssociation;
         $dto->rcProInsurer = $profile->rcProInsurer;
         $dto->rcProPolicyNumber = $profile->rcProPolicyNumber;
+        $dto->signatoryName = $profile->signatoryName;
+        $dto->signatoryCity = $profile->signatoryCity;
         $dto->partners = [];
         foreach ($profile->partners as $partnerData) {
             $partnerDto = new PartnerDTO();

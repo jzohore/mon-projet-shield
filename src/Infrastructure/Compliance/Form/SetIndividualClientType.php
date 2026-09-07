@@ -7,6 +7,7 @@ namespace App\Infrastructure\Compliance\Form;
 use App\Application\Compliance\DTO\Request\SetIndividualClientRequest;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -30,6 +31,16 @@ class SetIndividualClientType extends AbstractType
                 'label' => 'Email de contact',
                 'attr' => ['placeholder' => 'jean.dupont@email.com', 'autocomplete' => 'email'],
                 'empty_data' => '',
+            ])
+            ->add('address', TextareaType::class, [
+                'label' => 'Adresse postale',
+                'required' => false,
+                'attr' => [
+                    'placeholder' => "12 rue de la Paix\n69002 Lyon",
+                    'rows' => 2,
+                    'autocomplete' => 'street-address',
+                ],
+                'help' => 'Imprimée sur le DER.',
             ]);
     }
 

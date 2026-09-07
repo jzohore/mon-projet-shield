@@ -26,7 +26,8 @@ readonly class SetIndividualClientUseCase
         $folder->setClientInfo(
             firstName: $request->firstName,
             lastName: $request->lastName,
-            email: $request->email
+            email: $request->email,
+            address: $request->address,
         );
 
         $this->repository->save($folder);

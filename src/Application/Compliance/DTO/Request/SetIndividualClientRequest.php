@@ -22,4 +22,7 @@ class SetIndividualClientRequest
     #[Assert\Email(message: 'L\'adresse email n\'est pas valide.')]
     #[Assert\NotBlank(message: 'L\'adresse email est obligatoire.')]
     public string $email = '';
+
+    #[Assert\Length(max: 500, maxMessage: 'L\'adresse ne peut pas dépasser 500 caractères.')]
+    public ?string $address = null;
 }

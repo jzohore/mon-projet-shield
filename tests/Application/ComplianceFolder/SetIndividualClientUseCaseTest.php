@@ -106,6 +106,7 @@ final class SetIndividualClientUseCaseTest extends TestCase
         $request->firstName = 'Jean';
         $request->lastName = 'Dupont';
         $request->email = 'jean@test.com';
+        $request->address = "  12 rue de la Paix\n69002 Lyon  ";
         // 🚀 On utilise une VRAIE instance d'IndividualFolder
         $folder = $this->createEntityState(IndividualFolder::class);
 
@@ -122,6 +123,9 @@ final class SetIndividualClientUseCaseTest extends TestCase
             ->with($this->identicalTo($folder));
 
         ($this->useCase)($request);
+
+        self::assertSame('Jean', $folder->firstName);
+        self::assertSame("12 rue de la Paix\n69002 Lyon", $folder->address, 'adresse trim mais multi-lignes conservées');
 
         // Note : En pur DDD, si les propriétés de ton entité sont lisibles (via getter ou public private(set)),
         // tu pourrais ajouter des assertions ici pour vérifier que $folder->firstName === 'Jean', etc.

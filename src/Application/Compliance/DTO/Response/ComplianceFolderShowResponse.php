@@ -48,6 +48,7 @@ readonly class ComplianceFolderShowResponse
         public ?string $contactLastName,
         public ?string $contactEmail,
         public ?string $type,
+        public ?string $contactAddress = null,
         public ?array $postMeetingReport = null,
     ) {
     }

@@ -23,6 +23,11 @@ class IndividualFolder extends ComplianceFolder
     #[Encrypted]
     public private(set) ?string $email = null;
 
+    /** Adresse postale du client, imprimée sur le DER (bloc « Le client »). */
+    #[ORM\Column(length: 500, nullable: true)]
+    #[Encrypted]
+    public private(set) ?string $address = null;
+
     /**
      * CONSTRUCTEUR PROTÉGÉ.
      */
@@ -57,11 +62,12 @@ class IndividualFolder extends ComplianceFolder
         $this->saveHistory('Email mis à jour', "De $oldEmail vers $newEmail");
     }
 
-    public function setClientInfo(string $firstName, string $lastName, string $email): void
+    public function setClientInfo(string $firstName, string $lastName, string $email, ?string $address = null): void
     {
         $this->firstName = $firstName;
         $this->lastName = $lastName;
         $this->email = $email;
+        $this->address = null !== $address ? trim($address) ?: null : $this->address;
         $this->saveHistory('Les informations clients ont été mis à jour');
     }
 

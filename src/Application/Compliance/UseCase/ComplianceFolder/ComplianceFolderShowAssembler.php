@@ -52,6 +52,8 @@ class ComplianceFolderShowAssembler
             ? $folder->email
             : 'Non défini';
 
+        $contactAddress = $folder instanceof IndividualFolder ? $folder->address : null;
+
         $type = $folder instanceof IndividualFolder ? 'individual' : 'company';
         // Note: Assure-toi d'avoir une méthode de fallback pour l'email si elle n'est pas sur la classe parente
 
@@ -145,6 +147,7 @@ class ComplianceFolderShowAssembler
             contactLastName: $contactLastName, // À mapper de la même manière si tu as l'entité Stakeholder
             contactEmail: $contactEmail,
             type: $type,
+            contactAddress: $contactAddress,
             postMeetingReport: $folder->postMeetingReport,
         );
     }

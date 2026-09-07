@@ -47,7 +47,9 @@ readonly class UpdateRegulatoryProfileUseCase
             rcProInsurer: $request->rcProInsurer,
             rcProPolicyNumber: $request->rcProPolicyNumber,
             isIndependent: $request->isIndependent,
-            partners: $partnersAsArray
+            partners: $partnersAsArray,
+            signatoryName: $request->signatoryName,
+            signatoryCity: $request->signatoryCity,
         );
 
         $this->repository->save($profile);

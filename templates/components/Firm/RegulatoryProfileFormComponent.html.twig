@@ -35,6 +35,18 @@
 
             <div class="h-px bg-slate-100 w-full"></div>
 
+            {# Section Signataire du DER #}
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-2">
+                    {{ form_row(form.signatoryName) }}
+                </div>
+                <div class="space-y-2">
+                    {{ form_row(form.signatoryCity) }}
+                </div>
+            </div>
+
+            <div class="h-px bg-slate-100 w-full"></div>
+
             {# Section Indépendance #}
             <div class="space-y-2">
                 {{ form_row(form.isIndependent) }}
