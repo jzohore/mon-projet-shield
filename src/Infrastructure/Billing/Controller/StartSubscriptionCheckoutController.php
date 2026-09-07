@@ -12,7 +12,9 @@ use App\Infrastructure\Service\Payment\Stripe\StripeCheckoutService;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -32,6 +34,7 @@ final readonly class StartSubscriptionCheckoutController
         private CurrentWorkspaceProvider $workspaceProvider,
         private UrlGeneratorInterface $urlGenerator,
         private LoggerInterface $logger,
+        private RequestStack $requestStack,
     ) {
     }
 
@@ -44,7 +47,7 @@ final readonly class StartSubscriptionCheckoutController
         $seats = max(1, (int) $request->request->get('seats', 1));
 
         if (null === $plan) {
-            return new RedirectResponse($this->urlGenerator->generate('app_pricing'));
+            return $this->backToPricing('Offre inconnue.');
         }
 
         $workspace = $this->workspaceProvider->getWorkspace();
@@ -62,9 +65,19 @@ final readonly class StartSubscriptionCheckoutController
         } catch (\Throwable $e) {
             $this->logger->error('Échec de création du checkout abonnement : ' . $e->getMessage());
 
-            return new RedirectResponse($this->urlGenerator->generate('app_pricing'));
+            return $this->backToPricing('Le paiement n\'a pas pu être initié. Réessayez dans un instant.');
         }
 
         return new RedirectResponse($url, Response::HTTP_SEE_OTHER);
+    }
+
+    private function backToPricing(string $error): RedirectResponse
+    {
+        $session = $this->requestStack->getSession();
+        if ($session instanceof FlashBagAwareSessionInterface) {
+            $session->getFlashBag()->add('error', $error);
+        }
+
+        return new RedirectResponse($this->urlGenerator->generate('app_pricing'));
     }
 }
