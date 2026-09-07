@@ -10,9 +10,9 @@ use App\Domain\Workspace\Enum\WorkspaceType;
  * Offres KYSURE. Modèle : abonnement AU SIÈGE, dossiers de conformité illimités
  * (fair-use), seules les minutes d'entretien sont métrées (incluses + packs).
  *
- * Les prix et l'ID de prix Stripe vivent dans la conf d'environnement
- * (clés `STRIPE_PRICE_*`) : ici on ne garde que la structure commerciale,
- * consultable côté admin.
+ * Les prix affichés ici sont les prix de lancement (repli) ; le prix réellement
+ * facturé et l'ID de prix Stripe vivent en base (entité PricingPlan), provisionnés
+ * par la commande `app:billing:sync-pricing`.
  */
 enum Plan: string
 {
@@ -58,12 +58,12 @@ enum Plan: string
         };
     }
 
-    /** Clé de la variable d'env portant l'ID de prix Stripe (par siège). */
-    public function getStripePriceEnvKey(): string
+    /** Clé de l'entité PricingPlan correspondante en base. */
+    public function getPricingKey(): string
     {
         return match ($this) {
-            self::INDIVIDUAL => 'STRIPE_PRICE_INDIVIDUAL_SEAT',
-            self::CABINET => 'STRIPE_PRICE_CABINET_SEAT',
+            self::INDIVIDUAL => 'individual_seat',
+            self::CABINET => 'cabinet_seat',
         };
     }
 

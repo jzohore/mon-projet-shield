@@ -197,4 +197,49 @@ readonly class StripeService
             throw new \RuntimeException('Impossible de cancel l\'abonnement sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
+
+    /**
+     * Crée un produit + son prix par défaut sur Stripe pour une offre KYSURE
+     * (modèle Phase 1). Renvoie les deux identifiants.
+     *
+     * @param array<string, string> $metadata
+     *
+     * @return array{product_id: string, price_id: string}
+     */
+    public function createPricingPlan(
+        string $name,
+        ?string $description,
+        int $unitAmountCents,
+        bool $recurring,
+        array $metadata = [],
+    ): array {
+        try {
+            Stripe::setApiKey($this->stripeSecretKey);
+
+            $priceData = [
+                'currency' => 'eur',
+                'unit_amount' => $unitAmountCents,
+            ];
+            if ($recurring) {
+                $priceData['recurring'] = ['interval' => 'month'];
+            }
+
+            $product = Product::create([
+                'name' => $name,
+                'description' => $description ?? $name,
+                'metadata' => $metadata,
+                'default_price_data' => $priceData,
+            ]);
+
+            $priceRaw = $product->default_price;
+            $priceId = is_string($priceRaw) ? $priceRaw : $priceRaw?->id;
+
+            Assert::stringNotEmpty($product->id, 'Stripe n\'a pas retourné d\'ID de produit.');
+            Assert::stringNotEmpty($priceId, 'Stripe n\'a pas retourné d\'ID de prix.');
+
+            return ['product_id' => $product->id, 'price_id' => $priceId];
+        } catch (ApiErrorException $e) {
+            throw new \RuntimeException('Impossible de créer l\'offre sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
+        }
+    }
 }

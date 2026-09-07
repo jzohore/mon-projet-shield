@@ -39,12 +39,9 @@ enum MinutePack: string
         return sprintf('%d minutes', $this->getMinutes());
     }
 
-    public function getStripePriceEnvKey(): string
+    /** Clé de l'entité PricingPlan correspondante en base (= valeur de l'enum). */
+    public function getPricingKey(): string
     {
-        return match ($this) {
-            self::SMALL => 'STRIPE_PRICE_MINUTES_300',
-            self::MEDIUM => 'STRIPE_PRICE_MINUTES_600',
-            self::LARGE => 'STRIPE_PRICE_MINUTES_1500',
-        };
+        return $this->value;
     }
 }

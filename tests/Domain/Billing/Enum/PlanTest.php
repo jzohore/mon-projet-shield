@@ -47,7 +47,7 @@ final class PlanTest extends TestCase
         foreach (Plan::cases() as $plan) {
             self::assertNotSame('', $plan->getLabel());
             self::assertGreaterThan(0, $plan->getIncludedMinutesPerSeat());
-            self::assertStringStartsWith('STRIPE_PRICE_', $plan->getStripePriceEnvKey());
+            self::assertStringEndsWith('_seat', $plan->getPricingKey());
         }
     }
 }

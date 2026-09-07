@@ -35,7 +35,7 @@ final class MinutePackTest extends TestCase
     public function testEveryCaseHasAStripePriceKey(): void
     {
         foreach (MinutePack::cases() as $pack) {
-            self::assertStringStartsWith('STRIPE_PRICE_MINUTES_', $pack->getStripePriceEnvKey());
+            self::assertSame($pack->value, $pack->getPricingKey());
         }
     }
 }
