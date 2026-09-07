@@ -45,6 +45,23 @@ class CreateUserType extends AbstractType
                 'help' => 'Astuce : utilisez votre adresse e-mail professionnelle afin de permettre à votre équipe de vous retrouver facilement.',
                 'setter' => $noOpSetter,
             ])
+            // 🍯 Honeypot anti-bot : champ leurre, invisible et hors tabulation pour
+            // un humain, mais qu'un robot remplira volontiers. Non mappé sur le DTO.
+            // Le composant rejette silencieusement toute soumission où il est rempli.
+            ->add('website', TextType::class, [
+                'mapped' => false,
+                'required' => false,
+                'label' => false,
+                'attr' => [
+                    'autocomplete' => 'off',
+                    'tabindex' => '-1',
+                    'aria-hidden' => 'true',
+                    // On demande aux gestionnaires de mots de passe d'ignorer ce
+                    // champ pour éviter tout faux positif via l'auto-remplissage.
+                    'data-1p-ignore' => 'true',
+                    'data-lpignore' => 'true',
+                ],
+            ])
         ;
     }
 

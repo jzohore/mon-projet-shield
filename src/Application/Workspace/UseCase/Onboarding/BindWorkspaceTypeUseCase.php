@@ -4,14 +4,13 @@ declare(strict_types=1);
 
 namespace App\Application\Workspace\UseCase\Onboarding;
 
-use App\Domain\Billing\Event\CreateBillingModeEvent;
 use App\Domain\Database\TransactionManagerInterface;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Enum\OnboardingStatus;
-use App\Domain\User\Event\UserOnboardingCompletedEvent;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Enum\WorkspaceType;
+use App\Domain\Workspace\Event\WorkspacePlanSelectedEvent;
 use App\Domain\Workspace\Repository\WorkspaceRepositoryInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -37,7 +36,9 @@ readonly class BindWorkspaceTypeUseCase
             $this->userRepository->save($user);
         });
 
-        $this->eventDispatcher->dispatch(new UserOnboardingCompletedEvent($user, $workspace));
-        // $this->eventDispatcher->dispatch(new CreateBillingModeEvent($workspace, $user));
+        // ⚠️ L'onboarding n'est PAS terminé ici : on notifie seulement que le type
+        // de compte est choisi, pour préparer Stripe/facturation en tâche de fond.
+        // L'événement de fin d'onboarding est émis par MarkAsOnboardingCompletedUseCase.
+        $this->eventDispatcher->dispatch(new WorkspacePlanSelectedEvent($user, $workspace));
     }
 }

@@ -31,17 +31,28 @@ readonly class StripeService
      */
     public function createStripeCustomer(User $user): string
     {
+        // 🛡️ Idempotence applicative : on ne recrée jamais un client déjà rattaché.
+        if (null !== $user->profile->stripeCustomerId) {
+            return $user->profile->stripeCustomerId;
+        }
+
         try {
             Assert::notNull($user->email);
             Assert::notNull($user->getFullName());
+            Assert::notNull($user->id);
             Stripe::setApiKey($this->stripeSecretKey);
-            $customer = Customer::create([
-                'email' => $user->email,
-                'name' => $user->getFullName(), // Ou le nom du Workspace selon ton architecture
-                'metadata' => [
-                    'user_id' => (string) $user->id, // Indispensable pour retrouver tes petits
+            $customer = Customer::create(
+                [
+                    'email' => $user->email,
+                    'name' => $user->getFullName(), // Ou le nom du Workspace selon ton architecture
+                    'metadata' => [
+                        'user_id' => (string) $user->id, // Indispensable pour retrouver tes petits
+                    ],
                 ],
-            ]);
+                // 🛡️ Idempotence côté Stripe : un rejeu (retry Messenger, incident
+                // réseau) réutilise le même client au lieu d'en créer un doublon.
+                ['idempotency_key' => 'create_customer_' . $user->id],
+            );
 
             Assert::notNull($customer->id);
             ($this->stripeCustomerIdUseCase)($user, $customer->id);

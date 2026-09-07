@@ -51,6 +51,12 @@
                 </div>
             </div>
 
+            {# 🍯 Honeypot anti-bot : masqué à l'humain (display:none + hors flux
+               d'accessibilité), attirant pour un robot. Ne jamais le remplir. #}
+            <div class="hidden" aria-hidden="true">
+                {{ form_row(form.website, { label: false }) }}
+            </div>
+
             {# Le Footer / Bouton de soumission #}
             <div class="flex items-center justify-end mt-8 pt-4">
                 <twig:Button as="button" type="submit" variant="dark" class="w-full sm:w-auto px-8">

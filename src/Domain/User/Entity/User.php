@@ -262,8 +262,12 @@ class User implements UserInterface, TwoFactorInterface, \Stringable
      */
     public function generateMagicLinkToken(): void
     {
+        // Jeton à usage unique, 512 bits, invalidé dès la première connexion
+        // (UserLoginListener::onClearMagicLinkToken). 30 min : couvre la latence
+        // de distribution de l'e-mail d'inscription sans élargir la fenêtre
+        // d'exposition de façon significative.
         $this->magicLinkToken = bin2hex(random_bytes(64));
-        $this->magicLinkTokenExpiresAt = now()->add(new \DateInterval('PT10M'));
+        $this->magicLinkTokenExpiresAt = now()->add(new \DateInterval('PT30M'));
     }
 
     public function isMagicLinkTokenValid(): bool

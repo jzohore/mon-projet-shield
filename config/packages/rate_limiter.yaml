@@ -18,3 +18,10 @@ framework:
             policy: 'sliding_window'
             limit: 30
             interval: '1 hour'
+        # Création de compte pro depuis /register (par IP). Chaque acceptation
+        # crée un User + envoie un e-mail : on borne fort pour couper le bombing
+        # d'e-mails et la pollution de la base. Un usage légitime = 1 création.
+        user_registration:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '15 minutes'

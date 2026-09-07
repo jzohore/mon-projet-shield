@@ -127,6 +127,9 @@ services:
     App\Infrastructure\Compliance\Controller\Client\ClientCreateController:
         arguments:
             $clientCreationLimiter: '@limiter.client_creation'
+    App\Infrastructure\User\Twig\Components\CreateUserFormComponent:
+        arguments:
+            $registrationLimiter: '@limiter.user_registration'
     App\Domain\Workspace\Service\CurrentWorkspaceProvider:
         tags:
             - { name: 'kernel.reset', method: 'reset' }

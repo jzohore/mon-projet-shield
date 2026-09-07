@@ -63,6 +63,7 @@ framework:
             'App\Infrastructure\Screening\Message\ShareDocumentMessage': async_main
             'App\Infrastructure\Billing\Message\SendSubscriptionActivatedEmailMessage': async_main
             'App\Infrastructure\Billing\Message\SendSubscriptionCanceledEmailMessage': async_main
+            'App\Infrastructure\User\Message\CreateStripeCustomerMessage': async_main
             'App\Infrastructure\Compliance\Message\AnalyzeCompleteMeetingMessage': async_main
             'App\Infrastructure\Compliance\Message\DeleteAudioFileMessage': async_main
             'App\Infrastructure\Compliance\Message\GenerateDerAcknowledgementCertificateMessage': async_main

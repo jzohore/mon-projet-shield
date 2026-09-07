@@ -263,6 +263,36 @@
         {# CONTENU PRINCIPAL #}
         <div class="flex-1 overflow-y-auto">
             <div class="max-w-8xl mx-auto p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8 pb-24">
+
+                {# ── Incitation 2FA (non bloquante) : tant que l'utilisateur n'a
+                   pas activé la double authentification. Masquable pour la
+                   session, réapparaît à la connexion suivante. ── #}
+                {% if app.user and not is_granted('IS_IMPERSONATOR') and not app.user.isGoogleAuthenticatorEnabled() %}
+                    <div data-controller="dismissible" data-dismissible-key-value="twofa-nudge" hidden
+                         class="flex items-start gap-3 rounded-lg border border-slate-200 border-l-4 border-l-amber-500 bg-white p-4 shadow-sm">
+                        <span class="mt-0.5 shrink-0 text-amber-500" aria-hidden="true">
+                            {{ ux_icon('lucide:shield-alert', { class: 'size-5' }) }}
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-semibold text-slate-900">Sécurisez votre compte avec la double authentification</p>
+                            <p class="mt-1 text-sm text-slate-600">
+                                Vous manipulez des données de conformité sensibles. L'activation de la 2FA
+                                (application d'authentification) prend moins d'une minute.
+                            </p>
+                            <div class="mt-3">
+                                <twig:Button as="a" href="{{ path('app_settings_account') }}" variant="outline" size="sm">
+                                    Activer la 2FA
+                                </twig:Button>
+                            </div>
+                        </div>
+                        <button type="button" data-action="dismissible#dismiss"
+                                class="shrink-0 rounded p-1 text-slate-400 hover:text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                                aria-label="Masquer ce rappel pour cette session">
+                            {{ ux_icon('lucide:x', { class: 'size-4' }) }}
+                        </button>
+                    </div>
+                {% endif %}
+
                 {% block content %}{% endblock %}
             </div>
         </div>
