@@ -3,66 +3,92 @@ import { Controller } from '@hotwired/stimulus';
 /*
  * Compte à rebours pour le bouton « Renvoyer le lien ».
  *
- * Le serveur (LiveComponent) fournit le nombre de secondes restantes via
- * data-resend-countdown-seconds-value. Tant qu'il est > 0, le bouton est
- * désactivé et affiche « Renvoyer dans Ns ». À 0, il redevient cliquable.
+ * - data-resend-countdown-remaining-value : secondes restantes fournies par le
+ *   serveur (LiveComponent) au rendu.
+ * - data-resend-countdown-cooldown-value  : durée totale du cooldown (défaut 60).
+ * - data-resend-countdown-label-value     : libellé du bouton au repos.
  *
- *   <div data-controller="resend-countdown" data-resend-countdown-seconds-value="60">
+ * Tant qu'il reste du temps, le bouton est désactivé et affiche
+ * « Renvoyer dans N s ». À 0, il redevient un bouton d'action cliquable.
+ *
+ *   <div data-controller="resend-countdown"
+ *        data-resend-countdown-remaining-value="60"
+ *        data-resend-countdown-cooldown-value="60"
+ *        data-resend-countdown-label-value="Renvoyer le lien">
  *     <button data-resend-countdown-target="button"
- *             data-action="live#action" data-live-action-param="resend">
+ *             data-action="live#action resend-countdown#restart"
+ *             data-live-action-param="resend">
  *       <span data-resend-countdown-target="label">Renvoyer le lien</span>
  *     </button>
  *   </div>
  */
 export default class extends Controller {
     static targets = ['button', 'label'];
-    static values = { seconds: Number };
+    static values = {
+        remaining: Number,
+        cooldown: { type: Number, default: 60 },
+        label: { type: String, default: 'Renvoyer le lien' },
+    };
+
+    #ready = false;
+    timer = null;
+    count = 0;
 
     connect() {
-        this.defaultLabel = this.hasLabelTarget ? this.labelTarget.textContent.trim() : 'Renvoyer le lien';
-        this.#start(this.secondsValue);
+        this.#ready = true;
+        this.#run(this.remainingValue);
     }
 
     disconnect() {
+        this.#ready = false;
         this.#clear();
     }
 
-    secondsValueChanged() {
-        // Le serveur a renvoyé une nouvelle valeur (après un envoi) : on relance.
-        this.#start(this.secondsValue);
+    // Le serveur a renvoyé une nouvelle valeur après un envoi.
+    remainingValueChanged() {
+        if (this.#ready) {
+            this.#run(this.remainingValue);
+        }
     }
 
-    onClick() {
-        // Retour visuel immédiat en attendant la réponse serveur.
-        this.#start(this.secondsValue > 0 ? this.secondsValue : 60);
+    // Clic sur le bouton : on relance immédiatement le décompte (retour visuel),
+    // l'action LiveComponent `resend` part en parallèle.
+    restart() {
+        this.#run(this.cooldownValue);
     }
 
-    #start(seconds) {
+    #run(seconds) {
         this.#clear();
-        this.remaining = Math.max(0, Math.floor(seconds || 0));
+        this.count = Math.max(0, Math.floor(Number(seconds) || 0));
         this.#render();
 
-        if (this.remaining <= 0) return;
+        if (this.count <= 0) {
+            return;
+        }
 
         this.timer = setInterval(() => {
-            this.remaining -= 1;
+            this.count -= 1;
             this.#render();
-            if (this.remaining <= 0) this.#clear();
+            if (this.count <= 0) {
+                this.#clear();
+            }
         }, 1000);
     }
 
     #render() {
-        if (!this.hasButtonTarget) return;
+        const waiting = this.count > 0;
 
-        const waiting = this.remaining > 0;
-        this.buttonTarget.disabled = waiting;
-        this.buttonTarget.classList.toggle('opacity-50', waiting);
-        this.buttonTarget.classList.toggle('cursor-not-allowed', waiting);
+        if (this.hasButtonTarget) {
+            this.buttonTarget.disabled = waiting;
+            this.buttonTarget.classList.toggle('opacity-50', waiting);
+            this.buttonTarget.classList.toggle('cursor-not-allowed', waiting);
+            this.buttonTarget.setAttribute('aria-disabled', waiting ? 'true' : 'false');
+        }
 
         if (this.hasLabelTarget) {
             this.labelTarget.textContent = waiting
-                ? `Renvoyer dans ${this.remaining} s`
-                : this.defaultLabel;
+                ? 'Renvoyer dans ' + this.count + ' s'
+                : this.labelValue;
         }
     }
 

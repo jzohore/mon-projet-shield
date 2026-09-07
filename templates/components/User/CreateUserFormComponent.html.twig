@@ -12,11 +12,13 @@
             {% if this.pendingEmail is not null %}
                 <div class="mt-6 border-t border-slate-200 pt-5"
                      data-controller="resend-countdown"
-                     data-resend-countdown-seconds-value="{{ this.resendCooldownRemaining }}">
+                     data-resend-countdown-remaining-value="{{ this.resendCooldownRemaining }}"
+                     data-resend-countdown-cooldown-value="60"
+                     data-resend-countdown-label-value="Renvoyer le lien">
                     <p class="text-xs text-slate-500 mb-3">Vous n'avez rien reçu&nbsp;?</p>
                     <button type="button"
                             data-resend-countdown-target="button"
-                            data-action="resend-countdown#onClick live#action"
+                            data-action="live#action resend-countdown#restart"
                             data-live-action-param="resend"
                             class="inline-flex items-center gap-2 rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 disabled:opacity-50 disabled:cursor-not-allowed">
                         <i class="fas fa-circle-notch fa-spin opacity-70" data-loading="action(resend)|show"></i>
