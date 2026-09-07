@@ -1,0 +1,104 @@
+{% extends '@app/base_app.html.twig' %}
+
+{% block title %}{{ page_title }} - {{ company_name }}{% endblock %}
+{% block page_title %}Offres & tarifs{% endblock %}
+
+{% block content %}
+    <header class="mb-8">
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900">Choisissez votre offre</h1>
+        <p class="text-sm text-slate-500 mt-1">
+            {% if pricing.hasActiveSubscription %}
+                Votre abonnement est actif. Vous pouvez ajouter des minutes d'entretien à tout moment.
+            {% else %}
+                Essai en cours&nbsp;: <span class="font-medium text-slate-700 tabular-nums">{{ pricing.trialDossiersRemaining }}</span> dossier(s) et
+                <span class="font-medium text-slate-700 tabular-nums">{{ pricing.remainingMeetingMinutes }}</span> min restants.
+            {% endif %}
+        </p>
+    </header>
+
+    {% if pricing.hasActiveSubscription %}
+        <div class="mb-8 flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            {{ ux_icon('lucide:check-circle-2', { class: 'size-4 shrink-0' }) }}
+            <span>Abonnement actif — <a href="{{ path('app_settings_subscription') }}" class="font-semibold underline">gérer mon abonnement</a></span>
+        </div>
+    {% endif %}
+
+    {# ═══════════ ABONNEMENTS ═══════════ #}
+    {% if pricing.subscriptionPlans is not empty and not pricing.hasActiveSubscription %}
+        <section class="mb-12">
+            <h2 class="text-base font-semibold text-slate-900 mb-1">Abonnement</h2>
+            <p class="text-sm text-slate-500 mb-5">Facturation mensuelle au siège. Dossiers de conformité illimités.</p>
+
+            <div class="grid gap-4 sm:grid-cols-2 lg:max-w-3xl">
+                {% for plan in pricing.subscriptionPlans %}
+                    {% set is_reco = plan.planKey == pricing.recommendedPlanKey %}
+                    {% set plan_enum = plan.planKey starts with 'cabinet' ? 'cabinet' : 'individual' %}
+                    <div class="rounded-2xl border bg-white p-6 shadow-sm flex flex-col {{ is_reco ? 'border-indigo-500 ring-1 ring-indigo-500' : 'border-slate-200' }}">
+                        {% if is_reco %}
+                            <span class="self-start mb-3 inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700">Recommandé</span>
+                        {% endif %}
+                        <h3 class="text-sm font-semibold text-slate-900">{{ plan.label }}</h3>
+                        <div class="mt-2 flex items-baseline gap-1">
+                            <span class="text-3xl font-bold tracking-tight text-slate-900 tabular-nums">{{ plan.formattedPrice }} €</span>
+                            <span class="text-sm text-slate-500">/ siège / mois</span>
+                        </div>
+                        <ul class="mt-4 space-y-2 text-sm text-slate-600 flex-1">
+                            <li class="flex gap-2">{{ ux_icon('lucide:check', { class: 'size-4 text-emerald-600 shrink-0 mt-0.5' }) }} Dossiers de conformité illimités</li>
+                            <li class="flex gap-2">{{ ux_icon('lucide:check', { class: 'size-4 text-emerald-600 shrink-0 mt-0.5' }) }} {{ plan.meetingMinutes }} min d'entretien incluses / siège</li>
+                            <li class="flex gap-2">{{ ux_icon('lucide:check', { class: 'size-4 text-emerald-600 shrink-0 mt-0.5' }) }} Minimum {{ plan.minSeats }} siège{{ plan.minSeats > 1 ? 's' : '' }}</li>
+                        </ul>
+
+                        <form method="post" action="{{ path('app_billing_subscribe') }}" class="mt-5" data-turbo="false">
+                            <input type="hidden" name="_token" value="{{ csrf_token('billing_subscribe') }}">
+                            <input type="hidden" name="plan" value="{{ plan_enum }}">
+                            {% if plan.minSeats > 1 %}
+                                <label class="block text-xs font-medium text-slate-500 mb-1" for="seats-{{ plan.planKey }}">Nombre de sièges</label>
+                                <input id="seats-{{ plan.planKey }}" type="number" name="seats" min="{{ plan.minSeats }}"
+                                       value="{{ max(plan.minSeats, pricing.suggestedSeats) }}"
+                                       class="mb-3 w-24 rounded-md border border-slate-300 px-2 py-1.5 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            {% else %}
+                                <input type="hidden" name="seats" value="1">
+                            {% endif %}
+                            <twig:Button type="submit" variant="{{ is_reco ? 'dark' : 'outline' }}" class="w-full">
+                                Choisir cette offre
+                            </twig:Button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
+
+    {# ═══════════ PACKS DE MINUTES ═══════════ #}
+    <section>
+        <h2 class="text-base font-semibold text-slate-900 mb-1">Packs de minutes d'entretien</h2>
+        <p class="text-sm text-slate-500 mb-5">Paiement unique, sans expiration. Créditées immédiatement après paiement.</p>
+
+        {% if pricing.minutePacks is empty %}
+            <p class="text-sm text-slate-500 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4">
+                Aucun pack disponible — lancez <code class="text-xs">app:billing:sync-pricing</code>.
+            </p>
+        {% else %}
+            <div class="grid gap-4 sm:grid-cols-3 lg:max-w-4xl">
+                {% for pack in pricing.minutePacks %}
+                    <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm flex flex-col">
+                        <h3 class="text-sm font-semibold text-slate-900">{{ pack.meetingMinutes }} minutes</h3>
+                        <div class="mt-2 flex items-baseline gap-1">
+                            <span class="text-2xl font-bold tracking-tight text-slate-900 tabular-nums">{{ pack.formattedPrice }} €</span>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-400 tabular-nums">
+                            {{ (pack.unitAmountCents / pack.meetingMinutes / 100)|number_format(3, ',', ' ') }} € / min
+                        </p>
+                        <form method="post" action="{{ path('app_billing_minutes') }}" class="mt-5" data-turbo="false">
+                            <input type="hidden" name="_token" value="{{ csrf_token('billing_minutes') }}">
+                            <input type="hidden" name="pack" value="{{ pack.planKey }}">
+                            <twig:Button type="submit" variant="outline" class="w-full">Acheter</twig:Button>
+                        </form>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <p class="mt-4 text-[11px] text-slate-400">Paiement sécurisé par Stripe.</p>
+    </section>
+{% endblock %}

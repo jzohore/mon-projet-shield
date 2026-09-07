@@ -34,6 +34,8 @@ final readonly class WorkspaceInfoResponse
         public ?bool $isRegProfilValid = null,
         public ?bool $hasActiveSubscription = null,
         public ?bool $isOrgCompleted = null,
+        public int $remainingMeetingMinutes = 0,
+        public int $meetingMinutesAllocated = 0,
     ) {
     }
 
@@ -70,6 +72,8 @@ final readonly class WorkspaceInfoResponse
             isRegProfilValid: $workspace->regulatoryProfile->isProfileValid(),
             hasActiveSubscription: $workspace->subscription?->isValid(),
             isOrgCompleted: $workspace->isOrgCompleted(),
+            remainingMeetingMinutes: $workspace->remainingMeetingMinutes(),
+            meetingMinutesAllocated: $workspace->meetingMinutesAllocated,
         );
     }
 }

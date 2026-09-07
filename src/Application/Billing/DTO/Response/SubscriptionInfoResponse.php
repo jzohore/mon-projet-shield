@@ -30,6 +30,8 @@ readonly class SubscriptionInfoResponse
         public ?int $maxUsers = null,                // Added default null
         public ?int $maxMonitoring = null,           // Added default null
         public ?float $basePrice = null,             // Added default null
+        public ?string $planReference = null,
+        public int $seatsCount = 1,
     ) {
     }
 
@@ -67,6 +69,8 @@ readonly class SubscriptionInfoResponse
             maxUsers: Subscription::PLAN_MAX_USERS,
             maxMonitoring: Subscription::PLAN_MAX_MONITORING,
             basePrice: $basePrice,
+            planReference: $subscription->planReference,
+            seatsCount: $subscription->seatsCount,
         );
     }
 }

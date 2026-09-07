@@ -44,7 +44,7 @@
                             {% else %}
                                 <span class="text-lg font-bold {{ dashboard.trialLow ? 'text-amber-600' : 'text-slate-900' }} tabular-nums">{{ dashboard.trialDossiersRemaining }}</span>
                                 <div class="text-[10px] {{ dashboard.trialLow ? 'text-amber-600' : 'text-slate-400' }}">
-                                    {% if dashboard.trialLow %}<a href="{{ path('app_settings_billing') }}" class="font-medium hover:underline">choisir une offre</a>{% else %}restants (essai){% endif %}
+                                    {% if dashboard.trialLow %}<a href="{{ path('app_pricing') }}" class="font-medium hover:underline">choisir une offre</a>{% else %}restants (essai){% endif %}
                                 </div>
                             {% endif %}
                         </div>
@@ -59,7 +59,7 @@
                         <div class="text-right">
                             <span class="text-lg font-bold {{ dashboard.minutesLow ? 'text-amber-600' : 'text-slate-900' }} tabular-nums">{{ dashboard.remainingMeetingMinutes }}</span>
                             <div class="text-[10px] {{ dashboard.minutesLow ? 'text-amber-600' : 'text-slate-400' }}">
-                                {% if dashboard.minutesLow %}<a href="{{ path('app_settings_billing') }}" class="font-medium hover:underline">recharger</a>{% else %}sur {{ dashboard.meetingMinutesAllocated }} min{% endif %}
+                                {% if dashboard.minutesLow %}<a href="{{ path('app_pricing') }}" class="font-medium hover:underline">recharger</a>{% else %}sur {{ dashboard.meetingMinutesAllocated }} min{% endif %}
                             </div>
                         </div>
                     </li>
