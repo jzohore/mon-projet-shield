@@ -5,13 +5,10 @@ declare(strict_types=1);
 namespace App\Infrastructure\Service\Payment\Stripe;
 
 use App\Application\User\UseCase\UpdateStripeCustomerIdUseCase;
-use App\Domain\Product\Repository\ProductRepositoryInterface;
 use App\Domain\User\Entity\User;
-use App\Domain\Workspace\Entity\Workspace;
 use Stripe\Customer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Invoice;
-use Stripe\Price;
 use Stripe\Product;
 use Stripe\Stripe;
 use Stripe\Subscription;
@@ -22,7 +19,6 @@ readonly class StripeService
     public function __construct(
         private string $stripeSecretKey,
         private UpdateStripeCustomerIdUseCase $stripeCustomerIdUseCase,
-        private ProductRepositoryInterface $productRepository,
     ) {
     }
 
@@ -61,44 +57,6 @@ readonly class StripeService
         } catch (ApiErrorException $e) {
             // Gérer l'erreur proprement pour ne pas faire planter ton app
             throw new \RuntimeException('Impossible d\'enregistrer le client sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-    public function createSubscription(string $stripeCustomerId): string
-    {
-        try {
-            Stripe::setApiKey($this->stripeSecretKey);
-
-            $product = $this->productRepository->getByReference('plan_cabinet');
-            Assert::notNull($product, 'Le produit "plan_cabinet" est introuvable.');
-
-            // 🛡️ Type Narrowing : On extrait l'ID strict pour PHPStan
-            $priceRaw = $product->stripePriceId;
-            $priceId = $priceRaw;
-            Assert::stringNotEmpty($priceId, 'L\'ID du prix Stripe est invalide ou manquant.');
-
-            $stripeSubscription = Subscription::create([
-                'customer' => $stripeCustomerId,
-                'items' => [
-                    ['price' => $priceId], // 🪄 On passe la chaîne stricte validée
-                ],
-                'trial_period_days' => 30, // 🪄 Les fameux 30 jours
-                'trial_settings' => [
-                    'end_behavior' => [
-                        // 💡 TRÈS IMPORTANT : Dit à Stripe d'annuler l'abonnement
-                        // si le client n'a pas ajouté de carte au 30ème jour
-                        'missing_payment_method' => 'cancel',
-                    ],
-                ],
-            ]);
-
-            // 🛡️ On s'assure que Stripe a bien renvoyé un ID
-            Assert::stringNotEmpty($stripeSubscription->id, 'Stripe n\'a pas retourné d\'ID d\'abonnement valide.');
-
-            return $stripeSubscription->id;
-        } catch (ApiErrorException $e) {
-            // Gérer l'erreur proprement pour ne pas faire planter ton app
-            throw new \RuntimeException('Impossible d\'enregistrer le nouvel abo sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
         }
     }
 
@@ -158,40 +116,6 @@ readonly class StripeService
                 'cancel_at_period_end' => true,
                 'metadata' => ['cancel_reason' => $reason],
             ]);
-        } catch (ApiErrorException $e) {
-            // Gérer l'erreur proprement pour ne pas faire planter ton app
-            throw new \RuntimeException('Impossible de cancel l\'abonnement sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-    public function createProduct(int $priceInCents, bool $isRecurring, string $name, string $description, string $reference): string|Price|null
-    {
-        try {
-            Stripe::setApiKey($this->stripeSecretKey);
-            // 2. Préparation du prix pour Stripe
-            $stripePriceData = [
-                'currency' => 'eur',
-                'unit_amount' => $priceInCents,
-            ];
-
-            // 🚀 Si c'est un abonnement, on ajoute l'intervalle mensuel !
-            if ($isRecurring) {
-                $stripePriceData['recurring'] = [
-                    'interval' => 'month',
-                ];
-            }
-
-            $stripeProduct = Product::create([
-                'name' => $name,
-                'description' => $description,
-                'metadata' => [
-                    'internal_reference' => $reference,
-                ],
-                'default_price_data' => $stripePriceData,
-            ]);
-
-            // 4. On récupère le fameux ID généré par Stripe (ex: price_12345...)
-            return $stripeProduct->default_price;
         } catch (ApiErrorException $e) {
             // Gérer l'erreur proprement pour ne pas faire planter ton app
             throw new \RuntimeException('Impossible de cancel l\'abonnement sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);

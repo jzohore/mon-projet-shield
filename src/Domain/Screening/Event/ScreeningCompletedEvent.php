@@ -14,7 +14,6 @@ readonly class ScreeningCompletedEvent
         public Workspace $workspace,
         public User $user,
         public ScreeningAudit $screeningAudit,
-        public int $cost,
     ) {
     }
 }

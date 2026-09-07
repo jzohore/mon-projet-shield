@@ -14,7 +14,6 @@ final readonly class WorkspaceInfoResponse
         public string $type,
         public bool $isFirm,
         // 2. Les paramètres avec valeur par défaut ensuite
-        public int $balance,
         public bool $isActivated = true,
         public bool $isSiretValid = true,
         public int $foldersCount = 0,
@@ -52,7 +51,6 @@ final readonly class WorkspaceInfoResponse
         return new self(
             type: $workspace->type->value,
             isFirm: $workspace->isFirm(),
-            balance: $workspace->balance,
             isActivated: $workspace->isActive,
             isSiretValid: $workspace->isSiretValid,
             foldersCount: $workspace->folders->count(),

@@ -16,9 +16,6 @@ class ScreeningRequest
 
     public string $workspaceSlugId;
 
-    // Permet au UseCase d'être appelé par le module KYC sans double-facturer
-    public bool $chargeCredit = true;
-
     // Ajout de l'email pour le journal d'audit interne
     public string $userEmail;
 }

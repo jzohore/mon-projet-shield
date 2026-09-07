@@ -6,14 +6,11 @@ namespace App\Domain\Workspace\Entity;
 
 use App\Domain\AuditLog\Entity\AuditLog;
 use App\Domain\Billing\Entity\Subscription;
-use App\Domain\Billing\Enum\CreditAction;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Firm\Entity\RegulatoryProfile;
 use App\Domain\Screening\Entity\ScreeningAudit;
 use App\Domain\Support\Entity\SupportThread;
 use App\Domain\User\Entity\Client;
-use App\Domain\Wallet\Entity\WalletTransaction;
-use App\Domain\Wallet\Exception\InsufficientCreditsException;
 use App\Domain\Workspace\Enum\Industry;
 use App\Domain\Workspace\Enum\WorkspaceType;
 use App\Domain\Workspace\Exception\QuotaExhaustedException;
@@ -115,15 +112,6 @@ class Workspace
         get => $this->createdAt;
     }
 
-    #[ORM\Column(type: Types::INTEGER, nullable: true)]
-    public private(set) int $balance = 2;
-
-    /**
-     * @var array<int|string, mixed>|null
-     */
-    #[ORM\Column(type: Types::JSON, nullable: true)]
-    public private(set) ?array $transactions = null;
-
     #[ORM\Column(type: Types::BOOLEAN, nullable: true, options: ['default' => false])]
     public private(set) bool $isActive = false;
 
@@ -144,12 +132,6 @@ class Workspace
 
     #[ORM\Column(type: Types::STRING, length: 64, unique: true, nullable: true)]
     public private(set) string $publicToken;
-
-    /**
-     * @var Collection<int, WalletTransaction>
-     */
-    #[ORM\OneToMany(targetEntity: WalletTransaction::class, mappedBy: 'workspace', cascade: ['persist', 'remove'], orphanRemoval: true)]
-    public private(set) Collection $walletTransactions;
 
     #[ORM\OneToOne(targetEntity: Subscription::class, mappedBy: 'workspace', cascade: ['persist', 'remove'], orphanRemoval: true)]
     public private(set) ?Subscription $subscription = null;
@@ -207,7 +189,6 @@ class Workspace
 
         $this->members = new ArrayCollection();
         $this->invitations = new ArrayCollection();
-        $this->walletTransactions = new ArrayCollection();
         $this->supportThread = new ArrayCollection();
         $this->folders = new ArrayCollection();
         $this->auditLogs = new ArrayCollection();
@@ -238,57 +219,6 @@ class Workspace
         if (!$this->members->contains($member)) {
             $this->members->add($member);
         }
-    }
-
-    public function debit(CreditAction $action, string $type): void
-    {
-        $cost = $action->getAmount();
-
-        // Si l'action est gratuite, on ne fait rien
-        if (0 === $cost) {
-            return;
-        }
-
-        if ($action->getAmount() <= 0) {
-            throw new \DomainException('Le montant à débiter doit être strictement positif.');
-        }
-
-        if ($this->balance < $cost) {
-            throw new InsufficientCreditsException();
-        }
-
-        $this->balance -= $cost;
-
-        $this->walletTransactions->add(
-            new WalletTransaction(
-                workspace: $this,
-                amount: $cost,
-                type: $type,
-                action: 'debit'
-            )
-        );
-    }
-
-    public function credit(int $amount, string $type, ?string $invoiceUrl = null): WalletTransaction
-    {
-        if ($amount <= 0) {
-            throw new \DomainException('Le montant à créditer doit être strictement positif.');
-        }
-
-        $this->balance += $amount;
-        $transaction = new WalletTransaction(
-            workspace: $this,
-            amount: $amount,
-            type: $type,
-            action: 'credit',
-            invoiceUrl: $invoiceUrl
-        );
-
-        // 2. On l'ajoute à la collection
-        $this->walletTransactions->add($transaction);
-
-        // 3. On retourne l'objet créé
-        return $transaction;
     }
 
     public function addWorkspaceType(WorkspaceType $type): void
@@ -429,6 +359,9 @@ class Workspace
             && !in_array($this->siren, [null, '', '0'], true);
     }
 
+    /**
+     * Bonus « double authentification activée » : +1 dossier d'essai, une seule fois.
+     */
     public function claimTwoFactorBonus(): void
     {
         if ($this->hasClaimed2faBonus) {
@@ -436,7 +369,7 @@ class Workspace
         }
 
         $this->hasClaimed2faBonus = true;
-        ++$this->balance;
+        ++$this->trialDossiersRemaining;
     }
 
     public function getWorkspaceRemainingMinutes(): int

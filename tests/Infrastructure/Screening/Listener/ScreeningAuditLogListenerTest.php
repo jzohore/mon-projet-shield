@@ -46,7 +46,7 @@ final class ScreeningAuditLogListenerTest extends TestCase
             'totalMatches' => 3,
         ]);
 
-        return new ScreeningCompletedEvent($workspace, $user, $audit, 5);
+        return new ScreeningCompletedEvent($workspace, $user, $audit);
     }
 
     public function testWritesAScreeningPerformedAuditLogWithTheMatchCount(): void
@@ -59,8 +59,7 @@ final class ScreeningAuditLogListenerTest extends TestCase
                 && 'marie@cabinet.test' === $log->payload['actor_email']
                 && 'Jean Dupont' === $log->payload['query_searched']
                 && 'scr_aud_1' === $log->payload['audit_slug_id']
-                && 3 === $log->payload['total_matches']
-                && 5 === $log->payload['credits_cost']));
+                && 3 === $log->payload['total_matches']));
 
         ($this->listener)($this->event());
     }
@@ -82,6 +81,6 @@ final class ScreeningAuditLogListenerTest extends TestCase
 
         // Le getter d'ID lève tant que l'entité n'a pas été persistée.
         $this->expectException(\LogicException::class);
-        ($this->listener)(new ScreeningCompletedEvent($workspace, $user, $audit, 0));
+        ($this->listener)(new ScreeningCompletedEvent($workspace, $user, $audit));
     }
 }

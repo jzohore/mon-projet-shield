@@ -35,7 +35,6 @@ readonly class ScreeningAuditLogListener
                 'query_searched' => $event->screeningAudit->query,
                 'audit_slug_id' => $event->screeningAudit->slugId,
                 'total_matches' => $event->screeningAudit->totalMatches,
-                'credits_cost' => $event->cost,
             ],
             workspace: $event->workspace
         );

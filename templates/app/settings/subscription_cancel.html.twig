@@ -9,7 +9,8 @@
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
                 <h1 class="text-2xl font-bold text-slate-900">Nous sommes désolés de vous voir partir</h1>
                 <p class="mt-4 text-slate-600">
-                    En résiliant votre abonnement <strong>{{ product.name }}</strong>, vous perdrez l'accès à vos outils de monitoring automatique le
+                    En résiliant votre abonnement <strong>{{ subInfo.planReference == 'cabinet' ? 'Cabinet' : 'Indépendant' }}</strong>,
+                    vous conserverez l'accès jusqu'au
                     <span class="font-semibold text-slate-900">{{ subInfo.currentPeriodEnd|date('d/m/Y') }}</span>.
                 </p>
 

@@ -70,7 +70,6 @@ class ScreeningSearchComponent
         Assert::notNull($workspace->slugId);
 
         $dto->workspaceSlugId = $workspace->slugId;
-        $dto->chargeCredit = true;
         $dto->userEmail = $this->userEmail;
 
         $this->isSearching = true;
