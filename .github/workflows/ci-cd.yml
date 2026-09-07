@@ -29,10 +29,19 @@ jobs:
             # 🛡️ Scan de secrets : clés API, tokens, mots de passe committés par
             # erreur. Placé en tout premier car quasi instantané et le plus
             # critique à attraper avant tout le reste.
+            # NOTE : gitleaks-action@v2 tourne encore sur Node 20 (déprécié par
+            # GitHub). Non bloquant. Fix définitif = lancer le binaire officiel
+            # dans un step `run:` (voir plus bas, commenté) dès que l'upstream
+            # ne publie pas de version Node 24.
             -   name: Scan for leaked secrets (gitleaks)
                 uses: gitleaks/gitleaks-action@v2
                 env:
                     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            # -   name: Scan for leaked secrets (gitleaks, binaire épinglé)
+            #     run: |
+            #         docker run --rm -v "${{ github.workspace }}:/repo" \
+            #           ghcr.io/gitleaks/gitleaks:v8.24.3 \
+            #           git /repo --redact -v --exit-code 1
 
             -   name: Setup PHP 8.4
                 uses: shivammathur/setup-php@v2
@@ -49,7 +58,7 @@ jobs:
                 run: echo "dir=$(composer config cache-files-dir)" >> "$GITHUB_OUTPUT"
 
             -   name: Cache Dependencies
-                uses: actions/cache@v4
+                uses: actions/cache@v4.2.4   # v4.2.x = runtime Node 24 (fin de la dépréciation Node 20)
                 with:
                     path: ${{ steps.composer-cache.outputs.dir }}
                     key: ${{ runner.os }}-composer-php84-${{ hashFiles('**/composer.lock') }}
@@ -72,7 +81,7 @@ jobs:
 
         steps:
             -   name: Checkout Code
-                uses: actions/checkout@v4
+                uses: actions/checkout@v7   # aligné sur les autres jobs (Node 24)
 
             -   name: Lint Dockerfile (hadolint)
                 uses: hadolint/hadolint-action@v3.1.0

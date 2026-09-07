@@ -9,6 +9,11 @@ WORKDIR /app
 VOLUME /app/var/
 
 # persistent / runtime deps
+# hadolint ignore=DL3008
+# ↑ Pas de pin de version apt : l'image de base est figée
+# (dunglas/frankenphp:1-php8.4-bookworm → snapshot Debian bookworm stable).
+# Pinner chaque paquet au point-release casserait le build à chaque màj
+# mineure de Debian, pour un gain sécurité nul (Trivy scanne déjà l'image).
 RUN set -eux; \
     apt-get update; \
     apt-get install -y --no-install-recommends \
