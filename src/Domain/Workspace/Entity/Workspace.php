@@ -186,6 +186,14 @@ class Workspace
     #[ORM\Column(type: Types::INTEGER, options: ['default' => 0])]
     public private(set) int $meetingSecondsConsumed = 0;
 
+    /**
+     * Dossiers de conformité restants pendant l'essai gratuit. Ignoré dès qu'un
+     * abonnement est actif (dossiers illimités en fair-use). Rechargé par un
+     * administrateur KYSURE le cas échéant.
+     */
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 5])]
+    public private(set) int $trialDossiersRemaining = 5;
+
     private function __construct(string $name, string $legalName, string $address, #[ORM\Column(type: Types::STRING, length: 14, nullable: true)]
         public private(set) string $etatAdministratif, Industry $industry, #[ORM\Column(type: Types::STRING, length: 180, unique: true, nullable: true)]
         public private(set) string $email)
@@ -468,5 +476,65 @@ class Workspace
         }
 
         $this->meetingMinutesAllocated = $minutes;
+    }
+
+    // =========================================================================
+    // Quota & abonnement (modèle : abonnement au siège + dossiers illimités +
+    // minutes métrées seules)
+    // =========================================================================
+
+    public function hasActiveSubscription(): bool
+    {
+        return $this->subscription instanceof Subscription && $this->subscription->status->isActive();
+    }
+
+    /** Minutes d'entretien restantes (allouées − consommées, plancher à 0). */
+    public function remainingMeetingMinutes(): int
+    {
+        return max(0, $this->meetingMinutesAllocated - intdiv($this->meetingSecondsConsumed, 60));
+    }
+
+    /** Peut-on encore ouvrir un dossier de conformité ? */
+    public function canOpenComplianceFolder(): bool
+    {
+        return $this->hasActiveSubscription() || $this->trialDossiersRemaining > 0;
+    }
+
+    /**
+     * Consomme un dossier de l'essai. No-op si abonnement actif (illimité).
+     *
+     * @throws \DomainException si l'essai est épuisé et sans abonnement
+     */
+    public function consumeTrialComplianceFolder(): void
+    {
+        if ($this->hasActiveSubscription()) {
+            return;
+        }
+
+        if ($this->trialDossiersRemaining <= 0) {
+            throw new \DomainException('Votre essai gratuit est épuisé. Choisissez une offre pour continuer.');
+        }
+
+        --$this->trialDossiersRemaining;
+    }
+
+    /** Recharge de dossiers d'essai (grant administrateur). */
+    public function grantTrialComplianceFolders(int $count): void
+    {
+        if ($count <= 0) {
+            throw new \DomainException('Le nombre de dossiers à créditer doit être strictement positif.');
+        }
+
+        $this->trialDossiersRemaining += $count;
+    }
+
+    /** Recharge additive de minutes d'entretien (grant admin ou pack acheté). */
+    public function grantMeetingMinutes(int $minutes): void
+    {
+        if ($minutes <= 0) {
+            throw new \DomainException('Le nombre de minutes à créditer doit être strictement positif.');
+        }
+
+        $this->meetingMinutesAllocated += $minutes;
     }
 }

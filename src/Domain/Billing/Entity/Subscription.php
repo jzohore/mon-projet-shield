@@ -54,6 +54,16 @@ class Subscription
     #[ORM\Column(type: Types::STRING, nullable: true)]
     public private(set) ?string $reason = null;
 
+    /** Nombre de sièges facturés (quantity côté Stripe). */
+    #[ORM\Column(type: Types::INTEGER, options: ['default' => 1])]
+    public private(set) int $seatsCount = 1;
+
+    public function updateSeats(int $seatsCount): void
+    {
+        $this->seatsCount = max(1, $seatsCount);
+        $this->updateAt = now();
+    }
+
     /**
      * 1. On passe le constructeur en PRIVATE.
      * Seule la classe elle-même a le droit de s'instancier.

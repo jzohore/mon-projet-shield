@@ -27,6 +27,7 @@ enum AuditEventType: string
     case WORKSPACE_SUSPENDED = 'workspace.suspended';
     case WORKSPACE_MEMBER_ADDED = 'workspace.member_added';
     case WORKSPACE_MEMBER_REVOKED = 'workspace.member_revoked';
+    case WORKSPACE_QUOTA_GRANTED = 'workspace.quota_granted';
     case ONBOARDING_COMPLETED = 'workspace.onboarding_completed';
 
     // --- REGISTRATIONS & VÉRIFICATIONS LÉGALES ---
@@ -115,6 +116,7 @@ enum AuditEventType: string
             self::WORKSPACE_SUSPENDED => 'Suspension du cabinet',
             self::WORKSPACE_MEMBER_ADDED => 'Ajout d\'un collaborateur',
             self::WORKSPACE_MEMBER_REVOKED => 'Révocation d\'un collaborateur',
+            self::WORKSPACE_QUOTA_GRANTED => 'Recharge de quota (dossiers / minutes)',
             self::ONBOARDING_COMPLETED => 'Configuration initiale terminée',
 
             // Vérifications Légales
@@ -199,6 +201,7 @@ enum AuditEventType: string
             self::WORKSPACE_SUSPENDED,
             self::WORKSPACE_MEMBER_ADDED,
             self::WORKSPACE_MEMBER_REVOKED,
+            self::WORKSPACE_QUOTA_GRANTED,
             self::ONBOARDING_COMPLETED => 'Cabinet',
 
             self::SIRET_CHECK_SUCCESS,

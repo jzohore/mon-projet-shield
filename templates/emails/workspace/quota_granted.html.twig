@@ -1,0 +1,29 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block title %}Votre quota KYSURE a été rechargé{% endblock %}
+
+{% block content %}
+    <h1>Votre quota a été rechargé</h1>
+
+    <p>Bonjour,</p>
+
+    <p>
+        L'équipe KYSURE vient de créditer le cabinet <strong>{{ workspace_name }}</strong> :
+    </p>
+
+    <ul>
+        {% if dossiers_granted > 0 %}
+            <li><strong>+{{ dossiers_granted }}</strong> dossier(s) de conformité</li>
+        {% endif %}
+        {% if minutes_granted > 0 %}
+            <li><strong>+{{ minutes_granted }}</strong> minute(s) d'entretien</li>
+        {% endif %}
+    </ul>
+
+    <p style="font-size: 13px; color: #64748b; margin-top: 30px; padding: 15px; background-color: #f8fafc; border-radius: 6px; border-left: 4px solid #10b981;">
+        Solde actuel : <strong>{{ trial_dossiers_remaining }}</strong> dossier(s) restant(s)
+        &middot; <strong>{{ remaining_minutes }}</strong> minute(s) d'entretien.
+    </p>
+
+    <p>Bonne continuation,<br>L'équipe KYSURE</p>
+{% endblock %}
