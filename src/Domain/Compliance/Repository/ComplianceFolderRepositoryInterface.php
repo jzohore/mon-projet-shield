@@ -43,6 +43,16 @@ interface ComplianceFolderRepositoryInterface
     public function countDraftsForWorkspace(Workspace $workspace): int;
 
     /**
+     * Dossiers « en cours » : ni brouillon, ni supprimé, ni archivé, ni rejeté.
+     */
+    public function countActiveForWorkspace(Workspace $workspace): int;
+
+    /**
+     * Tous les dossiers non supprimés de l'espace (sert au « a déjà créé un dossier »).
+     */
+    public function countForWorkspace(Workspace $workspace): int;
+
+    /**
      * @return Pagerfanta<ComplianceFolder>
      */
     public function findAllByWorkspace(Workspace $workspace, ?string $search = null, ?ComplianceFolderStatus $status = null): Pagerfanta;

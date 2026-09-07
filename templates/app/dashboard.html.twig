@@ -1,234 +1,235 @@
-{# templates/dashboard/index.html.twig #}
 {% extends '@app/base_app.html.twig' %}
 
 {% block title %}{{ page_title }} - {{ company_name }}{% endblock %}
 
 {% block content %}
-    {% set is_cabinet = workspaceInfo().isFirm %}
+    {% set trial_unlimited = dashboard.hasActiveSubscription %}
 
-    {# HEADER : LES 3 ACTIONS CLÉS #}
-    <header class="flex flex-col lg:flex-row lg:items-end mb-8">
+    {# ═══════════════ EN-TÊTE ═══════════════ #}
+    <header class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between mb-8">
         <div>
             <h1 class="text-2xl font-semibold tracking-tight text-slate-900">
-                Espace <span class="text-indigo-600">{{ workspaceInfo().name | lower | capitalize }}</span>
+                Espace <span class="text-indigo-600">{{ dashboard.workspaceName|lower|capitalize }}</span>
             </h1>
             <p class="text-sm text-slate-500 mt-1">Gérez vos analyses de conformité et vos rapports d'adéquation.</p>
         </div>
+        <div class="shrink-0">
+            <twig:Button as="a" href="{{ path('app_compliance_new') }}" variant="dark" size="sm">
+                {{ ux_icon('lucide:plus', { class: 'size-4 mr-1.5' }) }}
+                Nouveau dossier
+            </twig:Button>
+        </div>
     </header>
 
-    {# SECTION KPIs (Style Linear/Stripe : Bordures douces, Ombres minimales, Tabular Nums) #}
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-        {# SOLDE #}
-        <div class="bg-white rounded-xl border border-slate-200/75 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+    {# ═══════════════ COMPTEURS ═══════════════ #}
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+
+        {# Dossiers d'essai / abonnement #}
+        <div class="bg-white rounded-xl border border-slate-200/75 {{ dashboard.trialLow ? 'border-l-4 border-l-amber-500' : '' }} p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
             <div class="flex justify-between items-start mb-3">
-                <h2 class="text-sm font-medium text-slate-500">Dossiers restants</h2>
-                <div class="p-1.5 bg-emerald-50 text-emerald-600 rounded-md">
-                    {{ ux_icon('lucide:wallet', { class: 'size-4' }) }}
+                <h2 class="text-sm font-medium text-slate-500">Dossiers de conformité</h2>
+                <div class="p-1.5 bg-emerald-50 text-emerald-600 rounded-md" aria-hidden="true">
+                    {{ ux_icon('lucide:folder-check', { class: 'size-4' }) }}
+                </div>
+            </div>
+            {% if trial_unlimited %}
+                <div class="flex items-baseline gap-2">
+                    <span class="text-2xl font-semibold tracking-tight text-slate-900">Illimité</span>
+                </div>
+                <p class="text-xs font-medium text-slate-400 mt-1">Abonnement actif</p>
+            {% else %}
+                <div class="flex items-baseline gap-2">
+                    <span class="text-3xl font-semibold tracking-tight text-slate-900 tabular-nums">{{ dashboard.trialDossiersRemaining }}</span>
+                    <span class="text-xs font-medium text-slate-400">restants (essai)</span>
+                </div>
+                {% if dashboard.trialLow %}
+                    <a href="{{ path('app_settings_billing') }}" class="text-xs font-medium text-amber-600 hover:text-amber-700 mt-1 inline-block">Choisir une offre →</a>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        {# Minutes d'entretien #}
+        <div class="bg-white rounded-xl border border-slate-200/75 {{ dashboard.minutesLow ? 'border-l-4 border-l-amber-500' : '' }} p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+            <div class="flex justify-between items-start mb-3">
+                <h2 class="text-sm font-medium text-slate-500">Minutes d'entretien</h2>
+                <div class="p-1.5 bg-indigo-50 text-indigo-600 rounded-md" aria-hidden="true">
+                    {{ ux_icon('lucide:mic', { class: 'size-4' }) }}
                 </div>
             </div>
             <div class="flex items-baseline gap-2">
-                <span class="text-3xl font-semibold tracking-tight text-slate-900 tabular-nums"><twig:HeaderCreditsCounter /></span>
+                <span class="text-3xl font-semibold tracking-tight text-slate-900 tabular-nums">{{ dashboard.remainingMeetingMinutes }}</span>
+                <span class="text-xs font-medium text-slate-400">/ {{ dashboard.meetingMinutesAllocated }} min</span>
+            </div>
+            {% if dashboard.minutesLow %}
+                <a href="{{ path('app_settings_billing') }}" class="text-xs font-medium text-amber-600 hover:text-amber-700 mt-1 inline-block">Recharger →</a>
+            {% endif %}
+        </div>
+
+        {# Dossiers actifs #}
+        <div class="bg-white rounded-xl border border-slate-200/75 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+            <div class="flex justify-between items-start mb-3">
+                <h2 class="text-sm font-medium text-slate-500">Dossiers actifs</h2>
+                <div class="p-1.5 bg-slate-50 text-slate-600 rounded-md" aria-hidden="true">
+                    {{ ux_icon('lucide:layers', { class: 'size-4' }) }}
+                </div>
+            </div>
+            <div class="flex items-baseline gap-2">
+                <span class="text-3xl font-semibold tracking-tight text-slate-900 tabular-nums">{{ dashboard.activeFoldersCount }}</span>
+                {% if dashboard.draftFoldersCount > 0 %}
+                    <span class="text-xs font-medium text-slate-400">+ {{ dashboard.draftFoldersCount }} brouillon{{ dashboard.draftFoldersCount > 1 ? 's' : '' }}</span>
+                {% endif %}
             </div>
         </div>
 
-        {# EN COURS #}
+        {# Clients suivis #}
         <div class="bg-white rounded-xl border border-slate-200/75 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
             <div class="flex justify-between items-start mb-3">
-                <h2 class="text-sm font-medium text-slate-500">Dossiers en cours</h2>
-                <div class="p-1.5 bg-indigo-50 text-indigo-600 rounded-md">
-                    {{ ux_icon('lucide:loader-2', { class: 'size-4 animate-spin-slow' }) }}
+                <h2 class="text-sm font-medium text-slate-500">Clients suivis</h2>
+                <div class="p-1.5 bg-slate-50 text-slate-600 rounded-md" aria-hidden="true">
+                    {{ ux_icon('lucide:users', { class: 'size-4' }) }}
                 </div>
             </div>
             <div class="flex items-baseline gap-2">
-                <span class="text-3xl font-semibold tracking-tight text-slate-900 tabular-nums">{{ stats_user.folderDraftWorkspaces|default(0) }}</span>
-                <span class="text-xs font-medium text-slate-400">KYC/KYB actifs</span>
-            </div>
-        </div>
-
-        {# ADVISORY #}
-        <div class="bg-white rounded-xl border border-slate-200/75 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-            <div class="flex justify-between items-start mb-3">
-                <h2 class="text-sm font-medium text-slate-500">Rapports Advisory</h2>
-                <div class="p-1.5 bg-slate-50 text-slate-600 rounded-md">
-                    {{ ux_icon('lucide:file-text', { class: 'size-4' }) }}
-                </div>
-            </div>
-            <div class="flex items-baseline gap-2">
-                <span class="text-3xl font-semibold tracking-tight text-slate-900 tabular-nums">12</span>
-                <span class="text-xs font-medium text-slate-400">Ce mois-ci</span>
-            </div>
-        </div>
-
-        {# ALERTES #}
-        <div class="bg-white rounded-xl border border-slate-200/75 p-5 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
-            <div class="flex justify-between items-start mb-3">
-                <h2 class="text-sm font-medium text-slate-500">Alertes Risques</h2>
-                <div class="p-1.5 bg-rose-50 text-rose-600 rounded-md">
-                    {{ ux_icon('lucide:shield-alert', { class: 'size-4' }) }}
-                </div>
-            </div>
-            <div class="flex items-baseline gap-2">
-                <span class="text-3xl font-semibold tracking-tight text-slate-900 tabular-nums">0</span>
-                <span class="text-xs font-medium text-slate-400">Sanctions / PEPs</span>
+                <span class="text-3xl font-semibold tracking-tight text-slate-900 tabular-nums">{{ dashboard.clientsCount }}</span>
             </div>
         </div>
     </div>
 
-    {# ACTIVITÉ RÉCENTE (Empty State B2B Premium) #}
+    {# ═══════════════ ACTIONS RAPIDES ═══════════════ #}
+    <section class="mb-10">
+        <h2 class="text-base font-semibold text-slate-900 mb-4">Actions rapides</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {% set quick_actions = [
+                { href: path('app_compliance_new'), icon: 'lucide:folder-plus', label: 'Nouveau dossier' },
+                { href: path('app_clients_new'), icon: 'lucide:user-plus', label: 'Nouveau client' },
+                { href: path('app_compliance_list'), icon: 'lucide:folders', label: 'Mes dossiers' },
+                { href: path('app_clients_list'), icon: 'lucide:contact', label: 'Mes clients' },
+            ] %}
+            {% for action in quick_actions %}
+                <a href="{{ action.href }}"
+                   class="group flex flex-col items-start gap-2 rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-indigo-300 hover:bg-indigo-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900">
+                    <span class="rounded-lg bg-slate-100 p-2 text-slate-600 transition-colors group-hover:bg-white group-hover:text-indigo-600" aria-hidden="true">
+                        {{ ux_icon(action.icon, { class: 'size-4' }) }}
+                    </span>
+                    <span class="text-sm font-medium text-slate-700 group-hover:text-indigo-700">{{ action.label }}</span>
+                </a>
+            {% endfor %}
+            {% if dashboard.isFirm %}
+                <a href="{{ path('app_employees_invitation') }}"
+                   class="group flex flex-col items-start gap-2 rounded-xl border border-slate-200 bg-white p-4 transition-colors hover:border-indigo-300 hover:bg-indigo-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900">
+                    <span class="rounded-lg bg-slate-100 p-2 text-slate-600 transition-colors group-hover:bg-white group-hover:text-indigo-600" aria-hidden="true">
+                        {{ ux_icon('lucide:user-round-plus', { class: 'size-4' }) }}
+                    </span>
+                    <span class="text-sm font-medium text-slate-700 group-hover:text-indigo-700">Inviter un collaborateur</span>
+                </a>
+            {% endif %}
+        </div>
+    </section>
+
+    {# ═══════════════ ACTIVITÉ RÉCENTE ═══════════════ #}
     <section>
         <div class="flex items-center justify-between mb-4">
             <h2 class="text-base font-semibold text-slate-900">Activité récente</h2>
-            <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">Voir tout</a>
+            <a href="{{ path('app_settings_logs') }}" class="text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors">Voir tout le journal</a>
         </div>
-
-        <div class="rounded-xl border border-dashed border-slate-300 bg-slate-50/50 overflow-hidden">
-            <div class="py-12 px-6 text-center">
-                <div class="size-12 rounded-xl bg-white shadow-sm border border-slate-200 flex items-center justify-center mb-4 mx-auto">
-                    {{ ux_icon('lucide:fingerprint', { class: 'size-6 text-slate-400' }) }}
-                </div>
-                <h4 class="text-sm font-semibold text-slate-900">Prêt à sécuriser vos relations ?</h4>
-                <p class="text-sm text-slate-500 mt-1 max-w-sm mx-auto">
-                    Lancez un premier module pour générer vos fiches de synthèse ou vos rapports d'adéquation.
-                </p>
-            </div>
+        <div class="rounded-xl border border-slate-200 bg-white p-4 sm:p-6">
+            <twig:AuditLogListByWorkspaceComponent />
         </div>
     </section>
-    
 
-    {# ========================================================= #}
-    {# WIDGET ONBOARDING (Stimulus)                              #}
-    {# ========================================================= #}
+    {# ═══════════════ WIDGET ONBOARDING ═══════════════ #}
+    {% if not app.user.profile.dismissOnboarding and not dashboard.isOnboardingComplete %}
+        {% set steps_done = dashboard.onboardingDoneSteps %}
+        {% set steps_total = dashboard.onboardingTotalSteps %}
+        {% set progress_pct = (steps_done / steps_total * 100)|round %}
 
-    {% if not app.user.profile.dismissOnboarding %}
         <div data-controller="onboarding"
              data-onboarding-target="widget"
              data-onboarding-dismiss-url-value="{{ path('app_user_dismiss_onboarding') }}"
-             class="fixed bottom-6 right-8 lg:right-14 w-[340px] bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.08)] border border-slate-200 z-50 flex flex-col transition-all duration-500 ease-in-out">
+             class="fixed bottom-6 right-6 lg:right-12 w-[340px] bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-200 z-40 flex flex-col transition-all duration-500 ease-in-out">
 
-            {# HEADER #}
-            <div data-action="click->onboarding#toggle" class="px-4 py-3 border-b border-slate-100 flex justify-between items-center cursor-pointer select-none hover:bg-slate-50 transition-colors rounded-t-xl">
-                <h3 class="text-sm font-semibold text-slate-900">
-                    Configuration du compte
-                </h3>
-                <div class="flex items-center gap-1">
-                    <button type="button" class="p-1 text-slate-400 hover:text-slate-700 rounded transition-colors">
-                        {{ ux_icon('lucide:chevron-down', { class: 'size-4' }) }}
-                    </button>
-                    <button type="button" data-action="click->onboarding#dismiss" class="p-1 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded transition-colors">
-                        {{ ux_icon('lucide:x', { class: 'size-4' }) }}
-                    </button>
-                </div>
+            {# EN-TÊTE #}
+            <div class="flex items-stretch border-b border-slate-100">
+                <button type="button"
+                        data-action="onboarding#toggle"
+                        data-onboarding-target="header"
+                        aria-expanded="true"
+                        aria-controls="onboarding-steps"
+                        class="flex-1 min-w-0 px-4 py-3 flex justify-between items-center gap-2 cursor-pointer select-none hover:bg-slate-50 transition-colors rounded-tl-xl text-left">
+                    <span class="flex flex-col gap-1 min-w-0">
+                        <span class="text-sm font-semibold text-slate-900 truncate">Configuration du compte</span>
+                        <span class="text-xs text-slate-500 tabular-nums">{{ steps_done }} / {{ steps_total }} étapes terminées</span>
+                    </span>
+                    <span class="p-1 text-slate-400 shrink-0" aria-hidden="true" data-onboarding-target="chevron">
+                        {{ ux_icon('lucide:chevron-down', { class: 'size-4 transition-transform' }) }}
+                    </span>
+                </button>
+                <button type="button"
+                        data-action="onboarding#dismiss"
+                        aria-label="Ne plus afficher cette check-list"
+                        class="px-3 text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors rounded-tr-xl">
+                    {{ ux_icon('lucide:x', { class: 'size-4' }) }}
+                </button>
             </div>
 
-            {# Calcul des états d'onboarding #}
-            {% set is_org_completed = workspaceInfo().isOrgCompleted %}
-            {% set is_profile_completed = workspaceInfo().isRegProfilValid %}
-            {% set is_2fa_enabled = app.user.googleAuthenticatorEnabled %}
-            {% set has_first_kyc = workspaceInfo().foldersCount > 0 %}
-            {% set has_subscription = workspaceInfo().hasActiveSubscription|default(false) %}
+            {# BARRE DE PROGRESSION #}
+            <div class="h-1 w-full bg-slate-100" aria-hidden="true">
+                <div class="h-1 bg-emerald-500 transition-all duration-500" style="width: {{ progress_pct }}%;"></div>
+            </div>
 
-            <div data-onboarding-target="content" class="overflow-hidden transition-all duration-300 max-h-[500px]">
-                <div class="p-2 space-y-0.5">
+            {% set is_org = dashboard.isOrgCompleted %}
+            {% set is_profile = dashboard.isRegProfileValid %}
+            {% set is_2fa = dashboard.is2faEnabled %}
+            {% set has_folder = dashboard.hasFirstFolder %}
+            {% set is_team = dashboard.isTeamStepDone %}
 
-                    {# ÉTAPE 1 : COMPTE VÉRIFIÉ #}
-                    <div class="flex items-center gap-3 p-2.5 rounded-lg opacity-50">
-                        <div class="size-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                            {{ ux_icon('lucide:check', { class: 'size-2.5 text-emerald-600' }) }}
-                        </div>
-                        <span class="text-sm font-medium text-slate-500 line-through decoration-slate-300">Compte vérifié</span>
-                    </div>
+            <div id="onboarding-steps" data-onboarding-target="content" class="overflow-hidden transition-all duration-300 max-h-[520px]">
+                <ul class="p-2 space-y-0.5">
 
-                    {# ÉTAPE 2 : ORGANISATION #}
-                    <div class="flex items-start gap-3 p-2.5 rounded-lg {{ is_org_completed ? 'opacity-50' : 'hover:bg-slate-50 transition-colors group' }}">
-                        <div class="mt-0.5 size-4 rounded-full flex items-center justify-center shrink-0 {{ is_org_completed ? 'bg-emerald-100' : 'border-[1.5px] border-indigo-500' }}">
-                            {% if is_org_completed %}
-                                {{ ux_icon('lucide:check', { class: 'size-2.5 text-emerald-600' }) }}
-                            {% endif %}
-                        </div>
-                        <div class="flex-1">
-                            {% if not is_org_completed %}
-                                <a href="{{ path('app_settings_organization') }}" class="block outline-none">
-                                    <p class="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Renseigner votre organisation</p>
-                                </a>
-                            {% else %}
-                                <p class="text-sm font-medium text-slate-500 line-through decoration-slate-300">Organisation identifiée</p>
-                            {% endif %}
-                        </div>
-                    </div>
+                    {# 1. COMPTE #}
+                    {{ _self.step(true, 'Compte vérifié', 'Compte vérifié', null) }}
 
-                    {# ÉTAPE 3 : PROFIL RÉGLEMENTAIRE #}
-                    <div class="flex items-start gap-3 p-2.5 rounded-lg {{ is_profile_completed ? 'opacity-50' : 'hover:bg-slate-50 transition-colors group' }}">
-                        <div class="mt-0.5 size-4 rounded-full flex items-center justify-center shrink-0 {{ is_profile_completed ? 'bg-emerald-100' : 'border-[1.5px] border-slate-300 group-hover:border-indigo-500 transition-colors' }}">
-                            {% if is_profile_completed %}
-                                {{ ux_icon('lucide:check', { class: 'size-2.5 text-emerald-600' }) }}
-                            {% endif %}
-                        </div>
-                        <div class="flex-1">
-                            {% if not is_profile_completed %}
-                                <a href="{{ path('app_settings_regulatory_profile') }}" class="block outline-none">
-                                    <p class="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Profil réglementaire</p>
-                                </a>
-                            {% else %}
-                                <p class="text-sm font-medium text-slate-500 line-through decoration-slate-300">Profil réglementaire renseigné</p>
-                            {% endif %}
-                        </div>
-                    </div>
+                    {# 2. ORGANISATION #}
+                    {{ _self.step(is_org, 'Renseigner votre organisation', 'Organisation identifiée', path('app_settings_organization')) }}
 
-                    {# ÉTAPE 4 : SÉCURITÉ (2FA) #}
-                    <div class="flex items-start gap-3 p-2.5 rounded-lg {{ is_2fa_enabled ? 'opacity-50' : 'hover:bg-slate-50 transition-colors group' }}">
-                        <div class="mt-0.5 size-4 rounded-full flex items-center justify-center shrink-0 {{ is_2fa_enabled ? 'bg-emerald-100' : 'border-[1.5px] border-slate-300 group-hover:border-indigo-500 transition-colors' }}">
-                            {% if is_2fa_enabled %}
-                                {{ ux_icon('lucide:check', { class: 'size-2.5 text-emerald-600' }) }}
-                            {% endif %}
-                        </div>
-                        <div class="flex-1">
-                            {% if not is_2fa_enabled %}
-                                <a href="{{ path('app_settings_account') }}" class="block outline-none">
-                                    <p class="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Activer la double auth.</p>
-                                    <p class="text-xs text-emerald-600 font-medium mt-0.5">+1 dossier offert</p>
-                                </a>
-                            {% else %}
-                                <p class="text-sm font-medium text-slate-500 line-through decoration-slate-300">Double auth activée</p>
-                            {% endif %}
-                        </div>
-                    </div>
+                    {# 3. PROFIL RÉGLEMENTAIRE #}
+                    {{ _self.step(is_profile, 'Compléter le profil réglementaire', 'Profil réglementaire renseigné', path('app_settings_regulatory_profile')) }}
 
-                    {# ÉTAPE 5 : LANCER UN PREMIER KYC #}
-                    <div class="flex items-start gap-3 p-2.5 rounded-lg {{ has_first_kyc ? 'opacity-50' : 'hover:bg-slate-50 transition-colors group' }}">
-                        <div class="mt-0.5 size-4 rounded-full flex items-center justify-center shrink-0 {{ has_first_kyc ? 'bg-emerald-100' : 'border-[1.5px] border-slate-300 group-hover:border-indigo-500 transition-colors' }}">
-                            {% if has_first_kyc %}
-                                {{ ux_icon('lucide:check', { class: 'size-2.5 text-emerald-600' }) }}
-                            {% endif %}
-                        </div>
-                        <div class="flex-1">
-                            {% if not has_first_kyc %}
-                                <a href="{{ path('app_compliance_new') }}" class="block outline-none">
-                                    <p class="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Lancer un premier KYC</p>
-                                </a>
-                            {% else %}
-                                <p class="text-sm font-medium text-slate-500 line-through decoration-slate-300">Module KYC testé</p>
-                            {% endif %}
-                        </div>
-                    </div>
+                    {# 4. 2FA #}
+                    {{ _self.step(is_2fa, 'Activer la double authentification', 'Double authentification activée', path('app_settings_account'), '+1 dossier offert') }}
 
-                    {# ÉTAPE 6 : COLLABORATEURS / ABONNEMENT #}
-                    <div class="flex items-start gap-3 p-2.5 rounded-lg hover:bg-slate-50 transition-colors group">
-                        <div class="mt-0.5 size-4 rounded-full border-[1.5px] border-slate-300 group-hover:border-indigo-500 transition-colors flex items-center justify-center shrink-0"></div>
-                        <div class="flex-1">
-                            {% if is_cabinet and not has_subscription %}
-                                <a href="{{ path('app_settings_billing') }}" class="block outline-none">
-                                    <p class="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Passer à l'accès illimité</p>
-                                </a>
-                            {% else %}
-                                <a href="{{ path('app_employees_invitation') }}" class="block outline-none">
-                                    <p class="text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">Inviter des collaborateurs</p>
-                                </a>
-                            {% endif %}
-                        </div>
-                    </div>
+                    {# 5. PREMIER DOSSIER #}
+                    {{ _self.step(has_folder, 'Créer un premier dossier', 'Premier dossier créé', path('app_compliance_new')) }}
 
-                </div>
+                    {# 6. ÉQUIPE / ABONNEMENT (cabinet uniquement) #}
+                    {% if dashboard.isFirm %}
+                        {% if dashboard.hasActiveSubscription %}
+                            {{ _self.step(true, '', 'Accès illimité activé', null) }}
+                        {% else %}
+                            {{ _self.step(is_team, 'Inviter un collaborateur', 'Collaborateur invité', path('app_employees_invitation')) }}
+                        {% endif %}
+                    {% endif %}
+                </ul>
             </div>
         </div>
     {% endif %}
 {% endblock %}
+
+{# ─────────── Macro : une ligne de la check-list ─────────── #}
+{% macro step(done, todo_label, done_label, href, hint = null) %}
+    <li class="flex items-start gap-3 p-2.5 rounded-lg {{ done ? 'opacity-60' : 'hover:bg-slate-50 transition-colors group' }}">
+        <span class="mt-0.5 size-4 rounded-full flex items-center justify-center shrink-0 {{ done ? 'bg-emerald-100' : 'border-[1.5px] border-indigo-500' }}" aria-hidden="true">
+            {% if done %}{{ ux_icon('lucide:check', { class: 'size-2.5 text-emerald-600' }) }}{% endif %}
+        </span>
+        <span class="flex-1 min-w-0">
+            {% if done %}
+                <span class="text-sm font-medium text-slate-500 line-through decoration-slate-300">{{ done_label }}</span>
+            {% else %}
+                <a href="{{ href }}" class="block outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded">
+                    <span class="block text-sm font-medium text-slate-700 group-hover:text-indigo-600 transition-colors">{{ todo_label }}</span>
+                    {% if hint %}<span class="block text-xs text-emerald-600 font-medium mt-0.5">{{ hint }}</span>{% endif %}
+                </a>
+            {% endif %}
+        </span>
+    </li>
+{% endmacro %}

@@ -31,7 +31,7 @@ final class DashboardController extends AbstractController
     {
         return $this->render('@app/dashboard.html.twig', [
             'page_title' => 'Votre tableau de bord',
-            'stats_user' => ($this->getUserDashboardStatsUseCase)(),
+            'dashboard' => ($this->getUserDashboardStatsUseCase)(),
         ]);
     }
 }

@@ -125,6 +125,35 @@ class ComplianceFolderRepository implements ComplianceFolderRepositoryInterface
             ->getSingleScalarResult();
     }
 
+    public function countActiveForWorkspace(Workspace $workspace): int
+    {
+        return (int) $this->repository->createQueryBuilder('cf')
+            ->select('COUNT(cf.id)')
+            ->where('cf.workspace = :workspace')
+            ->andWhere('cf.status NOT IN (:excluded)')
+            ->setParameter('workspace', $workspace)
+            ->setParameter('excluded', [
+                ComplianceFolderStatus::DRAFT,
+                ComplianceFolderStatus::DELETED,
+                ComplianceFolderStatus::ARCHIVED,
+                ComplianceFolderStatus::REJECTED,
+            ])
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    public function countForWorkspace(Workspace $workspace): int
+    {
+        return (int) $this->repository->createQueryBuilder('cf')
+            ->select('COUNT(cf.id)')
+            ->where('cf.workspace = :workspace')
+            ->andWhere('cf.status != :deletedStatus')
+            ->setParameter('workspace', $workspace)
+            ->setParameter('deletedStatus', ComplianceFolderStatus::DELETED)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     public function findOneLastDraftIndividuals(string $method, Workspace $workspace): ?ComplianceFolder
     {
         return $this->repository->createQueryBuilder('cf')

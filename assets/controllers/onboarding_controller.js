@@ -1,100 +1,67 @@
 import { Controller } from '@hotwired/stimulus';
 
 /*
- * Gère le widget de démarrage (rétractation + masquage définitif via AJAX)
+ * Widget de configuration du compte (check-list d'onboarding).
+ * - repli / dépli mémorisé dans le navigateur (localStorage) ;
+ * - fermeture définitive persistée côté serveur (AJAX).
  */
 export default class extends Controller {
-    // J'ai gardé progressText au cas où tu l'ajoutes plus tard, mais rendu son appel sécurisé
-    static targets = ['widget', 'content', 'progressText'];
-
-    static values = {
-        dismissUrl: String
-    };
+    static targets = ['widget', 'content', 'header', 'chevron'];
+    static values = { dismissUrl: String };
 
     connect() {
-        // 1. Au chargement, on lit l'état sauvegardé dans le navigateur
-        this.isCollapsed = localStorage.getItem('onboarding_collapsed') === 'true';
-
-        // 2. On applique l'état (le paramètre 'false' désactive l'animation au chargement initial)
-        this.applyState(false);
+        this.collapsed = localStorage.getItem('onboarding_collapsed') === 'true';
+        this.#apply(false);
     }
 
     toggle(event) {
-        if (event && event.target.closest('[data-action="click->onboarding#dismiss"]')) return;
-        if (event && event.target.tagName === 'A') return;
+        // On ne replie pas si le clic vient du bouton "fermer".
+        if (event && event.target.closest('[data-action*="onboarding#dismiss"]')) return;
 
-        // 3. On inverse l'état
-        this.isCollapsed = !this.isCollapsed;
-
-        // 4. On sauvegarde le nouvel état dans le navigateur
-        localStorage.setItem('onboarding_collapsed', this.isCollapsed);
-
-        // 5. On applique visuellement avec animation
-        this.applyState(true);
-    }
-
-    applyState(animate = true) {
-        // Si on ne veut pas d'animation (au chargement), on coupe temporairement les transitions CSS
-        if (!animate) {
-            this.contentTarget.style.transition = 'none';
-            this.widgetTarget.style.transition = 'none';
-        }
-
-        if (this.isCollapsed) {
-            // Rétracter
-            this.contentTarget.style.maxHeight = '0px';
-            if (this.hasProgressTextTarget) this.progressTextTargetTarget.classList.remove('hidden');
-            this.widgetTarget.classList.add('w-64');
-            this.widgetTarget.classList.remove('w-85'); // J'ai corrigé w-80 en w-85 pour matcher ton HTML
-        } else {
-            // Agrandir
-            this.contentTarget.style.maxHeight = '450px';
-            if (this.hasProgressTextTarget) this.progressTextTargetTarget.classList.add('hidden');
-            this.widgetTarget.classList.remove('w-64');
-            this.widgetTarget.classList.add('w-85');
-        }
-
-        // On remet les transitions après un très court délai
-        if (!animate) {
-            setTimeout(() => {
-                this.contentTarget.style.transition = '';
-                this.widgetTarget.style.transition = '';
-            }, 50);
-        }
+        this.collapsed = !this.collapsed;
+        localStorage.setItem('onboarding_collapsed', this.collapsed);
+        this.#apply(true);
     }
 
     async dismiss(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        // Optionnel : on nettoie le localStorage vu que le widget est définitivement fermé
         localStorage.removeItem('onboarding_collapsed');
-
-        // Animation visuelle immédiate
         this.widgetTarget.style.opacity = '0';
         this.widgetTarget.style.transform = 'translateY(20px)';
+        setTimeout(() => this.widgetTarget.remove(), 300);
 
-        setTimeout(() => {
-            this.widgetTarget.remove();
-        }, 300);
+        if (!this.hasDismissUrlValue) return;
+        try {
+            await fetch(this.dismissUrlValue, {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            });
+        } catch (e) {
+            // Fermeture visuelle déjà faite : on ignore l'échec réseau.
+        }
+    }
 
-        // Requête AJAX
-        if (this.hasDismissUrlValue) {
-            try {
-                const response = await fetch(this.dismissUrlValue, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Content-Type': 'application/json'
-                    }
-                });
+    #apply(animate) {
+        if (!animate && this.hasContentTarget) {
+            this.contentTarget.style.transition = 'none';
+        }
 
-                if (!response.ok) {
-                    console.error('Erreur lors de la sauvegarde du widget onboarding.');
-                }
-            } catch (error) {
-                console.error('Erreur réseau lors de la fermeture du widget:', error);
-            }
+        if (this.hasContentTarget) {
+            this.contentTarget.style.maxHeight = this.collapsed ? '0px' : '520px';
+        }
+        if (this.hasChevronTarget) {
+            this.chevronTarget.style.transform = this.collapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
+        }
+        if (this.hasHeaderTarget) {
+            this.headerTarget.setAttribute('aria-expanded', this.collapsed ? 'false' : 'true');
+        }
+
+        if (!animate && this.hasContentTarget) {
+            setTimeout(() => {
+                this.contentTarget.style.transition = '';
+            }, 50);
         }
     }
 }
