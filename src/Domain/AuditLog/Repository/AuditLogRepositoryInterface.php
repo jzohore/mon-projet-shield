@@ -38,4 +38,11 @@ interface AuditLogRepositoryInterface
      * @return AuditLog[]
      */
     public function findLatestLogs(int $limit = 5): array;
+
+    /**
+     * Derniers événements visibles côté cabinet, pour l'aperçu du tableau de bord.
+     *
+     * @return AuditLog[]
+     */
+    public function findRecentByWorkspace(Workspace $workspace, int $limit = 6): array;
 }

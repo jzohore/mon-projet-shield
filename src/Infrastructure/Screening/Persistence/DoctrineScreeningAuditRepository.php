@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Screening\Persistence;
 
 use App\Domain\Screening\Entity\ScreeningAudit;
+use App\Domain\Screening\Enum\ScreeningStatus;
 use App\Domain\Screening\Exception\AuditNotFoundException;
 use App\Domain\Screening\Repository\ScreeningAuditRepositoryInterface;
 use App\Domain\Workspace\Entity\Workspace;
@@ -95,6 +96,32 @@ readonly class DoctrineScreeningAuditRepository implements ScreeningAuditReposit
     {
         return (int) $this->repository->createQueryBuilder('sa')
             ->select('COUNT(sa.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
+    /**
+     * @return ScreeningAudit[]
+     */
+    public function findRecentByWorkspace(Workspace $workspace, int $limit = 5): array
+    {
+        return $this->repository->createQueryBuilder('sa')
+            ->where('sa.workspace = :workspace')
+            ->setParameter('workspace', $workspace)
+            ->orderBy('sa.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countInProgressForWorkspace(Workspace $workspace): int
+    {
+        return (int) $this->repository->createQueryBuilder('sa')
+            ->select('COUNT(sa.id)')
+            ->where('sa.workspace = :workspace')
+            ->andWhere('sa.status IN (:pending)')
+            ->setParameter('workspace', $workspace)
+            ->setParameter('pending', [ScreeningStatus::WAIT, ScreeningStatus::PENDING])
             ->getQuery()
             ->getSingleScalarResult();
     }

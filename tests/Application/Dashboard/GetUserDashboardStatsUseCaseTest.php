@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Tests\Application\Dashboard;
 
 use App\Application\Dashboard\UseCase\GetUserDashboardStatsUseCase;
+use App\Domain\AuditLog\Repository\AuditLogRepositoryInterface;
 use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
 use App\Domain\Firm\Entity\RegulatoryProfile;
 use App\Domain\Firm\Repository\RegulatoryProfileRepositoryInterface;
+use App\Domain\Screening\Repository\ScreeningAuditRepositoryInterface;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Repository\ClientRepositoryInterface;
 use App\Domain\Workspace\Entity\Workspace;
@@ -23,6 +25,48 @@ use Symfony\Component\Uid\Uuid;
 final class GetUserDashboardStatsUseCaseTest extends TestCase
 {
     use ReflectionHelperTrait;
+
+    private function buildUseCase(Workspace $workspace, User $user, ?RegulatoryProfile $profile): GetUserDashboardStatsUseCase
+    {
+        $folderRepo = $this->createStub(ComplianceFolderRepositoryInterface::class);
+        $folderRepo->method('countActiveForWorkspace')->willReturn(4);
+        $folderRepo->method('countDraftsForWorkspace')->willReturn(2);
+        $folderRepo->method('countForWorkspace')->willReturn(6);
+
+        $clientsPage = $this->createStub(Pagerfanta::class);
+        $clientsPage->method('getNbResults')->willReturn(7);
+        $clientRepo = $this->createStub(ClientRepositoryInterface::class);
+        $clientRepo->method('findAllByWorkspace')->willReturn($clientsPage);
+
+        $memberRepo = $this->createStub(WorkspaceMemberRepositoryInterface::class);
+        $memberRepo->method('findByWorkspace')->willReturn([1, 2, 3]);
+
+        $profileRepo = $this->createStub(RegulatoryProfileRepositoryInterface::class);
+        $profileRepo->method('findOneByWorkspace')->willReturn($profile);
+
+        $auditRepo = $this->createStub(AuditLogRepositoryInterface::class);
+        $auditRepo->method('findRecentByWorkspace')->willReturn([]);
+
+        $screeningRepo = $this->createStub(ScreeningAuditRepositoryInterface::class);
+        $screeningRepo->method('countInProgressForWorkspace')->willReturn(1);
+        $screeningRepo->method('findRecentByWorkspace')->willReturn([]);
+
+        $workspaceProvider = $this->createStub(CurrentWorkspaceProvider::class);
+        $workspaceProvider->method('getWorkspace')->willReturn($workspace);
+        $userProvider = $this->createStub(CurrentUserProvider::class);
+        $userProvider->method('getUser')->willReturn($user);
+
+        return new GetUserDashboardStatsUseCase(
+            $folderRepo,
+            $clientRepo,
+            $memberRepo,
+            $profileRepo,
+            $auditRepo,
+            $screeningRepo,
+            $workspaceProvider,
+            $userProvider,
+        );
+    }
 
     public function testAggregatesCountersAndChecklistState(): void
     {
@@ -50,37 +94,7 @@ final class GetUserDashboardStatsUseCaseTest extends TestCase
             'isTotpVerified' => true,
         ]);
 
-        $folderRepo = $this->createStub(ComplianceFolderRepositoryInterface::class);
-        $folderRepo->method('countActiveForWorkspace')->willReturn(4);
-        $folderRepo->method('countDraftsForWorkspace')->willReturn(2);
-        $folderRepo->method('countForWorkspace')->willReturn(6);
-
-        $clientsPage = $this->createStub(Pagerfanta::class);
-        $clientsPage->method('getNbResults')->willReturn(7);
-        $clientRepo = $this->createStub(ClientRepositoryInterface::class);
-        $clientRepo->method('findAllByWorkspace')->willReturn($clientsPage);
-
-        $memberRepo = $this->createStub(WorkspaceMemberRepositoryInterface::class);
-        $memberRepo->method('findByWorkspace')->willReturn([1, 2, 3]);
-
-        $profileRepo = $this->createStub(RegulatoryProfileRepositoryInterface::class);
-        $profileRepo->method('findOneByWorkspace')->willReturn($profile);
-
-        $workspaceProvider = $this->createStub(CurrentWorkspaceProvider::class);
-        $workspaceProvider->method('getWorkspace')->willReturn($workspace);
-        $userProvider = $this->createStub(CurrentUserProvider::class);
-        $userProvider->method('getUser')->willReturn($user);
-
-        $useCase = new GetUserDashboardStatsUseCase(
-            $folderRepo,
-            $clientRepo,
-            $memberRepo,
-            $profileRepo,
-            $workspaceProvider,
-            $userProvider,
-        );
-
-        $stats = $useCase();
+        $stats = ($this->buildUseCase($workspace, $user, $profile))();
 
         self::assertSame('Cabinet Durand', $stats->workspaceName);
         self::assertTrue($stats->isFirm);
@@ -92,6 +106,9 @@ final class GetUserDashboardStatsUseCaseTest extends TestCase
         self::assertSame(6, $stats->totalFoldersCount);
         self::assertSame(7, $stats->clientsCount);
         self::assertSame(3, $stats->teamMembersCount);
+        self::assertSame(1, $stats->pendingScreeningsCount);
+        self::assertSame([], $stats->latestAuditLogs);
+        self::assertSame([], $stats->latestScreenings);
         self::assertTrue($stats->isOrgCompleted);
         self::assertTrue($stats->isRegProfileValid);
         self::assertTrue($stats->is2faEnabled);
@@ -113,28 +130,7 @@ final class GetUserDashboardStatsUseCaseTest extends TestCase
 
         $user = $this->createEntityState(User::class, []);
 
-        $folderRepo = $this->createStub(ComplianceFolderRepositoryInterface::class);
-        $clientsPage = $this->createStub(Pagerfanta::class);
-        $clientsPage->method('getNbResults')->willReturn(0);
-        $clientRepo = $this->createStub(ClientRepositoryInterface::class);
-        $clientRepo->method('findAllByWorkspace')->willReturn($clientsPage);
-        $memberRepo = $this->createStub(WorkspaceMemberRepositoryInterface::class);
-        $memberRepo->method('findByWorkspace')->willReturn([1]);
-        $profileRepo = $this->createStub(RegulatoryProfileRepositoryInterface::class);
-        $profileRepo->method('findOneByWorkspace')->willReturn(null);
-        $workspaceProvider = $this->createStub(CurrentWorkspaceProvider::class);
-        $workspaceProvider->method('getWorkspace')->willReturn($workspace);
-        $userProvider = $this->createStub(CurrentUserProvider::class);
-        $userProvider->method('getUser')->willReturn($user);
-
-        $stats = (new GetUserDashboardStatsUseCase(
-            $folderRepo,
-            $clientRepo,
-            $memberRepo,
-            $profileRepo,
-            $workspaceProvider,
-            $userProvider,
-        ))();
+        $stats = ($this->buildUseCase($workspace, $user, null))();
 
         self::assertFalse($stats->isRegProfileValid);
         self::assertFalse($stats->isOrgCompleted);

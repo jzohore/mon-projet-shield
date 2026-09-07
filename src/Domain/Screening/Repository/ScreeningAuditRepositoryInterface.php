@@ -29,6 +29,18 @@ interface ScreeningAuditRepositoryInterface
     public function countAll(): int;
 
     /**
+     * Derniers criblages d'un espace, pour l'aperçu du tableau de bord.
+     *
+     * @return ScreeningAudit[]
+     */
+    public function findRecentByWorkspace(Workspace $workspace, int $limit = 5): array;
+
+    /**
+     * Criblages encore en traitement (en attente ou génération du PDF en cours).
+     */
+    public function countInProgressForWorkspace(Workspace $workspace): int;
+
+    /**
      * Audits dont les résultats bruts sont minimisables : créés avant
      * `$createdBefore`, avec au moins une correspondance, pas encore minimisés.
      *

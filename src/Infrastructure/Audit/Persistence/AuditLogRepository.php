@@ -113,4 +113,25 @@ final readonly class AuditLogRepository implements AuditLogRepositoryInterface
             ->getQuery()
             ->getResult();
     }
+
+    /**
+     * @return AuditLog[]
+     */
+    public function findRecentByWorkspace(Workspace $workspace, int $limit = 6): array
+    {
+        $visibleTypes = array_filter(
+            AuditEventType::cases(),
+            static fn (AuditEventType $type): bool => $type->isVisibleToWorkspace(),
+        );
+
+        return $this->repository->createQueryBuilder('a')
+            ->where('a.workspace = :workspace')
+            ->andWhere('a.eventName IN (:visibleTypes)')
+            ->setParameter('workspace', $workspace)
+            ->setParameter('visibleTypes', $visibleTypes)
+            ->orderBy('a.occurredAt', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
 }

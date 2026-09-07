@@ -4,12 +4,20 @@ declare(strict_types=1);
 
 namespace App\Application\Dashboard\DTO;
 
+use App\Domain\AuditLog\Entity\AuditLog;
+use App\Domain\Screening\Entity\ScreeningAudit;
+
 /**
  * Données agrégées du tableau de bord : compteurs de quota (Phase 1),
- * volumétrie des dossiers/clients, et état de la check-list d'onboarding.
+ * volumétrie des dossiers/clients, aperçus d'activité, et état de la
+ * check-list d'onboarding.
  */
 final readonly class UserDashboardStats
 {
+    /**
+     * @param AuditLog[]       $latestAuditLogs
+     * @param ScreeningAudit[] $latestScreenings
+     */
     public function __construct(
         public string $workspaceName,
         public bool $isFirm,
@@ -25,6 +33,10 @@ final readonly class UserDashboardStats
         public int $totalFoldersCount,
         public int $clientsCount,
         public int $teamMembersCount,
+        public int $pendingScreeningsCount,
+        // --- Aperçus d'activité ---
+        public array $latestAuditLogs,
+        public array $latestScreenings,
         // --- Check-list d'onboarding ---
         public bool $isOrgCompleted,
         public bool $isRegProfileValid,
