@@ -38,6 +38,11 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
         return $sub;
     }
 
+    public function findByStripeId(string $stripeSubscriptionId): ?Subscription
+    {
+        return $this->repository->findOneBy(['stripeSubscriptionId' => $stripeSubscriptionId]);
+    }
+
     public function save(Subscription $subscription): void
     {
         $this->entityManager->persist($subscription);

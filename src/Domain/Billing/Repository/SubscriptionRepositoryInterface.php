@@ -11,6 +11,8 @@ interface SubscriptionRepositoryInterface
 {
     public function getByStripeId(string $stripeSubscriptionId): Subscription;
 
+    public function findByStripeId(string $stripeSubscriptionId): ?Subscription;
+
     public function save(Subscription $subscription): void;
 
     /**

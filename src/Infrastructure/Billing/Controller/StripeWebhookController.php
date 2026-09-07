@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Billing\Controller;
 
+use App\Application\Billing\Service\StripeWebhookIdempotency;
+use App\Application\Billing\UseCase\Checkout\GrantMinutePackFromCheckoutUseCase;
+use App\Application\Billing\UseCase\Checkout\RegisterSubscriptionFromCheckoutUseCase;
 use App\Application\Billing\UseCase\Credits\AddCreditsUseCase;
 use App\Application\Billing\UseCase\Subscription\ActivateSubscriptionUseCase;
 use App\Application\Billing\UseCase\Subscription\SyncSubscriptionUseCase;
 use App\Application\Billing\UseCase\Subscription\TerminateSubscriptionUseCase;
 use App\Domain\Billing\Enum\CreditAction;
+use App\Domain\Billing\Enum\Plan;
+use App\Infrastructure\Billing\Service\StripePriceResolver;
 use Psr\Log\LoggerInterface;
 use Stripe\Checkout\Session;
 use Stripe\Customer;
@@ -33,6 +38,10 @@ readonly class StripeWebhookController
         private ActivateSubscriptionUseCase $activateSubscriptionUseCase,
         private TerminateSubscriptionUseCase $terminateSubscriptionUseCase,
         private SyncSubscriptionUseCase $syncSubscriptionUseCase,
+        private StripeWebhookIdempotency $idempotency,
+        private RegisterSubscriptionFromCheckoutUseCase $registerSubscriptionFromCheckout,
+        private GrantMinutePackFromCheckoutUseCase $grantMinutePackFromCheckout,
+        private StripePriceResolver $priceResolver,
     ) {
     }
 
@@ -49,15 +58,34 @@ readonly class StripeWebhookController
                 $sigHeader,
                 $this->stripeWebhookSecret
             );
-        } catch (\UnexpectedValueException $e) {
+        } catch (\UnexpectedValueException) {
             $this->logger->error('Stripe Webhook : Payload invalide.');
 
             return new Response('Invalid payload', Response::HTTP_BAD_REQUEST);
-        } catch (\Stripe\Exception\SignatureVerificationException $e) {
+        } catch (\Stripe\Exception\SignatureVerificationException) {
             $this->logger->error('Stripe Webhook : Signature invalide (Tentative de fraude ?).');
 
             return new Response('Invalid signature', Response::HTTP_BAD_REQUEST);
         }
+
+        // 🛡️ Idempotence : Stripe peut rejouer un événement (retries, incidents).
+        // On ne le traite qu'une fois ; on ne marque « traité » que si la
+        // réponse est un succès (sinon Stripe rejouera plus tard).
+        if ($this->idempotency->isAlreadyProcessed($event->id)) {
+            return new Response('Already processed', Response::HTTP_OK);
+        }
+
+        $response = $this->handleEvent($event);
+
+        if ($response->isSuccessful()) {
+            $this->idempotency->markProcessed($event->id);
+        }
+
+        return $response;
+    }
+
+    private function handleEvent(\Stripe\Event $event): Response
+    {
         // =========================================================================
         // ÉVÉNEMENT 1 : PAIEMENT RÉUSSI (Achat de crédits ou Début d'abonnement)
         // =========================================================================
@@ -68,6 +96,57 @@ readonly class StripeWebhookController
             $userIdString = $session->metadata->user_id ?? null;
             $userEmail = $session->metadata->user_email ?? null;
             $workspaceIdString = $session->metadata->workspace_id ?? null;
+            $purpose = $session->metadata->purpose ?? null;
+
+            // --- Nouveau modèle : abonnement KYSURE « au siège » ---
+            if ('kysure_subscription' === $purpose && $workspaceIdString && $userIdString && $userEmail) {
+                $subscriptionRaw = $session->subscription;
+                $stripeSubscriptionId = is_string($subscriptionRaw) ? $subscriptionRaw : $subscriptionRaw?->id;
+                $planReference = (string) ($session->metadata->plan ?? Plan::INDIVIDUAL->value);
+                $seats = (int) ($session->metadata->seats ?? 1);
+
+                if ($stripeSubscriptionId) {
+                    try {
+                        $plan = Plan::tryFrom($planReference) ?? Plan::INDIVIDUAL;
+                        ($this->registerSubscriptionFromCheckout)(
+                            workspaceId: $workspaceIdString,
+                            userId: $userIdString,
+                            stripeSubscriptionId: $stripeSubscriptionId,
+                            stripePriceId: $this->priceResolver->forPlan($plan),
+                            planReference: $planReference,
+                            seats: $seats,
+                            recipientEmail: $userEmail,
+                        );
+                    } catch (\Exception $e) {
+                        $this->logger->critical('Erreur enregistrement abonnement (checkout) : ' . $e->getMessage());
+
+                        return new Response('Erreur interne', Response::HTTP_INTERNAL_SERVER_ERROR);
+                    }
+                }
+
+                return new Response('Webhook handled', Response::HTTP_OK);
+            }
+
+            // --- Nouveau modèle : pack de minutes d'entretien prépayées ---
+            if ('kysure_minute_pack' === $purpose && $workspaceIdString && $userEmail) {
+                $minutes = (int) ($session->metadata->minutes ?? 0);
+                $invoiceUrl = $this->resolveInvoiceUrl($session);
+
+                try {
+                    ($this->grantMinutePackFromCheckout)(
+                        workspaceId: $workspaceIdString,
+                        minutes: $minutes,
+                        recipientEmail: $userEmail,
+                        invoiceUrl: $invoiceUrl,
+                    );
+                } catch (\Exception $e) {
+                    $this->logger->critical('Erreur crédit pack de minutes (checkout) : ' . $e->getMessage());
+
+                    return new Response('Erreur interne', Response::HTTP_INTERNAL_SERVER_ERROR);
+                }
+
+                return new Response('Webhook handled', Response::HTTP_OK);
+            }
             if ('setup' === $mode && ($session->metadata->purpose ?? null) === 'activate_existing_subscription') {
                 $stripeSubscriptionId = $session->metadata->stripe_subscription_id ?? null;
 
@@ -194,5 +273,25 @@ readonly class StripeWebhookController
         }
 
         return new Response('Webhook handled', Response::HTTP_OK);
+    }
+
+    private function resolveInvoiceUrl(Session $session): ?string
+    {
+        if (empty($session->invoice)) {
+            return null;
+        }
+
+        try {
+            $stripe = new StripeClient($this->stripeSecretKey);
+            $invoiceRaw = $session->invoice;
+            $invoiceId = is_string($invoiceRaw) ? $invoiceRaw : $invoiceRaw->id;
+            Assert::stringNotEmpty($invoiceId, 'ID Facture Stripe invalide.');
+
+            return $stripe->invoices->retrieve($invoiceId)->hosted_invoice_url;
+        } catch (\Exception $e) {
+            $this->logger->error('Impossible de récupérer la facture Stripe : ' . $e->getMessage());
+
+            return null;
+        }
     }
 }

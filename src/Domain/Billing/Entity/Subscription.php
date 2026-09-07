@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Billing\Entity;
 
+use App\Domain\Billing\Enum\Plan;
 use App\Domain\Billing\Enum\SubscriptionStatus;
 use App\Domain\Workspace\Entity\Workspace;
 use Doctrine\DBAL\Types\Types;
@@ -111,6 +112,37 @@ class Subscription
         // On donne 1h de battement le temps que le Webhook Stripe confirme le 1er paiement
         $subscription->currentPeriodEnd = new \DateTimeImmutable()->modify('+1 hour');
         $subscription->cancelAtPeriodEnd = false;
+
+        return $subscription;
+    }
+
+    /**
+     * Abonnement KYSURE « au siège » créé à la confirmation d'un Stripe Checkout.
+     * Le nombre de sièges = quantity de la ligne d'abonnement Stripe.
+     */
+    public static function forPlan(
+        Workspace $workspace,
+        string $stripeSubscriptionId,
+        string $stripePriceId,
+        Plan $plan,
+        int $seatsCount,
+        SubscriptionStatus $status,
+        \DateTimeImmutable $currentPeriodStart,
+        \DateTimeImmutable $currentPeriodEnd,
+    ): self {
+        $subscription = new self(
+            $workspace,
+            $stripeSubscriptionId,
+            $stripePriceId,
+            $plan->value,
+            $status,
+        );
+
+        $subscription->seatsCount = max($plan->getMinSeats(), $seatsCount);
+        $subscription->currentPeriodStart = $currentPeriodStart;
+        $subscription->currentPeriodEnd = $currentPeriodEnd;
+        $subscription->cancelAtPeriodEnd = false;
+        $subscription->trialEndsAt = SubscriptionStatus::TRIALING === $status ? $currentPeriodEnd : null;
 
         return $subscription;
     }
