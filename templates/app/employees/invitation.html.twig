@@ -19,6 +19,19 @@
             <p class="text-sm text-slate-500 mt-1">Gérez les accès de votre équipe à la plateforme {{ company_name }}.</p>
         </div>
 
+        {% set seats = seatInfo() %}
+        {% if seats.isFirm %}
+            <div class="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm">
+                <span class="text-slate-600">
+                    Sièges&nbsp;: <span class="font-semibold text-slate-900 tabular-nums">{{ seats.used }} / {{ seats.allowed }}</span> utilisés
+                    <span class="text-slate-400">— membres actifs + invitations en attente</span>
+                </span>
+                {% if seats.remaining == 0 %}
+                    <a href="{{ path('app_settings_subscription') }}" class="font-medium text-amber-600 hover:underline">Ajouter des sièges →</a>
+                {% endif %}
+            </div>
+        {% endif %}
+
         <twig:CreateInvitationFormComponent />
     </div>
 {% endblock %}

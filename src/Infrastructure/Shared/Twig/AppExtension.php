@@ -8,6 +8,8 @@ use App\Application\Billing\DTO\Response\SubscriptionInfoResponse;
 use App\Application\Billing\UseCase\Subscription\GetCurrentSubscriptionUseCase;
 use App\Application\Workspace\DTO\Response\WorkspaceInfoResponse;
 use App\Application\Workspace\UseCase\CurrentWorkspaceInfo;
+use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
+use App\Domain\Workspace\Service\SeatAvailability;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
@@ -17,6 +19,8 @@ class AppExtension extends AbstractExtension
     public function __construct(
         private readonly GetCurrentSubscriptionUseCase $currentSubscriptionUseCase,
         private readonly CurrentWorkspaceInfo $currentWorkspaceInfo,
+        private readonly SeatAvailability $seatAvailability,
+        private readonly CurrentWorkspaceProvider $currentWorkspaceProvider,
     ) {
     }
 
@@ -34,6 +38,22 @@ class AppExtension extends AbstractExtension
         return [
             new TwigFunction('workspaceInfo', $this->workspaceInfo(...)),
             new TwigFunction('subInfo', $this->subInfo(...)),
+            new TwigFunction('seatInfo', $this->seatInfo(...)),
+        ];
+    }
+
+    /**
+     * @return array{used: int, allowed: int, remaining: int, isFirm: bool}
+     */
+    public function seatInfo(): array
+    {
+        $workspace = $this->currentWorkspaceProvider->getWorkspace();
+
+        return [
+            'used' => $this->seatAvailability->usedSeats($workspace),
+            'allowed' => $this->seatAvailability->allowedSeats($workspace),
+            'remaining' => $this->seatAvailability->remainingSeats($workspace),
+            'isFirm' => $workspace->isFirm(),
         ];
     }
 

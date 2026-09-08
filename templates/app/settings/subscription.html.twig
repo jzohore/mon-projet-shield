@@ -62,6 +62,38 @@
         </div>
     </div>
 
+    {# ── Sièges (cabinet abonné) ── #}
+    {% set seats = seatInfo() %}
+    {% if seats.isFirm %}
+        <div class="mt-6 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                <div>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Sièges</p>
+                    <div class="flex items-baseline gap-1">
+                        <span class="text-3xl font-bold {{ seats.remaining == 0 ? 'text-amber-600' : 'text-slate-900' }} tabular-nums">{{ seats.used }}</span>
+                        <span class="text-sm text-slate-500">/ {{ seats.allowed }} utilisés</span>
+                    </div>
+                    <p class="mt-1 text-xs text-slate-400">Un siège = un collaborateur actif ou une invitation en attente.</p>
+                </div>
+
+                {% if active %}
+                    <form method="post" action="{{ path('app_billing_seats') }}" class="flex items-end gap-2" data-turbo="false">
+                        <input type="hidden" name="_token" value="{{ csrf_token('billing_seats') }}">
+                        <label class="flex flex-col gap-1">
+                            <span class="text-xs font-medium text-slate-500">Total de sièges</span>
+                            <input type="number" name="seats" min="{{ max(seats.used, 2) }}" value="{{ seats.allowed }}"
+                                   class="w-24 rounded-md border border-slate-300 px-2 py-1.5 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </label>
+                        <twig:Button type="submit" variant="outline" size="sm">Mettre à jour</twig:Button>
+                    </form>
+                {% else %}
+                    <a href="{{ path('app_pricing') }}" class="text-sm font-medium text-indigo-600 hover:underline">Passer à l'abonnement pour ajouter des sièges →</a>
+                {% endif %}
+            </div>
+            <p class="mt-3 text-[11px] text-slate-400">La modification est facturée au prorata sur votre prochaine facture.</p>
+        </div>
+    {% endif %}
+
     {# ── Factures ── #}
     {% if subInfo.invoices is not empty %}
         <section class="mt-6 bg-white rounded-xl border border-slate-200 shadow-sm">

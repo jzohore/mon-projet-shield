@@ -24,6 +24,7 @@ enum ErrorCode: string
     case INVALID_WORKSPACE_TYPE = 'INVALID_WORKSPACE_TYPE';
     case MEMBER_NOT_FOUND = 'MEMBER_NOT_FOUND';
     case CANNOT_REVOKE_OWNER = 'CANNOT_REVOKE_OWNER';
+    case SEAT_LIMIT_REACHED = 'SEAT_LIMIT_REACHED';
 
     // Compliance & KYC
     case COMPLIANCE_FOLDER_NOT_FOUND = 'COMPLIANCE_FOLDER_NOT_FOUND';
@@ -76,6 +77,7 @@ enum ErrorCode: string
             self::INVALID_WORKSPACE_TYPE => 'Le statut juridique ou le type de structure sélectionné est invalide.',
             self::MEMBER_NOT_FOUND => 'Ce collaborateur ne fait pas partie de cet espace de travail.',
             self::CANNOT_REVOKE_OWNER => 'Opération interdite : impossible de révoquer les droits de l\'administrateur principal.',
+            self::SEAT_LIMIT_REACHED => 'Vous avez atteint votre nombre de sièges. Ajoutez des sièges pour inviter davantage de collaborateurs.',
 
             // Conformité, LCB-FT & KYC
             self::COMPLIANCE_FOLDER_NOT_FOUND => 'Le dossier de conformité demandé est introuvable.',

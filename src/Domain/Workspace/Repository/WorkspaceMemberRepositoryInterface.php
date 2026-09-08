@@ -21,6 +21,8 @@ interface WorkspaceMemberRepositoryInterface
      */
     public function findByWorkspace(string $workspaceId): array;
 
+    public function countByWorkspace(Workspace $workspace): int;
+
     public function delete(WorkspaceMember $workspaceMember): void;
 
     /**

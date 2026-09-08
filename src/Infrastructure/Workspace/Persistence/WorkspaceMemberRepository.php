@@ -52,6 +52,16 @@ final readonly class WorkspaceMemberRepository implements WorkspaceMemberReposit
         return $this->repository->findBy(['workspace' => $workspaceId]);
     }
 
+    public function countByWorkspace(Workspace $workspace): int
+    {
+        return (int) $this->repository->createQueryBuilder('wm')
+            ->select('COUNT(wm.id)')
+            ->where('wm.workspace = :workspace')
+            ->setParameter('workspace', $workspace)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     public function delete(WorkspaceMember $workspaceMember): void
     {
         $this->entityManager->remove($workspaceMember);

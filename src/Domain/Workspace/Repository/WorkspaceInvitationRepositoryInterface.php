@@ -30,4 +30,6 @@ interface WorkspaceInvitationRepositoryInterface
     public function getById(Uuid $id): ?WorkspaceInvitation;
 
     public function hasPendingInvitation(Workspace $workspace, string $email): bool;
+
+    public function countPendingByWorkspace(Workspace $workspace): int;
 }

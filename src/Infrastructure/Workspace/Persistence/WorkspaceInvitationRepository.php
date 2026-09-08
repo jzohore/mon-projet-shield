@@ -99,4 +99,12 @@ final readonly class WorkspaceInvitationRepository implements WorkspaceInvitatio
 
         return $pendingCount > 0;
     }
+
+    public function countPendingByWorkspace(Workspace $workspace): int
+    {
+        return $this->repository->count([
+            'workspace' => $workspace,
+            'invitationStatus' => InvitationStatus::PENDING,
+        ]);
+    }
 }

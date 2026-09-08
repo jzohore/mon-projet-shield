@@ -52,6 +52,12 @@ readonly class SyncSubscriptionUseCase
             cancelPeriodEnd: $stripeSubscription->cancel_at_period_end,
         );
 
+        // 2b. On recale le nombre de sièges facturés sur la quantité Stripe.
+        $quantity = $stripeSubscription->items->data[0]->quantity ?? null;
+        if (\is_int($quantity) && $quantity > 0) {
+            $subscription->updateSeats($quantity);
+        }
+
         // 3. On sauvegarde
         $this->subscriptionRepository->save($subscription);
     }

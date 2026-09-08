@@ -9,10 +9,12 @@ use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Domain\Workspace\Event\WorkspaceInvitationCreatedEvent;
 use App\Domain\Workspace\Exception\HasPendingInvitationException;
 use App\Domain\Workspace\Exception\IsAlreadyMemberException;
+use App\Domain\Workspace\Exception\SeatLimitReachedException;
 use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
+use App\Domain\Workspace\Service\SeatAvailability;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final readonly class CreateWorkspaceInvitationUseCase
@@ -23,6 +25,7 @@ final readonly class CreateWorkspaceInvitationUseCase
         private EventDispatcherInterface $eventDispatcher,
         private CurrentUserProvider $currentUserProvider,
         private CurrentWorkspaceProvider $currentWorkspaceProvider,
+        private SeatAvailability $seatAvailability,
     ) {
     }
 
@@ -37,6 +40,10 @@ final readonly class CreateWorkspaceInvitationUseCase
 
         if ($this->workspaceMemberRepository->isAlreadyMember($workspace, $request->email)) {
             throw IsAlreadyMemberException::withWorkspaceAndEmail(workspace: $workspace, email: $request->email);
+        }
+
+        if (!$this->seatAvailability->hasFreeSeat($workspace)) {
+            throw SeatLimitReachedException::forWorkspace(usedSeats: $this->seatAvailability->usedSeats($workspace), allowedSeats: $this->seatAvailability->allowedSeats($workspace));
         }
 
         $newInvitation = WorkspaceInvitation::create(

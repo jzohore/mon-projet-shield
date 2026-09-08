@@ -123,6 +123,28 @@ readonly class StripeService
     }
 
     /**
+     * Ajuste le nombre de sièges facturés (quantity de la ligne d'abonnement),
+     * avec facturation au prorata immédiate.
+     */
+    public function updateSubscriptionSeats(string $stripeSubscriptionId, int $quantity): void
+    {
+        try {
+            Stripe::setApiKey($this->stripeSecretKey);
+
+            $subscription = Subscription::retrieve($stripeSubscriptionId);
+            $itemId = $subscription->items->data[0]->id ?? null;
+            Assert::stringNotEmpty($itemId, 'Ligne d\'abonnement Stripe introuvable.');
+
+            Subscription::update($stripeSubscriptionId, [
+                'items' => [['id' => $itemId, 'quantity' => max(1, $quantity)]],
+                'proration_behavior' => 'create_prorations',
+            ]);
+        } catch (ApiErrorException $e) {
+            throw new \RuntimeException('Impossible de mettre à jour les sièges sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
      * Crée un produit + son prix par défaut sur Stripe pour une offre KYSURE
      * (modèle Phase 1). Renvoie les deux identifiants.
      *
