@@ -25,6 +25,8 @@ enum ErrorCode: string
     case MEMBER_NOT_FOUND = 'MEMBER_NOT_FOUND';
     case CANNOT_REVOKE_OWNER = 'CANNOT_REVOKE_OWNER';
     case SEAT_LIMIT_REACHED = 'SEAT_LIMIT_REACHED';
+    case NOT_WORKSPACE_ADMIN = 'NOT_WORKSPACE_ADMIN';
+    case INVITATION_ALREADY_USED = 'INVITATION_ALREADY_USED';
 
     // Compliance & KYC
     case COMPLIANCE_FOLDER_NOT_FOUND = 'COMPLIANCE_FOLDER_NOT_FOUND';
@@ -78,6 +80,8 @@ enum ErrorCode: string
             self::MEMBER_NOT_FOUND => 'Ce collaborateur ne fait pas partie de cet espace de travail.',
             self::CANNOT_REVOKE_OWNER => 'Opération interdite : impossible de révoquer les droits de l\'administrateur principal.',
             self::SEAT_LIMIT_REACHED => 'Vous avez atteint votre nombre de sièges. Ajoutez des sièges pour inviter davantage de collaborateurs.',
+            self::NOT_WORKSPACE_ADMIN => 'Seul un administrateur de cet espace de travail peut effectuer cette action.',
+            self::INVITATION_ALREADY_USED => 'Cette invitation a déjà été utilisée ou n\'est plus valide.',
 
             // Conformité, LCB-FT & KYC
             self::COMPLIANCE_FOLDER_NOT_FOUND => 'Le dossier de conformité demandé est introuvable.',

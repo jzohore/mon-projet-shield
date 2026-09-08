@@ -10,6 +10,7 @@ use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Enum\InvitedRole;
 use App\Domain\Workspace\Event\WorkspaceInvitationCreatedEvent;
+use App\Domain\Workspace\Exception\NotWorkspaceAdminException;
 use App\Domain\Workspace\Exception\SeatLimitReachedException;
 use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
@@ -39,8 +40,10 @@ final class CreateWorkspaceInvitationUseCaseTest extends TestCase
         $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
     }
 
-    private function useCase(bool $seatFree): CreateWorkspaceInvitationUseCase
+    private function useCase(bool $seatFree, bool $isAdmin = true): CreateWorkspaceInvitationUseCase
     {
+        $this->memberRepository->method('isUserAdminOfWorkspace')->willReturn($isAdmin);
+
         $userProvider = $this->createStub(CurrentUserProvider::class);
         $userProvider->method('getUser')->willReturn($this->createEntityState(User::class, [
             'firstName' => 'Jean', 'lastName' => 'Dupont', 'email' => 'jean@cabinet.fr',
@@ -98,5 +101,14 @@ final class CreateWorkspaceInvitationUseCaseTest extends TestCase
 
         $this->expectException(SeatLimitReachedException::class);
         ($this->useCase(seatFree: false))($this->request());
+    }
+
+    public function testRejectsInvitationFromNonAdmin(): void
+    {
+        $this->invitationRepository->expects($this->never())->method('save');
+        $this->eventDispatcher->expects($this->never())->method('dispatch');
+
+        $this->expectException(NotWorkspaceAdminException::class);
+        ($this->useCase(seatFree: true, isAdmin: false))($this->request());
     }
 }

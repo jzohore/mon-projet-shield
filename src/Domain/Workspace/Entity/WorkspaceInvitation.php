@@ -37,11 +37,15 @@ class WorkspaceInvitation
     #[ORM\Column(type: Types::STRING, length: 50, nullable: true, enumType: InvitationStatus::class)]
     public private(set) InvitationStatus $invitationStatus = InvitationStatus::PENDING;
 
-    #[ORM\Column(type: Types::STRING, length: 255, nullable: true)]
+    /** Hachage SHA-256 du jeton (le jeton en clair ne vit qu'en mémoire, le temps de l'e-mail). */
+    #[ORM\Column(type: Types::STRING, length: 64, nullable: true)]
     public private(set) ?string $magicLinkToken;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
     public private(set) ?\DateTimeImmutable $magicLinkTokenExpiresAt;
+
+    /** Jeton en clair, jamais persisté : disponible uniquement juste après (re)génération. */
+    public private(set) ?string $plainMagicLinkToken = null;
 
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public private(set) \DateTimeImmutable $createdAt;
@@ -53,7 +57,7 @@ class WorkspaceInvitation
         #[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'invitations')]
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
         public private(set) Workspace $workspace,
-        #[ORM\Column(type: Types::STRING, length: 180, unique: true)]
+        #[ORM\Column(type: Types::STRING, length: 180)]
         public private(set) string $email,
         #[ORM\Column(type: Types::STRING, length: 100, nullable: true)]
         #[Assert\Length(max: 100)]
@@ -81,6 +85,11 @@ class WorkspaceInvitation
         );
     }
 
+    public static function hashToken(string $plainToken): string
+    {
+        return hash('sha256', $plainToken);
+    }
+
     public function isTokenValid(?string $token, ?\DateTimeImmutable $expiresAt): bool
     {
         if (null === $token || !$expiresAt instanceof \DateTimeImmutable) {
@@ -92,19 +101,24 @@ class WorkspaceInvitation
 
     public function generateMagicLinkToken(): void
     {
-        $this->magicLinkToken = bin2hex(random_bytes(64));
+        $plain = bin2hex(random_bytes(64));
+        $this->plainMagicLinkToken = $plain;
+        $this->magicLinkToken = self::hashToken($plain);
         $this->magicLinkTokenExpiresAt = now()->modify('+1 day');
     }
 
+    /** Le jeton n'est valide que pour une invitation encore en attente. */
     public function isMagicLinkTokenValid(): bool
     {
-        return $this->isTokenValid($this->magicLinkToken, $this->magicLinkTokenExpiresAt);
+        return $this->isPending()
+            && $this->isTokenValid($this->magicLinkToken, $this->magicLinkTokenExpiresAt);
     }
 
     public function clearMagicLinkToken(): void
     {
         $this->magicLinkToken = null;
         $this->magicLinkTokenExpiresAt = null;
+        $this->plainMagicLinkToken = null;
     }
 
     /**

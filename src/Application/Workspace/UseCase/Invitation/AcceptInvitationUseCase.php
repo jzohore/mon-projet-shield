@@ -8,7 +8,9 @@ use App\Domain\Database\TransactionManagerInterface;
 use App\Domain\User\Entity\User;
 use App\Domain\User\Enum\OnboardingStatus;
 use App\Domain\User\Repository\UserRepositoryInterface;
+use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Domain\Workspace\Entity\WorkspaceMember;
+use App\Domain\Workspace\Exception\InvitationAlreadyUsedException;
 use App\Domain\Workspace\Exception\InvitationNotFoundException;
 use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
@@ -28,12 +30,52 @@ readonly class AcceptInvitationUseCase
     {
         $invitation = $this->workspaceInvitationRepository->findBySlugId($invitationSlugId);
 
-        if (!$invitation instanceof \App\Domain\Workspace\Entity\WorkspaceInvitation) {
+        if (!$invitation instanceof WorkspaceInvitation) {
             throw InvitationNotFoundException::withSlugId($invitationSlugId);
+        }
+
+        // 🛡️ Idempotence : une invitation déjà acceptée / expirée / révoquée
+        // ne doit pas recréer un compte ou un second rattachement.
+        if (!$invitation->isPending() || !$invitation->isMagicLinkTokenValid()) {
+            throw InvitationAlreadyUsedException::create();
         }
 
         $workspace = $invitation->workspace;
         Assert::notNull($workspace->slugId);
+
+        $existingUser = $this->userRepository->findByEmail($invitation->email);
+
+        if ($existingUser instanceof User) {
+            return $this->attachExistingUser($invitation, $existingUser);
+        }
+
+        return $this->createUserFromInvitation($invitation);
+    }
+
+    private function attachExistingUser(WorkspaceInvitation $invitation, User $user): User
+    {
+        $workspace = $invitation->workspace;
+        $alreadyMember = $this->workspaceMemberRepository->findByWorkspaceAndUser($workspace, $user);
+
+        $invitation->accept();
+        $invitation->clearMagicLinkToken();
+
+        $this->transactionManager->transactional(function () use ($invitation, $user, $workspace, $alreadyMember): void {
+            if (!$alreadyMember instanceof WorkspaceMember) {
+                $this->workspaceMemberRepository->save(
+                    WorkspaceMember::create($workspace, $user, $invitation->invitedRole),
+                    false,
+                );
+            }
+            $this->workspaceInvitationRepository->save($invitation, false);
+        });
+
+        return $user;
+    }
+
+    private function createUserFromInvitation(WorkspaceInvitation $invitation): User
+    {
+        $workspace = $invitation->workspace;
 
         $user = User::create(
             email: $invitation->email,
@@ -45,10 +87,9 @@ readonly class AcceptInvitationUseCase
             isActif: true,
         );
 
-        $invitation->clearMagicLinkToken();
         $invitation->accept();
+        $invitation->clearMagicLinkToken();
 
-        // On instancie l'entité directement (adapte selon ton constructeur/factory)
         $member = WorkspaceMember::create($workspace, $user, $invitation->invitedRole);
 
         $this->transactionManager->transactional(function () use ($invitation, $user, $member): void {

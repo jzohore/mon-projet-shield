@@ -9,6 +9,7 @@ use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Domain\Workspace\Event\WorkspaceInvitationCreatedEvent;
 use App\Domain\Workspace\Exception\HasPendingInvitationException;
 use App\Domain\Workspace\Exception\IsAlreadyMemberException;
+use App\Domain\Workspace\Exception\NotWorkspaceAdminException;
 use App\Domain\Workspace\Exception\SeatLimitReachedException;
 use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
@@ -33,6 +34,10 @@ final readonly class CreateWorkspaceInvitationUseCase
     {
         $user = $this->currentUserProvider->getUser();
         $workspace = $this->currentWorkspaceProvider->getWorkspace();
+
+        if (!$this->workspaceMemberRepository->isUserAdminOfWorkspace($user, $workspace)) {
+            throw NotWorkspaceAdminException::create();
+        }
 
         if ($this->workspaceInvitationRepository->hasPendingInvitation($workspace, $request->email)) {
             throw HasPendingInvitationException::withWorkspaceAndEmail(workspace: $workspace, email: $request->email);

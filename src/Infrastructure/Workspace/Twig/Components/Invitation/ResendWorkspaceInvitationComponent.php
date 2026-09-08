@@ -8,7 +8,9 @@ use App\Application\Workspace\UseCase\Invitation\ResendWorkspaceInvitationUseCas
 use App\Domain\Shared\Exception\AbstractDomainException;
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
+use App\Infrastructure\Workspace\Voter\WorkspaceInvitationVoter;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -33,6 +35,7 @@ class ResendWorkspaceInvitationComponent
     }
 
     #[LiveAction]
+    #[IsGranted(WorkspaceInvitationVoter::RESEND, subject: 'workspaceInvitation')]
     public function resendInvitation(): void
     {
         $this->clearLiveFlash();

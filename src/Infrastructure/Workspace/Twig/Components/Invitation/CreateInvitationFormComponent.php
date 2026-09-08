@@ -19,6 +19,7 @@ use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\FlashBagAwareSessionInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -48,6 +49,7 @@ class CreateInvitationFormComponent
         private readonly UrlGeneratorInterface $router,
         private readonly CurrentWorkspaceProvider $currentWorkspaceProvider,
         private readonly WorkspaceInvitationRepositoryInterface $workspaceInvitationRepository,
+        private readonly RateLimiterFactory $workspaceInvitationLimiter,
     ) {
     }
 
@@ -57,54 +59,56 @@ class CreateInvitationFormComponent
     }
 
     #[LiveAction]
-    public function save(): RedirectResponse
+    public function save(): ?RedirectResponse
     {
         $this->clearLiveFlash();
         $this->submitForm();
+
+        // On laisse le LiveComponent ré-afficher les erreurs de champ sans recharger.
+        if (!$this->getForm()->isValid()) {
+            return null;
+        }
+
+        $ip = $this->requestStack->getCurrentRequest()?->getClientIp() ?? 'unknown';
+        if (!$this->workspaceInvitationLimiter->create($ip)->consume()->isAccepted()) {
+            $this->flash('error', 'Trop d\'invitations envoyées récemment. Merci de réessayer plus tard.');
+
+            return new RedirectResponse($this->router->generate('app_employees_invitation'));
+        }
 
         /** @var CreateWorkspaceInvitationRequest $dto */
         $dto = $this->getForm()->getData();
 
         try {
-            $dto->invitedRole = InvitedRole::from($this->invitedRole);
+            $dto->invitedRole = InvitedRole::tryFrom($this->invitedRole) ?? InvitedRole::ROLE_WORKSPACE_COLLAB;
             ($this->createWorkspaceInvitationUseCase)($dto);
             $this->resetForm();
 
             $this->invitedRole = 'ROLE_WORKSPACE_COLLAB';
-
-            /** @var FlashBagAwareSessionInterface $session */
-            $session = $this->requestStack->getSession();
-            $session->getFlashBag()->add(
-                type: 'success',
-                message: 'L\'invitation a bien été envoyée.'
-            );
+            $this->flash('success', 'L\'invitation a bien été envoyée.');
         } catch (AbstractDomainException $e) {
             $this->logger->error('Erreur métier lors de la création d\'une invitation', [
                 'email' => $dto->email,
                 'error' => $e->getMessage(),
             ]);
-
-            /** @var FlashBagAwareSessionInterface $session */
-            $session = $this->requestStack->getSession();
-            $session->getFlashBag()->add(
-                type: 'error',
-                message: $e->getMessage(),
-            );
+            $this->flash('error', $e->getMessage());
         } catch (\Exception $e) {
             $this->logger->critical('Crash système lors de la création d\'une invitation', [
                 'email' => $dto->email,
                 'error' => $e->getMessage(),
             ]);
-
-            /** @var FlashBagAwareSessionInterface $session */
-            $session = $this->requestStack->getSession();
-            $session->getFlashBag()->add(
-                type: 'error',
-                message: 'Une erreur technique est survenue. Veuillez réessayer plus tard.'
-            );
+            $this->flash('error', 'Une erreur technique est survenue. Veuillez réessayer plus tard.');
         }
 
         return new RedirectResponse($this->router->generate('app_employees_invitation'));
+    }
+
+    private function flash(string $type, string $message): void
+    {
+        $session = $this->requestStack->getSession();
+        if ($session instanceof FlashBagAwareSessionInterface) {
+            $session->getFlashBag()->add($type, $message);
+        }
     }
 
     /**

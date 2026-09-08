@@ -130,6 +130,9 @@ services:
     App\Infrastructure\User\Twig\Components\CreateUserFormComponent:
         arguments:
             $registrationLimiter: '@limiter.user_registration'
+    App\Infrastructure\Workspace\Twig\Components\Invitation\CreateInvitationFormComponent:
+        arguments:
+            $workspaceInvitationLimiter: '@limiter.workspace_invitation'
     App\Domain\Workspace\Service\CurrentWorkspaceProvider:
         tags:
             - { name: 'kernel.reset', method: 'reset' }

@@ -8,7 +8,9 @@ use App\Application\Workspace\UseCase\Invitation\RevokeWorkspaceInvitationUseCas
 use App\Domain\Shared\Exception\AbstractDomainException;
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
+use App\Infrastructure\Workspace\Voter\WorkspaceInvitationVoter;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
@@ -34,6 +36,7 @@ class RevokeWorkspaceInvitationComponent
     }
 
     #[LiveAction]
+    #[IsGranted(WorkspaceInvitationVoter::REVOKE, subject: 'workspaceInvitation')]
     public function revokeInvitation(LiveResponder $liveResponder): void
     {
         $this->clearLiveFlash();

@@ -14,10 +14,11 @@ use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 
 /**
- * @extends Voter<string, WorkspaceInvitation>
+ * @extends Voter<string, WorkspaceInvitation|Workspace>
  */
 final class WorkspaceInvitationVoter extends Voter
 {
+    public const string CREATE = 'INVITATION_CREATE';
     public const string RESEND = 'INVITATION_RESEND';
     public const string REVOKE = 'INVITATION_REVOKE';
 
@@ -29,41 +30,31 @@ final class WorkspaceInvitationVoter extends Voter
 
     protected function supports(string $attribute, mixed $subject): bool
     {
-        // Ce voter ne s'active QUE pour ces deux actions ET si le sujet est bien une Invitation
-        return in_array($attribute, [self::RESEND, self::REVOKE], true)
-            && $subject instanceof Workspace;
+        return match ($attribute) {
+            self::CREATE => $subject instanceof Workspace,
+            self::RESEND, self::REVOKE => $subject instanceof WorkspaceInvitation,
+            default => false,
+        };
     }
 
     protected function voteOnAttribute(string $attribute, mixed $subject, TokenInterface $token, ?Vote $vote = null): bool
     {
         $user = $token->getUser();
 
-        // 1. L'utilisateur doit être connecté
         if (!$user instanceof User) {
             $vote?->addReason('The user is not logged in.');
 
             return false;
         }
 
-        // 2. Le Super Admin (Equipe Shield) a tous les droits, on gagne du temps
+        // Le Super Admin KYSURE a tous les droits.
         if ($this->accessDecisionManager->decide($token, ['ROLE_SUPER_ADMIN'])) {
             return true;
         }
 
-        $workspace = $subject->workspace;
+        $workspace = $subject instanceof WorkspaceInvitation ? $subject->workspace : $subject;
 
-        // 3. Vérification de la permission contextuelle (Multi-tenant B2B)
-        // On interroge la base pour savoir si l'utilisateur courant a le droit d'administrer ce Workspace
-        return match ($attribute) {
-            self::RESEND, self::REVOKE => $this->canManageInvitation($user, $workspace),
-            default => false,
-        };
-    }
-
-    private function canManageInvitation(User $user, Workspace $workspace): bool
-    {
-        // 💡 Règle métier : Seul un Administrateur du Workspace peut révoquer ou renvoyer une invitation.
-        // À toi d'adapter cette méthode selon ton interface de repository.
+        // Seul un administrateur de l'espace de travail concerné peut gérer les invitations.
         return $this->workspaceMemberRepository->isUserAdminOfWorkspace(user: $user, workspace: $workspace);
     }
 }

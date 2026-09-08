@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Workspace\Controller;
 
 use App\Application\Workspace\UseCase\Invitation\AcceptInvitationUseCase;
-use App\Domain\Workspace\Exception\InvitationNotFoundException;
+use App\Domain\Shared\Exception\AbstractDomainException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RequestStack;
@@ -50,7 +50,8 @@ class AcceptWorkspaceInvitationController extends AbstractController
             $this->addFlash('success', 'Bienvenue dans votre nouvel espace !');
 
             return $this->redirectToRoute('app_dashboard');
-        } catch (InvitationNotFoundException $e) {
+        } catch (AbstractDomainException $e) {
+            $this->requestStack->getSession()->remove('wrk_inv_id');
             $this->addFlash('error', $e->getMessage());
 
             return $this->redirectToRoute('app_login');

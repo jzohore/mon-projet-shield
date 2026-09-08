@@ -75,7 +75,8 @@ final readonly class WorkspaceInvitationRepository implements WorkspaceInvitatio
 
     public function findByToken(string $token): ?WorkspaceInvitation
     {
-        return $this->repository->findOneBy(['magicLinkToken' => $token]);
+        // Le jeton reçu est en clair ; en base on ne stocke que son hachage.
+        return $this->repository->findOneBy(['magicLinkToken' => WorkspaceInvitation::hashToken($token)]);
     }
 
     public function getById(Uuid $id): WorkspaceInvitation

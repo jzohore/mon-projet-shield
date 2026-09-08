@@ -29,9 +29,10 @@ readonly class DispatchInvitationWorkspaceEmail
         $invitation = $event->workspaceInvitation;
 
         Assert::notNull($invitation->id);
+        Assert::stringNotEmpty($invitation->plainMagicLinkToken, 'Jeton d\'invitation manquant.');
 
         $url = $this->router->generate('portal_user_confirm_token', [
-            'token' => $invitation->magicLinkToken,
+            'token' => $invitation->plainMagicLinkToken,
         ], UrlGeneratorInterface::ABSOLUTE_URL);
 
         $message = new DispatchInvitationEmailMessage(
