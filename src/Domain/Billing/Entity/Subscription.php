@@ -59,6 +59,49 @@ class Subscription
     #[ORM\Column(type: Types::INTEGER, options: ['default' => 1])]
     public private(set) int $seatsCount = 1;
 
+    /** Non nul = abonnement suspendu (pause_collection côté Stripe), accès gelé. */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $pausedAt = null;
+
+    /** Non nul = l'offre de fidélité (au moment d'une tentative de résiliation) a déjà été utilisée. */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $retentionOfferClaimedAt = null;
+
+    public function isPaused(): bool
+    {
+        return $this->pausedAt instanceof \DateTimeImmutable;
+    }
+
+    public function pause(): void
+    {
+        $this->pausedAt = now();
+        $this->updateAt = now();
+    }
+
+    public function resume(): void
+    {
+        $this->pausedAt = null;
+        $this->updateAt = now();
+    }
+
+    public function canClaimRetentionOffer(): bool
+    {
+        return !$this->retentionOfferClaimedAt instanceof \DateTimeImmutable;
+    }
+
+    public function claimRetentionOffer(): void
+    {
+        if (!$this->canClaimRetentionOffer()) {
+            throw new \DomainException('L\'offre de fidélité a déjà été utilisée pour cet abonnement.');
+        }
+
+        $this->retentionOfferClaimedAt = now();
+        // Le client reste : on annule toute résiliation programmée.
+        $this->cancelAtPeriodEnd = false;
+        $this->reason = null;
+        $this->updateAt = now();
+    }
+
     public function updateSeats(int $seatsCount): void
     {
         $this->seatsCount = max(1, $seatsCount);
@@ -193,6 +236,11 @@ class Subscription
      */
     public function isValid(): bool
     {
+        // 0. Un abonnement suspendu ne donne pas accès.
+        if ($this->isPaused()) {
+            return false;
+        }
+
         // 1. Le statut doit être Actif ou Trial
         if (!$this->status->isActive()) {
             return false;

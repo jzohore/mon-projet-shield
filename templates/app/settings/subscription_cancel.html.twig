@@ -5,40 +5,69 @@
 
 {% block portal_content %}
     <div class="py-10">
-        <div class="max-w-2xl mx-auto py-12 px-4">
+        <div class="max-w-2xl mx-auto py-12 px-4 space-y-6">
+
             <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
-                <h1 class="text-2xl font-bold text-slate-900">Nous sommes désolés de vous voir partir</h1>
-                <p class="mt-4 text-slate-600">
+                <h1 class="text-2xl font-bold text-slate-900">Avant de partir…</h1>
+                <p class="mt-3 text-slate-600">
                     En résiliant votre abonnement <strong>{{ subInfo.planReference == 'cabinet' ? 'Cabinet' : 'Indépendant' }}</strong>,
-                    vous conserverez l'accès jusqu'au
-                    <span class="font-semibold text-slate-900">{{ subInfo.currentPeriodEnd|date('d/m/Y') }}</span>.
+                    vous conservez l'accès jusqu'au
+                    <span class="font-semibold text-slate-900">{{ subInfo.currentPeriodEnd|date('d/m/Y') }}</span>, puis il s'arrête.
                 </p>
+            </div>
 
-                <div class="mt-8 p-4 rounded-xl bg-indigo-50 border border-indigo-100 text-left">
-                    <h3 class="font-semibold text-indigo-900 text-sm">Besoin d'une pause ?</h3>
-                    <p class="text-xs text-indigo-700 mt-1">Mettez votre abonnement en pause pendant 1 mois au lieu de résilier.</p>
-                    <button class="mt-3 text-sm font-bold text-indigo-600">Suspendre l'abonnement</button>
+            {# ── Offre de fidélité (une seule fois) ── #}
+            {% if subInfo.canClaimRetentionOffer %}
+                <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-6">
+                    <div class="flex items-start gap-3">
+                        <span class="mt-0.5 shrink-0 text-emerald-600" aria-hidden="true">{{ ux_icon('lucide:gift', { class: 'size-5' }) }}</span>
+                        <div class="min-w-0">
+                            <h2 class="text-base font-semibold text-emerald-900">Une offre pour rester</h2>
+                            <p class="mt-1 text-sm text-emerald-800">
+                                <strong>-30 % sur vos 3 prochaines factures.</strong> Proposée une seule fois — après, elle ne sera plus disponible.
+                            </p>
+                            <form method="post" action="{{ path('app_settings_subscription_retention') }}" class="mt-4" data-turbo="false">
+                                <input type="hidden" name="_token" value="{{ csrf_token('subscription-retention') }}">
+                                <twig:Button type="submit" variant="dark" size="sm">Profiter de l'offre et rester</twig:Button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
+            {% endif %}
 
-                <form action="{{ path('app_settings_subscription_cancel_confirm') }}" method="POST" class="mt-10">
+            {# ── Suspension ── #}
+            <div class="rounded-2xl border border-slate-200 bg-white p-6">
+                <div class="flex items-start gap-3">
+                    <span class="mt-0.5 shrink-0 text-slate-500" aria-hidden="true">{{ ux_icon('lucide:pause', { class: 'size-5' }) }}</span>
+                    <div class="min-w-0">
+                        <h2 class="text-base font-semibold text-slate-900">Plutôt une pause ?</h2>
+                        <p class="mt-1 text-sm text-slate-600">
+                            Suspendez l'abonnement : la facturation s'arrête, l'accès est gelé, et vous reprenez quand vous voulez sans re-souscrire.
+                        </p>
+                        <form method="post" action="{{ path('app_settings_subscription_pause') }}" class="mt-4" data-turbo="false">
+                            <input type="hidden" name="_token" value="{{ csrf_token('subscription-pause') }}">
+                            <twig:Button type="submit" variant="outline" size="sm">Suspendre l'abonnement</twig:Button>
+                        </form>
+                    </div>
+                </div>
+            </div>
 
+            {# ── Résiliation ── #}
+            <div class="rounded-2xl border border-slate-200 bg-white p-8">
+                <form action="{{ path('app_settings_subscription_cancel_confirm') }}" method="POST">
                     <input type="hidden" name="_token" value="{{ csrf_token('cancel-subscription') }}">
 
-                    <div class="text-left">
-                        <label class="block text-sm font-medium text-slate-700 mb-2">Dites-nous pourquoi vous nous quittez :</label>
-                        <select name="reason" class="w-full rounded-lg border-slate-200 text-sm">
-                            <option value="too_expensive">Le prix est trop élevé</option>
-                            <option value="missing_features">Il manque des fonctionnalités</option>
-                            <option value="too_complex">L'outil est trop complexe</option>
-                            <option value="other">Autre raison</option>
-                        </select>
-                    </div>
+                    <label for="cancel-reason" class="block text-sm font-medium text-slate-700 mb-2">Dites-nous pourquoi vous nous quittez :</label>
+                    <select id="cancel-reason" name="reason" class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900">
+                        <option value="too_expensive">Le prix est trop élevé</option>
+                        <option value="missing_features">Il manque des fonctionnalités</option>
+                        <option value="too_complex">L'outil est trop complexe</option>
+                        <option value="other">Autre raison</option>
+                    </select>
 
-                    <div class="mt-8 flex items-center justify-between">
-                        <a href="{{ path('app_settings_billing') }}" class="text-sm font-medium text-slate-500">Garder mon abonnement</a>
-                        <twig:Button type="submit" variant="dark">
-                            Confirmer la résiliation
-                        </twig:Button>
+                    <div class="mt-6 flex items-center justify-between">
+                        <a href="{{ path('app_settings_subscription') }}" class="text-sm font-medium text-slate-500 hover:text-slate-700">Garder mon abonnement</a>
+                        <twig:Button type="submit" variant="destructive">Confirmer la résiliation</twig:Button>
                     </div>
                 </form>
             </div>

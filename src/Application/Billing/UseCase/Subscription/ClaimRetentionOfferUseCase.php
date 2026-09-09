@@ -5,34 +5,29 @@ declare(strict_types=1);
 namespace App\Application\Billing\UseCase\Subscription;
 
 use App\Domain\Billing\Entity\Subscription;
-use App\Domain\Billing\Enum\Plan;
 use App\Domain\Billing\Repository\SubscriptionRepositoryInterface;
-use App\Domain\Workspace\Enum\WorkspaceType;
 use App\Domain\Workspace\Exception\NotWorkspaceAdminException;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
-use App\Domain\Workspace\Service\SeatAvailability;
 use App\Infrastructure\Service\Payment\Stripe\StripeService;
 
 /**
- * Ajuste le nombre de sièges d'un abonnement cabinet : met à jour la quantité
- * facturée sur Stripe (prorata immédiat) puis, optimiste, le compteur local
- * (le webhook `customer.subscription.updated` confirmera).
+ * Applique l'offre de fidélité (-30 % pendant 3 mois) proposée au moment d'une
+ * tentative de résiliation. Utilisable une seule fois par abonnement.
  */
-readonly class UpdateSubscriptionSeatsUseCase
+readonly class ClaimRetentionOfferUseCase
 {
     public function __construct(
         private CurrentWorkspaceProvider $currentWorkspaceProvider,
         private CurrentUserProvider $currentUserProvider,
         private WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
         private SubscriptionRepositoryInterface $subscriptionRepository,
-        private SeatAvailability $seatAvailability,
         private StripeService $stripeService,
     ) {
     }
 
-    public function __invoke(int $desiredSeats): void
+    public function __invoke(): void
     {
         $workspace = $this->currentWorkspaceProvider->getWorkspace();
 
@@ -41,25 +36,18 @@ readonly class UpdateSubscriptionSeatsUseCase
         }
 
         $subscription = $workspace->subscription;
-
         if (!$subscription instanceof Subscription || !$subscription->isValid() || null === $subscription->stripeSubscriptionId) {
-            throw new \DomainException('Aucun abonnement actif : impossible d\'ajuster les sièges.');
+            throw new \DomainException('Aucun abonnement actif.');
         }
 
-        $minPlanSeats = Plan::forWorkspaceType($workspace->isFirm() ? WorkspaceType::FIRM : WorkspaceType::INDIVIDUAL)->getMinSeats();
-        $floor = max($minPlanSeats, $this->seatAvailability->usedSeats($workspace));
-
-        if ($desiredSeats < $floor) {
-            throw new \DomainException(sprintf('Vous ne pouvez pas descendre en dessous de %d sièges (minimum de l\'offre ou sièges déjà occupés).', $floor));
+        if (!$subscription->canClaimRetentionOffer()) {
+            throw new \DomainException('L\'offre de fidélité a déjà été utilisée.');
         }
 
-        if ($desiredSeats === $subscription->seatsCount) {
-            return;
-        }
+        $this->stripeService->applyRetentionCoupon($subscription->stripeSubscriptionId);
 
-        $this->stripeService->updateSubscriptionSeats($subscription->stripeSubscriptionId, $desiredSeats);
-
-        $subscription->updateSeats($desiredSeats);
+        // Si une résiliation était programmée, on l'annule : le client reste.
+        $subscription->claimRetentionOffer();
         $this->subscriptionRepository->save($subscription);
     }
 }

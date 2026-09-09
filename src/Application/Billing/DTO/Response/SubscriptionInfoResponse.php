@@ -32,6 +32,8 @@ readonly class SubscriptionInfoResponse
         public ?float $basePrice = null,             // Added default null
         public ?string $planReference = null,
         public int $seatsCount = 1,
+        public bool $isPaused = false,
+        public bool $canClaimRetentionOffer = false,
     ) {
     }
 
@@ -71,6 +73,8 @@ readonly class SubscriptionInfoResponse
             basePrice: $basePrice,
             planReference: $subscription->planReference,
             seatsCount: $subscription->seatsCount,
+            isPaused: $subscription->isPaused(),
+            canClaimRetentionOffer: $subscription->canClaimRetentionOffer(),
         );
     }
 }

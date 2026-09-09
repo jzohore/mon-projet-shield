@@ -6,6 +6,7 @@ namespace App\Infrastructure\Service\Payment\Stripe;
 
 use App\Application\User\UseCase\UpdateStripeCustomerIdUseCase;
 use App\Domain\User\Entity\User;
+use Stripe\Coupon;
 use Stripe\Customer;
 use Stripe\Exception\ApiErrorException;
 use Stripe\Invoice;
@@ -16,6 +17,11 @@ use Webmozart\Assert\Assert;
 
 readonly class StripeService
 {
+    /** Coupon de fidélité proposé au moment d'une tentative de résiliation. */
+    public const string RETENTION_COUPON_ID = 'kysure_retention_30_3m';
+    public const int RETENTION_PERCENT_OFF = 30;
+    public const int RETENTION_DURATION_MONTHS = 3;
+
     public function __construct(
         private string $stripeSecretKey,
         private UpdateStripeCustomerIdUseCase $stripeCustomerIdUseCase,
@@ -123,8 +129,73 @@ readonly class StripeService
     }
 
     /**
+     * Suspend l'abonnement : plus de facture émise tant que la pause dure.
+     */
+    public function pauseSubscription(string $stripeSubscriptionId): void
+    {
+        try {
+            Stripe::setApiKey($this->stripeSecretKey);
+            Subscription::update($stripeSubscriptionId, [
+                'pause_collection' => ['behavior' => 'void'],
+            ]);
+        } catch (ApiErrorException $e) {
+            throw new \RuntimeException('Impossible de suspendre l\'abonnement sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Lève la suspension : la facturation reprend au cycle suivant.
+     */
+    public function resumeSubscription(string $stripeSubscriptionId): void
+    {
+        try {
+            Stripe::setApiKey($this->stripeSecretKey);
+            Subscription::update($stripeSubscriptionId, [
+                'pause_collection' => null,
+            ]);
+        } catch (ApiErrorException $e) {
+            throw new \RuntimeException('Impossible de reprendre l\'abonnement sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    /**
+     * Applique le coupon de fidélité (-30 % pendant 3 mois) à l'abonnement.
+     * Crée le coupon Stripe s'il n'existe pas encore (idempotent).
+     */
+    public function applyRetentionCoupon(string $stripeSubscriptionId): void
+    {
+        try {
+            Stripe::setApiKey($this->stripeSecretKey);
+            $this->ensureRetentionCoupon();
+
+            Subscription::update($stripeSubscriptionId, [
+                'coupon' => self::RETENTION_COUPON_ID,
+                // Le client reste : on annule toute résiliation programmée.
+                'cancel_at_period_end' => false,
+            ]);
+        } catch (ApiErrorException $e) {
+            throw new \RuntimeException('Impossible d\'appliquer l\'offre de fidélité sur Stripe : ' . $e->getMessage(), $e->getCode(), $e);
+        }
+    }
+
+    private function ensureRetentionCoupon(): void
+    {
+        try {
+            Coupon::retrieve(self::RETENTION_COUPON_ID);
+        } catch (ApiErrorException) {
+            Coupon::create([
+                'id' => self::RETENTION_COUPON_ID,
+                'percent_off' => self::RETENTION_PERCENT_OFF,
+                'duration' => 'repeating',
+                'duration_in_months' => self::RETENTION_DURATION_MONTHS,
+                'name' => 'Fidélité KYSURE — -30 % pendant 3 mois',
+            ]);
+        }
+    }
+
+    /**
      * Ajuste le nombre de sièges facturés (quantity de la ligne d'abonnement),
-     * avec facturation au prorata immédiate.
+     * avec facturation au prorata sur la prochaine facture.
      */
     public function updateSubscriptionSeats(string $stripeSubscriptionId, int $quantity): void
     {

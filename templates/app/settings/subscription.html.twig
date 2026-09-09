@@ -12,10 +12,22 @@
     <div class="grid gap-6 lg:grid-cols-3">
 
         {# ── Offre actuelle ── #}
-        <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
+        <div class="lg:col-span-2 bg-white rounded-xl border border-slate-200 {{ subInfo.isPaused ? 'border-l-4 border-l-amber-500' : '' }} p-6 shadow-sm">
             <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Offre actuelle</p>
 
-            {% if active %}
+            {% if subInfo.isPaused %}
+                <div class="flex items-baseline gap-2">
+                    <span class="text-2xl font-bold text-slate-900 tracking-tight">
+                        {{ subInfo.planReference == 'cabinet' ? 'Cabinet' : 'Indépendant' }}
+                    </span>
+                    <span class="inline-flex items-center rounded-md bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">Suspendu</span>
+                </div>
+                <p class="mt-1 text-sm text-slate-500">Facturation interrompue, accès gelé. Reprenez quand vous voulez.</p>
+                <form method="post" action="{{ path('app_settings_subscription_resume') }}" class="mt-4" data-turbo="false">
+                    <input type="hidden" name="_token" value="{{ csrf_token('subscription-resume') }}">
+                    <twig:Button type="submit" variant="dark" size="sm">Reprendre l'abonnement</twig:Button>
+                </form>
+            {% elseif active %}
                 <div class="flex items-baseline gap-2">
                     <span class="text-2xl font-bold text-slate-900 tracking-tight">
                         {{ subInfo.planReference == 'cabinet' ? 'Cabinet' : 'Indépendant' }}
