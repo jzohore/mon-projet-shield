@@ -92,6 +92,9 @@ enum AuditEventType: string
     case SUBSCRIPTION_ACTIVATED = 'billing.subscription_activated';
     case SUBSCRIPTION_CANCELED = 'billing.subscription_canceled';
     case SUBSCRIPTION_TRIAL_EXTENDED = 'billing.trial_extended';
+    case SUBSCRIPTION_PAUSED = 'billing.subscription_paused';
+    case SUBSCRIPTION_RESUMED = 'billing.subscription_resumed';
+    case SUBSCRIPTION_RETENTION_OFFER_CLAIMED = 'billing.retention_offer_claimed';
 
     /**
      * Libellé explicite en français pour l'affichage dans les journaux d'audit.
@@ -177,6 +180,9 @@ enum AuditEventType: string
             self::SUBSCRIPTION_ACTIVATED => 'Activation de l\'abonnement SaaS',
             self::SUBSCRIPTION_CANCELED => 'Résiliation de l\'abonnement',
             self::SUBSCRIPTION_TRIAL_EXTENDED => 'Prolongation de la période d\'essai',
+            self::SUBSCRIPTION_PAUSED => 'Suspension de l\'abonnement',
+            self::SUBSCRIPTION_RESUMED => 'Reprise de l\'abonnement',
+            self::SUBSCRIPTION_RETENTION_OFFER_CLAIMED => 'Offre de fidélité appliquée',
         };
     }
 
@@ -251,7 +257,10 @@ enum AuditEventType: string
 
             self::SUBSCRIPTION_ACTIVATED,
             self::SUBSCRIPTION_CANCELED,
-            self::SUBSCRIPTION_TRIAL_EXTENDED => 'Abonnement',
+            self::SUBSCRIPTION_TRIAL_EXTENDED,
+            self::SUBSCRIPTION_PAUSED,
+            self::SUBSCRIPTION_RESUMED,
+            self::SUBSCRIPTION_RETENTION_OFFER_CLAIMED => 'Abonnement',
         };
     }
 

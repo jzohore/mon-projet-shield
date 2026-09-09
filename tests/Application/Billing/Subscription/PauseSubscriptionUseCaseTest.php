@@ -18,6 +18,7 @@ use App\Infrastructure\Service\Payment\Stripe\StripeService;
 use App\Tests\Application\ReflectionHelperTrait;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final class PauseSubscriptionUseCaseTest extends TestCase
 {
@@ -47,10 +48,11 @@ final class PauseSubscriptionUseCaseTest extends TestCase
 
         $this->stripeService = $this->createMock(StripeService::class);
         $repo = $this->createStub(SubscriptionRepositoryInterface::class);
+        $dispatcher = $this->createStub(EventDispatcherInterface::class);
 
         return [
-            new PauseSubscriptionUseCase($workspaceProvider, $userProvider, $memberRepo, $repo, $this->stripeService),
-            new ResumeSubscriptionUseCase($workspaceProvider, $userProvider, $memberRepo, $repo, $this->stripeService),
+            new PauseSubscriptionUseCase($workspaceProvider, $userProvider, $memberRepo, $repo, $this->stripeService, $dispatcher),
+            new ResumeSubscriptionUseCase($workspaceProvider, $userProvider, $memberRepo, $repo, $this->stripeService, $dispatcher),
         ];
     }
 

@@ -1,0 +1,17 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block content %}
+    <h1>{{ headline }}</h1>
+
+    <p>Bonjour,</p>
+
+    <p>{{ body }}</p>
+
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 16px; border-radius: 8px; margin: 24px 0;">
+        <p style="margin: 0; font-size: 14px; color: #475569;">
+            Espace concerné : <strong>{{ workspace_name }}</strong>
+        </p>
+    </div>
+
+    <p>Vous pouvez gérer votre abonnement à tout moment depuis vos paramètres de facturation.</p>
+{% endblock %}

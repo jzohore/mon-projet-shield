@@ -18,6 +18,7 @@ use App\Tests\Application\ReflectionHelperTrait;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 #[AllowMockObjectsWithoutExpectations]
 final class ClaimRetentionOfferUseCaseTest extends TestCase
@@ -54,6 +55,7 @@ final class ClaimRetentionOfferUseCaseTest extends TestCase
             $memberRepo,
             $this->subscriptionRepository,
             $this->stripeService,
+            $this->createStub(EventDispatcherInterface::class),
         );
     }
 
