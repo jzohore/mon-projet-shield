@@ -29,6 +29,7 @@ enum AuditEventType: string
     case WORKSPACE_INVITATION_RESENT = 'workspace.invitation_resent';
     case WORKSPACE_INVITATION_ACCEPTED = 'workspace.invitation_accepted';
     case WORKSPACE_INVITATION_REVOKED = 'workspace.invitation_revoked';
+    case WORKSPACE_INVITATION_EXPIRED = 'workspace.invitation_expired';
     case WORKSPACE_MEMBER_ADDED = 'workspace.member_added';
     case WORKSPACE_MEMBER_REVOKED = 'workspace.member_revoked';
     case WORKSPACE_PERMISSIONS_UPDATED = 'workspace.permissions_updated';
@@ -126,6 +127,7 @@ enum AuditEventType: string
             self::WORKSPACE_INVITATION_RESENT => 'Invitation de collaborateur renvoyée',
             self::WORKSPACE_INVITATION_ACCEPTED => 'Invitation acceptée — accès accordé',
             self::WORKSPACE_INVITATION_REVOKED => 'Annulation d\'une invitation de collaborateur',
+            self::WORKSPACE_INVITATION_EXPIRED => 'Expiration et purge d\'invitations non acceptées',
             self::WORKSPACE_MEMBER_ADDED => 'Ajout d\'un collaborateur',
             self::WORKSPACE_MEMBER_REVOKED => 'Révocation d\'un collaborateur',
             self::WORKSPACE_PERMISSIONS_UPDATED => 'Modification des droits délégués aux collaborateurs',
@@ -219,6 +221,7 @@ enum AuditEventType: string
             self::WORKSPACE_INVITATION_RESENT,
             self::WORKSPACE_INVITATION_ACCEPTED,
             self::WORKSPACE_INVITATION_REVOKED,
+            self::WORKSPACE_INVITATION_EXPIRED,
             self::WORKSPACE_MEMBER_ADDED,
             self::WORKSPACE_MEMBER_REVOKED,
             self::WORKSPACE_PERMISSIONS_UPDATED,

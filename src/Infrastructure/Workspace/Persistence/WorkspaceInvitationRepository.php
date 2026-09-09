@@ -56,6 +56,22 @@ final readonly class WorkspaceInvitationRepository implements WorkspaceInvitatio
         );
     }
 
+    /**
+     * @return array<int, WorkspaceInvitation>
+     */
+    public function findExpiredPending(\DateTimeImmutable $cutoff, int $limit): array
+    {
+        return $this->repository->createQueryBuilder('wi')
+            ->where('wi.invitationStatus = :pending')
+            ->andWhere('COALESCE(wi.magicLinkTokenExpiresAt, wi.createdAt) < :cutoff')
+            ->setParameter('pending', InvitationStatus::PENDING)
+            ->setParameter('cutoff', $cutoff)
+            ->orderBy('wi.createdAt', 'ASC')
+            ->setMaxResults(max(1, $limit))
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findByEmail(string $email): ?WorkspaceInvitation
     {
         return $this->repository->findOneBy(['email' => $email]);

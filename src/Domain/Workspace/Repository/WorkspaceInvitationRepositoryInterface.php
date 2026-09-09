@@ -22,6 +22,14 @@ interface WorkspaceInvitationRepositoryInterface
      */
     public function findPendingByWorkspace(Workspace $workspace): array;
 
+    /**
+     * Invitations encore PENDING mais périmées avant $cutoff (jamais acceptées),
+     * candidates à l'anonymisation RGPD.
+     *
+     * @return WorkspaceInvitation[]
+     */
+    public function findExpiredPending(\DateTimeImmutable $cutoff, int $limit): array;
+
     public function findByEmail(string $email): ?WorkspaceInvitation;
 
     public function findBySlugId(string $slugId): ?WorkspaceInvitation;

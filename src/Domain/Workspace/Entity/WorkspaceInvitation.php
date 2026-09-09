@@ -176,4 +176,18 @@ class WorkspaceInvitation
     {
         $this->invitationStatus = InvitationStatus::ACCEPTED;
     }
+
+    /**
+     * Minimisation RGPD : une invitation jamais acceptée et périmée de longue
+     * date n'a plus de raison de conserver les nom / prénom / e-mail du
+     * destinataire. La ligne devient un simple marqueur historique.
+     */
+    public function anonymizeAsExpired(): void
+    {
+        $this->firstName = '';
+        $this->lastName = '';
+        $this->email = '';
+        $this->invitationStatus = InvitationStatus::EXPIRED;
+        $this->clearMagicLinkToken();
+    }
 }
