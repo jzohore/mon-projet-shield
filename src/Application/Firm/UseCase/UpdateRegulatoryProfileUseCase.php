@@ -9,8 +9,10 @@ use App\Application\Firm\DTO\Request\UpdateRegulatoryProfileRequest;
 use App\Domain\Firm\Entity\RegulatoryProfile;
 use App\Domain\Firm\Event\RegulatoryProfileUpdatedEvent;
 use App\Domain\Firm\Repository\RegulatoryProfileRepositoryInterface;
+use App\Domain\Workspace\Exception\NotWorkspaceAdminException;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
+use App\Domain\Workspace\Service\WorkspacePermissionChecker;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 readonly class UpdateRegulatoryProfileUseCase
@@ -20,6 +22,7 @@ readonly class UpdateRegulatoryProfileUseCase
         private CurrentUserProvider $currentUserProvider,
         private RegulatoryProfileRepositoryInterface $repository,
         private EventDispatcherInterface $eventDispatcher,
+        private WorkspacePermissionChecker $permissionChecker,
     ) {
     }
 
@@ -27,6 +30,10 @@ readonly class UpdateRegulatoryProfileUseCase
     {
         $workspace = $this->workspaceProvider->getWorkspace();
         $user = $this->currentUserProvider->getUser();
+
+        if (!$this->permissionChecker->canEditCabinet($user, $workspace)) {
+            throw NotWorkspaceAdminException::create();
+        }
 
         $profile = $workspace->regulatoryProfile;
 

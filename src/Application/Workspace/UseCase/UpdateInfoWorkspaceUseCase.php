@@ -6,12 +6,14 @@ namespace App\Application\Workspace\UseCase;
 
 use App\Application\Workspace\DTO\Request\UpdateWorkspaceRequest;
 use App\Domain\Workspace\Event\WorkspaceUpdatedEvent;
+use App\Domain\Workspace\Exception\NotWorkspaceAdminException;
 use App\Domain\Workspace\Exception\WorkspaceNameAlreadyExistsException;
 use App\Domain\Workspace\Exception\WorkspaceSirenAlreadyExistsException;
 use App\Domain\Workspace\Exception\WorkspaceSiretAlreadyExistsException;
 use App\Domain\Workspace\Repository\WorkspaceRepositoryInterface;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
+use App\Domain\Workspace\Service\WorkspacePermissionChecker;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 readonly class UpdateInfoWorkspaceUseCase
@@ -21,6 +23,7 @@ readonly class UpdateInfoWorkspaceUseCase
         private CurrentWorkspaceProvider $currentWorkspaceProvider,
         private EventDispatcherInterface $eventDispatcher,
         private CurrentUserProvider $currentUserProvider,
+        private WorkspacePermissionChecker $permissionChecker,
     ) {
     }
 
@@ -28,6 +31,10 @@ readonly class UpdateInfoWorkspaceUseCase
     {
         $workspace = $this->currentWorkspaceProvider->getWorkspace();
         $user = $this->currentUserProvider->getUser();
+
+        if (!$this->permissionChecker->canEditCabinet($user, $workspace)) {
+            throw NotWorkspaceAdminException::create();
+        }
 
         // 1. On capture les VRAIES anciennes valeurs depuis l'entité
         $oldName = $workspace->name;

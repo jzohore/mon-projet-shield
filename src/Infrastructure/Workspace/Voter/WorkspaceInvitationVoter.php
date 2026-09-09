@@ -7,8 +7,7 @@ namespace App\Infrastructure\Workspace\Voter;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
-use App\Domain\Workspace\Entity\WorkspaceMember;
-use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
+use App\Domain\Workspace\Service\WorkspacePermissionChecker;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\AccessDecisionManagerInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
@@ -22,19 +21,21 @@ final class WorkspaceInvitationVoter extends Voter
     public const string CREATE = 'INVITATION_CREATE';
     public const string RESEND = 'INVITATION_RESEND';
     public const string REVOKE = 'INVITATION_REVOKE';
+    /** Modifier la fiche / les réglages du cabinet. */
+    public const string WORKSPACE_EDIT = 'WORKSPACE_EDIT';
     /** Ouvrir / restreindre les droits délégués aux collaborateurs — administrateurs uniquement. */
     public const string PERMISSIONS_MANAGE = 'WORKSPACE_PERMISSIONS_MANAGE';
 
     public function __construct(
         private readonly AccessDecisionManagerInterface $accessDecisionManager,
-        private readonly WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
+        private readonly WorkspacePermissionChecker $permissionChecker,
     ) {
     }
 
     protected function supports(string $attribute, mixed $subject): bool
     {
         return match ($attribute) {
-            self::CREATE, self::PERMISSIONS_MANAGE => $subject instanceof Workspace,
+            self::CREATE, self::WORKSPACE_EDIT, self::PERMISSIONS_MANAGE => $subject instanceof Workspace,
             self::RESEND, self::REVOKE => $subject instanceof WorkspaceInvitation,
             default => false,
         };
@@ -57,16 +58,10 @@ final class WorkspaceInvitationVoter extends Voter
 
         $workspace = $subject instanceof WorkspaceInvitation ? $subject->workspace : $subject;
 
-        // Un administrateur de l'espace de travail concerné a tous ces droits.
-        if ($this->workspaceMemberRepository->isUserAdminOfWorkspace(user: $user, workspace: $workspace)) {
-            return true;
-        }
-
-        // Délégation : la gestion des invitations peut être ouverte aux
-        // collaborateurs membres du cabinet. La gestion des droits, jamais.
         return match ($attribute) {
-            self::CREATE, self::RESEND, self::REVOKE => $workspace->collabCanInvite
-                && $this->workspaceMemberRepository->findByWorkspaceAndUser($workspace, $user) instanceof WorkspaceMember,
+            self::CREATE, self::RESEND, self::REVOKE => $this->permissionChecker->canInvite($user, $workspace),
+            self::WORKSPACE_EDIT => $this->permissionChecker->canEditCabinet($user, $workspace),
+            self::PERMISSIONS_MANAGE => $this->permissionChecker->isAdmin($user, $workspace),
             default => false,
         };
     }

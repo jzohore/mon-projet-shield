@@ -6,8 +6,7 @@ namespace App\Tests\Infrastructure\Workspace\Voter;
 
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
-use App\Domain\Workspace\Entity\WorkspaceMember;
-use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
+use App\Domain\Workspace\Service\WorkspacePermissionChecker;
 use App\Infrastructure\Workspace\Voter\WorkspaceInvitationVoter;
 use App\Tests\Application\ReflectionHelperTrait;
 use PHPUnit\Framework\TestCase;
@@ -19,14 +18,10 @@ final class WorkspaceInvitationVoterTest extends TestCase
 {
     use ReflectionHelperTrait;
 
-    private function vote(bool $isAdmin, bool $collabCanInvite, bool $isMember, string $attribute = WorkspaceInvitationVoter::CREATE): int
+    private function vote(string $attribute, bool $canInvite = false, bool $canEditCabinet = false, bool $isAdmin = false): int
     {
         $user = $this->createEntityState(User::class, ['email' => 'u@x.fr']);
-        $workspace = $this->createEntityState(Workspace::class, [
-            'name' => 'Cabinet',
-            'slugId' => 'wrk_1',
-            'collabCanInvite' => $collabCanInvite,
-        ]);
+        $workspace = $this->createEntityState(Workspace::class, ['name' => 'Cabinet', 'slugId' => 'wrk_1']);
 
         $token = $this->createStub(TokenInterface::class);
         $token->method('getUser')->willReturn($user);
@@ -34,40 +29,29 @@ final class WorkspaceInvitationVoterTest extends TestCase
         $adm = $this->createStub(AccessDecisionManagerInterface::class);
         $adm->method('decide')->willReturn(false); // pas super-admin KYSURE
 
-        $members = $this->createStub(WorkspaceMemberRepositoryInterface::class);
-        $members->method('isUserAdminOfWorkspace')->willReturn($isAdmin);
-        $members->method('findByWorkspaceAndUser')->willReturn(
-            $isMember ? $this->createEntityState(WorkspaceMember::class, []) : null,
-        );
+        $checker = $this->createStub(WorkspacePermissionChecker::class);
+        $checker->method('canInvite')->willReturn($canInvite);
+        $checker->method('canEditCabinet')->willReturn($canEditCabinet);
+        $checker->method('isAdmin')->willReturn($isAdmin);
 
-        return new WorkspaceInvitationVoter($adm, $members)->vote($token, $workspace, [$attribute]);
+        return new WorkspaceInvitationVoter($adm, $checker)->vote($token, $workspace, [$attribute]);
     }
 
-    public function testAdminIsAlwaysGranted(): void
+    public function testInvitationDelegatedToCollab(): void
     {
-        self::assertSame(VoterInterface::ACCESS_GRANTED, $this->vote(isAdmin: true, collabCanInvite: false, isMember: true));
+        self::assertSame(VoterInterface::ACCESS_GRANTED, $this->vote(WorkspaceInvitationVoter::CREATE, canInvite: true));
+        self::assertSame(VoterInterface::ACCESS_DENIED, $this->vote(WorkspaceInvitationVoter::CREATE, canInvite: false));
     }
 
-    public function testCollabDeniedWhenDelegationIsOff(): void
+    public function testCabinetEditFollowsItsOwnDelegation(): void
     {
-        self::assertSame(VoterInterface::ACCESS_DENIED, $this->vote(isAdmin: false, collabCanInvite: false, isMember: true));
+        self::assertSame(VoterInterface::ACCESS_GRANTED, $this->vote(WorkspaceInvitationVoter::WORKSPACE_EDIT, canEditCabinet: true));
+        self::assertSame(VoterInterface::ACCESS_DENIED, $this->vote(WorkspaceInvitationVoter::WORKSPACE_EDIT, canEditCabinet: false));
     }
 
-    public function testCollabGrantedWhenDelegationIsOnAndMember(): void
+    public function testPermissionsManagementIsAdminOnly(): void
     {
-        self::assertSame(VoterInterface::ACCESS_GRANTED, $this->vote(isAdmin: false, collabCanInvite: true, isMember: true));
-    }
-
-    public function testNonMemberDeniedEvenWhenDelegationIsOn(): void
-    {
-        self::assertSame(VoterInterface::ACCESS_DENIED, $this->vote(isAdmin: false, collabCanInvite: true, isMember: false));
-    }
-
-    public function testPermissionsManagementIsNeverDelegated(): void
-    {
-        self::assertSame(
-            VoterInterface::ACCESS_DENIED,
-            $this->vote(isAdmin: false, collabCanInvite: true, isMember: true, attribute: WorkspaceInvitationVoter::PERMISSIONS_MANAGE),
-        );
+        self::assertSame(VoterInterface::ACCESS_GRANTED, $this->vote(WorkspaceInvitationVoter::PERMISSIONS_MANAGE, isAdmin: true));
+        self::assertSame(VoterInterface::ACCESS_DENIED, $this->vote(WorkspaceInvitationVoter::PERMISSIONS_MANAGE, canInvite: true, canEditCabinet: true, isAdmin: false));
     }
 }

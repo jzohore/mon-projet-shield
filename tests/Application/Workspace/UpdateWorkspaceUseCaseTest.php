@@ -16,6 +16,7 @@ use App\Domain\Workspace\Exception\WorkspaceSiretAlreadyExistsException;
 use App\Domain\Workspace\Repository\WorkspaceRepositoryInterface;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
+use App\Domain\Workspace\Service\WorkspacePermissionChecker;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -36,11 +37,15 @@ final class UpdateWorkspaceUseCaseTest extends TestCase
         $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $this->currentUserProvider = $this->createMock(CurrentUserProvider::class);
 
+        $permissionChecker = $this->createStub(WorkspacePermissionChecker::class);
+        $permissionChecker->method('canEditCabinet')->willReturn(true);
+
         $this->useCase = new UpdateInfoWorkspaceUseCase(
             $this->workspaceRepository,
             $this->currentWorkspaceProvider,
             $this->eventDispatcher,
-            $this->currentUserProvider
+            $this->currentUserProvider,
+            $permissionChecker,
         );
     }
 

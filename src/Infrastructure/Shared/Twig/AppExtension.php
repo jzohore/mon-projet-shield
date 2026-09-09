@@ -10,6 +10,8 @@ use App\Application\Workspace\DTO\Response\WorkspaceInfoResponse;
 use App\Application\Workspace\UseCase\CurrentWorkspaceInfo;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use App\Domain\Workspace\Service\SeatAvailability;
+use App\Infrastructure\Workspace\Voter\WorkspaceInvitationVoter;
+use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
 use Twig\TwigFunction;
@@ -21,6 +23,7 @@ class AppExtension extends AbstractExtension
         private readonly CurrentWorkspaceInfo $currentWorkspaceInfo,
         private readonly SeatAvailability $seatAvailability,
         private readonly CurrentWorkspaceProvider $currentWorkspaceProvider,
+        private readonly AuthorizationCheckerInterface $authorizationChecker,
     ) {
     }
 
@@ -39,7 +42,28 @@ class AppExtension extends AbstractExtension
             new TwigFunction('workspaceInfo', $this->workspaceInfo(...)),
             new TwigFunction('subInfo', $this->subInfo(...)),
             new TwigFunction('seatInfo', $this->seatInfo(...)),
+            new TwigFunction('workspace_can', $this->workspaceCan(...)),
         ];
+    }
+
+    /**
+     * Le collaborateur courant a-t-il ce droit dans son cabinet ?
+     * (un administrateur a toujours tout ; sinon, selon la délégation configurée).
+     */
+    public function workspaceCan(string $capability): bool
+    {
+        $attribute = match ($capability) {
+            'invite' => WorkspaceInvitationVoter::CREATE,
+            'edit_cabinet' => WorkspaceInvitationVoter::WORKSPACE_EDIT,
+            'manage_permissions' => WorkspaceInvitationVoter::PERMISSIONS_MANAGE,
+            default => null,
+        };
+
+        if (null === $attribute) {
+            return false;
+        }
+
+        return $this->authorizationChecker->isGranted($attribute, $this->currentWorkspaceProvider->getWorkspace());
     }
 
     /**
