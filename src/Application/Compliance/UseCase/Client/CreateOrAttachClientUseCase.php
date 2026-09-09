@@ -9,8 +9,10 @@ use App\Domain\Compliance\Event\ClientAddedToWorkspaceEvent;
 use App\Domain\User\Entity\Client;
 use App\Domain\User\Entity\ClientWorkspaceRelation;
 use App\Domain\User\Repository\ClientRepositoryInterface;
+use App\Domain\Workspace\Exception\NotWorkspaceAdminException;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
+use App\Domain\Workspace\Service\WorkspacePermissionChecker;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
@@ -26,6 +28,7 @@ readonly class CreateOrAttachClientUseCase
         private CurrentWorkspaceProvider $workspaceProvider,
         private CurrentUserProvider $userProvider,
         private EventDispatcherInterface $eventDispatcher,
+        private WorkspacePermissionChecker $permissionChecker,
     ) {
     }
 
@@ -33,6 +36,10 @@ readonly class CreateOrAttachClientUseCase
     {
         $workspace = $this->workspaceProvider->getWorkspace();
         $actor = $this->userProvider->getUser();
+
+        if (!$this->permissionChecker->canManagePortfolio($actor, $workspace)) {
+            throw NotWorkspaceAdminException::forDelegatedAction();
+        }
         $email = mb_strtolower(trim($request->email));
 
         $client = $this->clientRepository->findByEmail($email);

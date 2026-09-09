@@ -13,6 +13,7 @@ use App\Domain\User\Repository\ClientRepositoryInterface;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
+use App\Domain\Workspace\Service\WorkspacePermissionChecker;
 use App\Tests\Application\ReflectionHelperTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
@@ -49,11 +50,15 @@ final class CreateOrAttachClientUseCaseTest extends TestCase
             $this->createEntityState(User::class, ['slugId' => 'usr_1', 'firstName' => 'Marie', 'lastName' => 'Curie'])
         );
 
+        $permissionChecker = $this->createStub(WorkspacePermissionChecker::class);
+        $permissionChecker->method('canManagePortfolio')->willReturn(true);
+
         $this->useCase = new CreateOrAttachClientUseCase(
             $this->clientRepository,
             $workspaceProvider,
             $userProvider,
             $this->eventDispatcher,
+            $permissionChecker,
         );
     }
 

@@ -7,7 +7,9 @@ namespace App\Application\Compliance\UseCase\ComplianceFolder;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Event\ArchiveComplianceEvent;
 use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
+use App\Domain\Workspace\Exception\NotWorkspaceAdminException;
 use App\Domain\Workspace\Service\CurrentUserProvider;
+use App\Domain\Workspace\Service\WorkspacePermissionChecker;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final readonly class ArchiveFolderUseCase
@@ -16,12 +18,17 @@ final readonly class ArchiveFolderUseCase
         private ComplianceFolderRepositoryInterface $complianceFolderRepository,
         private CurrentUserProvider $currentUserProvider,
         private EventDispatcherInterface $eventDispatcher,
+        private WorkspacePermissionChecker $permissionChecker,
     ) {
     }
 
     public function __invoke(ComplianceFolder $folder): void
     {
         $user = $this->currentUserProvider->getUser();
+
+        if (!$this->permissionChecker->canArchiveFolder($user, $folder->workspace)) {
+            throw NotWorkspaceAdminException::forDelegatedAction();
+        }
 
         $folder->markAsArchive($user->email);
         $this->complianceFolderRepository->save($folder);

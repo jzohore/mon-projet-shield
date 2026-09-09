@@ -22,7 +22,7 @@
             <div class="divide-y divide-slate-100">
                 {% set toggles = [
                     { name: 'collab_can_invite', label: 'Inviter, renvoyer et annuler des invitations', on: workspace.collabCanInvite },
-                    { name: 'collab_can_manage_portfolio', label: 'Gérer le portefeuille client (rattacher / détacher)', on: workspace.collabCanManagePortfolio },
+                    { name: 'collab_can_manage_portfolio', label: 'Ajouter des clients au portefeuille (le retrait reste admin)', on: workspace.collabCanManagePortfolio },
                     { name: 'collab_can_edit_cabinet', label: 'Modifier la fiche et les réglages du cabinet', on: workspace.collabCanEditCabinet },
                     { name: 'collab_can_archive_folder', label: 'Archiver un dossier de conformité', on: workspace.collabCanArchiveFolder },
                 ] %}

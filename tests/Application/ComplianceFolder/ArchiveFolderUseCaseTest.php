@@ -9,7 +9,9 @@ use App\Domain\Compliance\Entity\BusinessFolder;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Compliance\Repository\ComplianceFolderRepositoryInterface;
 use App\Domain\User\Entity\User;
+use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Service\CurrentUserProvider;
+use App\Domain\Workspace\Service\WorkspacePermissionChecker;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -29,10 +31,14 @@ final class ArchiveFolderUseCaseTest extends TestCase
         $this->currentUserProvider = $this->createMock(CurrentUserProvider::class);
         $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
+        $permissionChecker = $this->createStub(WorkspacePermissionChecker::class);
+        $permissionChecker->method('canArchiveFolder')->willReturn(true);
+
         $this->useCase = new ArchiveFolderUseCase(
             $this->repository,
             $this->currentUserProvider,
             $this->eventDispatcher,
+            $permissionChecker,
         );
     }
 
@@ -68,6 +74,7 @@ final class ArchiveFolderUseCaseTest extends TestCase
         // Utilisation d'une implémentation concrète de ComplianceFolder
         $folder = $this->createEntityState(BusinessFolder::class, [
             'slugId' => 'folder_archive_123',
+            'workspace' => $this->createEntityState(Workspace::class, ['slugId' => 'wrk_1', 'name' => 'Cabinet']),
         ]);
 
         if (!$folder instanceof ComplianceFolder) {

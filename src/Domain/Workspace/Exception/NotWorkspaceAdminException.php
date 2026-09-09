@@ -18,4 +18,14 @@ class NotWorkspaceAdminException extends AbstractDomainException
             statusCode: Response::HTTP_FORBIDDEN,
         );
     }
+
+    /** Action non ouverte au collaborateur par l'administrateur du cabinet. */
+    public static function forDelegatedAction(): self
+    {
+        return new self(
+            message: 'Cette action n\'est pas ouverte aux collaborateurs dans ce cabinet. Demandez à un administrateur.',
+            errorCode: ErrorCode::NOT_WORKSPACE_ADMIN,
+            statusCode: Response::HTTP_FORBIDDEN,
+        );
+    }
 }

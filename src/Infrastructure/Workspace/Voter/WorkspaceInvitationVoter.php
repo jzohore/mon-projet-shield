@@ -23,6 +23,10 @@ final class WorkspaceInvitationVoter extends Voter
     public const string REVOKE = 'INVITATION_REVOKE';
     /** Modifier la fiche / les réglages du cabinet. */
     public const string WORKSPACE_EDIT = 'WORKSPACE_EDIT';
+    /** Ajouter un client au portefeuille du cabinet. */
+    public const string PORTFOLIO_MANAGE = 'WORKSPACE_PORTFOLIO_MANAGE';
+    /** Archiver un dossier de conformité. */
+    public const string FOLDER_ARCHIVE = 'WORKSPACE_FOLDER_ARCHIVE';
     /** Ouvrir / restreindre les droits délégués aux collaborateurs — administrateurs uniquement. */
     public const string PERMISSIONS_MANAGE = 'WORKSPACE_PERMISSIONS_MANAGE';
 
@@ -35,7 +39,7 @@ final class WorkspaceInvitationVoter extends Voter
     protected function supports(string $attribute, mixed $subject): bool
     {
         return match ($attribute) {
-            self::CREATE, self::WORKSPACE_EDIT, self::PERMISSIONS_MANAGE => $subject instanceof Workspace,
+            self::CREATE, self::WORKSPACE_EDIT, self::PORTFOLIO_MANAGE, self::FOLDER_ARCHIVE, self::PERMISSIONS_MANAGE => $subject instanceof Workspace,
             self::RESEND, self::REVOKE => $subject instanceof WorkspaceInvitation,
             default => false,
         };
@@ -61,6 +65,8 @@ final class WorkspaceInvitationVoter extends Voter
         return match ($attribute) {
             self::CREATE, self::RESEND, self::REVOKE => $this->permissionChecker->canInvite($user, $workspace),
             self::WORKSPACE_EDIT => $this->permissionChecker->canEditCabinet($user, $workspace),
+            self::PORTFOLIO_MANAGE => $this->permissionChecker->canManagePortfolio($user, $workspace),
+            self::FOLDER_ARCHIVE => $this->permissionChecker->canArchiveFolder($user, $workspace),
             self::PERMISSIONS_MANAGE => $this->permissionChecker->isAdmin($user, $workspace),
             default => false,
         };
