@@ -7,11 +7,14 @@ namespace App\Tests\Application\Workspace\Invitation;
 use App\Application\Workspace\DTO\Request\CreateWorkspaceInvitationRequest;
 use App\Application\Workspace\UseCase\Invitation\CreateWorkspaceInvitationUseCase;
 use App\Domain\User\Entity\User;
+use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Domain\Workspace\Entity\Workspace;
+use App\Domain\Workspace\Entity\WorkspaceMember;
 use App\Domain\Workspace\Enum\InvitedRole;
 use App\Domain\Workspace\Event\WorkspaceInvitationCreatedEvent;
 use App\Domain\Workspace\Exception\NotWorkspaceAdminException;
 use App\Domain\Workspace\Exception\SeatLimitReachedException;
+use App\Domain\Workspace\Exception\UserAlreadyBelongsToAnotherWorkspaceException;
 use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use App\Domain\Workspace\Service\CurrentUserProvider;
@@ -28,6 +31,7 @@ final class CreateWorkspaceInvitationUseCaseTest extends TestCase
 
     private WorkspaceInvitationRepositoryInterface&MockObject $invitationRepository;
     private WorkspaceMemberRepositoryInterface $memberRepository;
+    private UserRepositoryInterface $userRepository;
     private EventDispatcherInterface&MockObject $eventDispatcher;
     private Workspace $workspace;
 
@@ -37,6 +41,7 @@ final class CreateWorkspaceInvitationUseCaseTest extends TestCase
 
         $this->invitationRepository = $this->createMock(WorkspaceInvitationRepositoryInterface::class);
         $this->memberRepository = $this->createStub(WorkspaceMemberRepositoryInterface::class);
+        $this->userRepository = $this->createStub(UserRepositoryInterface::class);
         $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
     }
 
@@ -59,6 +64,7 @@ final class CreateWorkspaceInvitationUseCaseTest extends TestCase
         return new CreateWorkspaceInvitationUseCase(
             $this->invitationRepository,
             $this->memberRepository,
+            $this->userRepository,
             $this->eventDispatcher,
             $userProvider,
             $workspaceProvider,
@@ -101,6 +107,25 @@ final class CreateWorkspaceInvitationUseCaseTest extends TestCase
 
         $this->expectException(SeatLimitReachedException::class);
         ($this->useCase(seatFree: false))($this->request());
+    }
+
+    public function testRejectsInvitationWhenEmailBelongsToAnotherWorkspace(): void
+    {
+        $this->invitationRepository->method('hasPendingInvitation')->willReturn(false);
+        $this->memberRepository->method('isAlreadyMember')->willReturn(false);
+
+        $existingUser = $this->createEntityState(User::class, ['email' => 'collab@cabinet.fr']);
+        $otherWorkspace = $this->createEntityState(Workspace::class, ['name' => 'Autre', 'slugId' => 'wrk_other']);
+        $foreignMembership = $this->createEntityState(WorkspaceMember::class, ['workspace' => $otherWorkspace]);
+
+        $this->userRepository->method('findByEmail')->willReturn($existingUser);
+        $this->memberRepository->method('findByUser')->willReturn([$foreignMembership]);
+
+        $this->invitationRepository->expects($this->never())->method('save');
+        $this->eventDispatcher->expects($this->never())->method('dispatch');
+
+        $this->expectException(UserAlreadyBelongsToAnotherWorkspaceException::class);
+        ($this->useCase(seatFree: true))($this->request());
     }
 
     public function testRejectsInvitationFromNonAdmin(): void

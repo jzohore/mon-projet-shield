@@ -106,78 +106,10 @@
         </div>
 
         {# --- COLONNE DROITE : LE PILOTAGE (Prend 5 colonnes) --- #}
-        {# 💡 IMPORTANT : On a rajouté un léger effet de chargement sur la liste quand on sauvegarde #}
-        <div class="lg:col-span-5 space-y-4 transition-opacity duration-200" data-loading="action(save)|addClass(opacity-50)">
-            <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
-                {# Icône harmonisée avec Lucide #}
-                <twig:ux:icon name="lucide:clock" class="w-4 h-4 text-slate-400" />
-                Invitations en attente
-            </h3>
-
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden"
-                 data-controller="toggle"
-                 data-toggle-hidden-class="hidden">
-
-                <ul class="divide-y divide-slate-100">
-                    {% set total_invitations = this.invitations|length %}
-
-                    {% for invitation in this.invitations %}
-                        {# Les 5 premières sont toujours visibles. Les autres reçoivent la cible "content" et la classe "hidden" par défaut #}
-                        {% set is_hidden = loop.index > 5 %}
-
-                        <li id="invitation-{{ invitation.id }}"
-                            class="p-4 hover:bg-slate-50 transition-colors group {{ is_hidden ? 'hidden' : '' }}"
-                            {% if is_hidden %}data-toggle-target="content"{% endif %}>
-
-                            <div class="flex items-start justify-between gap-4">
-                                <div class="min-w-0 flex-1">
-                                    <p class="text-sm font-bold text-slate-900 truncate">{{ invitation.email }}</p>
-                                    <div class="flex items-center gap-2 mt-1">
-                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border transition-colors {{ invitation.invitedRole.getColorClasses() }}">
-                                {{ invitation.invitedRole.getLabel() }}
-                            </span>
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border transition-colors {{ invitation.invitationStatus.getColorClasses() }}">
-                                {{ invitation.invitationStatus.getLabel() }}
-                            </span>
-                                        <span class="text-[11px] text-slate-400">{{ invitation.expiresAt }}</span>
-                                    </div>
-                                </div>
-                                {% if invitation.invitationStatus.value != 'accepted' %}
-                                    <div class="flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                                        <twig:ResendWorkspaceInvitationComponent workspaceInvitation="{{ invitation }}"></twig:ResendWorkspaceInvitationComponent>
-                                        <twig:RevokeWorkspaceInvitationComponent workspaceInvitation="{{ invitation }}"></twig:RevokeWorkspaceInvitationComponent>
-                                {% endif %}
-                            </div>
-                        </li>
-                    {% else %}
-                        <li class="p-12 text-center">
-                            <div class="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
-                                <twig:ux:icon name="lucide:mail-x" class="w-6 h-6 text-slate-300" />
-                            </div>
-                            <p class="text-sm text-slate-500 font-medium">Aucune invitation en attente</p>
-                        </li>
-                    {% endfor %}
-
-                    {# 💡 LE BOUTON STIMULUS (100% côté client, aucune requête AJAX) #}
-                    {% if total_invitations > 5 %}
-                        <li class="p-0 border-t border-slate-100 bg-slate-50/50">
-                            <button type="button"
-                                    data-action="click->toggle#toggle"
-                                    class="w-full p-3 text-sm font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors flex items-center justify-center gap-2 focus:outline-none cursor-pointer">
-
-                                {# Textes gérés par Stimulus #}
-                                <span data-toggle-target="showText">Afficher les {{ total_invitations - 5 }} autres</span>
-                                <span data-toggle-target="hideText" class="hidden">Masquer la liste</span>
-
-                                {# Icônes gérées par Stimulus #}
-                                <span data-toggle-target="iconDown"><twig:ux:icon name="lucide:chevron-down" class="w-4 h-4" /></span>
-                                <span data-toggle-target="iconUp" class="hidden"><twig:ux:icon name="lucide:chevron-up" class="w-4 h-4" /></span>
-
-                            </button>
-                        </li>
-                    {% endif %}
-                </ul>
-            </div>
+        {# La liste des invitations en attente est un composant autonome : il se #}
+        {# rafraîchit seul après une annulation et se réutilise dans l'écran « sièges épuisés ». #}
+        <div class="lg:col-span-5 transition-opacity duration-200" data-loading="action(save)|addClass(opacity-50)">
+            <twig:WorkspacePendingInvitationsComponent />
         </div>
 
     </div>

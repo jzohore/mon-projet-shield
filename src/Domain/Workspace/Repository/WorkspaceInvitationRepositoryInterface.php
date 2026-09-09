@@ -17,6 +17,11 @@ interface WorkspaceInvitationRepositoryInterface
      */
     public function findByWorkspace(Workspace $workspace): array;
 
+    /**
+     * @return WorkspaceInvitation[]
+     */
+    public function findPendingByWorkspace(Workspace $workspace): array;
+
     public function findByEmail(string $email): ?WorkspaceInvitation;
 
     public function findBySlugId(string $slugId): ?WorkspaceInvitation;

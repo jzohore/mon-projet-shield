@@ -26,20 +26,24 @@ readonly class AuditLogRevokeInvitationListener
     {
         $invitation = $event->workspaceInvitation;
 
-        $user = $event->user;
+        $actor = $event->revokedBy;
 
-        Assert::notNull($user->id);
-        Assert::notNull($user->email);
+        Assert::notNull($actor->id);
+        Assert::notNull($actor->email);
 
         $workspace = $event->workspace;
         Assert::notNull($workspace->name);
 
         $audit = AuditLog::initiate(
-            eventName: AuditEventType::WORKSPACE_MEMBER_REVOKED,
+            eventName: AuditEventType::WORKSPACE_INVITATION_REVOKED,
             payload: [
                 'workspace_name' => $workspace->name,
-                'revoked_by_email' => $user->email,
+                'invitation_slug_id' => $invitation->slugId,
+                'revoked_by_name' => $actor->getFullName(),
+                'revoked_by_email' => $actor->email,
+                'invited_by_email' => $invitation->owner->email,
                 'email_revoked' => $invitation->email,
+                'role' => $invitation->invitedRole->getLabel(),
             ],
             workspace: $workspace,
         );

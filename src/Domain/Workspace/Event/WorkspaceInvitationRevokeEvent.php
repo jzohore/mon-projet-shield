@@ -13,7 +13,8 @@ class WorkspaceInvitationRevokeEvent extends Event
 {
     public function __construct(
         public readonly WorkspaceInvitation $workspaceInvitation,
-        public readonly User $user,
+        /** L'administrateur qui déclenche l'annulation (l'acteur), pas l'auteur de l'invitation. */
+        public readonly User $revokedBy,
         public readonly Workspace $workspace,
     ) {
     }

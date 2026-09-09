@@ -45,6 +45,17 @@ final readonly class WorkspaceInvitationRepository implements WorkspaceInvitatio
         return $this->repository->findBy(['workspace' => $workspace], ['createdAt' => 'DESC']);
     }
 
+    /**
+     * @return array<int, WorkspaceInvitation>
+     */
+    public function findPendingByWorkspace(Workspace $workspace): array
+    {
+        return $this->repository->findBy(
+            ['workspace' => $workspace, 'invitationStatus' => InvitationStatus::PENDING],
+            ['createdAt' => 'DESC'],
+        );
+    }
+
     public function findByEmail(string $email): ?WorkspaceInvitation
     {
         return $this->repository->findOneBy(['email' => $email]);

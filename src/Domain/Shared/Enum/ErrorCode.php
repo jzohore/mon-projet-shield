@@ -27,6 +27,7 @@ enum ErrorCode: string
     case SEAT_LIMIT_REACHED = 'SEAT_LIMIT_REACHED';
     case NOT_WORKSPACE_ADMIN = 'NOT_WORKSPACE_ADMIN';
     case INVITATION_ALREADY_USED = 'INVITATION_ALREADY_USED';
+    case USER_ALREADY_IN_ANOTHER_WORKSPACE = 'USER_ALREADY_IN_ANOTHER_WORKSPACE';
 
     // Compliance & KYC
     case COMPLIANCE_FOLDER_NOT_FOUND = 'COMPLIANCE_FOLDER_NOT_FOUND';
@@ -82,6 +83,7 @@ enum ErrorCode: string
             self::SEAT_LIMIT_REACHED => 'Vous avez atteint votre nombre de sièges. Ajoutez des sièges pour inviter davantage de collaborateurs.',
             self::NOT_WORKSPACE_ADMIN => 'Seul un administrateur de cet espace de travail peut effectuer cette action.',
             self::INVITATION_ALREADY_USED => 'Cette invitation a déjà été utilisée ou n\'est plus valide.',
+            self::USER_ALREADY_IN_ANOTHER_WORKSPACE => 'Cette adresse est déjà rattachée à un autre cabinet. Un collaborateur ne peut appartenir qu\'à un seul espace de travail.',
 
             // Conformité, LCB-FT & KYC
             self::COMPLIANCE_FOLDER_NOT_FOUND => 'Le dossier de conformité demandé est introuvable.',

@@ -7,10 +7,7 @@ namespace App\Infrastructure\Workspace\Twig\Components\Invitation;
 use App\Application\Workspace\DTO\Request\CreateWorkspaceInvitationRequest;
 use App\Application\Workspace\UseCase\Invitation\CreateWorkspaceInvitationUseCase;
 use App\Domain\Shared\Exception\AbstractDomainException;
-use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Domain\Workspace\Enum\InvitedRole;
-use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
-use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
 use App\Infrastructure\Workspace\Form\WorkspaceInvitationType;
 use Psr\Log\LoggerInterface;
@@ -23,7 +20,6 @@ use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
-use Symfony\UX\LiveComponent\Attribute\LiveListener;
 use Symfony\UX\LiveComponent\Attribute\LiveProp;
 use Symfony\UX\LiveComponent\ComponentWithFormTrait;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
@@ -47,8 +43,6 @@ class CreateInvitationFormComponent
         private readonly CreateWorkspaceInvitationUseCase $createWorkspaceInvitationUseCase,
         private readonly RequestStack $requestStack,
         private readonly UrlGeneratorInterface $router,
-        private readonly CurrentWorkspaceProvider $currentWorkspaceProvider,
-        private readonly WorkspaceInvitationRepositoryInterface $workspaceInvitationRepository,
         private readonly RateLimiterFactory $workspaceInvitationLimiter,
     ) {
     }
@@ -109,22 +103,5 @@ class CreateInvitationFormComponent
         if ($session instanceof FlashBagAwareSessionInterface) {
             $session->getFlashBag()->add($type, $message);
         }
-    }
-
-    /**
-     * @return array<int, WorkspaceInvitation>
-     */
-    public function getInvitations(): array
-    {
-        $workspace = $this->currentWorkspaceProvider->getWorkspace();
-
-        return $this->workspaceInvitationRepository->findByWorkspace($workspace);
-    }
-
-    #[LiveListener('revoke_invitation')]
-    public function onInvitationRevoked(): void
-    {
-        // On ne fait rien de spécial ici. Le simple fait d'attraper l'événement
-        // force le composant parent à se recharger.
     }
 }

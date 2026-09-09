@@ -34,25 +34,29 @@
             </div>
 
         {% elseif not has_free_seat %}
-            {# ── Sièges épuisés : on bloque le formulaire, on pousse vers l'ajout de sièges ── #}
-            <div class="rounded-xl border border-slate-200 border-l-4 border-l-amber-500 bg-white p-8 shadow-sm">
-                <div class="flex items-start gap-3">
-                    <span class="mt-0.5 shrink-0 text-amber-500" aria-hidden="true">{{ ux_icon('lucide:users', { class: 'size-5' }) }}</span>
-                    <div class="min-w-0">
-                        <h2 class="text-base font-semibold text-slate-900">
-                            Tous vos sièges sont utilisés
-                            <span class="ml-1 font-normal text-slate-500 tabular-nums">({{ seats_used }} / {{ seats_allowed }})</span>
-                        </h2>
-                        <p class="mt-1 text-sm text-slate-600">
-                            Un siège = un collaborateur actif ou une invitation en attente. Libérez un siège
-                            (révoquez une invitation) ou ajoutez des sièges pour inviter davantage.
-                        </p>
-                        <div class="mt-4 flex flex-wrap gap-2">
-                            <twig:Button as="a" href="{{ path('app_settings_subscription') }}" variant="dark" size="sm">Ajouter des sièges</twig:Button>
-                            <twig:Button as="a" href="{{ path('app_employees_list') }}" variant="outline" size="sm">Voir les invitations en cours</twig:Button>
+            {# ── Sièges épuisés : on bloque le formulaire, mais on garde la liste ── #}
+            {# des invitations à portée de main pour qu'un siège puisse être libéré. ── #}
+            <div class="space-y-6">
+                <div class="rounded-xl border border-slate-200 border-l-4 border-l-amber-500 bg-white p-8 shadow-sm">
+                    <div class="flex items-start gap-3">
+                        <span class="mt-0.5 shrink-0 text-amber-500" aria-hidden="true">{{ ux_icon('lucide:users', { class: 'size-5' }) }}</span>
+                        <div class="min-w-0">
+                            <h2 class="text-base font-semibold text-slate-900">
+                                Tous vos sièges sont utilisés
+                                <span class="ml-1 font-normal text-slate-500 tabular-nums">({{ seats_used }} / {{ seats_allowed }})</span>
+                            </h2>
+                            <p class="mt-1 text-sm text-slate-600">
+                                Un siège = un collaborateur actif ou une invitation en attente. Annulez une
+                                invitation ci-dessous pour libérer un siège, ou ajoutez des sièges.
+                            </p>
+                            <div class="mt-4">
+                                <twig:Button as="a" href="{{ path('app_settings_subscription') }}" variant="dark" size="sm">Ajouter des sièges</twig:Button>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <twig:WorkspacePendingInvitationsComponent />
             </div>
 
         {% else %}

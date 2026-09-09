@@ -34,12 +34,13 @@ readonly class AuditLogWorkspaceInvitationListener
         $workspace = $event->workspace;
         Assert::notNull($workspace->name);
         $audit = AuditLog::initiate(
-            eventName: AuditEventType::WORKSPACE_MEMBER_ADDED,
+            eventName: AuditEventType::WORKSPACE_INVITATION_SENT,
             payload: [
                 'workspace_name' => $workspace->name,
+                'invitation_slug_id' => $invitation->slugId,
                 'actor_name' => $user->getFullName(),
                 'actor_email' => $user->email,
-                'email_created' => $invitation->email,
+                'email_invited' => $invitation->email,
                 'role' => $invitation->invitedRole->getLabel(),
             ],
             workspace: $workspace,

@@ -14,6 +14,7 @@ use App\Domain\Workspace\Entity\WorkspaceMember;
 use App\Domain\Workspace\Enum\InvitationStatus;
 use App\Domain\Workspace\Enum\InvitedRole;
 use App\Domain\Workspace\Exception\InvitationAlreadyUsedException;
+use App\Domain\Workspace\Exception\UserAlreadyBelongsToAnotherWorkspaceException;
 use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use App\Tests\Application\ReflectionHelperTrait;
@@ -21,6 +22,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\Uid\Uuid;
 
 #[AllowMockObjectsWithoutExpectations]
@@ -47,6 +49,7 @@ final class AcceptInvitationUseCaseTest extends TestCase
             $this->userRepository,
             $this->memberRepository,
             $transactionManager,
+            $this->createStub(EventDispatcherInterface::class),
         );
     }
 
@@ -102,6 +105,30 @@ final class AcceptInvitationUseCaseTest extends TestCase
         $user = ($this->useCase)('wrk_inv_1');
 
         self::assertSame($existing, $user);
+    }
+
+    public function testRejectsWhenExistingUserBelongsToAnotherWorkspace(): void
+    {
+        $invitation = $this->invitation();
+        $existing = $this->createEntityState(User::class, ['id' => Uuid::v7(), 'email' => 'collab@cabinet.fr']);
+
+        $otherWorkspace = $this->createEntityState(Workspace::class, [
+            'name' => 'Autre cabinet',
+            'slugId' => 'wrk_other',
+            'members' => new ArrayCollection(),
+        ]);
+        $foreignMembership = $this->createEntityState(WorkspaceMember::class, ['workspace' => $otherWorkspace]);
+
+        $this->invitationRepository->method('findBySlugId')->willReturn($invitation);
+        $this->userRepository->method('findByEmail')->willReturn($existing);
+        $this->memberRepository->method('findByUser')->willReturn([$foreignMembership]);
+
+        $this->userRepository->expects($this->never())->method('save');
+        $this->memberRepository->expects($this->never())->method('save');
+        $this->invitationRepository->expects($this->never())->method('save');
+
+        $this->expectException(UserAlreadyBelongsToAnotherWorkspaceException::class);
+        ($this->useCase)('wrk_inv_1');
     }
 
     public function testDoesNotDuplicateMemberWhenUserIsAlreadyInTheWorkspace(): void

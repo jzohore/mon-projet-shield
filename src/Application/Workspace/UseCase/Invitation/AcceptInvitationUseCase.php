@@ -10,10 +10,13 @@ use App\Domain\User\Enum\OnboardingStatus;
 use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Domain\Workspace\Entity\WorkspaceMember;
+use App\Domain\Workspace\Event\WorkspaceInvitationAcceptedEvent;
 use App\Domain\Workspace\Exception\InvitationAlreadyUsedException;
 use App\Domain\Workspace\Exception\InvitationNotFoundException;
+use App\Domain\Workspace\Exception\UserAlreadyBelongsToAnotherWorkspaceException;
 use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Webmozart\Assert\Assert;
 
 readonly class AcceptInvitationUseCase
@@ -23,6 +26,7 @@ readonly class AcceptInvitationUseCase
         private UserRepositoryInterface $userRepository,
         private WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
         private TransactionManagerInterface $transactionManager,
+        private EventDispatcherInterface $eventDispatcher,
     ) {
     }
 
@@ -55,6 +59,15 @@ readonly class AcceptInvitationUseCase
     private function attachExistingUser(WorkspaceInvitation $invitation, User $user): User
     {
         $workspace = $invitation->workspace;
+
+        // 🛡️ Modèle « un utilisateur = un espace de travail » : on refuse un
+        // rattachement croisé, qui casserait la résolution du workspace courant.
+        foreach ($this->workspaceMemberRepository->findByUser($user) as $membership) {
+            if ($membership->workspace->slugId !== $workspace->slugId) {
+                throw UserAlreadyBelongsToAnotherWorkspaceException::create();
+            }
+        }
+
         $alreadyMember = $this->workspaceMemberRepository->findByWorkspaceAndUser($workspace, $user);
 
         $invitation->accept();
@@ -69,6 +82,8 @@ readonly class AcceptInvitationUseCase
             }
             $this->workspaceInvitationRepository->save($invitation, false);
         });
+
+        $this->eventDispatcher->dispatch(new WorkspaceInvitationAcceptedEvent($invitation, $workspace, $user, false));
 
         return $user;
     }
@@ -97,6 +112,8 @@ readonly class AcceptInvitationUseCase
             $this->workspaceInvitationRepository->save($invitation, false);
             $this->workspaceMemberRepository->save($member, false);
         });
+
+        $this->eventDispatcher->dispatch(new WorkspaceInvitationAcceptedEvent($invitation, $workspace, $user, true));
 
         return $user;
     }

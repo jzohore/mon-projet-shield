@@ -25,6 +25,9 @@ enum AuditEventType: string
     case WORKSPACE_CREATED = 'workspace.created';
     case WORKSPACE_UPDATED = 'workspace.updated';
     case WORKSPACE_SUSPENDED = 'workspace.suspended';
+    case WORKSPACE_INVITATION_SENT = 'workspace.invitation_sent';
+    case WORKSPACE_INVITATION_ACCEPTED = 'workspace.invitation_accepted';
+    case WORKSPACE_INVITATION_REVOKED = 'workspace.invitation_revoked';
     case WORKSPACE_MEMBER_ADDED = 'workspace.member_added';
     case WORKSPACE_MEMBER_REVOKED = 'workspace.member_revoked';
     case WORKSPACE_QUOTA_GRANTED = 'workspace.quota_granted';
@@ -117,6 +120,9 @@ enum AuditEventType: string
             self::WORKSPACE_CREATED => 'Création du cabinet',
             self::WORKSPACE_UPDATED => 'Modification de la fiche du cabinet',
             self::WORKSPACE_SUSPENDED => 'Suspension du cabinet',
+            self::WORKSPACE_INVITATION_SENT => 'Invitation d\'un collaborateur envoyée',
+            self::WORKSPACE_INVITATION_ACCEPTED => 'Invitation acceptée — accès accordé',
+            self::WORKSPACE_INVITATION_REVOKED => 'Annulation d\'une invitation de collaborateur',
             self::WORKSPACE_MEMBER_ADDED => 'Ajout d\'un collaborateur',
             self::WORKSPACE_MEMBER_REVOKED => 'Révocation d\'un collaborateur',
             self::WORKSPACE_QUOTA_GRANTED => 'Recharge de quota (dossiers / minutes)',
@@ -205,6 +211,9 @@ enum AuditEventType: string
             self::WORKSPACE_CREATED,
             self::WORKSPACE_UPDATED,
             self::WORKSPACE_SUSPENDED,
+            self::WORKSPACE_INVITATION_SENT,
+            self::WORKSPACE_INVITATION_ACCEPTED,
+            self::WORKSPACE_INVITATION_REVOKED,
             self::WORKSPACE_MEMBER_ADDED,
             self::WORKSPACE_MEMBER_REVOKED,
             self::WORKSPACE_QUOTA_GRANTED,
@@ -276,6 +285,7 @@ enum AuditEventType: string
             self::MEETING_REPORT_VALIDATED,
             self::ORIAS_CHECK_SUCCESS,
             self::SIRET_CHECK_SUCCESS,
+            self::WORKSPACE_INVITATION_ACCEPTED,
             self::SUBSCRIPTION_ACTIVATED => 'bg-emerald-50 text-emerald-700 border-emerald-200',
 
             self::SUSPICIOUS_LOGIN_ATTEMPT,
@@ -287,6 +297,7 @@ enum AuditEventType: string
             self::MEETING_REPORT_REVOKED,
             self::DER_ACKNOWLEDGEMENT_REVOKED,
             self::DER_DECLINED,
+            self::WORKSPACE_INVITATION_REVOKED,
             self::SUBSCRIPTION_CANCELED => 'bg-rose-50 text-rose-700 border-rose-200',
 
             self::ADMIN_IMPERSONATION_START,

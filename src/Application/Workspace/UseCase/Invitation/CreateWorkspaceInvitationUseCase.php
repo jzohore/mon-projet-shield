@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Application\Workspace\UseCase\Invitation;
 
 use App\Application\Workspace\DTO\Request\CreateWorkspaceInvitationRequest;
+use App\Domain\User\Entity\User;
+use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Domain\Workspace\Event\WorkspaceInvitationCreatedEvent;
 use App\Domain\Workspace\Exception\HasPendingInvitationException;
 use App\Domain\Workspace\Exception\IsAlreadyMemberException;
 use App\Domain\Workspace\Exception\NotWorkspaceAdminException;
 use App\Domain\Workspace\Exception\SeatLimitReachedException;
+use App\Domain\Workspace\Exception\UserAlreadyBelongsToAnotherWorkspaceException;
 use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 use App\Domain\Workspace\Service\CurrentUserProvider;
@@ -23,6 +26,7 @@ final readonly class CreateWorkspaceInvitationUseCase
     public function __construct(
         private WorkspaceInvitationRepositoryInterface $workspaceInvitationRepository,
         private WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
+        private UserRepositoryInterface $userRepository,
         private EventDispatcherInterface $eventDispatcher,
         private CurrentUserProvider $currentUserProvider,
         private CurrentWorkspaceProvider $currentWorkspaceProvider,
@@ -45,6 +49,17 @@ final readonly class CreateWorkspaceInvitationUseCase
 
         if ($this->workspaceMemberRepository->isAlreadyMember($workspace, $request->email)) {
             throw IsAlreadyMemberException::withWorkspaceAndEmail(workspace: $workspace, email: $request->email);
+        }
+
+        // 🛡️ Modèle « un utilisateur = un espace de travail » : inutile d'envoyer
+        // un e-mail que le destinataire ne pourra jamais accepter (cf. AcceptInvitationUseCase).
+        $existingUser = $this->userRepository->findByEmail($request->email);
+        if ($existingUser instanceof User) {
+            foreach ($this->workspaceMemberRepository->findByUser($existingUser) as $membership) {
+                if ($membership->workspace->slugId !== $workspace->slugId) {
+                    throw UserAlreadyBelongsToAnotherWorkspaceException::create();
+                }
+            }
         }
 
         if (!$this->seatAvailability->hasFreeSeat($workspace)) {

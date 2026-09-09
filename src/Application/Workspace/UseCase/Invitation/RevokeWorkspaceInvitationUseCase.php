@@ -6,6 +6,7 @@ namespace App\Application\Workspace\UseCase\Invitation;
 
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Domain\Workspace\Event\WorkspaceInvitationRevokeEvent;
+use App\Domain\Workspace\Exception\InvitationAlreadyUsedException;
 use App\Domain\Workspace\Exception\NotWorkspaceAdminException;
 use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
@@ -29,10 +30,16 @@ readonly class RevokeWorkspaceInvitationUseCase
             throw NotWorkspaceAdminException::create();
         }
 
-        $owner = $workspaceInvitation->owner;
+        // 🛡️ On n'annule qu'une invitation encore en attente. Une invitation déjà
+        // acceptée correspond à un accès réel : il se retire via la révocation de
+        // membre, jamais en supprimant la ligne d'invitation (le journal mentirait).
+        if (!$workspaceInvitation->isPending()) {
+            throw InvitationAlreadyUsedException::create();
+        }
+
         $workspace = $workspaceInvitation->workspace;
 
         $this->workspaceInvitationRepository->delete($workspaceInvitation);
-        $this->eventDispatcher->dispatch(new WorkspaceInvitationRevokeEvent($workspaceInvitation, $owner, $workspace));
+        $this->eventDispatcher->dispatch(new WorkspaceInvitationRevokeEvent($workspaceInvitation, $currentUser, $workspace));
     }
 }

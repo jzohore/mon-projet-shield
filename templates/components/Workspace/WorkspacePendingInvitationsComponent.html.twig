@@ -1,0 +1,64 @@
+<div {{ attributes.defaults({ class: 'space-y-4' }) }}>
+    {% set invitations = this.invitations %}
+    {% set total_invitations = invitations|length %}
+
+    <h3 class="flex items-center gap-2 text-sm font-bold text-slate-900">
+        <twig:ux:icon name="lucide:clock" class="size-4 text-slate-400" aria-hidden="true" />
+        Invitations en attente
+        {% if total_invitations > 0 %}
+            <span class="font-normal text-slate-400 tabular-nums">({{ total_invitations }})</span>
+        {% endif %}
+    </h3>
+
+    <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+         data-controller="toggle"
+         data-toggle-hidden-class="hidden">
+        <ul class="divide-y divide-slate-100">
+            {% for invitation in invitations %}
+                {% set is_hidden = loop.index > 5 %}
+                <li id="invitation-{{ invitation.id }}"
+                    class="group p-4 transition-colors hover:bg-slate-50 {{ is_hidden ? 'hidden' : '' }}"
+                    {% if is_hidden %}data-toggle-target="content"{% endif %}>
+                    <div class="flex items-start justify-between gap-4">
+                        <div class="min-w-0 flex-1">
+                            <p class="truncate text-sm font-bold text-slate-900">{{ invitation.email }}</p>
+                            <div class="mt-1 flex flex-wrap items-center gap-2">
+                                <span class="inline-flex items-center rounded border px-2 py-0.5 text-[10px] font-bold {{ invitation.invitedRole.getColorClasses() }}">
+                                    {{ invitation.invitedRole.getLabel() }}
+                                </span>
+                                <span class="inline-flex items-center rounded border px-2 py-0.5 text-[10px] font-bold {{ invitation.invitationStatus.getColorClasses() }}">
+                                    {{ invitation.invitationStatus.getLabel() }}
+                                </span>
+                                <span class="text-[11px] text-slate-400">{{ invitation.expiresAt }}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1 opacity-60 transition-opacity group-hover:opacity-100">
+                            <twig:ResendWorkspaceInvitationComponent workspaceInvitation="{{ invitation }}" />
+                            <twig:RevokeWorkspaceInvitationComponent workspaceInvitation="{{ invitation }}" />
+                        </div>
+                    </div>
+                </li>
+            {% else %}
+                <li class="p-12 text-center">
+                    <div class="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-slate-50">
+                        <twig:ux:icon name="lucide:mail-x" class="size-6 text-slate-300" aria-hidden="true" />
+                    </div>
+                    <p class="text-sm font-medium text-slate-500">Aucune invitation en attente</p>
+                </li>
+            {% endfor %}
+
+            {% if total_invitations > 5 %}
+                <li class="border-t border-slate-100 bg-slate-50/50 p-0">
+                    <button type="button"
+                            data-action="click->toggle#toggle"
+                            class="flex w-full items-center justify-center gap-2 p-3 text-sm font-bold text-slate-600 transition-colors hover:bg-slate-50 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300">
+                        <span data-toggle-target="showText">Afficher les {{ total_invitations - 5 }} autres</span>
+                        <span data-toggle-target="hideText" class="hidden">Masquer la liste</span>
+                        <span data-toggle-target="iconDown"><twig:ux:icon name="lucide:chevron-down" class="size-4" aria-hidden="true" /></span>
+                        <span data-toggle-target="iconUp" class="hidden"><twig:ux:icon name="lucide:chevron-up" class="size-4" aria-hidden="true" /></span>
+                    </button>
+                </li>
+            {% endif %}
+        </ul>
+    </div>
+</div>
