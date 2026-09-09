@@ -7,6 +7,7 @@ namespace App\Infrastructure\Employees\Twig;
 use App\Application\Workspace\DTO\Response\WorkspaceMemberDetailsResponse;
 use App\Application\Workspace\UseCase\WorkspaceMember\GetWorkspaceMemberDetailsUseCase;
 use App\Application\Workspace\UseCase\WorkspaceMember\RevokeWorkspaceMemberAccessUseCase;
+use App\Application\Workspace\UseCase\WorkspaceMember\SetWorkspaceMemberActiveUseCase;
 use App\Domain\Shared\Exception\AbstractDomainException;
 use App\Domain\Workspace\Service\CurrentUserProvider;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
@@ -37,6 +38,7 @@ class RevokeWorkspaceMemberAccessComponent
 
     public function __construct(
         private readonly RevokeWorkspaceMemberAccessUseCase $revokeUseCase,
+        private readonly SetWorkspaceMemberActiveUseCase $setMemberActiveUseCase,
         private readonly CurrentUserProvider $currentUserProvider,
         private readonly LoggerInterface $logger,
         private readonly GetWorkspaceMemberDetailsUseCase $getMemberDetailsUseCase,
@@ -51,6 +53,47 @@ class RevokeWorkspaceMemberAccessComponent
         $user = $this->currentUserProvider->getUser();
 
         return ($this->getMemberDetailsUseCase)($this->targetUserSlugId, $user);
+    }
+
+    #[LiveAction]
+    public function suspend(): void
+    {
+        $this->toggleActive(false, 'Le compte du collaborateur a été suspendu.');
+    }
+
+    #[LiveAction]
+    public function reactivate(): void
+    {
+        $this->toggleActive(true, 'Le compte du collaborateur a été réactivé.');
+    }
+
+    private function toggleActive(bool $active, string $successMessage): void
+    {
+        $this->validate();
+        try {
+            ($this->setMemberActiveUseCase)($this->targetUserSlugId, $active);
+            $this->flash('success', $successMessage);
+        } catch (AbstractDomainException|\DomainException $e) {
+            $this->logger->warning('Échec du changement de statut du collaborateur', [
+                'target_slug' => $this->targetUserSlugId,
+                'error' => $e->getMessage(),
+            ]);
+            $this->flash('error', $e->getMessage());
+        } catch (\Exception $e) {
+            $this->logger->critical('Crash système lors du changement de statut d\'un collaborateur', [
+                'target_slug' => $this->targetUserSlugId,
+                'error' => $e->getMessage(),
+            ]);
+            $this->flash('error', 'Une erreur technique est survenue. Veuillez réessayer plus tard.');
+        }
+    }
+
+    private function flash(string $type, string $message): void
+    {
+        $this->addLiveFlash($type, $message);
+        /** @var FlashBagAwareSessionInterface $session */
+        $session = $this->requestStack->getSession();
+        $session->getFlashBag()->add($type, $message);
     }
 
     #[LiveAction]

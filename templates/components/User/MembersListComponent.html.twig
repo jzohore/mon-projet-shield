@@ -102,7 +102,7 @@
                         <twig:Grid:Cell cols="1" class="flex flex-row lg:justify-end items-center gap-2 mt-4 pt-4 lg:mt-0 lg:pt-0 border-t border-slate-100 lg:border-t-0">
                             {% if member.user.isOwner %}
                                 <span class="text-xs italic text-slate-400 lg:text-right w-full">Compte principal</span>
-                            {% else %}
+                            {% elseif workspace_can('manage_members') %}
 
                                 {# Bouton Modifier #}
                                 <twig:Button

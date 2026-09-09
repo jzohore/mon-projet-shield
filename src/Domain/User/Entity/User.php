@@ -219,6 +219,22 @@ class User implements UserInterface, TwoFactorInterface, EquatableInterface, \St
         $this->securityStamp = bin2hex(random_bytes(16));
     }
 
+    /** Suspend le compte : plus de connexion possible, sessions ouvertes coupées. */
+    public function deactivate(): void
+    {
+        $this->isActif = false;
+        $this->updatedAt = now();
+        $this->regenerateSecurityStamp();
+    }
+
+    /** Réactive un compte suspendu. */
+    public function reactivate(): void
+    {
+        $this->isActif = true;
+        $this->updatedAt = now();
+        $this->regenerateSecurityStamp();
+    }
+
     /**
      * Comparaison utilisée par le ContextListener à chaque requête : identité +
      * empreinte de session. Une empreinte différente ⇒ session invalidée.

@@ -20,10 +20,17 @@
             </div>
 
             <div class="mt-4 sm:mt-0 flex justify-center">
+                {% if member.isActive %}
                     <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-50 text-emerald-700 border border-emerald-100">
-                        <twig:ux:icon name="lucide:shield-check" class="w-4 h-4 mr-1.5" />
+                        <twig:ux:icon name="lucide:shield-check" class="w-4 h-4 mr-1.5" aria-hidden="true" />
                         Accès actif
                     </span>
+                {% else %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-50 text-amber-700 border border-amber-100">
+                        <twig:ux:icon name="lucide:pause" class="w-4 h-4 mr-1.5" aria-hidden="true" />
+                        Compte suspendu
+                    </span>
+                {% endif %}
             </div>
         </div>
 
@@ -65,10 +72,45 @@
 
         {# 3. La "Danger Zone" #}
         {% if member.userSlugId != app.user.slugId %}
-            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4">
+            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 space-y-4">
+
+                {# 3A. Suspension réversible du compte #}
                 <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div class="text-sm text-slate-600">
-                        Besoin de retirer cet utilisateur de l'espace ?
+                        {% if member.isActive %}
+                            Suspendre temporairement l'accès de ce collaborateur ?
+                        {% else %}
+                            Ce compte est suspendu : le collaborateur ne peut plus se connecter.
+                        {% endif %}
+                    </div>
+                    {% if member.isActive %}
+                        <div data-controller="inline-confirm" data-action="click@window->inline-confirm#clickOutside" class="inline-block">
+                            <twig:Button variant="outline" data-action="inline-confirm#toggle">
+                                <twig:ux:icon name="lucide:pause" class="w-4 h-4 mr-2" aria-hidden="true" />
+                                Suspendre le compte
+                            </twig:Button>
+                            <div data-inline-confirm-target="popover" class="hidden z-[100] w-64 bg-white border border-slate-200 rounded-md shadow-xl p-3 animate-in fade-in zoom-in-95 duration-200">
+                                <p class="text-sm text-slate-700 font-medium mb-3 text-center">
+                                    Suspendre l'accès de <span class="font-bold text-slate-900">{{ member.email }}</span> ? Ses sessions sont coupées immédiatement.
+                                </p>
+                                <div class="flex gap-2">
+                                    <twig:Button variant="secondary" data-action="live#action inline-confirm#close" size="sm">Annuler</twig:Button>
+                                    <twig:Button type="button" variant="dark" data-action="live#action inline-confirm#close" data-live-action-param="suspend" size="sm">Oui, suspendre</twig:Button>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <twig:Button variant="dark" data-action="live#action" data-live-action-param="reactivate">
+                            <twig:ux:icon name="lucide:play" class="w-4 h-4 mr-2" aria-hidden="true" />
+                            Réactiver le compte
+                        </twig:Button>
+                    {% endif %}
+                </div>
+
+                {# 3B. Retrait définitif du cabinet #}
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-200 pt-4">
+                    <div class="text-sm text-slate-600">
+                        Retirer définitivement cet utilisateur du cabinet ?
                     </div>
 
                     <div data-controller="inline-confirm"
@@ -87,7 +129,7 @@
                              class="hidden z-[100] w-64 bg-white border border-slate-200 rounded-md shadow-xl p-3 animate-in fade-in zoom-in-95 duration-200">
 
                             <p class="text-sm text-slate-700 font-medium mb-3 text-center">
-                                Êtes-vous sûr de vouloir renvoyer l'invitation de <span class="font-bold text-slate-900">{{ member.email }}</span> ?
+                                Retirer définitivement <span class="font-bold text-slate-900">{{ member.email }}</span> du cabinet ? Le compte est désactivé.
                             </p>
 
                             <div class="flex gap-2">

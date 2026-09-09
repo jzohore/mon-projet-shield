@@ -32,6 +32,8 @@ enum AuditEventType: string
     case WORKSPACE_INVITATION_EXPIRED = 'workspace.invitation_expired';
     case WORKSPACE_MEMBER_ADDED = 'workspace.member_added';
     case WORKSPACE_MEMBER_REVOKED = 'workspace.member_revoked';
+    case WORKSPACE_MEMBER_SUSPENDED = 'workspace.member_suspended';
+    case WORKSPACE_MEMBER_REACTIVATED = 'workspace.member_reactivated';
     case WORKSPACE_PERMISSIONS_UPDATED = 'workspace.permissions_updated';
     case WORKSPACE_QUOTA_GRANTED = 'workspace.quota_granted';
     case ONBOARDING_COMPLETED = 'workspace.onboarding_completed';
@@ -130,6 +132,8 @@ enum AuditEventType: string
             self::WORKSPACE_INVITATION_EXPIRED => 'Expiration et purge d\'invitations non acceptées',
             self::WORKSPACE_MEMBER_ADDED => 'Ajout d\'un collaborateur',
             self::WORKSPACE_MEMBER_REVOKED => 'Révocation d\'un collaborateur',
+            self::WORKSPACE_MEMBER_SUSPENDED => 'Suspension du compte d\'un collaborateur',
+            self::WORKSPACE_MEMBER_REACTIVATED => 'Réactivation du compte d\'un collaborateur',
             self::WORKSPACE_PERMISSIONS_UPDATED => 'Modification des droits délégués aux collaborateurs',
             self::WORKSPACE_QUOTA_GRANTED => 'Recharge de quota (dossiers / minutes)',
             self::ONBOARDING_COMPLETED => 'Configuration initiale terminée',
@@ -224,6 +228,8 @@ enum AuditEventType: string
             self::WORKSPACE_INVITATION_EXPIRED,
             self::WORKSPACE_MEMBER_ADDED,
             self::WORKSPACE_MEMBER_REVOKED,
+            self::WORKSPACE_MEMBER_SUSPENDED,
+            self::WORKSPACE_MEMBER_REACTIVATED,
             self::WORKSPACE_PERMISSIONS_UPDATED,
             self::WORKSPACE_QUOTA_GRANTED,
             self::ONBOARDING_COMPLETED => 'Cabinet',

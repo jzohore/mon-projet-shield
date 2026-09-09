@@ -14,6 +14,7 @@ readonly class WorkspaceMemberDetailsResponse
         public string $email,
         public string $role,
         public string $joinedAt,
+        public bool $isActive = true,
     ) {
     }
 
@@ -28,6 +29,7 @@ readonly class WorkspaceMemberDetailsResponse
             email: $user->email,
             role: $member->role->getLabel(), // Le rôle appartient au Member, pas au User !
             joinedAt: $member->joinedAt->format('d/m/Y'),
+            isActive: $user->isActif,
         );
     }
 }

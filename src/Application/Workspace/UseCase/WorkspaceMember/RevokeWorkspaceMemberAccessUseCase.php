@@ -57,9 +57,10 @@ readonly class RevokeWorkspaceMemberAccessUseCase
 
         $this->workspaceMemberRepository->delete($member);
 
-        // Coupure immédiate : la nouvelle empreinte invalide les sessions ouvertes
-        // de l'ex-collaborateur dès sa prochaine requête.
-        $revokedUser->regenerateSecurityStamp();
+        // L'ex-collaborateur n'a plus de cabinet : on désactive le compte (sinon
+        // toute requête ultérieure échoue faute de workspace résolu) et la
+        // nouvelle empreinte coupe ses sessions ouvertes dès la requête suivante.
+        $revokedUser->deactivate();
         $this->userRepository->save($revokedUser);
 
         // 🪄 On déclenche l'événement !

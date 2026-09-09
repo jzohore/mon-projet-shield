@@ -7,6 +7,8 @@ namespace App\Infrastructure\Employees\Controller;
 use App\Application\Workspace\UseCase\WorkspaceMember\GetWorkspaceMemberDetailsUseCase;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Exception\MemberNotFoundException;
+use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
+use App\Infrastructure\Workspace\Voter\WorkspaceInvitationVoter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
@@ -20,12 +22,18 @@ class EmployeesShowController extends AbstractController
 {
     public function __construct(
         private readonly GetWorkspaceMemberDetailsUseCase $getMemberDetailsUseCase,
+        private readonly CurrentWorkspaceProvider $currentWorkspaceProvider,
     ) {
     }
 
     public function __invoke(string $slugId, #[CurrentUser] User $user): Response
     {
         Assert::notNull($user->id, "L'utilisateur connecté doit avoir un ID.");
+
+        $this->denyAccessUnlessGranted(
+            WorkspaceInvitationVoter::PERMISSIONS_MANAGE,
+            $this->currentWorkspaceProvider->getWorkspace(),
+        );
 
         try {
             $memberDto = ($this->getMemberDetailsUseCase)($slugId, $user);
