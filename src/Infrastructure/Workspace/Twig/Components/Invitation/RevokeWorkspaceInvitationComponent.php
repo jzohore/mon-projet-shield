@@ -7,6 +7,7 @@ namespace App\Infrastructure\Workspace\Twig\Components\Invitation;
 use App\Application\Workspace\UseCase\Invitation\RevokeWorkspaceInvitationUseCase;
 use App\Domain\Shared\Exception\AbstractDomainException;
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
+use App\Domain\Workspace\Enum\InvitationRevocationReason;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
 use App\Infrastructure\Workspace\Voter\WorkspaceInvitationVoter;
 use Psr\Log\LoggerInterface;
@@ -29,10 +30,21 @@ class RevokeWorkspaceInvitationComponent
     #[LiveProp]
     public WorkspaceInvitation $workspaceInvitation;
 
+    #[LiveProp(writable: true)]
+    public string $revocationReason = '';
+
     public function __construct(
         private readonly RevokeWorkspaceInvitationUseCase $revokeWorkspaceInvitationUseCase,
         private readonly LoggerInterface $logger,
     ) {
+    }
+
+    /**
+     * @return array<int, InvitationRevocationReason>
+     */
+    public function reasons(): array
+    {
+        return InvitationRevocationReason::cases();
     }
 
     #[LiveAction]
@@ -41,11 +53,19 @@ class RevokeWorkspaceInvitationComponent
     {
         $this->clearLiveFlash();
 
-        try {
-            ($this->revokeWorkspaceInvitationUseCase)($this->workspaceInvitation);
+        $reason = InvitationRevocationReason::tryFrom($this->revocationReason);
+        if (!$reason instanceof InvitationRevocationReason) {
+            $this->addLiveFlash('error', 'Sélectionnez un motif d\'annulation.');
 
-            $this->addLiveFlash('success', 'L\'invitation a été annulée.');
-            $liveResponder->emitUp('revoke_invitation');
+            return;
+        }
+
+        try {
+            ($this->revokeWorkspaceInvitationUseCase)($this->workspaceInvitation, $reason);
+
+            // Le succès est notifié par le composant parent : cette ligne (et son
+            // toast) disparaît au re-rendu déclenché par l'événement.
+            $liveResponder->emitUp('revoke_invitation', ['email' => $this->workspaceInvitation->email]);
         } catch (AbstractDomainException $e) {
             $this->logger->error('Tentative de révocation échouée', [
                 'email' => $this->workspaceInvitation->email,
@@ -54,7 +74,7 @@ class RevokeWorkspaceInvitationComponent
 
             $this->addLiveFlash('error', $e->getMessage());
         } catch (\Exception $e) {
-            $this->logger->critical('Crash système lors de la création d\'une invitation', [
+            $this->logger->critical('Crash système lors de l\'annulation d\'une invitation', [
                 'email' => $this->workspaceInvitation->email,
                 'error' => $e->getMessage(),
             ]);

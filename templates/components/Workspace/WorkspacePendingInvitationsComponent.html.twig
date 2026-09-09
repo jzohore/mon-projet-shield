@@ -1,4 +1,9 @@
 <div {{ attributes.defaults({ class: 'space-y-4' }) }}>
+    {% include 'components/partials/_live_alerts.html.twig' with {
+        message: this.actionMessage|default(null),
+        type: this.actionMessageType|default('success')
+    } %}
+
     {% set invitations = this.invitations %}
     {% set total_invitations = invitations|length %}
 

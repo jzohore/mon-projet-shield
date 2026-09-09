@@ -42,6 +42,14 @@ class ResendWorkspaceInvitationComponent
     {
         $this->clearLiveFlash();
 
+        // Anti-double-clic : court délai entre deux renvois (le compte à rebours
+        // du bouton reflète cette même valeur côté client).
+        if ($this->workspaceInvitation->secondsUntilResendAllowed() > 0) {
+            $this->addLiveFlash('error', 'Patientez un instant avant de renvoyer à nouveau.');
+
+            return;
+        }
+
         // Un renvoi régénère un jeton d'accès et part par e-mail : borné par invitation.
         $limit = $this->workspaceInvitationResendLimiter->create($this->workspaceInvitation->slugId)->consume();
         if (!$limit->isAccepted()) {
@@ -55,14 +63,14 @@ class ResendWorkspaceInvitationComponent
 
             $this->addLiveFlash('success', 'L\'invitation a été envoyée de nouveau.');
         } catch (AbstractDomainException $e) {
-            $this->logger->error('Tentative de révocation échouée', [
+            $this->logger->error('Tentative de renvoi d\'invitation échouée', [
                 'email' => $this->workspaceInvitation->email,
                 'error' => $e->getMessage(),
             ]);
 
             $this->addLiveFlash('error', $e->getMessage());
         } catch (\Exception $e) {
-            $this->logger->critical('Crash système lors de la création d\'une invitation', [
+            $this->logger->critical('Crash système lors du renvoi d\'une invitation', [
                 'email' => $this->workspaceInvitation->email,
                 'error' => $e->getMessage(),
             ]);

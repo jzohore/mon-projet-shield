@@ -10,34 +10,43 @@
         <button
             type="button"
             data-action="inline-confirm#toggle"
-            class="p-1.5 text-slate-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors cursor-pointer"
-            title="Révoquer">
-            <twig:ux:icon name="lucide:trash" class="w-4 h-4" />
+            class="rounded-md p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-300"
+            aria-label="Annuler l'invitation de {{ workspaceInvitation.email }}">
+            <twig:ux:icon name="lucide:trash" class="size-4" aria-hidden="true" />
         </button>
 
         <div data-inline-confirm-target="popover"
-             class="hidden z-[100] w-64 bg-white border border-slate-200 rounded-xl shadow-xl p-3 animate-in fade-in zoom-in-95 duration-200">
+             class="hidden z-[100] w-72 rounded-xl border border-slate-200 bg-white p-3 shadow-xl animate-in fade-in zoom-in-95 duration-200">
 
-            <p class="text-sm text-slate-700 font-medium mb-3 text-center">
-                Révoquer <span class="font-bold text-slate-900">{{ workspaceInvitation.email }}</span> ?
+            <p class="mb-3 text-sm font-medium text-slate-700">
+                Annuler l'invitation de <span class="font-bold text-slate-900">{{ workspaceInvitation.email }}</span> ?
             </p>
+
+            <label for="revoke-reason-{{ workspaceInvitation.slugId }}" class="mb-1 block text-xs font-semibold text-slate-600">
+                Motif
+            </label>
+            <select id="revoke-reason-{{ workspaceInvitation.slugId }}"
+                    data-model="norender|revocationReason"
+                    class="mb-3 w-full rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300">
+                <option value="">Sélectionnez un motif…</option>
+                {% for reason in this.reasons %}
+                    <option value="{{ reason.value }}">{{ reason.getLabel() }}</option>
+                {% endfor %}
+            </select>
 
             <div class="flex gap-2">
                 <twig:Button variant="secondary"
                              data-action="live#action inline-confirm#close"
-                             size="sm"
-                >
-                    Annuler
+                             size="sm">
+                    Retour
                 </twig:Button>
                 <twig:Button variant="destructive"
                              data-action="live#action inline-confirm#close"
                              data-live-action-param="revokeInvitation"
-                             size="sm"
-                >
-                    Oui, révoquer
+                             size="sm">
+                    Annuler l'invitation
                 </twig:Button>
             </div>
         </div>
     </div>
 </div>
-

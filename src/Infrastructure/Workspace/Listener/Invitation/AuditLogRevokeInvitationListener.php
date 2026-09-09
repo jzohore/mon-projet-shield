@@ -44,6 +44,7 @@ readonly class AuditLogRevokeInvitationListener
                 'invited_by_email' => $invitation->owner->email,
                 'email_revoked' => $invitation->email,
                 'role' => $invitation->invitedRole->getLabel(),
+                'reason' => $event->reason->getLabel(),
             ],
             workspace: $workspace,
         );

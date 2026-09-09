@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Workspace\UseCase\Invitation;
 
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
+use App\Domain\Workspace\Enum\InvitationRevocationReason;
 use App\Domain\Workspace\Event\WorkspaceInvitationRevokeEvent;
 use App\Domain\Workspace\Exception\InvitationAlreadyUsedException;
 use App\Domain\Workspace\Exception\NotWorkspaceAdminException;
@@ -23,7 +24,7 @@ readonly class RevokeWorkspaceInvitationUseCase
     ) {
     }
 
-    public function __invoke(WorkspaceInvitation $workspaceInvitation): void
+    public function __invoke(WorkspaceInvitation $workspaceInvitation, InvitationRevocationReason $reason): void
     {
         $currentUser = $this->currentUserProvider->getUser();
         if (!$this->workspaceMemberRepository->isUserAdminOfWorkspace($currentUser, $workspaceInvitation->workspace)) {
@@ -40,6 +41,6 @@ readonly class RevokeWorkspaceInvitationUseCase
         $workspace = $workspaceInvitation->workspace;
 
         $this->workspaceInvitationRepository->delete($workspaceInvitation);
-        $this->eventDispatcher->dispatch(new WorkspaceInvitationRevokeEvent($workspaceInvitation, $currentUser, $workspace));
+        $this->eventDispatcher->dispatch(new WorkspaceInvitationRevokeEvent($workspaceInvitation, $currentUser, $workspace, $reason));
     }
 }

@@ -8,6 +8,7 @@ use App\Application\Workspace\UseCase\Invitation\RevokeWorkspaceInvitationUseCas
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
+use App\Domain\Workspace\Enum\InvitationRevocationReason;
 use App\Domain\Workspace\Enum\InvitationStatus;
 use App\Domain\Workspace\Event\WorkspaceInvitationRevokeEvent;
 use App\Domain\Workspace\Exception\InvitationAlreadyUsedException;
@@ -74,10 +75,11 @@ final class RevokeWorkspaceInvitationUseCaseTest extends TestCase
             ->method('dispatch')
             ->with($this->callback(fn (object $event): bool => $event instanceof WorkspaceInvitationRevokeEvent
                 && $event->revokedBy === $this->currentUser
-                && $event->workspaceInvitation === $invitation))
+                && $event->workspaceInvitation === $invitation
+                && InvitationRevocationReason::SECURITY_INCIDENT === $event->reason))
             ->willReturnArgument(0);
 
-        ($this->useCase())($invitation);
+        ($this->useCase())($invitation, InvitationRevocationReason::SECURITY_INCIDENT);
     }
 
     public function testRejectsNonAdmin(): void
@@ -86,7 +88,7 @@ final class RevokeWorkspaceInvitationUseCaseTest extends TestCase
         $this->eventDispatcher->expects($this->never())->method('dispatch');
 
         $this->expectException(NotWorkspaceAdminException::class);
-        ($this->useCase(isAdmin: false))($this->invitation());
+        ($this->useCase(isAdmin: false))($this->invitation(), InvitationRevocationReason::OTHER);
     }
 
     public function testRejectsInvitationThatIsNoLongerPending(): void
@@ -95,6 +97,6 @@ final class RevokeWorkspaceInvitationUseCaseTest extends TestCase
         $this->eventDispatcher->expects($this->never())->method('dispatch');
 
         $this->expectException(InvitationAlreadyUsedException::class);
-        ($this->useCase())($this->invitation(InvitationStatus::ACCEPTED));
+        ($this->useCase())($this->invitation(InvitationStatus::ACCEPTED), InvitationRevocationReason::OTHER);
     }
 }

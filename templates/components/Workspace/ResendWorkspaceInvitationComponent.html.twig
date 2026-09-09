@@ -3,41 +3,44 @@
         message: this.actionMessage|default(null),
         type: this.actionMessageType|default('success')
     } %}
-    <div data-controller="inline-confirm"
+    <div data-controller="inline-confirm resend-cooldown"
          data-action="click@window->inline-confirm#clickOutside"
+         data-resend-cooldown-seconds-value="{{ workspaceInvitation.secondsUntilResendAllowed }}"
          class="inline-block">
 
         <button
             type="button"
             data-action="inline-confirm#toggle"
-            class="p-1.5 text-slate-400 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors cursor-pointer"
-            title="Révoquer">
-            <twig:ux:icon name="lucide:send" class="w-4 h-4" />
+            data-resend-cooldown-target="button"
+            class="flex size-7 items-center justify-center rounded-md text-slate-400 transition-colors hover:bg-blue-50 hover:text-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300"
+            aria-label="Renvoyer l'invitation à {{ workspaceInvitation.email }}">
+            <span data-resend-cooldown-target="count" class="text-[11px] font-bold tabular-nums" hidden></span>
+            <span data-resend-cooldown-target="icon">
+                <twig:ux:icon name="lucide:send" class="size-4" aria-hidden="true" />
+            </span>
         </button>
 
         <div data-inline-confirm-target="popover"
-             class="hidden z-[100] w-64 bg-white border border-slate-200 rounded-md shadow-xl p-3 animate-in fade-in zoom-in-95 duration-200">
+             class="hidden z-[100] w-72 rounded-md border border-slate-200 bg-white p-3 shadow-xl animate-in fade-in zoom-in-95 duration-200">
 
-            <p class="text-sm text-slate-700 font-medium mb-3 text-center">
-                Êtes-vous sûr de vouloir renvoyer l'invitation de <span class="font-bold text-slate-900">{{ workspaceInvitation.email }}</span> ?
+            <p class="mb-3 text-sm font-medium text-slate-700">
+                Renvoyer l'invitation à <span class="font-bold text-slate-900">{{ workspaceInvitation.email }}</span> ?
+                Un nouveau lien lui sera envoyé et l'ancien cessera d'être valable.
             </p>
 
             <div class="flex gap-2">
                 <twig:Button variant="secondary"
                              data-action="live#action inline-confirm#close"
-                             size="sm"
-                >
-                    Annuler
+                             size="sm">
+                    Retour
                 </twig:Button>
                 <twig:Button variant="primary"
                              data-action="live#action inline-confirm#close"
                              data-live-action-param="resendInvitation"
-                             size="sm"
-                >
+                             size="sm">
                     Oui, renvoyer
                 </twig:Button>
             </div>
         </div>
     </div>
 </div>
-

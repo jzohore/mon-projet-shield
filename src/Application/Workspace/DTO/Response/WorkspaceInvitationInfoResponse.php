@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Workspace\DTO\Response;
 
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
+use App\Domain\Workspace\Enum\InvitedRole;
 
 readonly class WorkspaceInvitationInfoResponse
 {
@@ -19,6 +20,7 @@ readonly class WorkspaceInvitationInfoResponse
         public ?string $token = null,
         public ?\DateTimeImmutable $tokenExpiresAt = null,
         public ?string $role = null,
+        public bool $isAdmin = false,
         public ?string $workspaceName = null,
         public ?string $ownerFullName = null,
     ) {
@@ -37,6 +39,7 @@ readonly class WorkspaceInvitationInfoResponse
             token: $invitation->magicLinkToken,
             tokenExpiresAt: $invitation->magicLinkTokenExpiresAt,
             role: $invitation->invitedRole->getLabel(),
+            isAdmin: InvitedRole::ROLE_WORKSPACE_ADMIN === $invitation->invitedRole,
             workspaceName: $invitation->workspace->name,
             ownerFullName: $invitation->owner->getFullName(),
         );

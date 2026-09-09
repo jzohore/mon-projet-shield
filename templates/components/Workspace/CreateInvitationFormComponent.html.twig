@@ -6,8 +6,7 @@
         } %}
         {# --- COLONNE GAUCHE : LE FORMULAIRE (Prend 7 colonnes) --- #}
         <div class="lg:col-span-7">
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-indigo-500"></div>
+            <div class="bg-white rounded-2xl border border-slate-200 border-l-4 border-l-indigo-500 shadow-sm">
 
                 <div class="p-8">
                     <h2 class="text-lg font-bold text-slate-900 mb-6">Nouvelle invitation</h2>
@@ -47,21 +46,22 @@
                         </div>
 
                         {# Les 2 Rôles #}
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-3">Niveau de privilèges</label>
+                        <fieldset>
+                            <legend class="block text-sm font-semibold text-slate-700 mb-1">Niveau de privilèges</legend>
+                            <p class="text-xs text-slate-500 mb-3">Par défaut : Collaborateur.</p>
 
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                                 {# Option 1 : Collaborateur #}
-                                <label class="relative flex cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-4 focus:outline-none hover:border-slate-300 has-[:checked]:border-blue-500 has-[:checked]:bg-blue-50/30 transition-all group">
-                                    <input type="radio" data-model="norender|invitedRole" name="invitedRole" value="ROLE_WORKSPACE_COLLAB" class="peer sr-only">
+                                <label class="relative flex cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-4 transition-all hover:border-slate-300 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50/30 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-300 has-[:focus-visible]:ring-offset-2 group">
+                                    <input type="radio" data-model="norender|invitedRole" name="invitedRole" value="ROLE_WORKSPACE_COLLAB" class="peer sr-only" {{ this.invitedRole == 'ROLE_WORKSPACE_COLLAB' ? 'checked' : '' }}>
                                     <span class="flex flex-col w-full">
                                         <span class="flex items-center justify-between mb-2">
                                             <span class="flex items-center gap-2 text-sm font-bold text-slate-900">
-                                                {{ ux_icon('lucide:user', { class: 'size-4 text-slate-400 group-has-[:checked]:text-blue-600 transition-colors' }) }}
+                                                {{ ux_icon('lucide:user', { class: 'size-4 text-slate-400 group-has-[:checked]:text-indigo-600 transition-colors' }) }}
                                                 Collaborateur
                                             </span>
-                                            {{ ux_icon('lucide:check-circle-2', { class: 'size-4 text-blue-600 opacity-0 peer-checked:opacity-100 transition-opacity' }) }}
+                                            {{ ux_icon('lucide:circle-check-big', { class: 'size-4 text-indigo-600 opacity-0 peer-checked:opacity-100 transition-opacity' }) }}
                                         </span>
                                         <span class="text-xs text-slate-500 leading-relaxed">
                                             Accès aux dossiers clients et réalisation des contrôles de conformité KYC.
@@ -70,15 +70,15 @@
                                 </label>
 
                                 {# Option 2 : Administrateur #}
-                                <label class="relative flex cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-4 focus:outline-none hover:border-slate-300 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50/30 transition-all group">
-                                    <input type="radio" data-model="norender|invitedRole" name="invitedRole" value="ROLE_WORKSPACE_ADMIN" class="peer sr-only">
+                                <label class="relative flex cursor-pointer rounded-xl border-2 border-slate-200 bg-white p-4 transition-all hover:border-slate-300 has-[:checked]:border-indigo-500 has-[:checked]:bg-indigo-50/30 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-indigo-300 has-[:focus-visible]:ring-offset-2 group">
+                                    <input type="radio" data-model="norender|invitedRole" name="invitedRole" value="ROLE_WORKSPACE_ADMIN" class="peer sr-only" {{ this.invitedRole == 'ROLE_WORKSPACE_ADMIN' ? 'checked' : '' }}>
                                     <span class="flex flex-col w-full">
                                         <span class="flex items-center justify-between mb-2">
                                             <span class="flex items-center gap-2 text-sm font-bold text-slate-900">
                                                 {{ ux_icon('lucide:shield-check', { class: 'size-4 text-slate-400 group-has-[:checked]:text-indigo-600 transition-colors' }) }}
                                                 Administrateur
                                             </span>
-                                            {{ ux_icon('lucide:check-circle-2', { class: 'size-4 text-indigo-600 opacity-0 peer-checked:opacity-100 transition-opacity' }) }}
+                                            {{ ux_icon('lucide:circle-check-big', { class: 'size-4 text-indigo-600 opacity-0 peer-checked:opacity-100 transition-opacity' }) }}
                                         </span>
                                         <span class="text-xs text-slate-500 leading-relaxed">
                                             Contrôle total. Peut inviter des membres, modifier les réglages et la facturation.
@@ -87,15 +87,15 @@
                                 </label>
 
                             </div>
-                        </div>
+                        </fieldset>
                     </div>
 
                     {# Le Footer / Bouton de soumission #}
                     <div class="flex items-center justify-end mt-8 pt-4">
-                        <twig:Button as="button" type="submit" variant="dark" class="w-full sm:w-auto px-8">
+                        <twig:Button as="button" type="submit" variant="dark" class="w-full sm:w-auto px-8" aria-live="polite">
                             <span data-loading="action(save)|hide">Envoyer l'invitation</span>
                             <span data-loading="action(save)|show" class="hidden items-center gap-2">
-                                Enregistrement...
+                                Envoi de l'invitation…
                             </span>
                         </twig:Button>
                     </div>

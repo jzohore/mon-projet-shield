@@ -1,72 +1,68 @@
-{# templates/portal/step1_company.html.twig #}
-{% extends '@app/kyc/portal/base_portal.html.twig' %}
+{% extends '@website/base.html.twig' %}
 
-{# On passe les variables au layout parent pour qu'il mette à jour la sidebar #}
-{% set step = 1 %}
-{% set workspace_name = folder.workspaceName ?? 'Cabinet Dupont' %}
-{% block title %} {{ page_title }} : {{ workspace_name}} | {{ company_name}} {% endblock %}
-{% block portal_content %}
-    <div class="mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4 px-1 sm:px-0">
-        <div>
-            <h1 class="text-xl font-bold text-slate-900 tracking-tight">👋 Bonjour, {{ invitation.firstName }}</h1>
-            <p class="text-sm text-slate-500 mt-1">Vous avez été invité à collaborer sur Kysure</p>
-        </div>
-    </div>
-    <div class="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-100 mb-8">
-        <div class="size-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-lg">
-            {{ invitation.firstName|first }}
-        </div>
-        <div>
-            <p class="text-sm font-medium text-slate-900">
-                <span class="font-bold">{{ invitation.ownerFullName }}</span> vous invite
-            </p>
-            <p class="text-xs text-slate-500">
-                Espace de travail : <span class="font-semibold text-slate-700">{{ invitation.workspaceName }}</span>
-            </p>
-        </div>
-    </div>
+{% block title %}Rejoindre {{ invitation.workspaceName }}{% endblock %}
+{% block meta_robots %}noindex, nofollow{% endblock %}
 
-    <div class="space-y-6">
-        {# Détails des accès #}
-        <div class="space-y-3">
-            <div class="flex items-start gap-3">
-                <div class="mt-0.5">
-                    <twig:ux:icon name="tabler:check" class="size-4 text-emerald-500" />
-                </div>
-                <p class="text-xs text-slate-600">
-                    Accès en tant que <span class="font-bold text-slate-900 underline decoration-indigo-500/30">{{ invitation.role }}</span>
+{% block body %}
+    <main class="flex min-h-screen w-full items-center justify-center bg-slate-50 p-6">
+        <div class="w-full max-w-md">
+
+            <div class="mb-6 flex items-center gap-2 text-[15px] font-bold tracking-tight text-slate-900">
+                <span class="flex size-7 items-center justify-center rounded bg-slate-900 text-sm font-bold text-white" aria-hidden="true">K</span>
+                {{ company_name }}
+            </div>
+
+            <div class="rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">
+                    Rejoindre {{ invitation.workspaceName }}
+                </h1>
+                <p class="mt-1 text-sm text-slate-500">
+                    <span class="font-medium text-slate-700">{{ invitation.ownerFullName }}</span>
+                    vous invite à collaborer sur {{ company_name }}.
                 </p>
-            </div>
-            <div class="flex items-start gap-3">
-                <div class="mt-0.5">
-                    <twig:ux:icon name="tabler:check" class="size-4 text-emerald-500" />
-                </div>
-                <p class="text-xs text-slate-600">Lecture et création des dossiers clients</p>
-            </div>
-            <div class="flex items-start gap-3">
-                <div class="mt-0.5">
-                    <twig:ux:icon name="tabler:check" class="size-4 text-emerald-500" />
-                </div>
-                <p class="text-xs text-slate-600">Utilisation des outils de screening et monitoring</p>
-            </div>
-            {% if invitation.role == 'Administrateur' %}
-                <div class="flex items-start gap-3">
-                    <div class="mt-0.5">
-                        <twig:ux:icon name="tabler:check" class="size-4 text-emerald-500" />
-                    </div>
-                    <p class="text-xs text-slate-600">Contrôle total. Peut inviter des membres, modifier les réglages et la facturation.</p>
-                </div>
-            {% endif %}
-        </div>
 
-        <div class="pt-4">
-            <form action="{{ path('portal_user_invitation_accept') }}" method="POST">
-                <twig:Button type="submit" variant="dark" class="w-full">
-                    Accepter l'invitation
-                    <twig:ux:icon name="tabler:arrow-right" class="ml-2 size-4" />
-                </twig:Button>
-                <input type="hidden" name="_token" value="{{ csrf_token('accept-invitation') }}">
-            </form>
+                <dl class="mt-6 space-y-3 border-t border-slate-100 pt-6 text-sm">
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-slate-500">Adresse invitée</dt>
+                        <dd class="text-right font-medium text-slate-900">{{ invitation.email }}</dd>
+                    </div>
+                    <div class="flex items-start justify-between gap-4">
+                        <dt class="text-slate-500">Rôle</dt>
+                        <dd class="text-right font-medium text-slate-900">{{ invitation.role }}</dd>
+                    </div>
+                    {% if invitation.tokenExpiresAt %}
+                        <div class="flex items-start justify-between gap-4">
+                            <dt class="text-slate-500">Lien valable jusqu'au</dt>
+                            <dd class="text-right font-medium text-slate-900">{{ invitation.tokenExpiresAt|date('d/m/Y à H:i') }}</dd>
+                        </div>
+                    {% endif %}
+                </dl>
+
+                <ul class="mt-6 space-y-2 text-xs text-slate-600">
+                    <li class="flex items-start gap-2">
+                        {{ ux_icon('lucide:check', { class: 'mt-0.5 size-4 shrink-0 text-emerald-500' }) }}
+                        Accès aux dossiers de conformité du cabinet.
+                    </li>
+                    {% if invitation.isAdmin %}
+                        <li class="flex items-start gap-2">
+                            {{ ux_icon('lucide:check', { class: 'mt-0.5 size-4 shrink-0 text-emerald-500' }) }}
+                            Contrôle total : gestion des membres, des réglages et de la facturation.
+                        </li>
+                    {% endif %}
+                </ul>
+
+                <form action="{{ path('portal_user_invitation_accept') }}" method="POST" class="mt-8">
+                    <input type="hidden" name="_token" value="{{ csrf_token('accept-invitation') }}">
+                    <twig:Button type="submit" variant="dark" class="w-full">
+                        Accepter l'invitation
+                        {{ ux_icon('lucide:arrow-right', { class: 'ml-2 size-4' }) }}
+                    </twig:Button>
+                </form>
+            </div>
+
+            <p class="mt-4 text-center text-xs text-slate-400">
+                Ce n'est pas vous ? Ignorez cet e-mail, l'invitation expirera d'elle-même.
+            </p>
         </div>
-    </div>
+    </main>
 {% endblock %}

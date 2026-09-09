@@ -35,6 +35,7 @@ final readonly class ResendWorkspaceInvitationUseCase
         }
 
         $workspaceInvitation->generateMagicLinkToken();
+        $workspaceInvitation->markResent();
         $this->repository->save($workspaceInvitation);
 
         // L'e-mail (dispatch Messenger) et la trace d'audit sont câblés par des

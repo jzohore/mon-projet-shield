@@ -51,6 +51,10 @@ class WorkspaceInvitation
     #[ORM\Column(type: Types::DATETIME_IMMUTABLE)]
     public private(set) \DateTimeImmutable $createdAt;
 
+    /** Dernier renvoi de l'invitation : pilote le compte à rebours du bouton « Renvoyer ». */
+    #[ORM\Column(type: Types::DATETIME_IMMUTABLE, nullable: true)]
+    public private(set) ?\DateTimeImmutable $lastResentAt = null;
+
     private function __construct(
         #[ORM\ManyToOne(targetEntity: User::class, inversedBy: 'invitations')]
         #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
@@ -147,6 +151,25 @@ class WorkspaceInvitation
     public function isPending(): bool
     {
         return InvitationStatus::PENDING === $this->invitationStatus;
+    }
+
+    public function markResent(): void
+    {
+        $this->lastResentAt = now();
+    }
+
+    /**
+     * Secondes restantes avant qu'un nouveau renvoi soit permis (anti-spam).
+     */
+    public function secondsUntilResendAllowed(int $cooldownSeconds = 60): int
+    {
+        if (!$this->lastResentAt instanceof \DateTimeImmutable) {
+            return 0;
+        }
+
+        $elapsed = now()->getTimestamp() - $this->lastResentAt->getTimestamp();
+
+        return max(0, $cooldownSeconds - $elapsed);
     }
 
     public function accept(): void

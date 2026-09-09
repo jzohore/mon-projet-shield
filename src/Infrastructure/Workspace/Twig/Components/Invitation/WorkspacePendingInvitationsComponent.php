@@ -7,7 +7,9 @@ namespace App\Infrastructure\Workspace\Twig\Components\Invitation;
 use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
+use App\Infrastructure\Shared\Component\LiveFlashTrait;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
+use Symfony\UX\LiveComponent\Attribute\LiveArg;
 use Symfony\UX\LiveComponent\Attribute\LiveListener;
 use Symfony\UX\LiveComponent\DefaultActionTrait;
 
@@ -24,6 +26,7 @@ use Symfony\UX\LiveComponent\DefaultActionTrait;
 class WorkspacePendingInvitationsComponent
 {
     use DefaultActionTrait;
+    use LiveFlashTrait;
 
     public function __construct(
         private readonly CurrentWorkspaceProvider $currentWorkspaceProvider,
@@ -42,11 +45,15 @@ class WorkspacePendingInvitationsComponent
     }
 
     /**
-     * Une invitation vient d'être annulée dans un composant frère : capter
-     * l'événement suffit à forcer le rafraîchissement de la liste.
+     * Une invitation vient d'être annulée dans un composant enfant. On porte le
+     * message de succès ici : c'est ce composant qui survit au re-rendu de la liste.
      */
     #[LiveListener('revoke_invitation')]
-    public function onInvitationRevoked(): void
+    public function onInvitationRevoked(#[LiveArg] string $email = ''): void
     {
+        $this->addLiveFlash(
+            'success',
+            '' !== $email ? sprintf('Invitation de %s annulée.', $email) : 'Invitation annulée.',
+        );
     }
 }
