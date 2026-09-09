@@ -35,7 +35,7 @@
             {{ ui.nav_link('app_settings_organization', 'Organisation', current_route) }}
         {% endif %}
 
-        {% if is_granted('ROLE_WORKSPACE_ADMIN') %}
+        {% if workspace_can('billing') %}
             {{ ui.nav_link('app_settings_subscription', 'Abonnement', current_route) }}
             {{ ui.nav_link('app_settings_billing', 'Usage & minutes', current_route) }}
             {{ ui.nav_link('app_pricing', 'Offres & tarifs', current_route) }}

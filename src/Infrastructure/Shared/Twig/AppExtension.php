@@ -55,7 +55,8 @@ class AppExtension extends AbstractExtension
         $attribute = match ($capability) {
             'invite' => WorkspaceInvitationVoter::CREATE,
             'edit_cabinet' => WorkspaceInvitationVoter::WORKSPACE_EDIT,
-            'manage_permissions' => WorkspaceInvitationVoter::PERMISSIONS_MANAGE,
+            // Actions strictement réservées aux administrateurs (non délégables).
+            'manage_permissions', 'billing', 'manage_members' => WorkspaceInvitationVoter::PERMISSIONS_MANAGE,
             default => null,
         };
 

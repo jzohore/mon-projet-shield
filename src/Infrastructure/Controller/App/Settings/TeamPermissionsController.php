@@ -8,6 +8,7 @@ use App\Application\Workspace\UseCase\Permissions\UpdateWorkspacePermissionsUseC
 use App\Domain\Shared\Exception\AbstractDomainException;
 use App\Domain\Workspace\Enum\PermissionMode;
 use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
+use App\Infrastructure\Workspace\Voter\WorkspaceInvitationVoter;
 use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -18,7 +19,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[AsController]
-#[IsGranted('ROLE_WORKSPACE_ADMIN')]
+#[IsGranted('ROLE_USER')]
 #[Route(path: '/app/settings/team-permissions', name: 'app_settings_team_permissions', methods: ['GET', 'POST'])]
 final class TeamPermissionsController extends AbstractController
 {
@@ -31,6 +32,13 @@ final class TeamPermissionsController extends AbstractController
 
     public function __invoke(Request $request): Response
     {
+        // Le statut d'administrateur vit dans workspace_members, pas dans User::roles :
+        // on passe donc par le voter (contexte cabinet), jamais par is_granted('ROLE_*').
+        $this->denyAccessUnlessGranted(
+            WorkspaceInvitationVoter::PERMISSIONS_MANAGE,
+            $this->currentWorkspaceProvider->getWorkspace(),
+        );
+
         if ($request->isMethod('POST')) {
             return $this->handleSave($request);
         }
