@@ -25,6 +25,7 @@ use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 use function Symfony\Component\Clock\now;
 
+use Symfony\Component\Security\Core\User\EquatableInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -32,7 +33,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity]
 #[ORM\Table(name: '`users`')]
 #[UniqueEntity(fields: ['email'], message: 'Un compte existe déjà avec cet email')]
-class User implements UserInterface, TwoFactorInterface, \Stringable
+class User implements UserInterface, TwoFactorInterface, EquatableInterface, \Stringable
 {
     use GenerateSlugPrefixedTrait;
 
@@ -91,6 +92,13 @@ class User implements UserInterface, TwoFactorInterface, \Stringable
 
     #[ORM\Column(type: Types::INTEGER, nullable: true)]
     public private(set) int $trustedVersion = 0;
+
+    /**
+     * Empreinte d'identité de session : la régénérer invalide toutes les sessions
+     * ouvertes de l'utilisateur au prochain rafraîchissement (cf. isEqualTo()).
+     */
+    #[ORM\Column(type: Types::STRING, length: 32, options: ['default' => ''])]
+    public private(set) string $securityStamp = '';
 
     #[ORM\ManyToOne(targetEntity: Workspace::class, inversedBy: 'members')]
     #[ORM\JoinColumn(nullable: true)]
@@ -152,6 +160,7 @@ class User implements UserInterface, TwoFactorInterface, \Stringable
     ) {
         $this->roles = array_values(array_unique($roles));
         $this->slugId = $this->generate_ulid_prefixed('usr_');
+        $this->securityStamp = bin2hex(random_bytes(16));
         $this->profile = new UserProfil();
         $this->createdAt = now();
         $this->updatedAt = now();
@@ -198,6 +207,39 @@ class User implements UserInterface, TwoFactorInterface, \Stringable
     public function eraseCredentials(): void
     {
         // Si vous stockez un plainPassword temporaire, nettoyez-le ici
+    }
+
+    /**
+     * Régénère l'empreinte de session. À appeler quand l'accès de l'utilisateur
+     * change (révocation d'un membre, désactivation, changement de rôle) pour
+     * couper ses sessions ouvertes au prochain rafraîchissement.
+     */
+    public function regenerateSecurityStamp(): void
+    {
+        $this->securityStamp = bin2hex(random_bytes(16));
+    }
+
+    /**
+     * Comparaison utilisée par le ContextListener à chaque requête : identité +
+     * empreinte de session. Une empreinte différente ⇒ session invalidée.
+     */
+    public function isEqualTo(UserInterface $user): bool
+    {
+        if (!$user instanceof self) {
+            return false;
+        }
+
+        if ($this->email !== $user->email) {
+            return false;
+        }
+
+        // Tolérance transitoire : un compte pas encore ré-empreinté (déploiement
+        // en cours) ne doit pas être déconnecté à tort.
+        if ('' === $this->securityStamp || '' === $user->securityStamp) {
+            return true;
+        }
+
+        return hash_equals($this->securityStamp, $user->securityStamp);
     }
 
     // ==================== MÉTHODES MÉTIER ====================

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Application\Workspace\UseCase\WorkspaceMember;
 
+use App\Domain\User\Repository\UserRepositoryInterface;
 use App\Domain\Workspace\Event\WorkspaceMemberRevokedEvent;
 use App\Domain\Workspace\Exception\CannotRevokeOwnerException;
 use App\Domain\Workspace\Exception\MemberNotFoundException;
@@ -20,6 +21,7 @@ readonly class RevokeWorkspaceMemberAccessUseCase
         private CurrentWorkspaceProvider $currentWorkspaceProvider,
         private CurrentUserProvider $currentUserProvider,
         private EventDispatcherInterface $eventDispatcher,
+        private UserRepositoryInterface $userRepository,
     ) {
     }
 
@@ -54,6 +56,11 @@ readonly class RevokeWorkspaceMemberAccessUseCase
         $revokedUser = $member->user;
 
         $this->workspaceMemberRepository->delete($member);
+
+        // Coupure immédiate : la nouvelle empreinte invalide les sessions ouvertes
+        // de l'ex-collaborateur dès sa prochaine requête.
+        $revokedUser->regenerateSecurityStamp();
+        $this->userRepository->save($revokedUser);
 
         // 🪄 On déclenche l'événement !
         $this->eventDispatcher->dispatch(new WorkspaceMemberRevokedEvent(
