@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Workspace\Controller;
 
 use App\Application\Workspace\UseCase\Invitation\GetCurrentInvitationUseCase;
+use App\Domain\Shared\Exception\AbstractDomainException;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,7 +16,7 @@ use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
 
 #[AsController]
-#[Route(path: '/portal/invitation', name: 'portal_user_invitation', methods: ['GET'])]
+#[Route(path: '/invitation', name: 'portal_user_invitation', methods: ['GET'])]
 class PortalWorkspaceInvitationController extends AbstractController
 {
     public function __construct(
@@ -31,7 +32,8 @@ class PortalWorkspaceInvitationController extends AbstractController
      */
     public function __invoke(): Response
     {
-        $id = $this->requestStack->getSession()->get('wrk_inv_id');
+        $session = $this->requestStack->getSession();
+        $id = $session->get('wrk_inv_id');
 
         if (!$id) {
             $this->addFlash('error', 'Le lien d\'invitation est invalide ou expiré. Redemandez une invitation à votre administrateur.');
@@ -39,7 +41,16 @@ class PortalWorkspaceInvitationController extends AbstractController
             return $this->redirectToRoute('app_login');
         }
 
-        $invitation = ($this->getCurrentInvitationUseCase)($id);
+        try {
+            $invitation = ($this->getCurrentInvitationUseCase)($id);
+        } catch (AbstractDomainException) {
+            // Invitation périmée / consommée / révoquée entre-temps : on ne
+            // ré-affiche pas une carte morte, on nettoie et on renvoie proprement.
+            $session->remove('wrk_inv_id');
+            $this->addFlash('error', 'Cette invitation a expiré ou a déjà été utilisée. Demandez une nouvelle invitation à votre administrateur.');
+
+            return $this->redirectToRoute('app_login');
+        }
 
         return $this->render('@app/workspace/invitation/accept_invitation.html.twig', [
             'page_title' => 'Rejoindre votre équipe',

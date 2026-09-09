@@ -13,10 +13,13 @@ use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Domain\Workspace\Entity\WorkspaceMember;
 use App\Domain\Workspace\Enum\InvitationStatus;
 use App\Domain\Workspace\Enum\InvitedRole;
+use App\Domain\Workspace\Exception\CannotAcceptInvitationException;
 use App\Domain\Workspace\Exception\InvitationAlreadyUsedException;
+use App\Domain\Workspace\Exception\SeatLimitReachedException;
 use App\Domain\Workspace\Exception\UserAlreadyBelongsToAnotherWorkspaceException;
 use App\Domain\Workspace\Repository\WorkspaceInvitationRepositoryInterface;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
+use App\Domain\Workspace\Service\SeatAvailability;
 use App\Tests\Application\ReflectionHelperTrait;
 use Doctrine\Common\Collections\ArrayCollection;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -33,6 +36,7 @@ final class AcceptInvitationUseCaseTest extends TestCase
     private WorkspaceInvitationRepositoryInterface&MockObject $invitationRepository;
     private UserRepositoryInterface&MockObject $userRepository;
     private WorkspaceMemberRepositoryInterface&MockObject $memberRepository;
+    private SeatAvailability&MockObject $seatAvailability;
     private AcceptInvitationUseCase $useCase;
 
     protected function setUp(): void
@@ -40,6 +44,8 @@ final class AcceptInvitationUseCaseTest extends TestCase
         $this->invitationRepository = $this->createMock(WorkspaceInvitationRepositoryInterface::class);
         $this->userRepository = $this->createMock(UserRepositoryInterface::class);
         $this->memberRepository = $this->createMock(WorkspaceMemberRepositoryInterface::class);
+        // Par défaut un mock renvoie 0 pour les deux → 0 > 0 est faux, le siège passe.
+        $this->seatAvailability = $this->createMock(SeatAvailability::class);
 
         $transactionManager = $this->createStub(TransactionManagerInterface::class);
         $transactionManager->method('transactional')->willReturnCallback(static fn (callable $cb) => $cb());
@@ -50,14 +56,16 @@ final class AcceptInvitationUseCaseTest extends TestCase
             $this->memberRepository,
             $transactionManager,
             $this->createStub(EventDispatcherInterface::class),
+            $this->seatAvailability,
         );
     }
 
-    private function invitation(InvitationStatus $status = InvitationStatus::PENDING): WorkspaceInvitation
+    private function invitation(InvitationStatus $status = InvitationStatus::PENDING, bool $workspaceActive = true): WorkspaceInvitation
     {
         $workspace = $this->createEntityState(Workspace::class, [
             'name' => 'Cabinet',
             'slugId' => 'wrk_1',
+            'isActive' => $workspaceActive,
             'members' => new ArrayCollection(),
         ]);
 
@@ -93,7 +101,7 @@ final class AcceptInvitationUseCaseTest extends TestCase
     public function testAttachesAnExistingUserAsMemberWithoutCreatingAnAccount(): void
     {
         $invitation = $this->invitation();
-        $existing = $this->createEntityState(User::class, ['id' => Uuid::v7(), 'email' => 'collab@cabinet.fr']);
+        $existing = $this->createEntityState(User::class, ['id' => Uuid::v7(), 'email' => 'collab@cabinet.fr', 'isActif' => true]);
 
         $this->invitationRepository->method('findBySlugId')->willReturn($invitation);
         $this->userRepository->method('findByEmail')->willReturn($existing);
@@ -110,7 +118,7 @@ final class AcceptInvitationUseCaseTest extends TestCase
     public function testRejectsWhenExistingUserBelongsToAnotherWorkspace(): void
     {
         $invitation = $this->invitation();
-        $existing = $this->createEntityState(User::class, ['id' => Uuid::v7(), 'email' => 'collab@cabinet.fr']);
+        $existing = $this->createEntityState(User::class, ['id' => Uuid::v7(), 'email' => 'collab@cabinet.fr', 'isActif' => true]);
 
         $otherWorkspace = $this->createEntityState(Workspace::class, [
             'name' => 'Autre cabinet',
@@ -131,10 +139,25 @@ final class AcceptInvitationUseCaseTest extends TestCase
         ($this->useCase)('wrk_inv_1');
     }
 
+    public function testRejectsWhenTheExistingUserAccountIsDisabled(): void
+    {
+        $invitation = $this->invitation();
+        $disabled = $this->createEntityState(User::class, ['id' => Uuid::v7(), 'email' => 'collab@cabinet.fr', 'isActif' => false]);
+
+        $this->invitationRepository->method('findBySlugId')->willReturn($invitation);
+        $this->userRepository->method('findByEmail')->willReturn($disabled);
+
+        $this->memberRepository->expects($this->never())->method('save');
+        $this->invitationRepository->expects($this->never())->method('save');
+
+        $this->expectException(CannotAcceptInvitationException::class);
+        ($this->useCase)('wrk_inv_1');
+    }
+
     public function testDoesNotDuplicateMemberWhenUserIsAlreadyInTheWorkspace(): void
     {
         $invitation = $this->invitation();
-        $existing = $this->createEntityState(User::class, ['id' => Uuid::v7(), 'email' => 'collab@cabinet.fr']);
+        $existing = $this->createEntityState(User::class, ['id' => Uuid::v7(), 'email' => 'collab@cabinet.fr', 'isActif' => true]);
         $member = $this->createEntityState(WorkspaceMember::class, []);
 
         $this->invitationRepository->method('findBySlugId')->willReturn($invitation);
@@ -155,6 +178,50 @@ final class AcceptInvitationUseCaseTest extends TestCase
         $this->memberRepository->expects($this->never())->method('save');
 
         $this->expectException(InvitationAlreadyUsedException::class);
+        ($this->useCase)('wrk_inv_1');
+    }
+
+    public function testRejectsWhenAnotherIdentityIsAlreadySignedIn(): void
+    {
+        $this->invitationRepository->method('findBySlugId')->willReturn($this->invitation());
+
+        $this->userRepository->expects($this->never())->method('save');
+        $this->memberRepository->expects($this->never())->method('save');
+
+        $this->expectException(CannotAcceptInvitationException::class);
+        ($this->useCase)('wrk_inv_1', 'someone.else@cabinet.fr');
+    }
+
+    public function testAcceptsWhenTheSignedInIdentityIsTheRecipient(): void
+    {
+        $this->invitationRepository->method('findBySlugId')->willReturn($this->invitation());
+        $this->userRepository->method('findByEmail')->willReturn(null);
+
+        $user = ($this->useCase)('wrk_inv_1', 'COLLAB@cabinet.FR');
+
+        self::assertSame('collab@cabinet.fr', $user->email);
+    }
+
+    public function testRejectsWhenTheWorkspaceIsSuspended(): void
+    {
+        $this->invitationRepository->method('findBySlugId')->willReturn($this->invitation(workspaceActive: false));
+
+        $this->userRepository->expects($this->never())->method('save');
+
+        $this->expectException(CannotAcceptInvitationException::class);
+        ($this->useCase)('wrk_inv_1');
+    }
+
+    public function testRejectsWhenTheSeatQuotaIsExceeded(): void
+    {
+        $this->invitationRepository->method('findBySlugId')->willReturn($this->invitation());
+        $this->seatAvailability->method('usedSeats')->willReturn(5);
+        $this->seatAvailability->method('allowedSeats')->willReturn(2);
+
+        $this->userRepository->expects($this->never())->method('save');
+        $this->memberRepository->expects($this->never())->method('save');
+
+        $this->expectException(SeatLimitReachedException::class);
         ($this->useCase)('wrk_inv_1');
     }
 }

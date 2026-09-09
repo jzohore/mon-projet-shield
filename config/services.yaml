@@ -133,6 +133,12 @@ services:
     App\Infrastructure\Workspace\Twig\Components\Invitation\CreateInvitationFormComponent:
         arguments:
             $workspaceInvitationLimiter: '@limiter.workspace_invitation'
+    App\Infrastructure\Workspace\Twig\Components\Invitation\ResendWorkspaceInvitationComponent:
+        arguments:
+            $workspaceInvitationResendLimiter: '@limiter.workspace_invitation_resend'
+    App\Infrastructure\Workspace\Controller\WorkspaceInvitationConfirmTokenController:
+        arguments:
+            $workspaceInvitationConfirmLimiter: '@limiter.workspace_invitation_confirm'
     App\Domain\Workspace\Service\CurrentWorkspaceProvider:
         tags:
             - { name: 'kernel.reset', method: 'reset' }

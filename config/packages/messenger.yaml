@@ -52,6 +52,10 @@ framework:
             'App\Infrastructure\Compliance\Message\DispatchNotifyDerSigned': async_priority
             'App\Infrastructure\Compliance\Message\DispatchNotifyDerRejected': async_priority
             'App\Infrastructure\Compliance\Message\SendClientRelationshipEndedMessage': async_priority
+            # Invitation collaborateur : même exigence que les autres e-mails
+            # transactionnels (départ immédiat + retries), et l'audit ne doit pas
+            # dépendre de la réussite de l'envoi.
+            'App\Infrastructure\Workspace\Message\DispatchInvitationEmailMessage': async_priority
 
             # --- WORKFLOW KYC & S3 (Peut prendre 1 ou 2 secondes) ---
             'App\Infrastructure\KYC\Message\SendSubmittedKycFolderMessage': async_main

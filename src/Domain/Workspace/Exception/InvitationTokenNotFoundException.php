@@ -16,7 +16,8 @@ class InvitationTokenNotFoundException extends AbstractDomainException
             message: 'Invitation introuvable ou expirée.',
             errorCode: ErrorCode::INVITATION_TOKEN_NOT_FOUND,
             statusCode: Response::HTTP_NOT_FOUND, // 404
-            payload: ['token' => $token]
+            // Le jeton est un secret d'authentification : on n'en garde qu'un préfixe de hash pour corréler.
+            payload: ['token_hash' => substr(hash('sha256', $token), 0, 12)]
         );
     }
 }

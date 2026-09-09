@@ -10,6 +10,7 @@ use App\Domain\Workspace\Entity\WorkspaceInvitation;
 use App\Infrastructure\Shared\Component\LiveFlashTrait;
 use App\Infrastructure\Workspace\Voter\WorkspaceInvitationVoter;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\UX\LiveComponent\Attribute\AsLiveComponent;
 use Symfony\UX\LiveComponent\Attribute\LiveAction;
@@ -31,6 +32,7 @@ class ResendWorkspaceInvitationComponent
     public function __construct(
         private readonly ResendWorkspaceInvitationUseCase $resendWorkspaceInvitationUseCase,
         private readonly LoggerInterface $logger,
+        private readonly RateLimiterFactory $workspaceInvitationResendLimiter,
     ) {
     }
 
@@ -40,10 +42,18 @@ class ResendWorkspaceInvitationComponent
     {
         $this->clearLiveFlash();
 
+        // Un renvoi régénère un jeton d'accès et part par e-mail : borné par invitation.
+        $limit = $this->workspaceInvitationResendLimiter->create($this->workspaceInvitation->slugId)->consume();
+        if (!$limit->isAccepted()) {
+            $this->addLiveFlash('error', 'Vous avez renvoyé cette invitation trop souvent. Réessayez plus tard.');
+
+            return;
+        }
+
         try {
             ($this->resendWorkspaceInvitationUseCase)($this->workspaceInvitation);
 
-            $this->addLiveFlash('success', 'L\'invitation a été envoyé de nouveau.');
+            $this->addLiveFlash('success', 'L\'invitation a été envoyée de nouveau.');
         } catch (AbstractDomainException $e) {
             $this->logger->error('Tentative de révocation échouée', [
                 'email' => $this->workspaceInvitation->email,

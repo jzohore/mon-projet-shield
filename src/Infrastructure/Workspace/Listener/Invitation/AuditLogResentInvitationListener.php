@@ -7,13 +7,13 @@ namespace App\Infrastructure\Workspace\Listener\Invitation;
 use App\Domain\AuditLog\Entity\AuditLog;
 use App\Domain\AuditLog\Enum\AuditEventType;
 use App\Domain\AuditLog\Repository\AuditLogRepositoryInterface;
-use App\Domain\Workspace\Event\WorkspaceInvitationCreatedEvent;
+use App\Domain\Workspace\Event\WorkspaceInvitationResentEvent;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Webmozart\Assert\Assert;
 
 // L'audit passe avant l'envoi d'e-mail : la trace ne doit pas dépendre du mailer.
 #[AsEventListener(priority: 10)]
-readonly class AuditLogWorkspaceInvitationListener
+readonly class AuditLogResentInvitationListener
 {
     public function __construct(
         private AuditLogRepositoryInterface $auditLogRepository,
@@ -23,26 +23,24 @@ readonly class AuditLogWorkspaceInvitationListener
     /**
      * @throws \Exception
      */
-    public function __invoke(WorkspaceInvitationCreatedEvent $event): void
+    public function __invoke(WorkspaceInvitationResentEvent $event): void
     {
         $invitation = $event->workspaceInvitation;
-
-        $user = $event->user;
-
-        Assert::notNull($user->id);
-        Assert::notNull($user->email);
-
+        $actor = $event->resentBy;
         $workspace = $event->workspace;
+
+        Assert::notNull($actor->id);
+        Assert::notNull($actor->email);
         Assert::notNull($workspace->name);
+
         $audit = AuditLog::initiate(
-            eventName: AuditEventType::WORKSPACE_INVITATION_SENT,
+            eventName: AuditEventType::WORKSPACE_INVITATION_RESENT,
             payload: [
                 'workspace_name' => $workspace->name,
                 'invitation_slug_id' => $invitation->slugId,
-                'actor_name' => $user->getFullName(),
-                'actor_email' => $user->email,
+                'actor_name' => $actor->getFullName(),
+                'actor_email' => $actor->email,
                 'email_invited' => $invitation->email,
-                'role' => $invitation->invitedRole->getLabel(),
             ],
             workspace: $workspace,
         );

@@ -11,11 +11,12 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpKernel\Attribute\AsController;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 #[AsController]
-#[Route(path: '/portal/invitation/confirm/{token}', name: 'portal_user_confirm_token', methods: ['GET'])]
+#[Route(path: '/invitation/confirm/{token}', name: 'portal_user_confirm_token', methods: ['GET'])]
 class WorkspaceInvitationConfirmTokenController extends AbstractController
 {
     public function __construct(
@@ -23,11 +24,26 @@ class WorkspaceInvitationConfirmTokenController extends AbstractController
         private readonly UrlGeneratorInterface $urlGenerator,
         private readonly RequestStack $requestStack,
         private readonly LoggerInterface $logger,
+        private readonly RateLimiterFactory $workspaceInvitationConfirmLimiter,
     ) {
     }
 
     public function __invoke(string $token): RedirectResponse
     {
+        $request = $this->requestStack->getCurrentRequest();
+        $clientIp = $request?->getClientIp() ?? 'unknown';
+
+        // Route publique, non authentifiée : on borne l'énumération / le DoS.
+        if (!$this->workspaceInvitationConfirmLimiter->create($clientIp)->consume()->isAccepted()) {
+            $this->logger->warning('Rate limit atteint sur la confirmation d\'invitation collaborateur', [
+                'ip' => $clientIp,
+                'token_hash' => substr(hash('sha256', $token), 0, 12),
+            ]);
+            $this->addFlash('error', 'Trop de tentatives. Merci de réessayer dans quelques minutes.');
+
+            return new RedirectResponse($this->urlGenerator->generate('app_login'));
+        }
+
         try {
             $invitation = ($this->validateInvitationTokenUseCase)($token);
 
@@ -44,15 +60,16 @@ class WorkspaceInvitationConfirmTokenController extends AbstractController
         } catch (AbstractDomainException $exception) {
             $this->addFlash('error', $exception->getMessage());
 
+            // Jamais le jeton en clair dans les logs : un préfixe de hash suffit à corréler.
             $this->logger->warning('Tentative de récupération d\'invitation introuvable', [
-                'token' => $token, // Toujours utile de logguer LE token qui a posé problème
+                'token_hash' => substr(hash('sha256', $token), 0, 12),
             ]);
         } catch (\Exception $exception) {
             $this->addFlash('error', 'Le lien d\'invitation est invalide ou expiré.');
 
             $this->logger->critical('Crash système lors de la validation du token d\'invitation', [
                 'error' => $exception->getMessage(),
-                'token' => $token,
+                'token_hash' => substr(hash('sha256', $token), 0, 12),
             ]);
         }
 

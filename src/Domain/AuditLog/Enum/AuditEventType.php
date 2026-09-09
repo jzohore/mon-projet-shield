@@ -26,6 +26,7 @@ enum AuditEventType: string
     case WORKSPACE_UPDATED = 'workspace.updated';
     case WORKSPACE_SUSPENDED = 'workspace.suspended';
     case WORKSPACE_INVITATION_SENT = 'workspace.invitation_sent';
+    case WORKSPACE_INVITATION_RESENT = 'workspace.invitation_resent';
     case WORKSPACE_INVITATION_ACCEPTED = 'workspace.invitation_accepted';
     case WORKSPACE_INVITATION_REVOKED = 'workspace.invitation_revoked';
     case WORKSPACE_MEMBER_ADDED = 'workspace.member_added';
@@ -121,6 +122,7 @@ enum AuditEventType: string
             self::WORKSPACE_UPDATED => 'Modification de la fiche du cabinet',
             self::WORKSPACE_SUSPENDED => 'Suspension du cabinet',
             self::WORKSPACE_INVITATION_SENT => 'Invitation d\'un collaborateur envoyée',
+            self::WORKSPACE_INVITATION_RESENT => 'Invitation de collaborateur renvoyée',
             self::WORKSPACE_INVITATION_ACCEPTED => 'Invitation acceptée — accès accordé',
             self::WORKSPACE_INVITATION_REVOKED => 'Annulation d\'une invitation de collaborateur',
             self::WORKSPACE_MEMBER_ADDED => 'Ajout d\'un collaborateur',
@@ -212,6 +214,7 @@ enum AuditEventType: string
             self::WORKSPACE_UPDATED,
             self::WORKSPACE_SUSPENDED,
             self::WORKSPACE_INVITATION_SENT,
+            self::WORKSPACE_INVITATION_RESENT,
             self::WORKSPACE_INVITATION_ACCEPTED,
             self::WORKSPACE_INVITATION_REVOKED,
             self::WORKSPACE_MEMBER_ADDED,

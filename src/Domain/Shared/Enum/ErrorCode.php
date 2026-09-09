@@ -28,6 +28,7 @@ enum ErrorCode: string
     case NOT_WORKSPACE_ADMIN = 'NOT_WORKSPACE_ADMIN';
     case INVITATION_ALREADY_USED = 'INVITATION_ALREADY_USED';
     case USER_ALREADY_IN_ANOTHER_WORKSPACE = 'USER_ALREADY_IN_ANOTHER_WORKSPACE';
+    case CANNOT_ACCEPT_INVITATION = 'CANNOT_ACCEPT_INVITATION';
 
     // Compliance & KYC
     case COMPLIANCE_FOLDER_NOT_FOUND = 'COMPLIANCE_FOLDER_NOT_FOUND';
@@ -84,6 +85,7 @@ enum ErrorCode: string
             self::NOT_WORKSPACE_ADMIN => 'Seul un administrateur de cet espace de travail peut effectuer cette action.',
             self::INVITATION_ALREADY_USED => 'Cette invitation a déjà été utilisée ou n\'est plus valide.',
             self::USER_ALREADY_IN_ANOTHER_WORKSPACE => 'Cette adresse est déjà rattachée à un autre cabinet. Un collaborateur ne peut appartenir qu\'à un seul espace de travail.',
+            self::CANNOT_ACCEPT_INVITATION => 'Cette invitation ne peut pas être acceptée dans les conditions actuelles.',
 
             // Conformité, LCB-FT & KYC
             self::COMPLIANCE_FOLDER_NOT_FOUND => 'Le dossier de conformité demandé est introuvable.',

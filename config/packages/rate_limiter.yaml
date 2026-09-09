@@ -31,3 +31,15 @@ framework:
             policy: 'sliding_window'
             limit: 20
             interval: '1 hour'
+        # Renvoi d'une invitation (clé = jeton de l'invitation). Chaque renvoi
+        # régénère un jeton d'accès + envoie un e-mail à un tiers : strict.
+        workspace_invitation_resend:
+            policy: 'sliding_window'
+            limit: 5
+            interval: '1 hour'
+        # Consommation du lien public confirm/{token} (par IP). Le brute force est
+        # hors de portée (512 bits) : on borne le DoS et on rend l'abus détectable.
+        workspace_invitation_confirm:
+            policy: 'sliding_window'
+            limit: 10
+            interval: '1 hour'

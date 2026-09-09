@@ -19,6 +19,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'workspaces_invitations')]
+#[ORM\Index(name: 'idx_wrk_inv_magic_token', columns: ['magic_link_token'])]
 class WorkspaceInvitation
 {
     use GenerateSlugPrefixedTrait;
