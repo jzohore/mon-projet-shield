@@ -29,11 +29,16 @@ final class SeatAvailabilityTest extends TestCase
         return new SeatAvailability($memberRepo, $invitationRepo);
     }
 
-    private function workspace(WorkspaceType $type, ?SubscriptionStatus $status = null, int $seats = 1): Workspace
-    {
+    private function workspace(
+        WorkspaceType $type,
+        ?SubscriptionStatus $status = null,
+        int $seats = 1,
+        string $planReference = 'cabinet',
+    ): Workspace {
         $subscription = $status instanceof SubscriptionStatus ? $this->createEntityState(Subscription::class, [
             'status' => $status,
             'seatsCount' => $seats,
+            'planReference' => $planReference,
             'currentPeriodEnd' => new \DateTimeImmutable('+20 days'),
         ]) : null;
 
@@ -55,6 +60,22 @@ final class SeatAvailabilityTest extends TestCase
         $workspace = $this->workspace(WorkspaceType::FIRM, SubscriptionStatus::ACTIVE, seats: 6);
 
         self::assertSame(6, $this->service(3, 1)->allowedSeats($workspace));
+    }
+
+    public function testCabinetSubscriptionOpensSeatsEvenIfWorkspaceTypeStillIndividual(): void
+    {
+        // Cas réel : l'utilisateur a souscrit l'offre cabinet mais workspace.type
+        // n'a pas (encore) été recalé.
+        $workspace = $this->workspace(WorkspaceType::INDIVIDUAL, SubscriptionStatus::ACTIVE, seats: 3);
+
+        self::assertSame(3, $this->service(1, 0)->allowedSeats($workspace));
+    }
+
+    public function testIndividualPlanSubscriptionStaysAtOneSeat(): void
+    {
+        $workspace = $this->workspace(WorkspaceType::INDIVIDUAL, SubscriptionStatus::ACTIVE, seats: 5, planReference: 'individual');
+
+        self::assertSame(1, $this->service(1, 0)->allowedSeats($workspace));
     }
 
     public function testUsedSeatsSumsMembersAndPendingInvitations(): void

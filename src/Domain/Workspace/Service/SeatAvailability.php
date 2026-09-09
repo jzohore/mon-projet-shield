@@ -13,9 +13,12 @@ use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 /**
  * Sièges d'un cabinet : un siège = un membre actif OU une invitation en attente.
  *
- * - Cabinet abonné      → sièges = quantité facturée sur Stripe (Subscription::seatsCount).
- * - Cabinet en essai    → 2 sièges (le minimum d'un cabinet), le temps de tester.
- * - Compte indépendant  → 1 siège (pas de collaborateurs).
+ * - Abonnement « cabinet » actif → sièges = quantité facturée (Subscription::seatsCount).
+ * - Abonnement « indépendant » actif → 1 siège.
+ * - Sans abonnement : cabinet en essai → 2 sièges ; indépendant → 1.
+ *
+ * Le plafond suit le PLAN de l'abonnement, pas le type du workspace : un compte
+ * peut avoir souscrit l'offre cabinet sans que son `type` ait été recalé.
  */
 readonly class SeatAvailability
 {
@@ -30,16 +33,21 @@ readonly class SeatAvailability
 
     public function allowedSeats(Workspace $workspace): int
     {
-        if (!$workspace->isFirm()) {
-            return 1;
-        }
-
         $subscription = $workspace->subscription;
+
         if ($subscription instanceof Subscription && $subscription->isValid()) {
-            return max(Plan::CABINET->getMinSeats(), $subscription->seatsCount);
+            return $this->isCabinetPlan($subscription->planReference)
+                ? max(Plan::CABINET->getMinSeats(), $subscription->seatsCount)
+                : 1;
         }
 
-        return self::TRIAL_CABINET_SEATS;
+        return $workspace->isFirm() ? self::TRIAL_CABINET_SEATS : 1;
+    }
+
+    private function isCabinetPlan(string $planReference): bool
+    {
+        // 'cabinet' (nouveau modèle) ou 'kysure_cabinet_300' (essai historique).
+        return str_contains($planReference, 'cabinet');
     }
 
     public function usedSeats(Workspace $workspace): int

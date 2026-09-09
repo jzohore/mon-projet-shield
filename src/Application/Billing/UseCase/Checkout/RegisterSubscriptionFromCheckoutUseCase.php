@@ -11,6 +11,7 @@ use App\Domain\Billing\Event\SubscriptionActivatedEvent;
 use App\Domain\Billing\Repository\SubscriptionRepositoryInterface;
 use App\Domain\Database\TransactionManagerInterface;
 use App\Domain\User\Repository\UserRepositoryInterface;
+use App\Domain\Workspace\Enum\WorkspaceType;
 use App\Domain\Workspace\Repository\WorkspaceRepositoryInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
@@ -58,6 +59,12 @@ readonly class RegisterSubscriptionFromCheckoutUseCase
         $workspace = $this->workspaceRepository->getById(Uuid::fromString($workspaceId));
         $user = $this->userRepository->getById(Uuid::fromString($userId));
 
+        // Souscrire l'offre cabinet fait du workspace un cabinet (sièges,
+        // collaborateurs, navigation « Équipe »…). On ne rétrograde jamais.
+        if (Plan::CABINET === $plan && !$workspace->isFirm()) {
+            $workspace->addWorkspaceType(WorkspaceType::FIRM);
+        }
+
         $now = new \DateTimeImmutable();
         $existing = $workspace->subscription;
 
@@ -80,7 +87,8 @@ readonly class RegisterSubscriptionFromCheckoutUseCase
             );
         }
 
-        $this->transactionManager->transactional(function () use ($subscription): void {
+        $this->transactionManager->transactional(function () use ($subscription, $workspace): void {
+            $this->workspaceRepository->save($workspace);
             $this->subscriptionRepository->save($subscription);
         });
 
