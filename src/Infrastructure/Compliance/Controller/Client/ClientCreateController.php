@@ -7,7 +7,9 @@ namespace App\Infrastructure\Compliance\Controller\Client;
 use App\Application\Compliance\DTO\Request\CreateClientRequest;
 use App\Application\Compliance\UseCase\Client\CreateOrAttachClientUseCase;
 use App\Domain\Workspace\Service\CurrentUserProvider;
+use App\Domain\Workspace\Service\CurrentWorkspaceProvider;
 use App\Infrastructure\Compliance\Form\CreateClientType;
+use App\Infrastructure\Workspace\Voter\WorkspaceInvitationVoter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,12 +26,18 @@ final class ClientCreateController extends AbstractController
     public function __construct(
         private readonly CreateOrAttachClientUseCase $createOrAttachClient,
         private readonly CurrentUserProvider $userProvider,
+        private readonly CurrentWorkspaceProvider $workspaceProvider,
         private readonly RateLimiterFactory $clientCreationLimiter,
     ) {
     }
 
     public function __invoke(Request $request): Response
     {
+        $this->denyAccessUnlessGranted(
+            WorkspaceInvitationVoter::PORTFOLIO_MANAGE,
+            $this->workspaceProvider->getWorkspace(),
+        );
+
         $form = $this->createForm(CreateClientType::class, new CreateClientRequest());
         $form->handleRequest($request);
 

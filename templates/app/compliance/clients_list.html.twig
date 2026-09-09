@@ -10,10 +10,12 @@
             <p class="text-sm text-slate-500 mt-1">Votre portefeuille de clients et l'état de leurs dossiers.</p>
         </div>
 
-        <twig:Button as="a" href="{{ path('app_clients_new') }}" variant="dark">
-            <twig:ux:icon name="tabler:user-plus" class="size-4" aria-hidden="true" />
-            Nouveau client
-        </twig:Button>
+        {% if workspace_can('manage_portfolio') %}
+            <twig:Button as="a" href="{{ path('app_clients_new') }}" variant="dark">
+                <twig:ux:icon name="tabler:user-plus" class="size-4" aria-hidden="true" />
+                Nouveau client
+            </twig:Button>
+        {% endif %}
     </div>
 
     <twig:WorkspaceClientListComponent />
