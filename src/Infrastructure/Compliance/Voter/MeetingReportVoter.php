@@ -9,6 +9,7 @@ use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Entity\WorkspaceMember;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
+use App\Domain\Workspace\Service\WorkspacePermissionChecker;
 use Symfony\Component\Security\Core\Authentication\Token\TokenInterface;
 use Symfony\Component\Security\Core\Authorization\Voter\Vote;
 use Symfony\Component\Security\Core\Authorization\Voter\Voter;
@@ -30,6 +31,7 @@ class MeetingReportVoter extends Voter
 
     public function __construct(
         private readonly WorkspaceMemberRepositoryInterface $workspaceMemberRepository,
+        private readonly WorkspacePermissionChecker $permissionChecker,
     ) {
     }
 
@@ -54,8 +56,14 @@ class MeetingReportVoter extends Voter
             return false;
         }
 
+        if (!$folder->canBeViewedBy($user)) {
+            return false;
+        }
+
+        // Poser un acte de conformité (figer / révoquer une synthèse) suit la
+        // posture de validation du cabinet.
         return match ($attribute) {
-            self::VALIDATE, self::REVOKE => $folder->canBeViewedBy($user),
+            self::VALIDATE, self::REVOKE => $this->permissionChecker->canValidateActs($user, $folder->workspace),
             default => false,
         };
     }

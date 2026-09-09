@@ -9,6 +9,7 @@ use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Entity\WorkspaceMember;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
+use App\Domain\Workspace\Service\WorkspacePermissionChecker;
 use App\Infrastructure\Compliance\Voter\MeetingReportVoter;
 use App\Tests\Application\ReflectionHelperTrait;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -29,13 +30,20 @@ final class MeetingReportVoterTest extends TestCase
     protected function setUp(): void
     {
         $this->memberRepository = $this->createStub(WorkspaceMemberRepositoryInterface::class);
-        $this->voter = new MeetingReportVoter($this->memberRepository);
+        $this->makeVoter(canValidateActs: true);
         $this->workspace = $this->createEntityState(Workspace::class);
         $this->user = $this->createEntityState(User::class, [
             'firstName' => 'marie',
             'lastName' => 'curie',
             'email' => 'marie@kysure.test',
         ]);
+    }
+
+    private function makeVoter(bool $canValidateActs): void
+    {
+        $checker = $this->createStub(WorkspacePermissionChecker::class);
+        $checker->method('canValidateActs')->willReturn($canValidateActs);
+        $this->voter = new MeetingReportVoter($this->memberRepository, $checker);
     }
 
     public function testAbstainsOnUnsupportedAttribute(): void
@@ -79,6 +87,17 @@ final class MeetingReportVoterTest extends TestCase
         $token = $this->token($this->user);
         self::assertSame(Voter::ACCESS_GRANTED, $this->voter->vote($token, $this->folder(), [MeetingReportVoter::VALIDATE]));
         self::assertSame(Voter::ACCESS_GRANTED, $this->voter->vote($token, $this->folder(), [MeetingReportVoter::REVOKE]));
+    }
+
+    public function testDeniesWhenValidationPostureForbidsThisUser(): void
+    {
+        $this->makeVoter(canValidateActs: false);
+        $this->memberRepository->method('findByWorkspaceAndUser')
+            ->willReturn($this->createEntityState(WorkspaceMember::class));
+
+        $token = $this->token($this->user);
+        self::assertSame(Voter::ACCESS_DENIED, $this->voter->vote($token, $this->folder(), [MeetingReportVoter::VALIDATE]));
+        self::assertSame(Voter::ACCESS_DENIED, $this->voter->vote($token, $this->folder(), [MeetingReportVoter::REVOKE]));
     }
 
     public function testDeniesOnAConfidentialFolderWhenUserIsNotWhitelisted(): void

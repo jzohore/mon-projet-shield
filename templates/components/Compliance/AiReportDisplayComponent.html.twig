@@ -175,14 +175,18 @@
                                         <twig:Dialog:Close>
                                             <twig:Button variant="outline" size="sm" {{ ...dialog_close_attrs }}>Annuler</twig:Button>
                                         </twig:Dialog:Close>
-                                        <twig:Button type="button" variant="destructive" size="sm"
-                                                     data-action="live#action" data-live-action-param="revokeReport"
-                                                     data-loading="action(revokeReport)|addAttribute(disabled)">
-                                            <span data-loading="action(revokeReport)|hide">Révoquer la version&nbsp;{{ validated.version }}</span>
-                                            <span data-loading="action(revokeReport)|show" class="hidden items-center gap-2">
-                                                {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin', 'aria-hidden': 'true' }) }} Révocation…
-                                            </span>
-                                        </twig:Button>
+                                        {% if this.canRevokeReport %}
+                                            <twig:Button type="button" variant="destructive" size="sm"
+                                                         data-action="live#action" data-live-action-param="revokeReport"
+                                                         data-loading="action(revokeReport)|addAttribute(disabled)">
+                                                <span data-loading="action(revokeReport)|hide">Révoquer la version&nbsp;{{ validated.version }}</span>
+                                                <span data-loading="action(revokeReport)|show" class="hidden items-center gap-2">
+                                                    {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin', 'aria-hidden': 'true' }) }} Révocation…
+                                                </span>
+                                            </twig:Button>
+                                        {% else %}
+                                            <p class="text-xs text-slate-400">Révocation réservée à un administrateur.</p>
+                                        {% endif %}
                                     </twig:Dialog:Footer>
                                 </twig:Dialog:Content>
                             </twig:Dialog>
@@ -190,14 +194,18 @@
                         {% elseif this.isEditing %}
                             {# ── En édition : rien d'autre que « Valider » (Annuler est dans le corps) ── #}
                             <span></span>
-                            <twig:Button type="button" variant="primary" size="sm" class="shrink-0"
-                                         data-action="live#action" data-live-action-param="validateReport"
-                                         data-loading="action(validateReport)|addAttribute(disabled)">
-                                <span data-loading="action(validateReport)|hide">Valider la synthèse</span>
-                                <span data-loading="action(validateReport)|show" class="hidden items-center gap-2">
-                                    {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin', 'aria-hidden': 'true' }) }} Validation…
-                                </span>
-                            </twig:Button>
+                            {% if this.canValidateReport %}
+                                <twig:Button type="button" variant="primary" size="sm" class="shrink-0"
+                                             data-action="live#action" data-live-action-param="validateReport"
+                                             data-loading="action(validateReport)|addAttribute(disabled)">
+                                    <span data-loading="action(validateReport)|hide">Valider la synthèse</span>
+                                    <span data-loading="action(validateReport)|show" class="hidden items-center gap-2">
+                                        {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin', 'aria-hidden': 'true' }) }} Validation…
+                                    </span>
+                                </twig:Button>
+                            {% else %}
+                                <p class="text-xs text-slate-400">Validation réservée à un administrateur du cabinet.</p>
+                            {% endif %}
 
                         {% else %}
                             {# ── Brouillon : « Supprimer » (discret) + « Valider » (primaire) ── #}
@@ -228,14 +236,18 @@
                                 </twig:Dialog:Content>
                             </twig:Dialog>
 
-                            <twig:Button type="button" variant="primary" size="sm" class="shrink-0"
-                                         data-action="live#action" data-live-action-param="validateReport"
-                                         data-loading="action(validateReport)|addAttribute(disabled)">
-                                <span data-loading="action(validateReport)|hide">Valider la synthèse</span>
-                                <span data-loading="action(validateReport)|show" class="hidden items-center gap-2">
-                                    {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin', 'aria-hidden': 'true' }) }} Validation…
-                                </span>
-                            </twig:Button>
+                            {% if this.canValidateReport %}
+                                <twig:Button type="button" variant="primary" size="sm" class="shrink-0"
+                                             data-action="live#action" data-live-action-param="validateReport"
+                                             data-loading="action(validateReport)|addAttribute(disabled)">
+                                    <span data-loading="action(validateReport)|hide">Valider la synthèse</span>
+                                    <span data-loading="action(validateReport)|show" class="hidden items-center gap-2">
+                                        {{ ux_icon('lucide:loader-2', { class: 'size-3.5 animate-spin', 'aria-hidden': 'true' }) }} Validation…
+                                    </span>
+                                </twig:Button>
+                            {% else %}
+                                <p class="text-xs text-slate-400">Validation réservée à un administrateur du cabinet.</p>
+                            {% endif %}
                         {% endif %}
                     </div>
                 {% endif %}

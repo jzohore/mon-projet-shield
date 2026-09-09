@@ -272,6 +272,16 @@ final class AiReportDisplayComponent extends AbstractController
         return $this->getValidatedReport() instanceof ValidatedMeetingReport;
     }
 
+    public function canValidateReport(): bool
+    {
+        return $this->isGranted(MeetingReportVoter::VALIDATE, $this->folder);
+    }
+
+    public function canRevokeReport(): bool
+    {
+        return $this->isGranted(MeetingReportVoter::REVOKE, $this->folder);
+    }
+
     #[LiveAction]
     public function validateReport(): void
     {

@@ -7,6 +7,7 @@ namespace App\Domain\Workspace\Service;
 use App\Domain\User\Entity\User;
 use App\Domain\Workspace\Entity\Workspace;
 use App\Domain\Workspace\Entity\WorkspaceMember;
+use App\Domain\Workspace\Enum\PermissionMode;
 use App\Domain\Workspace\Repository\WorkspaceMemberRepositoryInterface;
 
 /**
@@ -45,6 +46,18 @@ readonly class WorkspacePermissionChecker
     public function canArchiveFolder(User $user, Workspace $workspace): bool
     {
         return $this->allowed($user, $workspace, $workspace->collabCanArchiveFolder);
+    }
+
+    /**
+     * Valider / rejeter / révoquer un acte de conformité (dossier KYC, rapport
+     * d'entretien). Un administrateur peut toujours ; un collaborateur seulement
+     * si le cabinet est en mode « délégué ». Les modes « soumission » et
+     * « réservé » exigent un administrateur (le circuit de soumission viendra).
+     */
+    public function canValidateActs(User $user, Workspace $workspace): bool
+    {
+        return $this->isAdmin($user, $workspace)
+            || PermissionMode::DELEGATED === $workspace->validationMode;
     }
 
     private function allowed(User $user, Workspace $workspace, bool $delegated): bool
