@@ -12,6 +12,7 @@ use App\Domain\Screening\Entity\ScreeningAudit;
 use App\Domain\Support\Entity\SupportThread;
 use App\Domain\User\Entity\Client;
 use App\Domain\Workspace\Enum\Industry;
+use App\Domain\Workspace\Enum\PermissionMode;
 use App\Domain\Workspace\Enum\WorkspaceType;
 use App\Domain\Workspace\Exception\QuotaExhaustedException;
 use App\Infrastructure\Trait\GenerateSlugPrefixedTrait;
@@ -176,6 +177,23 @@ class Workspace
     #[ORM\Column(type: Types::INTEGER, options: ['default' => 5])]
     public private(set) int $trialDossiersRemaining = 5;
 
+    // --- DÉLÉGATION DE DROITS AUX COLLABORATEURS (géré par un administrateur) ---
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    public private(set) bool $collabCanInvite = false;
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => true])]
+    public private(set) bool $collabCanManagePortfolio = true;
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    public private(set) bool $collabCanEditCabinet = false;
+
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => true])]
+    public private(set) bool $collabCanArchiveFolder = true;
+
+    #[ORM\Column(type: Types::STRING, length: 20, enumType: PermissionMode::class, options: ['default' => 'delegated'])]
+    public private(set) PermissionMode $validationMode = PermissionMode::DELEGATED;
+
     private function __construct(string $name, string $legalName, string $address, #[ORM\Column(type: Types::STRING, length: 14, nullable: true)]
         public private(set) string $etatAdministratif, Industry $industry, #[ORM\Column(type: Types::STRING, length: 180, unique: true, nullable: true)]
         public private(set) string $email)
@@ -198,6 +216,20 @@ class Workspace
     public static function create(string $name, string $legalName, string $address, string $etatAdministratif, Industry $industry, string $email): self
     {
         return new self($name, $legalName, $address, $etatAdministratif, $industry, trim($email));
+    }
+
+    public function updateCollabPermissions(
+        bool $canInvite,
+        bool $canManagePortfolio,
+        bool $canEditCabinet,
+        bool $canArchiveFolder,
+        PermissionMode $validationMode,
+    ): void {
+        $this->collabCanInvite = $canInvite;
+        $this->collabCanManagePortfolio = $canManagePortfolio;
+        $this->collabCanEditCabinet = $canEditCabinet;
+        $this->collabCanArchiveFolder = $canArchiveFolder;
+        $this->validationMode = $validationMode;
     }
 
     public function update(string $name, string $address, Industry $industry, ?string $siret = null, ?string $siren = null): void
