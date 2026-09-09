@@ -123,6 +123,9 @@ security:
         - { path: ^/der/, roles: PUBLIC_ACCESS }
         - { path: ^/api/track, roles: PUBLIC_ACCESS }
         - { path: ^/login, roles: PUBLIC_ACCESS }
+        # Invitation collaborateur : lien nominatif à jeton (512 bits, haché en base).
+        # Le destinataire n'a pas encore de compte : ces pages doivent être publiques.
+        - { path: ^/portal/invitation, roles: PUBLIC_ACCESS }
 
         # Double authentification en cours
         - { path: ^/2fa, roles: IS_AUTHENTICATED_2FA_IN_PROGRESS }

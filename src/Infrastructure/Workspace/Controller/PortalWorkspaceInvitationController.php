@@ -34,9 +34,9 @@ class PortalWorkspaceInvitationController extends AbstractController
         $id = $this->requestStack->getSession()->get('wrk_inv_id');
 
         if (!$id) {
-            $this->addFlash('error', 'Le lien d\'invitation est invalide ou expiré.');
+            $this->addFlash('error', 'Le lien d\'invitation est invalide ou expiré. Redemandez une invitation à votre administrateur.');
 
-            return $this->redirectToRoute('portal_user_invitation');
+            return $this->redirectToRoute('app_login');
         }
 
         $invitation = ($this->getCurrentInvitationUseCase)($id);
