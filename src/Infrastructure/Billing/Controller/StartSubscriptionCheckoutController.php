@@ -44,11 +44,16 @@ final readonly class StartSubscriptionCheckoutController
         User $user,
     ): RedirectResponse {
         $plan = Plan::tryFrom((string) $request->request->get('plan'));
-        $seats = max(1, (int) $request->request->get('seats', 1));
 
         if (null === $plan) {
             return $this->backToPricing('Offre inconnue.');
         }
+
+        // L'offre « indépendant » est mono-siège par nature : on ignore toute
+        // quantité soumise (formulaire trafiqué) pour ne jamais surfacturer.
+        $seats = $plan->allowsCollaborators()
+            ? max($plan->getMinSeats(), (int) $request->request->get('seats', $plan->getMinSeats()))
+            : 1;
 
         $workspace = $this->workspaceProvider->getWorkspace();
 
