@@ -68,7 +68,7 @@
                     </button>
                 {% endif %}
 
-            {% if is_granted('DELETE', folder) %}
+            {% if is_granted('DELETE', folder) or is_granted('MAKE_CONFIDENTIAL', folder) or workspace_can('archive_folder') %}
                 <div class="relative group inline-block">
                     <button type="button"
                             aria-haspopup="menu"
@@ -82,6 +82,7 @@
 
                         <div class="p-1">
 
+                            {% if is_granted('MAKE_CONFIDENTIAL', folder) %}
                             {# ACTION 1 : Le fameux "Zéro Friction" (Déclenche le Modal) #}
                             <button
                                type="submit"
@@ -98,6 +99,9 @@
                             </button>
 
                             <div class="h-px bg-slate-100 my-1 mx-2"></div>
+                            {% endif %}
+
+                            {% if workspace_can('archive_folder') %}
                             <twig:Dialog id="archive_compliance_folder">
                                 <twig:Dialog:Trigger>
 
@@ -156,6 +160,9 @@
                                     </twig:Dialog:Footer>
                                 </twig:Dialog:Content>
                             </twig:Dialog>
+                            {% endif %}
+
+                            {% if is_granted('DELETE', folder) %}
                             <div class="h-px bg-slate-100 my-1 mx-2"></div>
 
                             <twig:Dialog id="delete_compliance_folder">
@@ -216,6 +223,7 @@
                                     </twig:Dialog:Footer>
                                 </twig:Dialog:Content>
                             </twig:Dialog>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
