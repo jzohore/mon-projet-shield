@@ -39,6 +39,9 @@ services:
       MESSENGER_TRANSPORT_DSN: '${MESSENGER_TRANSPORT_DSN}'
       MAILER_DSN: 'smtp://mailpit-staging:1025'
       GOTENBERG_URL: 'http://gotenberg-staging:3000/forms/chromium/convert/html'
+      # Analytique Umami : le <script> n'est rendu que si les deux sont non vides.
+      UMAMI_SCRIPT_URL: 'https://analytics.staging.kysure.fr/script.js'
+      UMAMI_WEBSITE_ID: '${UMAMI_WEBSITE_ID}'
     logging: *default-logging
     deploy:
       resources:
@@ -155,8 +158,59 @@ services:
           memory: 512M
         # Décommente si ta version de Coolify/compose le supporte :
         # pids: 256
+  # Analytique self-hosted (visites, sources, campagnes UTM). Sans cookie ni PII.
+  # Domaine à fixer dans l'UI Coolify sur ce service : analytics.staging.kysure.fr
+  # Vars requises dans l'éditeur d'env Coolify : UMAMI_DB_PASSWORD, UMAMI_APP_SECRET,
+  # UMAMI_WEBSITE_ID (vide au 1er déploiement, renseigné après création du site).
+  umami-staging:
+    image: 'ghcr.io/umami-software/umami:postgresql-latest'   # prod : pin, ex. :v2.19.0-postgresql
+    container_name: kysure_umami_staging
+    restart: unless-stopped
+    environment:
+      DATABASE_TYPE: postgresql
+      DATABASE_URL: 'postgresql://umami:${UMAMI_DB_PASSWORD}@umami-db-staging:5432/umami'
+      APP_SECRET: '${UMAMI_APP_SECRET}'
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    depends_on:
+      umami-db-staging:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000/api/heartbeat" ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.services.umami-staging.loadbalancer.server.port=3000"
+
+  umami-db-staging:
+    image: 'postgres:16-alpine'
+    container_name: kysure_umami_db_staging
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: '${UMAMI_DB_PASSWORD}'
+    volumes:
+      - 'umami_db_staging_data:/var/lib/postgresql/data'
+    logging: *default-logging
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U umami -d umami" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 volumes:
   postgres_staging_data: null
   rabbitmq_staging_data: null
   mailpit_staging_data: null
+  umami_db_staging_data: null
