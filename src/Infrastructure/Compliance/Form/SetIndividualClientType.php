@@ -39,7 +39,6 @@ class SetIndividualClientType extends AbstractType
                     'placeholder' => "12 rue de la Paix\n69002 Lyon",
                     'rows' => 2,
                     'autocomplete' => 'street-address',
-                    'data-address-autocomplete-target' => 'field',
                 ],
                 'help' => 'Imprimée sur le DER.',
             ]);

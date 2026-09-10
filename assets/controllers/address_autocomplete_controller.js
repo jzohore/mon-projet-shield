@@ -1,21 +1,26 @@
 import { Controller } from '@hotwired/stimulus';
 
 /*
- * Recherche d'adresse via la Base Adresse Nationale (api-adresse.data.gouv.fr).
- * Service public, sans clé.
+ * Autocomplétion d'adresse directement sur le champ « Adresse postale », via la
+ * Base Adresse Nationale (api-adresse.data.gouv.fr) — service public, sans clé.
  *
- * Par défaut, seul le champ de recherche est visible. Le champ « adresse
- * postale » n'apparaît qu'après le choix d'une suggestion (résumé + bouton
- * « Modifier ») ou via « Saisir l'adresse manuellement ». La saisie à la main
- * reste toujours possible ; en cas d'erreur réseau on masque juste les
- * suggestions.
+ * L'utilisateur tape dans le champ ; une liste de suggestions s'affiche ; en
+ * choisir une remplit le champ. La saisie libre reste possible, et si le réseau
+ * échoue on masque simplement les suggestions.
+ *
+ *   <div data-controller="address-autocomplete" data-address-autocomplete-min-value="4">
+ *     <div class="relative">
+ *       <textarea data-address-autocomplete-target="field"
+ *                 data-action="input->address-autocomplete#search keydown->address-autocomplete#keydown"></textarea>
+ *       <div data-address-autocomplete-target="results" hidden></div>
+ *     </div>
+ *   </div>
  */
 export default class extends Controller {
-    static targets = ['input', 'results', 'field', 'fieldWrapper', 'summary', 'summaryText'];
+    static targets = ['field', 'results'];
     static values = {
         min: { type: Number, default: 4 },
         url: { type: String, default: 'https://api-adresse.data.gouv.fr/search/' },
-        hasError: { type: Boolean, default: false },
     };
 
     #timer = null;
@@ -28,15 +33,6 @@ export default class extends Controller {
             }
         };
         document.addEventListener('click', this.onClickOutside);
-
-        // Adresse déjà renseignée (édition, ou re-rendu après soumission valide) :
-        // on montre le résumé et on replie le champ. En cas d'erreur serveur sur
-        // l'adresse, on laisse le champ ouvert pour la correction.
-        const value = this.hasFieldTarget ? this.fieldTarget.value.trim() : '';
-        if (value !== '' && !this.hasErrorValue) {
-            this.#showSummary(value);
-            this.#hideField();
-        }
     }
 
     disconnect() {
@@ -47,7 +43,7 @@ export default class extends Controller {
 
     search() {
         clearTimeout(this.#timer);
-        const query = this.inputTarget.value.trim();
+        const query = this.fieldTarget.value.trim().replace(/\s+/g, ' ');
 
         if (query.length < this.minValue) {
             this.#close();
@@ -61,21 +57,6 @@ export default class extends Controller {
         if (event.key === 'Escape') {
             this.#close();
         }
-    }
-
-    /** « Modifier » : rouvre le champ pour ajuster l'adresse choisie. */
-    edit() {
-        this.#showField();
-        this.#hideSummary();
-        this.#focusField();
-    }
-
-    /** « Saisir l'adresse manuellement ». */
-    manual() {
-        this.#close();
-        this.#showField();
-        this.#hideSummary();
-        this.#focusField();
     }
 
     async #fetch(query) {
@@ -121,49 +102,11 @@ export default class extends Controller {
     #choose(p) {
         const line1 = [p.name, p.locality].filter(Boolean).join(', ');
         const line2 = [p.postcode, p.city].filter(Boolean).join(' ');
-        const value = [line1, line2].filter(Boolean).join('\n');
-
-        if (this.hasFieldTarget) {
-            this.fieldTarget.value = value;
-            this.fieldTarget.dispatchEvent(new Event('input', { bubbles: true }));
-            this.fieldTarget.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-        this.inputTarget.value = '';
+        this.fieldTarget.value = [line1, line2].filter(Boolean).join('\n');
+        this.fieldTarget.dispatchEvent(new Event('input', { bubbles: true }));
+        this.fieldTarget.dispatchEvent(new Event('change', { bubbles: true }));
         this.#close();
-        this.#hideField();
-        this.#showSummary(value);
-    }
-
-    #showSummary(value) {
-        if (!this.hasSummaryTarget) {
-            return;
-        }
-        this.summaryTextTarget.textContent = value;
-        this.summaryTarget.hidden = false;
-    }
-
-    #hideSummary() {
-        if (this.hasSummaryTarget) {
-            this.summaryTarget.hidden = true;
-        }
-    }
-
-    #showField() {
-        if (this.hasFieldWrapperTarget) {
-            this.fieldWrapperTarget.hidden = false;
-        }
-    }
-
-    #hideField() {
-        if (this.hasFieldWrapperTarget) {
-            this.fieldWrapperTarget.hidden = true;
-        }
-    }
-
-    #focusField() {
-        if (this.hasFieldTarget) {
-            this.fieldTarget.focus();
-        }
+        this.fieldTarget.focus();
     }
 
     #close() {
