@@ -35,6 +35,22 @@ interface AuditLogRepositoryInterface
     public function getAuditLogsList(Workspace $workspace, ?AuditEventType $eventType = null, ?string $searchQuery = null): Pagerfanta;
 
     /**
+     * Journal inter-cabinets pour le back-office KYSURE (tous événements, aucun
+     * filtre de visibilité).
+     *
+     * @return Pagerfanta<AuditLog>
+     */
+    public function getGlobalAuditLogsList(
+        int $page,
+        int $perPage,
+        ?string $workspaceQuery = null,
+        ?AuditEventType $eventType = null,
+        ?\DateTimeImmutable $from = null,
+        ?\DateTimeImmutable $to = null,
+        ?string $actorQuery = null,
+    ): Pagerfanta;
+
+    /**
      * @return AuditLog[]
      */
     public function findLatestLogs(int $limit = 5): array;

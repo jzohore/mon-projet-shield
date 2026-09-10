@@ -11,6 +11,7 @@ use App\Domain\Workspace\Entity\Workspace;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
+use Pagerfanta\Exception\OutOfRangeCurrentPageException;
 use Pagerfanta\Pagerfanta;
 
 /**
@@ -100,6 +101,57 @@ final readonly class AuditLogRepository implements AuditLogRepositoryInterface
         }
 
         return new Pagerfanta(new QueryAdapter($qb));
+    }
+
+    public function getGlobalAuditLogsList(
+        int $page,
+        int $perPage,
+        ?string $workspaceQuery = null,
+        ?AuditEventType $eventType = null,
+        ?\DateTimeImmutable $from = null,
+        ?\DateTimeImmutable $to = null,
+        ?string $actorQuery = null,
+    ): Pagerfanta {
+        $qb = $this->repository->createQueryBuilder('a')
+            ->leftJoin('a.workspace', 'w')
+            ->addSelect('w')
+            ->orderBy('a.occurredAt', 'DESC');
+
+        if ($eventType instanceof AuditEventType) {
+            $qb->andWhere('a.eventName = :eventType')->setParameter('eventType', $eventType);
+        }
+
+        if ($from instanceof \DateTimeImmutable) {
+            $qb->andWhere('a.occurredAt >= :from')->setParameter('from', $from);
+        }
+
+        if ($to instanceof \DateTimeImmutable) {
+            $qb->andWhere('a.occurredAt <= :to')->setParameter('to', $to);
+        }
+
+        if (!in_array($workspaceQuery, [null, '', '0'], true)) {
+            $qb->andWhere('LOWER(w.name) LIKE LOWER(:ws)')
+                ->setParameter('ws', '%' . $workspaceQuery . '%');
+        }
+
+        if (!in_array($actorQuery, [null, '', '0'], true)) {
+            $qb->andWhere(
+                "LOWER(JSON_GET_TEXT(a.payload, 'actor_name')) LIKE LOWER(:actor)"
+                . " OR LOWER(JSON_GET_TEXT(a.payload, 'actor_email')) LIKE LOWER(:actor)"
+                . " OR LOWER(JSON_GET_TEXT(a.payload, 'revoked_by_email')) LIKE LOWER(:actor)"
+            )->setParameter('actor', '%' . $actorQuery . '%');
+        }
+
+        $pager = new Pagerfanta(new QueryAdapter($qb));
+        $pager->setMaxPerPage(max(1, $perPage));
+
+        try {
+            $pager->setCurrentPage(max(1, $page));
+        } catch (OutOfRangeCurrentPageException) {
+            $pager->setCurrentPage(1);
+        }
+
+        return $pager;
     }
 
     /**

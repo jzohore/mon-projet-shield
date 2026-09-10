@@ -1,0 +1,140 @@
+<div {{ attributes }} class="space-y-6">
+    {% set items = this.logs %}
+
+    {# ---------- FILTRES ---------- #}
+    <div class="grid grid-cols-1 gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-5">
+        <div class="lg:col-span-2">
+            <label for="f-workspace" class="mb-1 block text-xs font-semibold text-slate-500">Cabinet</label>
+            <input type="search" id="f-workspace" data-model="debounce(300)|workspace" value="{{ workspace }}"
+                   placeholder="Nom du cabinet…"
+                   class="block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
+        </div>
+
+        <div>
+            <label for="f-actor" class="mb-1 block text-xs font-semibold text-slate-500">Acteur</label>
+            <input type="search" id="f-actor" data-model="debounce(300)|actor" value="{{ actor }}"
+                   placeholder="Nom ou e-mail…"
+                   class="block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
+        </div>
+
+        <div>
+            <label for="f-type" class="mb-1 block text-xs font-semibold text-slate-500">Événement</label>
+            <select id="f-type" data-model="eventType"
+                    class="block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
+                <option value="">Tous</option>
+                {% for type in this.eventTypes %}
+                    <option value="{{ type.value }}" {{ eventType == type.value ? 'selected' : '' }}>{{ type.getLabel() }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+            <div>
+                <label for="f-from" class="mb-1 block text-xs font-semibold text-slate-500">Du</label>
+                <input type="date" id="f-from" data-model="dateFrom" value="{{ dateFrom }}"
+                       class="block w-full rounded-lg border border-slate-200 px-2 py-2 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
+            </div>
+            <div>
+                <label for="f-to" class="mb-1 block text-xs font-semibold text-slate-500">Au</label>
+                <input type="date" id="f-to" data-model="dateTo" value="{{ dateTo }}"
+                       class="block w-full rounded-lg border border-slate-200 px-2 py-2 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
+            </div>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-between">
+        <p class="text-sm text-slate-500" aria-live="polite">
+            <span class="font-bold text-slate-900">{{ items.nbResults }}</span> événement(s)
+        </p>
+        {% if this.hasFilters %}
+            <button type="button" data-action="live#action" data-live-action-param="resetFilters"
+                    class="text-xs font-semibold text-slate-600 hover:text-slate-900">Réinitialiser les filtres</button>
+        {% endif %}
+    </div>
+
+    {# ---------- TABLE ---------- #}
+    {% if items.nbResults == 0 %}
+        <div class="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+            <div class="mx-auto mb-3 inline-flex size-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400 ring-1 ring-slate-200">
+                <twig:ux:icon name="tabler:list-search" class="size-6" />
+            </div>
+            <h3 class="text-base font-bold text-slate-900">Aucun événement</h3>
+            <p class="mt-1 text-sm text-slate-500">Aucun log ne correspond à ces critères.</p>
+        </div>
+    {% else %}
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                            <th scope="col" class="px-4 py-3">Date</th>
+                            <th scope="col" class="px-4 py-3">Cabinet</th>
+                            <th scope="col" class="px-4 py-3">Événement</th>
+                            <th scope="col" class="px-4 py-3">Acteur</th>
+                            <th scope="col" class="px-4 py-3">Détails</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
+                        {% for log in items %}
+                            {% set p = log.payload %}
+                            <tr class="align-top hover:bg-slate-50/80">
+                                <td class="whitespace-nowrap px-4 py-3">
+                                    <p class="font-medium text-slate-900">{{ log.occurredAt|date('d/m/Y') }}</p>
+                                    <p class="text-xs text-slate-400">{{ log.occurredAt|date('H:i:s') }}</p>
+                                </td>
+                                <td class="px-4 py-3">
+                                    {% if log.workspace %}
+                                        <a href="{{ path('admin_workspace_details', {slugId: log.workspace.slugId}) }}"
+                                           class="font-medium text-slate-900 hover:underline">{{ log.workspace.name }}</a>
+                                    {% else %}
+                                        <span class="text-slate-400">{{ p.workspace_name|default('—') }}</span>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-bold {{ log.eventName.getBadgeColor() }}">
+                                        {{ log.eventName.getLabel() }}
+                                    </span>
+                                    <p class="mt-1 text-[11px] text-slate-400">{{ log.eventName.getCategory() }}</p>
+                                </td>
+                                <td class="px-4 py-3">
+                                    {{ p.actor_name|default(p.revoked_by_name)|default(p.actor_email)|default(p.revoked_by_email)|default('—') }}
+                                    {% if p.actor_email is defined and p.actor_name is defined %}
+                                        <p class="text-[11px] text-slate-400">{{ p.actor_email }}</p>
+                                    {% endif %}
+                                </td>
+                                <td class="max-w-sm px-4 py-3">
+                                    <div class="flex flex-wrap gap-1">
+                                        {% for key, value in p|filter((value, key) => key not in ['workspace_name', 'actor_name', 'actor_email', 'revoked_by_name', 'revoked_by_email'] and value is not iterable) %}
+                                            <span class="inline-flex max-w-[12rem] items-center truncate rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-600" title="{{ key }}: {{ value }}">
+                                                <span class="text-slate-400">{{ key }}:</span>&nbsp;{{ value }}
+                                            </span>
+                                        {% endfor %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {# ---------- PAGINATION ---------- #}
+            <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3">
+                <p class="text-xs text-slate-600">
+                    Page <span class="font-bold text-slate-900">{{ items.currentPage }}</span> / {{ items.nbPages }}
+                </p>
+                <nav class="inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                    <button type="button" data-action="live#action" data-live-action-param="previousPage"
+                            class="inline-flex items-center rounded-l-md border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-50 disabled:opacity-40"
+                            {% if not items.hasPreviousPage %}disabled{% endif %}>
+                        <twig:ux:icon name="tabler:chevron-left" class="size-4" />
+                    </button>
+                    <button type="button" data-action="live#action" data-live-action-param="nextPage"
+                            class="inline-flex items-center rounded-r-md border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-50 disabled:opacity-40"
+                            {% if not items.hasNextPage %}disabled{% endif %}>
+                        <twig:ux:icon name="tabler:chevron-right" class="size-4" />
+                    </button>
+                </nav>
+            </div>
+        </div>
+    {% endif %}
+</div>
