@@ -26,11 +26,14 @@ security:
         ROLE_WORKSPACE_ADMIN: [ ROLE_WORKSPACE_COLLAB ]
 
         # --- L'arbre système ---
-        # ROLE_ALLOWED_TO_SWITCH n'est PAS donné aux admins : la connexion support
-        # (impersonation) est réservée à ROLE_SUPPORT et passe par un motif tracé.
+        # La connexion support (impersonation d'un collaborateur) ne passe PAS par
+        # le switch_user de Symfony : l'opérateur vit sur le firewall « admin »
+        # (entité Admin) et la cible sur le firewall « main » (entité User), deux
+        # provideurs distincts. Elle est déclenchée depuis /admin, exige un motif
+        # et est tracée dans le journal d'audit du cabinet (cf. ImpersonateWorkspaceController).
         ROLE_ADMIN: [ ROLE_USER ]
-        ROLE_SUPER_ADMIN: [ ROLE_ADMIN ]
-        ROLE_SUPPORT: [ ROLE_USER, ROLE_ALLOWED_TO_SWITCH ]
+        ROLE_SUPER_ADMIN: [ ROLE_ADMIN, ROLE_SUPPORT ]
+        ROLE_SUPPORT: [ ROLE_USER ]
 
     firewalls:
         image_resolver:
@@ -114,9 +117,6 @@ security:
                 check_path: 2fa_login_check
                 trusted_parameter_name: _trusted
 
-            # Connexion support : réservée à ROLE_SUPPORT, et un listener exige un
-            # motif en session (formulaire dédié) avant d'autoriser le switch.
-            switch_user: { role: ROLE_SUPPORT }
             user_checker: App\Infrastructure\Security\WorkspaceStatusChecker
 
     # 2. VERROUILLAGE CHIRURGICAL DES ROUTES

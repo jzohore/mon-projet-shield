@@ -1,0 +1,55 @@
+{% extends '@admin/base_admin.html.twig' %}
+
+{% block title %}{{ page_title }} | {{ company_name }}{% endblock %}
+{% block page_title %}Connexion support{% endblock %}
+
+{% block content %}
+    <div class="max-w-xl">
+        <div class="mb-6">
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Connexion support</h1>
+            <p class="text-sm text-slate-500 mt-1">
+                Vous allez agir en tant que collaborateur du cabinet
+                <strong class="text-slate-700">{{ workspace_name }}</strong>. Cette action est
+                <strong class="text-slate-700">tracée dans le journal d'audit du cabinet</strong>,
+                avec votre identité et le motif ci-dessous. Vous resterez connecté au back-office.
+            </p>
+        </div>
+
+        <form method="post"
+              action="{{ path('admin_workspace_impersonate', {slugId: slug_id}) }}"
+              class="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <input type="hidden" name="_token" value="{{ csrf_token('impersonate_' ~ slug_id) }}">
+
+            <div>
+                <label for="target_email" class="mb-1 block text-sm font-medium text-slate-700">
+                    E-mail du collaborateur
+                </label>
+                <input type="email" id="target_email" name="target_email" required
+                       value="{{ target_email }}" placeholder="jean.dupont@cabinet.fr"
+                       class="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2">
+                <p class="mt-1 text-xs text-slate-400">Le compte doit appartenir à ce cabinet et être actif.</p>
+            </div>
+
+            <div>
+                <label for="reason" class="mb-1 block text-sm font-medium text-slate-700">
+                    Motif d'accès <span class="font-normal text-slate-400">— 10 caractères minimum</span>
+                </label>
+                <textarea id="reason" name="reason" rows="3" required minlength="10"
+                          placeholder="Ex : ticket #1287 — investigation d'un blocage à la validation d'un dossier."
+                          class="flex w-full min-h-[76px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2"></textarea>
+            </div>
+
+            <div class="flex items-center justify-end gap-2 pt-2">
+                <a href="{{ path('admin_workspace_details', {slugId: slug_id}) }}"
+                   class="px-4 py-2 bg-white border border-slate-200 text-xs font-bold text-slate-700 rounded-xl hover:bg-slate-50 transition-colors">
+                    Annuler
+                </a>
+                <button type="submit"
+                        class="px-4 py-2 bg-[#6e2f1e] text-xs font-bold text-white rounded-xl hover:bg-[#5a2517] transition-colors shadow-sm flex items-center gap-1.5">
+                    <twig:ux:icon name="tabler:spy" class="size-4" />
+                    Ouvrir la session support
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

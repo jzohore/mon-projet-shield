@@ -127,20 +127,12 @@
                     Paramètres
                 </a>
 
-                {% if workspace.ownerEmail %}
-                    <a href="{{ path('app_support_impersonate', {email: workspace.ownerEmail}) }}"
-                       class="px-4 py-2 bg-[#6e2f1e] text-xs font-bold text-white rounded-xl hover:bg-[#5a2517] transition-colors shadow-sm flex items-center gap-1.5"
-                       title="Connexion support en tant que {{ workspace.ownerEmail }} — motif obligatoire, tracé dans le journal du cabinet">
-                        <twig:ux:icon name="tabler:spy" class="size-4" />
-                        Impersonate
-                    </a>
-                {% else %}
-                    <span class="px-4 py-2 bg-slate-100 text-xs font-bold text-slate-400 rounded-xl shadow-sm flex items-center gap-1.5 cursor-not-allowed"
-                          title="Aucun membre actif : connexion support indisponible">
-                        <twig:ux:icon name="tabler:spy" class="size-4" />
-                        Impersonate
-                    </span>
-                {% endif %}
+                <a href="{{ path('admin_workspace_impersonate', workspace.ownerEmail ? {slugId: workspace.slugId, email: workspace.ownerEmail} : {slugId: workspace.slugId}) }}"
+                   class="px-4 py-2 bg-[#6e2f1e] text-xs font-bold text-white rounded-xl hover:bg-[#5a2517] transition-colors shadow-sm flex items-center gap-1.5"
+                   title="Connexion support — motif obligatoire, tracé dans le journal d'audit du cabinet">
+                    <twig:ux:icon name="tabler:spy" class="size-4" />
+                    Impersonate
+                </a>
             </div>
         </header>
 
