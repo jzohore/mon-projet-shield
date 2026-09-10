@@ -53,6 +53,12 @@ services:
         arguments:
             $inner: '@App\Infrastructure\ExternalApi\OriasChecker'
 
+    # MRR : provider Stripe enveloppé d'un cache court (l'appel API itère tous les abonnements actifs)
+    App\Application\Billing\Provider\MrrProviderInterface: '@App\Infrastructure\Service\Payment\Stripe\CachedMrrProvider'
+    App\Infrastructure\Service\Payment\Stripe\CachedMrrProvider:
+        arguments:
+            $inner: '@App\Infrastructure\Service\Payment\Stripe\StripeMrrProvider'
+
     # Résolution de l'OCR via sa Factory
     App\Domain\Port\OcrProviderInterface:
         factory: [ '@App\Infrastructure\Ocr\OcrFactory', 'create' ]

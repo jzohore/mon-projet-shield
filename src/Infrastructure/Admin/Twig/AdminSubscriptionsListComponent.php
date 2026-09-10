@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Admin\Twig;
 
+use App\Application\Billing\Provider\MrrProviderInterface;
 use App\Domain\Billing\Entity\Subscription;
 use App\Domain\Billing\Enum\SubscriptionStatus;
 use App\Domain\Billing\Repository\SubscriptionRepositoryInterface;
@@ -37,6 +38,7 @@ class AdminSubscriptionsListComponent
 
     public function __construct(
         private readonly SubscriptionRepositoryInterface $subscriptionRepository,
+        private readonly MrrProviderInterface $mrrProvider,
     ) {
     }
 
@@ -73,9 +75,10 @@ class AdminSubscriptionsListComponent
         return SubscriptionStatus::cases();
     }
 
-    public function mrrCents(): int
+    /** MRR Stripe (mis en cache ~15 min par le provider). */
+    public function mrrEuros(): float
     {
-        return $this->subscriptionRepository->estimateMonthlyRecurringRevenueCents();
+        return $this->mrrProvider->getCurrentMrr();
     }
 
     /**

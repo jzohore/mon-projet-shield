@@ -5,9 +5,9 @@
     {# ---------- BANDEAU MRR / RÉPARTITION ---------- #}
     <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">MRR estimé</p>
-            <p class="mt-1 text-xl font-bold text-slate-900">{{ (this.mrrCents / 100)|format_currency('EUR', {fraction_digit: 0}, 'fr') }}</p>
-            <p class="mt-0.5 text-[11px] text-slate-400">sièges actifs × tarif — hors coupons</p>
+            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">MRR (Stripe)</p>
+            <p class="mt-1 text-xl font-bold text-slate-900">{{ this.mrrEuros|format_currency('EUR', {fraction_digit: 0}, 'fr') }}</p>
+            <p class="mt-0.5 text-[11px] text-slate-400">abonnements actifs · cache ~15 min</p>
         </div>
         <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Actifs</p>
