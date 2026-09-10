@@ -167,7 +167,9 @@
         </header>
 
         {# 4. LA MAGIE EST ICI : Marges ajustées pour le mobile (p-4 vs p-8) #}
-        <div class="flex-1 overflow-y-auto">
+        {# min-w-0 : sans ça, un tableau large pousse la colonne au-delà du viewport #}
+        {# (le parent est en overflow-hidden) et le contenu est coupé. #}
+        <div class="flex-1 min-w-0 overflow-y-auto">
             <div class="max-w-8xl mx-auto p-4 sm:p-6 md:p-8 space-y-6 sm:space-y-8 pb-24">
                 {% block content %}{% endblock %}
             </div>
