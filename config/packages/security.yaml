@@ -48,6 +48,7 @@ security:
             pattern: ^/admin
             provider: app_admin_provider
             lazy: true
+            user_checker: App\Infrastructure\Security\AdminStatusChecker
             custom_authenticator:
                 - App\Infrastructure\Security\MagicAdminLinkAuthenticator
             form_login:
@@ -142,8 +143,12 @@ security:
         # Protection de l'espace utilisateur et de l'application CGP
         - { path: ^/app/, roles: ROLE_USER }
 
-        # Protection de l'espace administrateur'
-        - { path: ^/admin, roles: ROLE_SUPER_ADMIN }
+        # Protection de l'espace administrateur (back-office KYSURE)
+        # La gestion de l'équipe et les zones sensibles restent réservées au SUPER_ADMIN ;
+        # les opérateurs (ROLE_ADMIN) accèdent au reste du back-office.
+        - { path: ^/admin/administrators, roles: ROLE_SUPER_ADMIN }
+        - { path: ^/admin/audit-logs, roles: ROLE_SUPER_ADMIN }
+        - { path: ^/admin, roles: ROLE_ADMIN }
 
 when@test:
     security:

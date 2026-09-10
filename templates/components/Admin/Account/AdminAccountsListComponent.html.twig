@@ -1,0 +1,139 @@
+<div {{ attributes }} class="space-y-6">
+    {% set items = this.admins %}
+
+    {# ---------- FILTRES ---------- #}
+    <div class="flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end">
+        <div class="flex-1">
+            <label for="a-search" class="mb-1 block text-xs font-semibold text-slate-500">Recherche</label>
+            <input type="search" id="a-search" data-model="debounce(300)|search" value="{{ search }}"
+                   placeholder="Nom, prénom, e-mail…"
+                   class="block w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
+        </div>
+        <div class="sm:w-56">
+            <label for="a-status" class="mb-1 block text-xs font-semibold text-slate-500">Statut</label>
+            <select id="a-status" data-model="status"
+                    class="block w-full rounded-md border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
+                {% for opt in this.statusOptions %}
+                    <option value="{{ opt.value }}" {{ status == opt.value ? 'selected' : '' }}>{{ opt.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-between">
+        <p class="text-sm text-slate-500" aria-live="polite">
+            <span class="font-bold text-slate-900">{{ items.nbResults }}</span> compte(s)
+        </p>
+        {% if this.hasFilters %}
+            <button type="button" data-action="live#action" data-live-action-param="resetFilters"
+                    class="text-xs font-semibold text-slate-600 hover:text-slate-900">Réinitialiser</button>
+        {% endif %}
+    </div>
+
+    {% if items.nbResults == 0 %}
+        <div class="rounded-md border border-slate-200 bg-white p-12 text-center shadow-sm">
+            <div class="mx-auto mb-3 inline-flex size-12 items-center justify-center rounded-md bg-slate-100 text-slate-400 ring-1 ring-slate-200">
+                <twig:ux:icon name="tabler:users-group" class="size-6" />
+            </div>
+            <h3 class="text-base font-bold text-slate-900">Aucun compte</h3>
+            <p class="mt-1 text-sm text-slate-500">Aucun membre de l'équipe ne correspond à ces critères.</p>
+        </div>
+    {% else %}
+        <div class="overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                            <th scope="col" class="px-4 py-3">Membre</th>
+                            <th scope="col" class="px-4 py-3">Rôle</th>
+                            <th scope="col" class="px-4 py-3">Statut</th>
+                            <th scope="col" class="px-4 py-3">Créé le</th>
+                            <th scope="col" class="px-4 py-3 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
+                        {% for admin in items %}
+                            {% set role = this.primaryRole(admin) %}
+                            <tr class="align-top hover:bg-slate-50/80">
+                                <td class="px-4 py-3">
+                                    <div class="flex items-center gap-3">
+                                        <span class="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[11px] font-bold text-slate-500 ring-1 ring-slate-200">{{ admin.getInitials() }}</span>
+                                        <div class="min-w-0">
+                                            <p class="font-medium text-slate-900">{{ admin.getFullName() }}</p>
+                                            <p class="truncate text-[12px] text-slate-400">{{ admin.email }}</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-bold {{ role.getBadgeClasses() }}">{{ role.getLabel() }}</span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    {% if admin.isArchived %}
+                                        <span class="inline-flex items-center rounded border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-500">Archivé</span>
+                                        <p class="mt-0.5 text-[11px] text-slate-400">le {{ admin.archivedAt|date('d/m/Y') }}</p>
+                                    {% elseif admin.isSuspended or not admin.isActif %}
+                                        <span class="inline-flex items-center rounded border border-amber-200 bg-amber-50 px-2 py-0.5 text-[11px] font-bold text-amber-700">Suspendu</span>
+                                        {% if admin.suspendedAt %}<p class="mt-0.5 text-[11px] text-slate-400">le {{ admin.suspendedAt|date('d/m/Y') }}</p>{% endif %}
+                                    {% else %}
+                                        <span class="inline-flex items-center rounded border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[11px] font-bold text-emerald-700">Actif</span>
+                                    {% endif %}
+                                </td>
+                                <td class="whitespace-nowrap px-4 py-3 text-slate-500">{{ admin.createdAt|date('d/m/Y') }}</td>
+                                <td class="px-4 py-3">
+                                    <div class="flex flex-wrap items-center justify-end gap-1.5">
+                                        {% if not admin.isArchived %}
+                                            <a href="{{ path('account_admin_edit', {slugId: admin.slugId}) }}"
+                                               class="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-700 hover:bg-slate-50">Éditer</a>
+
+                                            {% if admin.isActif %}
+                                                <form method="post" action="{{ path('account_admin_status', {slugId: admin.slugId, action: 'suspend'}) }}">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_account_status_' ~ admin.slugId) }}">
+                                                    <button type="submit" class="rounded-md border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-bold text-amber-700 hover:bg-amber-100">Suspendre</button>
+                                                </form>
+                                            {% else %}
+                                                <form method="post" action="{{ path('account_admin_status', {slugId: admin.slugId, action: 'reactivate'}) }}">
+                                                    <input type="hidden" name="_token" value="{{ csrf_token('admin_account_status_' ~ admin.slugId) }}">
+                                                    <button type="submit" class="rounded-md border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-700 hover:bg-emerald-100">Réactiver</button>
+                                                </form>
+                                            {% endif %}
+
+                                            <form method="post" action="{{ path('account_admin_status', {slugId: admin.slugId, action: 'archive'}) }}"
+                                                  onsubmit="return confirm('Archiver le compte de {{ admin.getFullName()|e('js') }} ? Il ne pourra plus se connecter.');">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('admin_account_status_' ~ admin.slugId) }}">
+                                                <button type="submit" class="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-bold text-slate-600 hover:bg-slate-50">Archiver</button>
+                                            </form>
+                                        {% endif %}
+
+                                        <form method="post" action="{{ path('account_admin_delete', {slugId: admin.slugId}) }}"
+                                              onsubmit="return confirm('Supprimer définitivement le compte de {{ admin.getFullName()|e('js') }} ? Cette action est irréversible.');">
+                                            <input type="hidden" name="_token" value="{{ csrf_token('admin_account_delete_' ~ admin.slugId) }}">
+                                            <button type="submit" class="rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-[11px] font-bold text-rose-700 hover:bg-rose-100">Supprimer</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3">
+                <p class="text-xs text-slate-600">
+                    Page <span class="font-bold text-slate-900">{{ items.currentPage }}</span> / {{ items.nbPages }}
+                </p>
+                <nav class="inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                    <button type="button" data-action="live#action" data-live-action-param="previousPage"
+                            class="inline-flex items-center rounded-l-md border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-50 disabled:opacity-40"
+                            {% if not items.hasPreviousPage %}disabled{% endif %}>
+                        <twig:ux:icon name="tabler:chevron-left" class="size-4" />
+                    </button>
+                    <button type="button" data-action="live#action" data-live-action-param="nextPage"
+                            class="inline-flex items-center rounded-r-md border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-50 disabled:opacity-40"
+                            {% if not items.hasNextPage %}disabled{% endif %}>
+                        <twig:ux:icon name="tabler:chevron-right" class="size-4" />
+                    </button>
+                </nav>
+            </div>
+        </div>
+    {% endif %}
+</div>

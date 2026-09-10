@@ -1,16 +1,23 @@
 {% extends '@admin/base_admin.html.twig' %}
 
+{% block title %}{{ page_title }} | {{ company_name }}{% endblock %}
 {% block page_title %}{{ page_title }}{% endblock %}
+
 {% block button_page %}
     <twig:Button as="a" href="{{ path('account_admin_add') }}" variant="link" size="sm">
         <twig:ux:icon name="ic:baseline-plus" />
-        Nouveau
+        Nouveau membre
     </twig:Button>
-
 {% endblock %}
-{% block content %}
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        {# Utilisation d'un composant anonyme si tu l'as créé #}
 
+{% block content %}
+    <div class="mb-6">
+        <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Équipe KYSURE</h1>
+        <p class="text-sm text-slate-500 mt-1">
+            Comptes du back-office. Créer, modifier le profil ou le rôle, suspendre, archiver ou supprimer —
+            chaque action est tracée dans le journal d'audit et notifiée par e-mail au membre concerné.
+        </p>
     </div>
+
+    <twig:AdminAccountsListComponent />
 {% endblock %}

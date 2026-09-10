@@ -58,7 +58,7 @@
                 {# 🪄 MAGIE TWIG : On récupère dynamiquement les cas de l'Enum PHP #}
                 {% set system_items = enum('App\\Infrastructure\\Shared\\Menu\\SystemAdminMenuItem').cases %}
 
-                {% for item in system_items %}
+                {% for item in system_items|filter(item => not item.superAdminOnly or is_granted('ROLE_SUPER_ADMIN')) %}
                     {# On utilise dynamiquement les méthodes getRoute(), getIcon() et getLabel() de l'Enum #}
                     {% set is_active = (app.request.attributes.get('_route') == item.route) %}
 

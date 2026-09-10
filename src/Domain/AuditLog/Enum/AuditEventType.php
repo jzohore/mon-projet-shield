@@ -104,6 +104,15 @@ enum AuditEventType: string
     case SUBSCRIPTION_RESUMED = 'billing.subscription_resumed';
     case SUBSCRIPTION_RETENTION_OFFER_CLAIMED = 'billing.retention_offer_claimed';
 
+    // --- ÉQUIPE KYSURE (BACK-OFFICE) ---
+    case ADMIN_ACCOUNT_CREATED = 'team.admin_account_created';
+    case ADMIN_ACCOUNT_PROFILE_UPDATED = 'team.admin_account_profile_updated';
+    case ADMIN_ACCOUNT_ROLES_CHANGED = 'team.admin_account_roles_changed';
+    case ADMIN_ACCOUNT_SUSPENDED = 'team.admin_account_suspended';
+    case ADMIN_ACCOUNT_REACTIVATED = 'team.admin_account_reactivated';
+    case ADMIN_ACCOUNT_ARCHIVED = 'team.admin_account_archived';
+    case ADMIN_ACCOUNT_DELETED = 'team.admin_account_deleted';
+
     /**
      * Libellé explicite en français pour l'affichage dans les journaux d'audit.
      */
@@ -120,6 +129,15 @@ enum AuditEventType: string
             self::SUSPICIOUS_LOGIN_ATTEMPT => 'Tentative de connexion suspecte',
             self::ADMIN_IMPERSONATION_START => 'Connexion support (Impersonation)',
             self::ADMIN_IMPERSONATION_EXIT => 'Fin de connexion support',
+
+            // Équipe KYSURE
+            self::ADMIN_ACCOUNT_CREATED => 'Création d\'un compte de l\'équipe KYSURE',
+            self::ADMIN_ACCOUNT_PROFILE_UPDATED => 'Modification du profil d\'un membre de l\'équipe',
+            self::ADMIN_ACCOUNT_ROLES_CHANGED => 'Changement de rôle d\'un membre de l\'équipe',
+            self::ADMIN_ACCOUNT_SUSPENDED => 'Suspension d\'un compte de l\'équipe KYSURE',
+            self::ADMIN_ACCOUNT_REACTIVATED => 'Réactivation d\'un compte de l\'équipe KYSURE',
+            self::ADMIN_ACCOUNT_ARCHIVED => 'Archivage d\'un compte de l\'équipe KYSURE',
+            self::ADMIN_ACCOUNT_DELETED => 'Suppression définitive d\'un compte de l\'équipe KYSURE',
 
             // Workspace
             self::WORKSPACE_CREATED => 'Création du cabinet',
@@ -285,6 +303,14 @@ enum AuditEventType: string
             self::SUBSCRIPTION_PAUSED,
             self::SUBSCRIPTION_RESUMED,
             self::SUBSCRIPTION_RETENTION_OFFER_CLAIMED => 'Abonnement',
+
+            self::ADMIN_ACCOUNT_CREATED,
+            self::ADMIN_ACCOUNT_PROFILE_UPDATED,
+            self::ADMIN_ACCOUNT_ROLES_CHANGED,
+            self::ADMIN_ACCOUNT_SUSPENDED,
+            self::ADMIN_ACCOUNT_REACTIVATED,
+            self::ADMIN_ACCOUNT_ARCHIVED,
+            self::ADMIN_ACCOUNT_DELETED => 'Équipe KYSURE',
         };
     }
 
@@ -343,7 +369,11 @@ enum AuditEventType: string
             self::DER_DECLINED,
             self::KYC_LEGAL_HOLD_PLACED,
             self::CLIENT_ACCOUNT_DELETED,
-            self::ADMIN_IMPERSONATION_START => true,
+            self::ADMIN_IMPERSONATION_START,
+            self::ADMIN_ACCOUNT_CREATED,
+            self::ADMIN_ACCOUNT_ROLES_CHANGED,
+            self::ADMIN_ACCOUNT_ARCHIVED,
+            self::ADMIN_ACCOUNT_DELETED => true,
             default => false,
         };
     }

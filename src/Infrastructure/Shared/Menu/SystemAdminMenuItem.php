@@ -43,6 +43,18 @@ enum SystemAdminMenuItem: string
         };
     }
 
+    /**
+     * Entrées réservées au ROLE_SUPER_ADMIN (gestion de l'équipe, zones sensibles).
+     * Les opérateurs (ROLE_ADMIN) ne les voient pas dans la barre latérale.
+     */
+    public function isSuperAdminOnly(): bool
+    {
+        return match ($this) {
+            self::ADMINS, self::AUDIT_LOGS, self::SUBSCRIPTIONS, self::COMPLIANCE => true,
+            default => false,
+        };
+    }
+
     public function getRoute(): string
     {
         return match ($this) {

@@ -1,0 +1,44 @@
+{% extends 'emails/base.html.twig' %}
+
+{% block title %}Votre compte {{ company_name }}{% endblock %}
+
+{% block content %}
+    {% if action == 'created' %}
+        <h1>Bienvenue dans l'équipe {{ company_name }}</h1>
+        <p>Bonjour {{ first_name }},</p>
+        <p>Un compte vous a été créé sur le back-office {{ company_name }}{% if details.role is defined %}, avec le rôle <strong>{{ details.role }}</strong>{% endif %}.</p>
+        <p>Vous vous connectez sans mot de passe : rendez-vous sur la page de connexion et saisissez cette adresse e-mail, vous recevrez alors un lien de connexion sécurisé.</p>
+        <p style="text-align:center; margin:32px 0;">
+            <a href="{{ login_url }}" style="background-color:#6e2f1e; color:#ffffff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">Accéder à la connexion</a>
+        </p>
+    {% elseif action == 'roles_changed' %}
+        <h1>Votre rôle a changé</h1>
+        <p>Bonjour {{ first_name }},</p>
+        <p>Votre rôle sur le back-office {{ company_name }} a été modifié{% if details.role_after is defined %} : vous êtes désormais <strong>{{ details.role_after }}</strong>{% endif %}.</p>
+        <p>Pour des raisons de sécurité, vos sessions ouvertes ont été fermées. Reconnectez-vous via le lien ci-dessous.</p>
+        <p style="text-align:center; margin:32px 0;">
+            <a href="{{ login_url }}" style="background-color:#6e2f1e; color:#ffffff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">Se reconnecter</a>
+        </p>
+    {% elseif action == 'suspended' %}
+        <h1>Accès suspendu</h1>
+        <p>Bonjour {{ first_name }},</p>
+        <p>Votre accès au back-office {{ company_name }} a été suspendu par un administrateur. Vos sessions ouvertes ont été fermées.</p>
+        <p>Si vous pensez qu'il s'agit d'une erreur, contactez un administrateur de la plateforme.</p>
+    {% elseif action == 'reactivated' %}
+        <h1>Accès rétabli</h1>
+        <p>Bonjour {{ first_name }},</p>
+        <p>Votre accès au back-office {{ company_name }} a été rétabli. Vous pouvez de nouveau vous connecter.</p>
+        <p style="text-align:center; margin:32px 0;">
+            <a href="{{ login_url }}" style="background-color:#6e2f1e; color:#ffffff; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; display:inline-block;">Se connecter</a>
+        </p>
+    {% else %}
+        <h1>Votre compte a été fermé</h1>
+        <p>Bonjour {{ first_name }},</p>
+        <p>Votre compte du back-office {{ company_name }} a été fermé par un administrateur. Vous n'y avez plus accès.</p>
+        <p>Si vous pensez qu'il s'agit d'une erreur, contactez un administrateur de la plateforme.</p>
+    {% endif %}
+{% endblock %}
+
+{% block footer_text %}
+    <p>Ceci est une notification automatique concernant votre compte {{ company_name }}.</p>
+{% endblock %}

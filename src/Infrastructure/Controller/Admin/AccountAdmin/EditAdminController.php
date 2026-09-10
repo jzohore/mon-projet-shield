@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Controller\Admin\AccountAdmin;
 
-use App\Application\User\DTO\Request\CreateAdminAccountInput;
-use App\Application\User\UseCase\Team\CreateAdminAccountUseCase;
+use App\Application\User\DTO\Request\UpdateAdminAccountInput;
+use App\Application\User\UseCase\Team\GetAdminAccountUseCase;
+use App\Application\User\UseCase\Team\UpdateAdminAccountUseCase;
 use App\Domain\User\Entity\Admin;
 use App\Domain\User\Enum\AdminRole;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -19,45 +20,55 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[AsController]
 #[IsGranted('ROLE_SUPER_ADMIN')]
-#[Route(path: '/admin/administrators/add', name: 'account_admin_add', methods: ['GET', 'POST'])]
-final class AddAdminController extends AbstractController
+#[Route(path: '/admin/administrators/{slugId}/edit', name: 'account_admin_edit', methods: ['GET', 'POST'])]
+final class EditAdminController extends AbstractController
 {
     public function __construct(
-        private readonly CreateAdminAccountUseCase $createAdminAccount,
+        private readonly GetAdminAccountUseCase $getAdminAccount,
+        private readonly UpdateAdminAccountUseCase $updateAdminAccount,
     ) {
     }
 
-    public function __invoke(Request $request): Response
+    public function __invoke(Request $request, string $slugId): Response
     {
-        if ($request->isMethod('POST')) {
-            return $this->handle($request);
+        try {
+            $account = $this->getAdminAccount->__invoke($slugId);
+        } catch (\InvalidArgumentException $e) {
+            $this->addFlash('error', $e->getMessage());
+
+            return $this->redirectToRoute('account_admin_list');
         }
 
-        return $this->render('@admin/account_admin/add_admin.html.twig', [
-            'page_title' => 'Nouveau membre de l\'équipe',
+        if ($request->isMethod('POST')) {
+            return $this->handle($request, $slugId);
+        }
+
+        return $this->render('@admin/account_admin/edit_admin.html.twig', [
+            'page_title' => 'Modifier — ' . $account->firstName . ' ' . $account->lastName,
+            'account' => $account,
             'roles' => AdminRole::cases(),
         ]);
     }
 
-    private function handle(Request $request): RedirectResponse
+    private function handle(Request $request, string $slugId): RedirectResponse
     {
         $operator = $this->getUser();
         if (!$operator instanceof Admin) {
             throw new AccessDeniedException('Opérateur non identifié.');
         }
 
-        if (!$this->isCsrfTokenValid('admin_account_create', (string) $request->request->get('_token'))) {
+        if (!$this->isCsrfTokenValid('admin_account_edit_' . $slugId, (string) $request->request->get('_token'))) {
             $this->addFlash('error', 'Jeton de sécurité invalide ou expiré.');
 
-            return $this->redirectToRoute('account_admin_add');
+            return $this->redirectToRoute('account_admin_edit', ['slugId' => $slugId]);
         }
 
         $phone = trim((string) $request->request->get('phoneNumber'));
 
         try {
-            $this->createAdminAccount->__invoke(
-                new CreateAdminAccountInput(
-                    email: (string) $request->request->get('email'),
+            $this->updateAdminAccount->__invoke(
+                new UpdateAdminAccountInput(
+                    slugId: $slugId,
                     firstName: (string) $request->request->get('firstName'),
                     lastName: (string) $request->request->get('lastName'),
                     phoneNumber: '' !== $phone ? $phone : null,
@@ -69,10 +80,10 @@ final class AddAdminController extends AbstractController
         } catch (\InvalidArgumentException|\DomainException $e) {
             $this->addFlash('error', $e->getMessage());
 
-            return $this->redirectToRoute('account_admin_add');
+            return $this->redirectToRoute('account_admin_edit', ['slugId' => $slugId]);
         }
 
-        $this->addFlash('success', 'Compte créé. Un e-mail de bienvenue vient d\'être envoyé au nouveau membre.');
+        $this->addFlash('success', 'Compte mis à jour.');
 
         return $this->redirectToRoute('account_admin_list');
     }

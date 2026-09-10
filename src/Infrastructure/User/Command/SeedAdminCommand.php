@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\User\Command;
 
 use App\Domain\User\Entity\Admin;
+use App\Domain\User\Enum\AdminRole;
 use App\Domain\User\Repository\AdminRepositoryInterface;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
@@ -40,6 +41,7 @@ final readonly class SeedAdminCommand
             firstName: 'Zohore',
             lastName: 'Junior',
             isActif: true,
+            roles: [AdminRole::SUPER_ADMIN->value],
         );
 
         $this->adminRepository->save($admin, flush: true);
