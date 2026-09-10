@@ -13,7 +13,6 @@ enum SystemAdminMenuItem: string
     case COMPLIANCE = 'compliance';
     case ADMINS = 'admins';
     case AUDIT_LOGS = 'audit_logs';
-    case ANALYTICS = 'analytics';
 
     public function getLabel(): string
     {
@@ -25,7 +24,6 @@ enum SystemAdminMenuItem: string
             self::COMPLIANCE => 'Dossiers Compliance',
             self::ADMINS => 'Équipe Super-Admin',
             self::AUDIT_LOGS => 'Journal d\'Audit',
-            self::ANALYTICS => 'Analytique',
         };
     }
 
@@ -39,7 +37,6 @@ enum SystemAdminMenuItem: string
             self::COMPLIANCE => 'lucide:scale',
             self::ADMINS => 'lucide:shield-check',
             self::AUDIT_LOGS => 'lucide:scroll-text',
-            self::ANALYTICS => 'famicons:analytics',
         };
     }
 
@@ -65,7 +62,6 @@ enum SystemAdminMenuItem: string
             self::COMPLIANCE => 'admin_compliance_list',
             self::ADMINS => 'account_admin_list',
             self::AUDIT_LOGS => 'admin_audit_logs_list',
-            self::ANALYTICS => 'admin_analytics_show',
         };
     }
 }

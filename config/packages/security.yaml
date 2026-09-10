@@ -127,7 +127,6 @@ security:
         - { path: ^/api/stripe/webhook, roles: PUBLIC_ACCESS }
         # Accusé de réception du DER : lien nominatif à jeton (256 bits, haché en base), pas de compte client à ce stade.
         - { path: ^/der/, roles: PUBLIC_ACCESS }
-        - { path: ^/api/track, roles: PUBLIC_ACCESS }
         - { path: ^/login, roles: PUBLIC_ACCESS }
         # Invitation collaborateur : lien nominatif à jeton (512 bits, haché en base).
         # Le destinataire n'a pas encore de compte ; l'acceptation le connecte sur

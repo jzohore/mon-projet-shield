@@ -12,7 +12,6 @@ use App\Domain\Billing\Repository\SubscriptionRepositoryInterface;
 use App\Domain\Kyc\Repository\KycFolderRepositoryInterface;
 use App\Domain\Screening\Repository\ScreeningAuditRepositoryInterface;
 use App\Domain\Support\Repository\SupportThreadRepositoryInterface;
-use App\Domain\Tracking\Repository\ClickLogRepositoryInterface;
 use App\Domain\Workspace\Repository\WorkspaceRepositoryInterface;
 
 final readonly class GetAdminDashboardStatsUseCase
@@ -20,7 +19,6 @@ final readonly class GetAdminDashboardStatsUseCase
     public function __construct(
         private SupportThreadRepositoryInterface $threadRepository,
         private WorkspaceRepositoryInterface $workspaceRepository,
-        private ClickLogRepositoryInterface $clickLogRepository,
         private KycFolderRepositoryInterface $kycRepository,
         private ScreeningAuditRepositoryInterface $screeningRepository,
         private MrrProviderInterface $mrrProvider,
@@ -49,11 +47,7 @@ final readonly class GetAdminDashboardStatsUseCase
         $apiSuccessRate = 99.9;
         $totalKyc = $this->kycRepository->countAll();
         $totalScreenings = $this->screeningRepository->countAll();
-        $linkedinClicks = $this->clickLogRepository->countBySource('linkedin');
 
-        // On récupère les stats des 30 derniers jours par exemple
-        $thirtyDaysAgo = new \DateTimeImmutable('-30 days');
-        $clickStats = $this->clickLogRepository->getStatsByElement($thirtyDaysAgo);
         $latestWorkspaces = $this->workspaceRepository->findLatest();
         $latestAuditLogs = $this->auditLogRepository->findLatestLogs();
 
@@ -66,8 +60,6 @@ final readonly class GetAdminDashboardStatsUseCase
             $apiSuccessRate,
             $totalKyc,
             $totalScreenings,
-            $linkedinClicks,
-            $clickStats,
             $latestWorkspaces,
             $latestAuditLogs
         );

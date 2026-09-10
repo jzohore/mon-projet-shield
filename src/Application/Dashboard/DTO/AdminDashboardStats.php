@@ -17,10 +17,6 @@ final readonly class AdminDashboardStats
         public float $apiSuccessRate,
         public int $totalKycCreated,
         public int $totalScreeningsDone,
-        // 👇 Nouvelles métriques de conversion (ClickLog)
-        public int $totalLinkedinClicks,
-        /** @var array<string, int> */
-        public array $clickStatsByElement,
         /** @var array<Workspace> */
         public array $latestWorkspaces = [],
         /** @var AuditLog[] */

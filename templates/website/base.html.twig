@@ -35,6 +35,11 @@
     {% block javascripts %}
         {% block importmap %}{{ importmap('app') }}{% endblock %}
     {% endblock %}
+
+    {# Analytique Umami (self-hosted, sans cookie). Rendu seulement si configuré. #}
+    {% if umami_website_id is not empty and umami_src is not empty %}
+        <script defer src="{{ umami_src }}" data-website-id="{{ umami_website_id }}"></script>
+    {% endif %}
 </head>
 
 {# 6. Classes de base Tailwind : antialiased (lisse les polices), fond et texte par défaut #}

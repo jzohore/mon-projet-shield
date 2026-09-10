@@ -97,10 +97,46 @@ services:
     logging: *default-logging
 ###< sensiolabs/gotenberg-bundle ###
 
+  # Analytique self-hosted (visites, sources, campagnes UTM, conversions).
+  # Sans cookie, sans PII → pas de bannière de consentement.
+  # Base Postgres dédiée et isolée (ne touche pas la base applicative). Umami
+  # joue ses migrations au démarrage. UI sur http://localhost:3001
+  # (login initial admin / umami — à changer immédiatement).
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      umami-db:
+        condition: service_healthy
+    environment:
+      DATABASE_TYPE: postgresql
+      DATABASE_URL: postgresql://umami:umami@umami-db:5432/umami
+      APP_SECRET: ${UMAMI_APP_SECRET:-!ChangeThisUmamiAppSecret!}
+    ports:
+      - "3001:3000"
+
+  umami-db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_DB: umami
+      POSTGRES_USER: umami
+      POSTGRES_PASSWORD: umami
+    volumes:
+      - umami_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U umami -d umami" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   caddy_data:
   caddy_config:
   db_data:
+  umami_db_data:
 ###> symfony/mercure-bundle ###
 ###< symfony/mercure-bundle ###
 
