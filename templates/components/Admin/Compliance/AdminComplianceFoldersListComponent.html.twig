@@ -48,7 +48,6 @@
                             <th scope="col" class="px-4 py-3">Référence</th>
                             <th scope="col" class="px-4 py-3">Cabinet</th>
                             <th scope="col" class="px-4 py-3">Type</th>
-                            <th scope="col" class="px-4 py-3">Client</th>
                             <th scope="col" class="px-4 py-3">Statut</th>
                             <th scope="col" class="px-4 py-3">Risque</th>
                             <th scope="col" class="px-4 py-3">Signaux</th>
@@ -65,13 +64,6 @@
                                 </td>
                                 <td class="whitespace-nowrap px-4 py-3">
                                     {{ folder.isBusiness ? 'KYB — Personne morale' : 'KYC — Personne physique' }}
-                                </td>
-                                <td class="px-4 py-3">
-                                    {% if folder.isBusiness %}
-                                        {{ folder.companyName ?? '—' }}
-                                    {% else %}
-                                        {{ ((folder.firstName ?? '') ~ ' ' ~ (folder.lastName ?? ''))|trim|default('—') }}
-                                    {% endif %}
                                 </td>
                                 <td class="px-4 py-3">
                                     <span class="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-bold ring-1 ring-inset {{ folder.status.getBadgeClasses() }}">
