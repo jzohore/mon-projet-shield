@@ -48,8 +48,8 @@ enum SystemAdminMenuItem: string
         return match ($this) {
             self::DASHBOARD => 'admin_dashboard',
             self::WORKSPACES => 'admin_organizations_list',
-            self::SUPPORT => 'admin_support_list', // 👈 Nouvelle route à créer
-            self::SUBSCRIPTIONS => 'admin_compliance_list',
+            self::SUPPORT => 'admin_support_list',
+            self::SUBSCRIPTIONS => 'admin_subscriptions_list',
             self::COMPLIANCE => 'admin_compliance_list',
             self::ADMINS => 'account_admin_list',
             self::AUDIT_LOGS => 'admin_audit_logs_list',
