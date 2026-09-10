@@ -7,6 +7,7 @@ namespace App\Infrastructure\Compliance\Controller;
 use App\Application\Compliance\UseCase\ComplianceFolder\ArchiveFolderUseCase;
 use App\Domain\Compliance\Entity\ComplianceFolder;
 use App\Domain\Shared\Exception\AbstractDomainException;
+use App\Infrastructure\Workspace\Voter\WorkspaceInvitationVoter;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\Doctrine\Attribute\MapEntity;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -32,6 +33,9 @@ final class ArchiveFolderController extends AbstractController
         string $type,
         string $method,
     ): RedirectResponse {
+        // Archiver suit la posture de délégation du cabinet (admin, ou collaborateur si délégué).
+        $this->denyAccessUnlessGranted(WorkspaceInvitationVoter::FOLDER_ARCHIVE, $complianceFolder->workspace);
+
         $token = (string) $request->request->get('_token', '');
         $slug = $complianceFolder->slugId;
 

@@ -531,10 +531,19 @@
                                     <twig:ux:icon name="tabler:mail-forward" class="size-3.5 mr-1.5" aria-hidden="true" /> Relancer
                                 </twig:Button>
 
-                                {# Bouton qui ouvre la modale d'archivage (à relier avec ton composant) #}
-                                <twig:Button variant="ghost" class="w-full !text-slate-700 hover:!text-slate-900 hover:!bg-slate-100 !px-2 !text-xs focus-visible:ring-2 focus-visible:ring-slate-500">
-                                    <twig:ux:icon name="tabler:archive" class="size-3.5 mr-1.5" aria-hidden="true" /> Archiver
-                                </twig:Button>
+                                {# Archivage : visible pour un admin, et pour un collaborateur si le
+                                   cabinet le lui a délégué (Réglages → Rôles & permissions). #}
+                                {% if workspace_can('archive_folder') %}
+                                    <form action="{{ path('app_compliance_archive_folder', { slugId: dto.slugId, type: dto.isKyb ? 'business' : 'individual', method: dto.method }) }}"
+                                          method="POST"
+                                          onsubmit="return confirm('Archiver ce dossier ? Il passera en lecture seule.');"
+                                          class="contents">
+                                        <input type="hidden" name="_token" value="{{ csrf_token('archive_folder_' ~ dto.slugId) }}">
+                                        <twig:Button type="submit" variant="ghost" class="w-full !text-slate-700 hover:!text-slate-900 hover:!bg-slate-100 !px-2 !text-xs focus-visible:ring-2 focus-visible:ring-slate-500">
+                                            <twig:ux:icon name="tabler:archive" class="size-3.5 mr-1.5" aria-hidden="true" /> Archiver
+                                        </twig:Button>
+                                    </form>
+                                {% endif %}
                             </div>
 
                             {# ACTION RESTREINDRE L'ACCÈS #}

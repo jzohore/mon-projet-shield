@@ -427,10 +427,12 @@
                                 <twig:ux:icon name="tabler:mail-forward" class="size-3.5 mr-1.5" />
                                 Relancer
                             </twig:Button>
-                            <twig:Button variant="ghost" class="w-full !text-slate-600 hover:!text-rose-600 hover:!bg-rose-50 !px-2 !text-xs">
-                                <twig:ux:icon name="tabler:archive" class="size-3.5 mr-1.5" />
-                                Archiver
-                            </twig:Button>
+                            {% if workspace_can('archive_folder') %}
+                                <twig:Button variant="ghost" class="w-full !text-slate-600 hover:!text-rose-600 hover:!bg-rose-50 !px-2 !text-xs">
+                                    <twig:ux:icon name="tabler:archive" class="size-3.5 mr-1.5" aria-hidden="true" />
+                                    Archiver
+                                </twig:Button>
+                            {% endif %}
                         </div>
                     </div>
 
