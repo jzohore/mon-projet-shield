@@ -669,4 +669,10 @@ abstract class ComplianceFolder
     }
 
     abstract public function isDraftEmpty(): bool;
+
+    /** true pour un dossier KYB (personne morale), false pour un KYC (personne physique). */
+    public function isBusiness(): bool
+    {
+        return false;
+    }
 }

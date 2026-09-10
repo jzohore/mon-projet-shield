@@ -22,7 +22,7 @@ enum SystemAdminMenuItem: string
             self::WORKSPACES => 'Workspaces & Clients',
             self::SUPPORT => 'Support & Tickets', // 👈 Nouveau label
             self::SUBSCRIPTIONS => 'Abonnements & MRR',
-            self::COMPLIANCE => 'Règles Compliance',
+            self::COMPLIANCE => 'Dossiers Compliance',
             self::ADMINS => 'Équipe Super-Admin',
             self::AUDIT_LOGS => 'Journal d\'Audit',
             self::ANALYTICS => 'Analytique',

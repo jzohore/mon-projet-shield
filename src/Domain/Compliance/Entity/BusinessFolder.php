@@ -67,4 +67,10 @@ class BusinessFolder extends ComplianceFolder
     {
         return in_array($this->companyName, [null, '', '0'], true);
     }
+
+    #[\Override]
+    public function isBusiness(): bool
+    {
+        return true;
+    }
 }

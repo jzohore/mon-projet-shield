@@ -13,6 +13,7 @@ use App\Domain\Workspace\Entity\Workspace;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
 use Pagerfanta\Doctrine\ORM\QueryAdapter;
+use Pagerfanta\Exception\OutOfRangeCurrentPageException;
 use Pagerfanta\Pagerfanta;
 use Symfony\Component\Uid\Uuid;
 
@@ -110,6 +111,36 @@ class ComplianceFolderRepository implements ComplianceFolderRepositoryInterface
         }
 
         return new Pagerfanta(new QueryAdapter($qb));
+    }
+
+    public function findAllForAdmin(int $page, int $perPage, ?string $search = null, ?ComplianceFolderStatus $status = null): Pagerfanta
+    {
+        $qb = $this->repository->createQueryBuilder('cf')
+            ->select('cf', 'w')
+            ->leftJoin('cf.workspace', 'w')
+            ->orderBy('cf.createdAt', 'DESC');
+
+        if ($status instanceof ComplianceFolderStatus) {
+            $qb->andWhere('cf.status = :status')->setParameter('status', $status);
+        } else {
+            $qb->andWhere('cf.status != :deleted')->setParameter('deleted', ComplianceFolderStatus::DELETED);
+        }
+
+        if (!in_array($search, [null, '', '0'], true)) {
+            $qb->andWhere('LOWER(cf.reference) LIKE LOWER(:q) OR LOWER(w.name) LIKE LOWER(:q)')
+                ->setParameter('q', '%' . $search . '%');
+        }
+
+        $pager = new Pagerfanta(new QueryAdapter($qb));
+        $pager->setMaxPerPage(max(1, $perPage));
+
+        try {
+            $pager->setCurrentPage(max(1, $page));
+        } catch (OutOfRangeCurrentPageException) {
+            $pager->setCurrentPage(1);
+        }
+
+        return $pager;
     }
 
     public function countDraftsForWorkspace(Workspace $workspace): int

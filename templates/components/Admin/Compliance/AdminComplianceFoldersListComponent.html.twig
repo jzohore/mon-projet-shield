@@ -1,0 +1,126 @@
+<div {{ attributes }} class="space-y-6">
+    {% set items = this.folders %}
+
+    {# ---------- FILTRES ---------- #}
+    <div class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end">
+        <div class="flex-1">
+            <label for="c-search" class="mb-1 block text-xs font-semibold text-slate-500">Recherche</label>
+            <input type="search" id="c-search" data-model="debounce(300)|search" value="{{ search }}"
+                   placeholder="Référence du dossier ou cabinet…"
+                   class="block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
+        </div>
+        <div class="sm:w-64">
+            <label for="c-status" class="mb-1 block text-xs font-semibold text-slate-500">Statut</label>
+            <select id="c-status" data-model="status"
+                    class="block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
+                <option value="">Tous</option>
+                {% for st in this.statuses %}
+                    <option value="{{ st.value }}" {{ status == st.value ? 'selected' : '' }}>{{ st.getLabel() }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-between">
+        <p class="text-sm text-slate-500" aria-live="polite">
+            <span class="font-bold text-slate-900">{{ items.nbResults }}</span> dossier(s)
+        </p>
+        {% if this.hasFilters %}
+            <button type="button" data-action="live#action" data-live-action-param="resetFilters"
+                    class="text-xs font-semibold text-slate-600 hover:text-slate-900">Réinitialiser</button>
+        {% endif %}
+    </div>
+
+    {% if items.nbResults == 0 %}
+        <div class="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+            <div class="mx-auto mb-3 inline-flex size-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400 ring-1 ring-slate-200">
+                <twig:ux:icon name="tabler:folder-off" class="size-6" />
+            </div>
+            <h3 class="text-base font-bold text-slate-900">Aucun dossier</h3>
+            <p class="mt-1 text-sm text-slate-500">Aucun dossier ne correspond à ces critères.</p>
+        </div>
+    {% else %}
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                            <th scope="col" class="px-4 py-3">Référence</th>
+                            <th scope="col" class="px-4 py-3">Cabinet</th>
+                            <th scope="col" class="px-4 py-3">Type</th>
+                            <th scope="col" class="px-4 py-3">Client</th>
+                            <th scope="col" class="px-4 py-3">Statut</th>
+                            <th scope="col" class="px-4 py-3">Risque</th>
+                            <th scope="col" class="px-4 py-3">Signaux</th>
+                            <th scope="col" class="px-4 py-3">Créé le</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
+                        {% for folder in items %}
+                            <tr class="hover:bg-slate-50/80">
+                                <td class="px-4 py-3 font-mono text-xs font-medium text-slate-900">{{ folder.reference }}</td>
+                                <td class="px-4 py-3">
+                                    <a href="{{ path('admin_workspace_details', {slugId: folder.workspace.slugId}) }}"
+                                       class="font-medium text-slate-900 hover:underline">{{ folder.workspace.name }}</a>
+                                </td>
+                                <td class="whitespace-nowrap px-4 py-3">
+                                    {{ folder.isBusiness ? 'KYB — Personne morale' : 'KYC — Personne physique' }}
+                                </td>
+                                <td class="px-4 py-3">
+                                    {% if folder.isBusiness %}
+                                        {{ folder.companyName ?? '—' }}
+                                    {% else %}
+                                        {{ ((folder.firstName ?? '') ~ ' ' ~ (folder.lastName ?? ''))|trim|default('—') }}
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-bold ring-1 ring-inset {{ folder.status.getBadgeClasses() }}">
+                                        {{ folder.status.getLabel() }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-3">
+                                    {{ folder.riskLevel ? folder.riskLevel.value : '—' }}
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="flex flex-wrap gap-1">
+                                        {% if folder.isUnderLegalHold %}
+                                            <span class="inline-flex items-center rounded bg-rose-50 px-1.5 py-0.5 text-[11px] font-medium text-rose-700">Verrou litige</span>
+                                        {% endif %}
+                                        {% if folder.isCertified %}
+                                            <span class="inline-flex items-center rounded bg-emerald-50 px-1.5 py-0.5 text-[11px] font-medium text-emerald-700">Certifié</span>
+                                        {% endif %}
+                                        {% if folder.relationshipEndedAt %}
+                                            <span class="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">Relation terminée</span>
+                                        {% endif %}
+                                        {% if not folder.isUnderLegalHold and not folder.isCertified and not folder.relationshipEndedAt %}
+                                            <span class="text-[11px] text-slate-300">—</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="whitespace-nowrap px-4 py-3 text-xs text-slate-500">{{ folder.createdAt|date('d/m/Y') }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3">
+                <p class="text-xs text-slate-600">
+                    Page <span class="font-bold text-slate-900">{{ items.currentPage }}</span> / {{ items.nbPages }}
+                </p>
+                <nav class="inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                    <button type="button" data-action="live#action" data-live-action-param="previousPage"
+                            class="inline-flex items-center rounded-l-md border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-50 disabled:opacity-40"
+                            {% if not items.hasPreviousPage %}disabled{% endif %}>
+                        <twig:ux:icon name="tabler:chevron-left" class="size-4" />
+                    </button>
+                    <button type="button" data-action="live#action" data-live-action-param="nextPage"
+                            class="inline-flex items-center rounded-r-md border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-50 disabled:opacity-40"
+                            {% if not items.hasNextPage %}disabled{% endif %}>
+                        <twig:ux:icon name="tabler:chevron-right" class="size-4" />
+                    </button>
+                </nav>
+            </div>
+        </div>
+    {% endif %}
+</div>

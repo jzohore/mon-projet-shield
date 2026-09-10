@@ -57,6 +57,13 @@ interface ComplianceFolderRepositoryInterface
      */
     public function findAllByWorkspace(Workspace $workspace, ?string $search = null, ?ComplianceFolderStatus $status = null): Pagerfanta;
 
+    /**
+     * Liste paginée tous cabinets, pour le back-office KYSURE.
+     *
+     * @return Pagerfanta<ComplianceFolder>
+     */
+    public function findAllForAdmin(int $page, int $perPage, ?string $search = null, ?ComplianceFolderStatus $status = null): Pagerfanta;
+
     public function findOneLastDraftIndividuals(string $method, Workspace $workspace): ?ComplianceFolder;
 
     public function findActiveForClient(Client $client): ?ComplianceFolder;
