@@ -61,6 +61,18 @@
 {% endblock form_widget_simple %}
 
 {# =========================================================
+   3 bis. LE TEXTAREA (mêmes styles que les inputs, hauteur libre)
+   ========================================================= #}
+{% block textarea_widget %}
+    {% set has_errors = errors|length > 0 %}
+    {% set base = 'flex w-full min-h-[76px] rounded-md border border-slate-200 bg-white px-3 py-2 text-sm ring-offset-white placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400 disabled:opacity-50 transition-colors' %}
+    {% set attr = attr|merge({
+        class: (base ~ ' ' ~ attr.class|default('') ~ (has_errors ? ' border-red-500 focus-visible:ring-red-500 text-red-900' : ''))|trim
+    }) %}
+    <textarea {{ block('widget_attributes') }}>{{ value }}</textarea>
+{% endblock textarea_widget %}
+
+{# =========================================================
    4. LES ERREURS
    ========================================================= #}
 {% block form_errors %}
