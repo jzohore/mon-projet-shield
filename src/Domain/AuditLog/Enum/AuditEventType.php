@@ -342,7 +342,8 @@ enum AuditEventType: string
             self::DER_ACKNOWLEDGEMENT_REVOKED,
             self::DER_DECLINED,
             self::KYC_LEGAL_HOLD_PLACED,
-            self::CLIENT_ACCOUNT_DELETED => true,
+            self::CLIENT_ACCOUNT_DELETED,
+            self::ADMIN_IMPERSONATION_START => true,
             default => false,
         };
     }
@@ -357,9 +358,9 @@ enum AuditEventType: string
             self::USER_MAGIC_LINK_REQUESTED,
             self::USER_LOGGED_OUT,
             self::KYC_DOCUMENT_OCR_PROCESSED,
-            self::ONBOARDING_COMPLETED,
-            self::ADMIN_IMPERSONATION_START,
-            self::ADMIN_IMPERSONATION_EXIT => false,
+            self::ONBOARDING_COMPLETED => false,
+            // La connexion support DOIT être visible du cabinet : c'est ce qui lui
+            // permet de répondre à « qui a ouvert ce dossier, quand, pourquoi ».
             default => true,
         };
     }
