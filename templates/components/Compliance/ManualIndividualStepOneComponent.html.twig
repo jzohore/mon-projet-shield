@@ -36,7 +36,26 @@
                     <div>{{ form_row(form.lastName) }}</div>
                 </div>
                 <div>{{ form_row(form.email) }}</div>
-                <div>{{ form_row(form.address) }}</div>
+
+                <div data-controller="address-autocomplete" data-address-autocomplete-min-value="4">
+                    {# Bloc purement JS : on l'isole du re-rendu LiveComponent (morphdom). #}
+                    <div data-live-ignore>
+                        <label for="address-search" class="block text-sm font-medium text-slate-700 mb-1.5">Rechercher l'adresse</label>
+                        <div class="relative">
+                            <input type="text" id="address-search"
+                                   data-address-autocomplete-target="input"
+                                   data-action="input->address-autocomplete#search keydown->address-autocomplete#keydown"
+                                   autocomplete="off"
+                                   placeholder="Commencez à taper : 12 rue de la Paix, Lyon…"
+                                   class="block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-500/10">
+                            <div data-address-autocomplete-target="results" hidden
+                                 class="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg"></div>
+                        </div>
+                        <p class="mt-1 text-xs text-slate-400">Suggestions&nbsp;: Base Adresse Nationale (data.gouv.fr). L'adresse ci-dessous reste modifiable à la main.</p>
+                    </div>
+
+                    <div class="mt-4">{{ form_row(form.address) }}</div>
+                </div>
             </div>
 
             <div class="flex items-center justify-end mt-8 pt-4 border-t border-slate-100">
