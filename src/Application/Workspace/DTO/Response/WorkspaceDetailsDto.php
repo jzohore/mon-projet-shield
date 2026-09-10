@@ -7,6 +7,7 @@ namespace App\Application\Workspace\DTO\Response;
 use App\Domain\Support\Entity\SupportThread;
 use App\Domain\Support\Enum\SupportThreadStatus;
 use App\Domain\Workspace\Entity\Workspace;
+use App\Domain\Workspace\Entity\WorkspaceMember;
 
 final readonly class WorkspaceDetailsDto
 {
@@ -49,6 +50,9 @@ final readonly class WorkspaceDetailsDto
         // --- SUPPORT ---
         public int $openTicketsCount,
         public int $closedTicketsCount,
+
+        /** E-mail du propriétaire du cabinet, pour la connexion support. */
+        public ?string $ownerEmail = null,
     ) {
     }
 
@@ -61,6 +65,12 @@ final readonly class WorkspaceDetailsDto
         $closedTickets = $workspace->supportThread->filter(
             static fn (SupportThread $thread): bool => SupportThreadStatus::RESOLVED === $thread->status
         )->count();
+
+        // Propriétaire du cabinet : cible privilégiée d'une connexion support.
+        // À défaut de propriétaire identifié, on retombe sur le premier membre.
+        $owner = $workspace->members->findFirst(
+            static fn (int $_i, WorkspaceMember $member): bool => $member->user->isOwner
+        ) ?? $workspace->members->first();
 
         return new self(
             slugId: $workspace->slugId,
@@ -104,6 +114,8 @@ final readonly class WorkspaceDetailsDto
 
             openTicketsCount: $openTickets,
             closedTicketsCount: $closedTickets,
+
+            ownerEmail: $owner instanceof WorkspaceMember ? $owner->user->email : null,
         );
     }
 }
