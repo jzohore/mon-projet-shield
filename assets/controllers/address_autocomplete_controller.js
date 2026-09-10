@@ -2,21 +2,20 @@ import { Controller } from '@hotwired/stimulus';
 
 /*
  * Recherche d'adresse via la Base Adresse Nationale (api-adresse.data.gouv.fr).
- * Service public, sans clé. La saisie manuelle reste toujours possible : en cas
- * d'erreur réseau, le contrôleur se contente de masquer les suggestions.
+ * Service public, sans clé.
  *
- *   <div data-controller="address-autocomplete" data-address-autocomplete-min-value="4">
- *     <input data-address-autocomplete-target="input"
- *            data-action="input->address-autocomplete#search keydown->address-autocomplete#keydown">
- *     <div data-address-autocomplete-target="results" hidden></div>
- *     <textarea data-address-autocomplete-target="field"></textarea>
- *   </div>
+ * Par défaut, seul le champ de recherche est visible. Le champ « adresse
+ * postale » n'apparaît qu'après le choix d'une suggestion (résumé + bouton
+ * « Modifier ») ou via « Saisir l'adresse manuellement ». La saisie à la main
+ * reste toujours possible ; en cas d'erreur réseau on masque juste les
+ * suggestions.
  */
 export default class extends Controller {
-    static targets = ['input', 'results', 'field'];
+    static targets = ['input', 'results', 'field', 'fieldWrapper', 'summary', 'summaryText'];
     static values = {
         min: { type: Number, default: 4 },
         url: { type: String, default: 'https://api-adresse.data.gouv.fr/search/' },
+        hasError: { type: Boolean, default: false },
     };
 
     #timer = null;
@@ -29,6 +28,15 @@ export default class extends Controller {
             }
         };
         document.addEventListener('click', this.onClickOutside);
+
+        // Adresse déjà renseignée (édition, ou re-rendu après soumission valide) :
+        // on montre le résumé et on replie le champ. En cas d'erreur serveur sur
+        // l'adresse, on laisse le champ ouvert pour la correction.
+        const value = this.hasFieldTarget ? this.fieldTarget.value.trim() : '';
+        if (value !== '' && !this.hasErrorValue) {
+            this.#showSummary(value);
+            this.#hideField();
+        }
     }
 
     disconnect() {
@@ -55,6 +63,21 @@ export default class extends Controller {
         }
     }
 
+    /** « Modifier » : rouvre le champ pour ajuster l'adresse choisie. */
+    edit() {
+        this.#showField();
+        this.#hideSummary();
+        this.#focusField();
+    }
+
+    /** « Saisir l'adresse manuellement ». */
+    manual() {
+        this.#close();
+        this.#showField();
+        this.#hideSummary();
+        this.#focusField();
+    }
+
     async #fetch(query) {
         this.#abort();
         this.#controller = new AbortController();
@@ -67,7 +90,7 @@ export default class extends Controller {
                 return;
             }
             const data = await response.json();
-            this.#render(data.features || []);
+            this.#renderResults(data.features || []);
         } catch (error) {
             if (error.name !== 'AbortError') {
                 this.#close();
@@ -75,7 +98,7 @@ export default class extends Controller {
         }
     }
 
-    #render(features) {
+    #renderResults(features) {
         if (features.length === 0) {
             this.#close();
             return;
@@ -105,8 +128,42 @@ export default class extends Controller {
             this.fieldTarget.dispatchEvent(new Event('input', { bubbles: true }));
             this.fieldTarget.dispatchEvent(new Event('change', { bubbles: true }));
         }
-        this.inputTarget.value = p.label || value;
+        this.inputTarget.value = '';
         this.#close();
+        this.#hideField();
+        this.#showSummary(value);
+    }
+
+    #showSummary(value) {
+        if (!this.hasSummaryTarget) {
+            return;
+        }
+        this.summaryTextTarget.textContent = value;
+        this.summaryTarget.hidden = false;
+    }
+
+    #hideSummary() {
+        if (this.hasSummaryTarget) {
+            this.summaryTarget.hidden = true;
+        }
+    }
+
+    #showField() {
+        if (this.hasFieldWrapperTarget) {
+            this.fieldWrapperTarget.hidden = false;
+        }
+    }
+
+    #hideField() {
+        if (this.hasFieldWrapperTarget) {
+            this.fieldWrapperTarget.hidden = true;
+        }
+    }
+
+    #focusField() {
+        if (this.hasFieldTarget) {
+            this.fieldTarget.focus();
+        }
     }
 
     #close() {
