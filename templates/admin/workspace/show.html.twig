@@ -122,13 +122,13 @@
                     </div>
                 </div>
 
-                <a href="{{ path('admin_workspace_settings', {slugId: workspace.slugId}) }}" class="px-4 py-2 bg-white border border-slate-200 text-xs font-bold text-slate-700 rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-1.5">
+                <a href="{{ path('admin_workspace_settings', {slugId: workspace.slugId}) }}" class="px-4 py-2 bg-white border border-slate-200 text-xs font-bold text-slate-700 rounded-md hover:bg-slate-50 transition-colors shadow-sm flex items-center gap-1.5">
                     <twig:ux:icon name="tabler:edit" class="size-4" />
                     Paramètres
                 </a>
 
                 <a href="{{ path('admin_workspace_impersonate', workspace.ownerEmail ? {slugId: workspace.slugId, email: workspace.ownerEmail} : {slugId: workspace.slugId}) }}"
-                   class="px-4 py-2 bg-[#6e2f1e] text-xs font-bold text-white rounded-xl hover:bg-[#5a2517] transition-colors shadow-sm flex items-center gap-1.5"
+                   class="px-4 py-2 bg-[#6e2f1e] text-xs font-bold text-white rounded-md hover:bg-[#5a2517] transition-colors shadow-sm flex items-center gap-1.5"
                    title="Connexion support — motif obligatoire, tracé dans le journal d'audit du cabinet">
                     <twig:ux:icon name="tabler:spy" class="size-4" />
                     Impersonate

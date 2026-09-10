@@ -17,7 +17,7 @@
 
         <form method="post"
               action="{{ path('admin_workspace_impersonate', {slugId: slug_id}) }}"
-              class="space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              class="space-y-4 rounded-md border border-slate-200 bg-white p-6 shadow-sm">
             <input type="hidden" name="_token" value="{{ csrf_token('impersonate_' ~ slug_id) }}">
 
             <div>
@@ -41,11 +41,11 @@
 
             <div class="flex items-center justify-end gap-2 pt-2">
                 <a href="{{ path('admin_workspace_details', {slugId: slug_id}) }}"
-                   class="px-4 py-2 bg-white border border-slate-200 text-xs font-bold text-slate-700 rounded-xl hover:bg-slate-50 transition-colors">
+                   class="px-4 py-2 bg-white border border-slate-200 text-xs font-bold text-slate-700 rounded-md hover:bg-slate-50 transition-colors">
                     Annuler
                 </a>
                 <button type="submit"
-                        class="px-4 py-2 bg-[#6e2f1e] text-xs font-bold text-white rounded-xl hover:bg-[#5a2517] transition-colors shadow-sm flex items-center gap-1.5">
+                        class="px-4 py-2 bg-[#6e2f1e] text-xs font-bold text-white rounded-md hover:bg-[#5a2517] transition-colors shadow-sm flex items-center gap-1.5">
                     <twig:ux:icon name="tabler:spy" class="size-4" />
                     Ouvrir la session support
                 </button>
