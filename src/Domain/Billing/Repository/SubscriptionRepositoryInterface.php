@@ -34,4 +34,17 @@ interface SubscriptionRepositoryInterface
         ?string $search = null,
         ?SubscriptionStatus $status = null,
     ): Pagerfanta;
+
+    /**
+     * Nombre d'abonnements par statut.
+     *
+     * @return array<string, int>
+     */
+    public function countGroupedByStatus(): array;
+
+    /**
+     * MRR estimé (en centimes) à partir des sièges des abonnements actifs / en
+     * essai et du tarif du plan. N'intègre ni coupons ni proration.
+     */
+    public function estimateMonthlyRecurringRevenueCents(): int;
 }

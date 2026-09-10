@@ -73,6 +73,19 @@ class AdminSubscriptionsListComponent
         return SubscriptionStatus::cases();
     }
 
+    public function mrrCents(): int
+    {
+        return $this->subscriptionRepository->estimateMonthlyRecurringRevenueCents();
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function statusCounts(): array
+    {
+        return $this->subscriptionRepository->countGroupedByStatus();
+    }
+
     /**
      * @return Pagerfanta<Subscription>
      */

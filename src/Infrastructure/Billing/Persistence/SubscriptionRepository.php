@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Infrastructure\Billing\Persistence;
 
 use App\Domain\Billing\Entity\Subscription;
+use App\Domain\Billing\Enum\Plan;
 use App\Domain\Billing\Enum\SubscriptionStatus;
 use App\Domain\Billing\Exception\SubscriptionNotFoundException;
 use App\Domain\Billing\Repository\SubscriptionRepositoryInterface;
@@ -100,5 +101,45 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
         }
 
         return $pager;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function countGroupedByStatus(): array
+    {
+        $rows = $this->repository->createQueryBuilder('s')
+            ->select('s.status AS status, COUNT(s.id) AS total')
+            ->groupBy('s.status')
+            ->getQuery()
+            ->getArrayResult();
+
+        $counts = [];
+        foreach ($rows as $row) {
+            $status = $row['status'];
+            $key = $status instanceof SubscriptionStatus ? $status->value : (string) $status;
+            $counts[$key] = (int) $row['total'];
+        }
+
+        return $counts;
+    }
+
+    public function estimateMonthlyRecurringRevenueCents(): int
+    {
+        $rows = $this->repository->createQueryBuilder('s')
+            ->select('s.planReference AS planReference, SUM(s.seatsCount) AS seats')
+            ->where('s.status IN (:active)')
+            ->setParameter('active', [SubscriptionStatus::ACTIVE, SubscriptionStatus::TRIALING])
+            ->groupBy('s.planReference')
+            ->getQuery()
+            ->getArrayResult();
+
+        $cents = 0;
+        foreach ($rows as $row) {
+            $plan = str_contains((string) $row['planReference'], 'cabinet') ? Plan::CABINET : Plan::INDIVIDUAL;
+            $cents += (int) $row['seats'] * $plan->getMonthlyPriceCentsPerSeat();
+        }
+
+        return $cents;
     }
 }
