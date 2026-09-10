@@ -4,30 +4,21 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\Controller\Admin\Subscription;
 
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Attribute\Route;
-use Twig\Environment;
-use Twig\Error\LoaderError;
-use Twig\Error\RuntimeError;
-use Twig\Error\SyntaxError;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[AsController]
+#[IsGranted('ROLE_SUPER_ADMIN')]
 #[Route(path: '/admin/administrators/subscriptions/list', name: 'admin_subscriptions_list', methods: ['GET'])]
-final class SubscriptionListController
+final class SubscriptionListController extends AbstractController
 {
-    /**
-     * @throws RuntimeError
-     * @throws SyntaxError
-     * @throws LoaderError
-     */
-    public function __invoke(
-        Environment $twig,
-    ): Response {
-        return new Response(
-            $twig->render('@admin/subscription/list.html.twig', [
-                'page_title' => 'Abonnements',
-            ])
-        );
+    public function __invoke(): Response
+    {
+        return $this->render('@admin/subscription/list.html.twig', [
+            'page_title' => 'Abonnements',
+        ]);
     }
 }

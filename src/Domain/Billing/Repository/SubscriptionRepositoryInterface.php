@@ -6,6 +6,7 @@ namespace App\Domain\Billing\Repository;
 
 use App\Domain\Billing\Entity\Subscription;
 use App\Domain\Billing\Enum\SubscriptionStatus;
+use Pagerfanta\Pagerfanta;
 
 interface SubscriptionRepositoryInterface
 {
@@ -21,4 +22,16 @@ interface SubscriptionRepositoryInterface
      * @param SubscriptionStatus[] $statuses
      */
     public function countByStatuses(array $statuses): int;
+
+    /**
+     * Liste paginée pour le back-office KYSURE.
+     *
+     * @return Pagerfanta<Subscription>
+     */
+    public function getPaginatedSubscriptions(
+        int $page,
+        int $perPage,
+        ?string $search = null,
+        ?SubscriptionStatus $status = null,
+    ): Pagerfanta;
 }

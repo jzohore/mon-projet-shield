@@ -1,0 +1,132 @@
+<div {{ attributes }} class="space-y-6">
+    {% set items = this.subscriptions %}
+    {% set status_classes = {
+        'active': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        'trialing': 'bg-indigo-50 text-indigo-700 border-indigo-200',
+        'past_due': 'bg-amber-50 text-amber-700 border-amber-200',
+        'canceled': 'bg-rose-50 text-rose-700 border-rose-200',
+        'incomplete': 'bg-slate-100 text-slate-600 border-slate-200',
+    } %}
+
+    {# ---------- FILTRES ---------- #}
+    <div class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end">
+        <div class="flex-1">
+            <label for="s-search" class="mb-1 block text-xs font-semibold text-slate-500">Recherche</label>
+            <input type="search" id="s-search" data-model="debounce(300)|search" value="{{ search }}"
+                   placeholder="Cabinet, ID Stripe, plan…"
+                   class="block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
+        </div>
+        <div class="sm:w-56">
+            <label for="s-status" class="mb-1 block text-xs font-semibold text-slate-500">Statut</label>
+            <select id="s-status" data-model="status"
+                    class="block w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900">
+                <option value="">Tous</option>
+                {% for st in this.statuses %}
+                    <option value="{{ st.value }}" {{ status == st.value ? 'selected' : '' }}>{{ st.getLabel() }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+
+    <div class="flex items-center justify-between">
+        <p class="text-sm text-slate-500" aria-live="polite">
+            <span class="font-bold text-slate-900">{{ items.nbResults }}</span> abonnement(s)
+        </p>
+        {% if this.hasFilters %}
+            <button type="button" data-action="live#action" data-live-action-param="resetFilters"
+                    class="text-xs font-semibold text-slate-600 hover:text-slate-900">Réinitialiser</button>
+        {% endif %}
+    </div>
+
+    {% if items.nbResults == 0 %}
+        <div class="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+            <div class="mx-auto mb-3 inline-flex size-12 items-center justify-center rounded-xl bg-slate-100 text-slate-400 ring-1 ring-slate-200">
+                <twig:ux:icon name="tabler:receipt-off" class="size-6" />
+            </div>
+            <h3 class="text-base font-bold text-slate-900">Aucun abonnement</h3>
+            <p class="mt-1 text-sm text-slate-500">Aucun abonnement ne correspond à ces critères.</p>
+        </div>
+    {% else %}
+        <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="border-b border-slate-200 bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500">
+                            <th scope="col" class="px-4 py-3">Cabinet</th>
+                            <th scope="col" class="px-4 py-3">Plan</th>
+                            <th scope="col" class="px-4 py-3">Sièges</th>
+                            <th scope="col" class="px-4 py-3">Statut</th>
+                            <th scope="col" class="px-4 py-3">Période en cours</th>
+                            <th scope="col" class="px-4 py-3">Signaux</th>
+                            <th scope="col" class="px-4 py-3">Stripe</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
+                        {% for sub in items %}
+                            <tr class="align-top hover:bg-slate-50/80">
+                                <td class="px-4 py-3">
+                                    <a href="{{ path('admin_workspace_details', {slugId: sub.workspace.slugId}) }}"
+                                       class="font-medium text-slate-900 hover:underline">{{ sub.workspace.name }}</a>
+                                    <p class="text-[11px] text-slate-400">Créé le {{ sub.createdAt|date('d/m/Y') }}</p>
+                                </td>
+                                <td class="px-4 py-3">
+                                    {{ 'cabinet' in sub.planReference ? 'Cabinet' : 'Indépendant' }}
+                                    <p class="font-mono text-[11px] text-slate-400">{{ sub.planReference }}</p>
+                                </td>
+                                <td class="px-4 py-3 tabular-nums">{{ sub.seatsCount }}</td>
+                                <td class="px-4 py-3">
+                                    <span class="inline-flex items-center rounded border px-2 py-0.5 text-[11px] font-bold {{ status_classes[sub.status.value] ?? 'bg-slate-100 text-slate-600 border-slate-200' }}">
+                                        {{ sub.status.getLabel() }}
+                                    </span>
+                                </td>
+                                <td class="whitespace-nowrap px-4 py-3">
+                                    <p>{{ sub.currentPeriodStart|date('d/m/Y') }} → {{ sub.currentPeriodEnd|date('d/m/Y') }}</p>
+                                    {% if sub.trialEndsAt %}
+                                        <p class="text-[11px] text-indigo-500">Essai jusqu'au {{ sub.trialEndsAt|date('d/m/Y') }}</p>
+                                    {% endif %}
+                                </td>
+                                <td class="px-4 py-3">
+                                    <div class="flex flex-wrap gap-1">
+                                        {% if sub.cancelAtPeriodEnd %}
+                                            <span class="inline-flex items-center rounded bg-rose-50 px-1.5 py-0.5 text-[11px] font-medium text-rose-700">Résiliation programmée</span>
+                                        {% endif %}
+                                        {% if sub.pausedAt %}
+                                            <span class="inline-flex items-center rounded bg-amber-50 px-1.5 py-0.5 text-[11px] font-medium text-amber-700">Suspendu</span>
+                                        {% endif %}
+                                        {% if sub.retentionOfferClaimedAt %}
+                                            <span class="inline-flex items-center rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-medium text-slate-600">Offre fidélité utilisée</span>
+                                        {% endif %}
+                                        {% if not sub.cancelAtPeriodEnd and not sub.pausedAt and not sub.retentionOfferClaimedAt %}
+                                            <span class="text-[11px] text-slate-300">—</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <span class="font-mono text-[11px] text-slate-400">{{ sub.stripeSubscriptionId ?? '—' }}</span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-3">
+                <p class="text-xs text-slate-600">
+                    Page <span class="font-bold text-slate-900">{{ items.currentPage }}</span> / {{ items.nbPages }}
+                </p>
+                <nav class="inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                    <button type="button" data-action="live#action" data-live-action-param="previousPage"
+                            class="inline-flex items-center rounded-l-md border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-50 disabled:opacity-40"
+                            {% if not items.hasPreviousPage %}disabled{% endif %}>
+                        <twig:ux:icon name="tabler:chevron-left" class="size-4" />
+                    </button>
+                    <button type="button" data-action="live#action" data-live-action-param="nextPage"
+                            class="inline-flex items-center rounded-r-md border border-slate-300 bg-white px-2 py-1.5 text-xs text-slate-500 hover:bg-slate-50 disabled:opacity-40"
+                            {% if not items.hasNextPage %}disabled{% endif %}>
+                        <twig:ux:icon name="tabler:chevron-right" class="size-4" />
+                    </button>
+                </nav>
+            </div>
+        </div>
+    {% endif %}
+</div>

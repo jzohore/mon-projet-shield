@@ -10,6 +10,9 @@ use App\Domain\Billing\Exception\SubscriptionNotFoundException;
 use App\Domain\Billing\Repository\SubscriptionRepositoryInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\EntityRepository;
+use Pagerfanta\Doctrine\ORM\QueryAdapter;
+use Pagerfanta\Exception\OutOfRangeCurrentPageException;
+use Pagerfanta\Pagerfanta;
 
 /**
  * @method Subscription|null find($id, $lockMode = null, $lockVersion = null)
@@ -65,5 +68,37 @@ class SubscriptionRepository implements SubscriptionRepositoryInterface
             ->setParameter('statuses', $statuses)
             ->getQuery()
             ->getSingleScalarResult();
+    }
+
+    public function getPaginatedSubscriptions(
+        int $page,
+        int $perPage,
+        ?string $search = null,
+        ?SubscriptionStatus $status = null,
+    ): Pagerfanta {
+        $qb = $this->repository->createQueryBuilder('s')
+            ->leftJoin('s.workspace', 'w')
+            ->addSelect('w')
+            ->orderBy('s.createdAt', 'DESC');
+
+        if ($status instanceof SubscriptionStatus) {
+            $qb->andWhere('s.status = :status')->setParameter('status', $status);
+        }
+
+        if (!in_array($search, [null, '', '0'], true)) {
+            $qb->andWhere('LOWER(w.name) LIKE LOWER(:q) OR LOWER(s.stripeSubscriptionId) LIKE LOWER(:q) OR LOWER(s.planReference) LIKE LOWER(:q)')
+                ->setParameter('q', '%' . $search . '%');
+        }
+
+        $pager = new Pagerfanta(new QueryAdapter($qb));
+        $pager->setMaxPerPage(max(1, $perPage));
+
+        try {
+            $pager->setCurrentPage(max(1, $page));
+        } catch (OutOfRangeCurrentPageException) {
+            $pager->setCurrentPage(1);
+        }
+
+        return $pager;
     }
 }
