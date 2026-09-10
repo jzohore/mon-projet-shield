@@ -87,7 +87,7 @@
                                         <a href="{{ path('admin_workspace_details', {slugId: log.workspace.slugId}) }}"
                                            class="font-medium text-slate-900 hover:underline">{{ log.workspace.name }}</a>
                                     {% else %}
-                                        <span class="text-slate-400">{{ p.workspace_name|default('—') }}</span>
+                                        <span class="text-slate-400">{{ p.workspace_name ?? '—' }}</span>
                                     {% endif %}
                                 </td>
                                 <td class="px-4 py-3">
@@ -97,8 +97,8 @@
                                     <p class="mt-1 text-[11px] text-slate-400">{{ log.eventName.getCategory() }}</p>
                                 </td>
                                 <td class="px-4 py-3">
-                                    {{ p.actor_name|default(p.revoked_by_name)|default(p.actor_email)|default(p.revoked_by_email)|default('—') }}
-                                    {% if p.actor_email is defined and p.actor_name is defined %}
+                                    {{ p.actor_name ?? p.revoked_by_name ?? p.actor_email ?? p.revoked_by_email ?? p.initiated_by ?? '—' }}
+                                    {% if (p.actor_name ?? false) and (p.actor_email ?? false) %}
                                         <p class="text-[11px] text-slate-400">{{ p.actor_email }}</p>
                                     {% endif %}
                                 </td>
