@@ -10,8 +10,8 @@ import { Controller } from '@hotwired/stimulus';
  *
  *   <div data-controller="address-autocomplete" data-address-autocomplete-min-value="4">
  *     <div class="relative">
- *       <textarea data-address-autocomplete-target="field"
- *                 data-action="input->address-autocomplete#search keydown->address-autocomplete#keydown"></textarea>
+ *       <input data-address-autocomplete-target="field"
+ *              data-action="input->address-autocomplete#search keydown->address-autocomplete#keydown">
  *       <div data-address-autocomplete-target="results" hidden></div>
  *     </div>
  *   </div>
@@ -100,9 +100,9 @@ export default class extends Controller {
     }
 
     #choose(p) {
-        const line1 = [p.name, p.locality].filter(Boolean).join(', ');
-        const line2 = [p.postcode, p.city].filter(Boolean).join(' ');
-        this.fieldTarget.value = [line1, line2].filter(Boolean).join('\n');
+        // Champ sur une seule ligne : on prend le libellé complet fourni par la BAN.
+        const parts = [p.name, p.postcode, p.city].filter(Boolean).join(' ');
+        this.fieldTarget.value = p.label || parts;
         this.fieldTarget.dispatchEvent(new Event('input', { bubbles: true }));
         this.fieldTarget.dispatchEvent(new Event('change', { bubbles: true }));
         this.#close();
