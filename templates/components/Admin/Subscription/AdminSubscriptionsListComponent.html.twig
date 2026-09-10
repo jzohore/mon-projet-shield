@@ -3,27 +3,26 @@
     {% set counts = this.statusCounts %}
 
     {# ---------- BANDEAU MRR / RÉPARTITION ---------- #}
-    <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">MRR (Stripe)</p>
-            <p class="mt-1 text-xl font-bold text-slate-900">{{ this.mrrEuros|format_currency('EUR', {fraction_digit: 0}, 'fr') }}</p>
-            <p class="mt-0.5 text-[11px] text-slate-400">abonnements actifs · cache ~15 min</p>
+    <div class="flex flex-wrap items-stretch gap-3">
+        <div class="min-w-[9rem] flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400" title="Mis en cache ~15 min">MRR (Stripe)</p>
+            <p class="mt-1 text-lg font-bold text-slate-900">{{ this.mrrEuros|format_currency('EUR', {fraction_digit: 0}, 'fr') }}</p>
         </div>
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Actifs</p>
-            <p class="mt-1 text-xl font-bold text-emerald-700">{{ counts.active ?? 0 }}</p>
+        <div class="min-w-[7rem] flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Actifs</p>
+            <p class="mt-1 text-lg font-bold text-emerald-700">{{ counts.active ?? 0 }}</p>
         </div>
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">En essai</p>
-            <p class="mt-1 text-xl font-bold text-indigo-700">{{ counts.trialing ?? 0 }}</p>
+        <div class="min-w-[7rem] flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">En essai</p>
+            <p class="mt-1 text-lg font-bold text-indigo-700">{{ counts.trialing ?? 0 }}</p>
         </div>
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Paiement en retard</p>
-            <p class="mt-1 text-xl font-bold text-amber-700">{{ counts.past_due ?? 0 }}</p>
+        <div class="min-w-[7rem] flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Paiement en retard</p>
+            <p class="mt-1 text-lg font-bold text-amber-700">{{ counts.past_due ?? 0 }}</p>
         </div>
-        <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">Annulés</p>
-            <p class="mt-1 text-xl font-bold text-rose-700">{{ counts.canceled ?? 0 }}</p>
+        <div class="min-w-[7rem] flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
+            <p class="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Annulés</p>
+            <p class="mt-1 text-lg font-bold text-rose-700">{{ counts.canceled ?? 0 }}</p>
         </div>
     </div>
 
