@@ -106,12 +106,8 @@ services:
     hostname: kysure_rabbitmq_staging
     restart: unless-stopped
     environment:
-      RABBITMQ_DEFAULT_USER: '${RABBITMQ_USER}'
-      RABBITMQ_DEFAULT_PASS: '${RABBITMQ_PASSWORD}'
-      # Sous cette part de la RAM du conteneur, RabbitMQ bloque les publishers
-      # au lieu de se faire OOM-killer (l'app hang alors sur dispatch() — au
-      # moins c'est diagnosticable).
-      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: '0.5'
+      RABBITMQ_DEFAULT_USER: '${RABBITMQ_USER:-kysure}'
+      RABBITMQ_DEFAULT_PASS: '${RABBITMQ_PASSWORD:?RABBITMQ_PASSWORD manquant}'
     volumes:
       - 'rabbitmq_staging_data:/var/lib/rabbitmq'
     logging: *default-logging
