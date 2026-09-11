@@ -103,6 +103,7 @@ services:
   rabbitmq-staging:
     image: 'rabbitmq:4.3-management-alpine'
     container_name: kysure_rabbitmq_staging
+    hostname: kysure_rabbitmq_staging
     restart: unless-stopped
     environment:
       RABBITMQ_DEFAULT_USER: '${RABBITMQ_USER}'
